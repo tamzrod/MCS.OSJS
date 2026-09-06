@@ -49,20 +49,69 @@ GENERATE RANDOM VALUES
 
 All simulator-originated writes use MMA2 raw ingest. The simulator must not add a direct-memory bypass or use Modbus writes merely to populate its own simulated values.
 
+## Shared MMA2 Configuration Boundary
+
+MMA2 is a shared engine. The simulator is only one future user; Replicator will use the same MMA2 engine. Therefore the simulator must not become the exclusive owner of MMA2 configuration or overwrite configuration belonging to another producer.
+
+MMA2 remains a configuration consumer and runtime engine. Ownership/conflict policy belongs outside the MMA2 source tree.
+
+```text
+Simulator intent ──┐
+                   ├── shared configuration authority
+Replicator intent ─┘            ↓
+                       effective MMA2 config
+                                ↓
+                              MMA2
+```
+
+The effective configuration must be composed/validated before activation so multiple MMA2 users cannot independently claim conflicting listeners, Unit IDs, function-code ranges, or destination addresses.
+
+A hard rule for the eventual shared configuration model is that two producers must not independently own the same MMA2 destination address.
+
+The exact configuration-authority implementation is not decided by this brainstorm.
+
+## Persistent Configuration Location
+
+Persistent runtime configuration must live on the host-mounted MCS.OSJS data/configuration location, not inside the packaged application source tree or MMA2 source directory.
+
+Conceptually:
+
+```text
+HOST
+└── <MCS.OSJS mounted location>/
+    └── config/
+        ├── simulator/
+        ├── replicator/
+        └── mma2/          # effective/generated runtime configuration as appropriate
+             │
+             └── mounted into the MCS.OSJS container
+```
+
+The exact host path and final directory names must follow the appliance mount convention once that convention is established/verified. This brainstorm does not invent a host path.
+
+Rule to cement during implementation:
+
+> No application writes persistent configuration into its packaged application directory. Persistent configuration belongs under the designated host-mounted configuration root.
+
+Simulator and Replicator may own their respective configuration intent, while MMA2 consumes the validated effective runtime configuration generated from those intents.
+
 ## Ownership Boundary
 
 ```text
 OS.js Simulator App
 = simulator configuration / control surface
 
-MMA2 configuration
+Shared configuration authority
+= validates ownership, prevents conflicts, composes effective MMA2 configuration
+
+MMA2 effective configuration
 = Modbus address space, listener and Unit-ID runtime structure
 
 Simulator randomizer
 = periodic random-value generation
 
 MMA2 raw ingest
-= simulator value injection path
+= simulator/producer value injection path
 
 MMA2 Modbus TCP
 = external client-facing protocol path
@@ -73,8 +122,8 @@ MMA2 Modbus TCP
 Keep the first simulator intentionally small:
 
 - configure ranges;
-- generate MMA2 config;
-- restart MMA2 after structural config changes;
+- generate/submit its MMA2 configuration requirements without taking exclusive ownership of shared MMA2 configuration;
+- restart MMA2 after structural config changes through the eventual configuration/lifecycle authority;
 - populate all configured FC1-FC4 ranges with random values every minute through raw ingest;
 - allow real external Modbus clients to read the simulated device.
 

@@ -18,6 +18,24 @@ A microtask should be independently understandable, implementable, verifiable, a
 
 A single narrative outcome does not automatically mean a single JR-sized task. If the work crosses independently failure-prone execution boundaries, split it even when those boundaries contribute to one larger outcome.
 
+## File Boundary Rule
+
+> **One microtask = one detailed task file.**
+
+Do not place multiple executable microtasks into one giant planning document.
+
+A microtask file must contain only one task ID and one primary outcome. A feature may require many microtask files.
+
+If a feature decomposes into `TASK-001`, `TASK-002`, and `TASK-003`, store them as three separate files, for example:
+
+```text
+planning/microtask/task-001-something.md
+planning/microtask/task-002-something.md
+planning/microtask/task-003-something.md
+```
+
+A feature-level index or brainstorm may describe ordering, but it must not replace the individual detailed microtask files used for sizing, promotion, execution, and verification.
+
 ## Preferred Size
 
 Score tasks across five dimensions. Count **0, 1, or 2** points in each dimension:
@@ -81,10 +99,10 @@ When uncertain, split at the strongest independently verifiable boundary.
 
 ## Task Shape
 
-Each microtask should contain:
+Each microtask file should contain:
 
-- ID and title;
-- primary outcome;
+- exactly one task ID and title;
+- one primary outcome;
 - scope;
 - explicit non-scope when useful;
 - acceptance criteria;
@@ -98,4 +116,4 @@ A microtask remains planning material until a human promotes it.
 
 Before promotion, use synchronized ICC context for the selected task and workflow state. Refresh only stale affected context inside the selected semantic branch through BLACK SHEEP WALL.
 
-Promotion moves the selected task into `workflow/active_work/` and synchronizes `handoff.md`.
+Promotion moves the selected task file into `workflow/active_work/` and synchronizes `handoff.md`.

@@ -6,6 +6,102 @@ Build a deliberately simple Modbus device simulator as an OS.js application usin
 
 The OS.js application is the simulator configuration and control surface. It does not implement another Modbus server.
 
+## Two Parameter Domains
+
+A simulator device has two distinct parameter domains because MMA2 structure and random-value scheduling have different owners and different reload behavior.
+
+```text
+SIMULATOR DEVICE
+│
+├── MMA2 PARAMETERS
+│   ├── Listen Port
+│   ├── Unit ID
+│   ├── FC1 Start / Count
+│   ├── FC2 Start / Count
+│   ├── FC3 Start / Count
+│   └── FC4 Start / Count
+│
+└── RANDOM RUNTIME PARAMETERS
+    ├── FC1 Randomize Every (ms)
+    ├── FC2 Randomize Every (ms)
+    ├── FC3 Randomize Every (ms)
+    └── FC4 Randomize Every (ms)
+```
+
+The two domains may be persisted together as one simulator-owned device definition, but operationally they are separate parameter sets with separate consumers.
+
+Conceptual persisted shape:
+
+```text
+device: Sim-PLC-1
+
+mma2:
+  port: 5020
+  unit_id: 1
+  fc1: start/count
+  fc2: start/count
+  fc3: start/count
+  fc4: start/count
+
+random_runtime:
+  fc1_interval_ms: 1000
+  fc2_interval_ms: 5000
+  fc3_interval_ms: 60000
+  fc4_interval_ms: 10000
+```
+
+This is a conceptual ownership model, not a final serialization/schema decision.
+
+## Control and Data Paths
+
+The simulator has two related but separate flows.
+
+### Configuration / Control Path
+
+```text
+Simulation Form Fill
+        ↓
+Parameter Check
+        │
+        ├── invalid → return validation error
+        │
+        └── valid
+             ↓
+       classify change
+        ┌────┴────┐
+        │         │
+        ▼         ▼
+MMA2 structural  Random-runtime only
+parameters       parameters
+        │         │
+        ▼         ▼
+validate shared  save/update simulator
+MMA2 namespace   runtime schedule
+        │         │
+        ▼         └── no MMA2 restart
+save/compose
+MMA2 config
+        │
+        ▼
+restart/reload MMA2
+```
+
+### Simulation Data Path
+
+```text
+Random Simulator Runtime
+        ↓
+generate values on each FC schedule
+        ↓
+convert random values to raw ingest
+        ↓
+MMA2 raw ingest
+        ↓
+MMA2 memory
+```
+
+The runtime data path does not modify MMA2 configuration during normal randomization.
+
 ## Basic Configuration
 
 A simulated device configuration defines the address ranges and randomization interval required for the four read function-code areas:
@@ -15,22 +111,32 @@ A simulated device configuration defines the address ranges and randomization in
 - FC3 — holding registers: start + count + randomize every (ms)
 - FC4 — input registers: start + count + randomize every (ms)
 
-Device/listener identity required by MMA2, such as listener/port and Unit ID, is also part of the generated runtime configuration where required.
+Device/listener identity required by MMA2, such as listener/port and Unit ID, is also part of the MMA2 parameter domain where required.
 
 No per-address value configuration is required for the initial simulator.
 
 ## Runtime Model
 
 ```text
-OS.js Modbus Simulator
-→ edit simulator/device configuration
-→ generate/update MMA2 configuration requirements
-→ validate configuration
-→ restart MMA2 when structural MMA2 configuration changes
-→ MMA2 exposes the configured Modbus address space
+              SIMULATOR CONFIG
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+    MMA2 PARAMETERS      RANDOM PARAMETERS
+          │                   │
+          ▼                   ▼
+    MMA2 config/runtime    Random Runtime
+          │                   │
+          │              generate values
+          │                   ↓
+          │              convert to raw ingest
+          │                   ↓
+          └───────────────→ MMA2
 ```
 
-MMA2 is not restarted for periodic value changes. A randomization-interval-only change should update the simulator scheduler without requiring an MMA2 restart where the runtime design permits it.
+MMA2 parameters define where the Modbus memory/listener structure exists. Random-runtime parameters define when simulator values are generated for those configured areas.
+
+MMA2 is not restarted for periodic value changes. A randomization-interval-only change updates the simulator scheduler and does not by itself require an MMA2 restart.
 
 ## Simulated Values
 
@@ -57,17 +163,19 @@ MMA2 is a shared engine. The simulator is only one future user; Replicator will 
 MMA2 remains a configuration consumer and runtime engine. Ownership/conflict policy belongs outside the MMA2 source tree.
 
 ```text
-Simulator intent ──┐
-                   ├── shared configuration authority
-Replicator intent ─┘            ↓
-                       effective MMA2 config
-                                ↓
-                              MMA2
+Simulator MMA2 intent ──┐
+                        ├── shared configuration authority
+Replicator MMA2 intent ─┘            ↓
+                            effective MMA2 config
+                                     ↓
+                                   MMA2
 ```
 
 The effective configuration must be composed/validated before activation so multiple MMA2 users cannot independently claim conflicting listeners, Unit IDs, function-code ranges, or destination addresses.
 
 A hard rule for the eventual shared configuration model is that two producers must not independently own the same MMA2 destination address.
+
+Random-runtime parameters are simulator-owned and are not part of Replicator configuration or shared MMA2 configuration authority.
 
 The exact configuration-authority implementation is not decided by this brainstorm.
 
@@ -94,7 +202,7 @@ Rule to cement during implementation:
 
 > No application writes persistent configuration into its packaged application directory. Persistent configuration belongs under the designated host-mounted configuration root.
 
-Simulator and Replicator may own their respective configuration intent, while MMA2 consumes the validated effective runtime configuration generated from those intents.
+Simulator and Replicator may own their respective MMA2 configuration intent, while MMA2 consumes the validated effective runtime configuration generated from those intents. Simulator random-runtime parameters remain simulator-owned.
 
 ## Ownership Boundary
 
@@ -102,8 +210,14 @@ Simulator and Replicator may own their respective configuration intent, while MM
 OS.js Simulator App
 = simulator configuration / control surface
 
+Simulator MMA2 parameters
+= simulator request for Modbus listener / Unit ID / memory structure
+
+Simulator random-runtime parameters
+= simulator-owned FC1-FC4 update schedules
+
 Shared configuration authority
-= validates ownership, prevents conflicts, composes effective MMA2 configuration
+= validates MMA2 ownership, prevents conflicts, composes effective MMA2 configuration
 
 MMA2 effective configuration
 = Modbus address space, listener and Unit-ID runtime structure
@@ -198,6 +312,8 @@ The approved first version exposes:
 - FC3 Start + Count + Randomize Every (ms);
 - FC4 Start + Count + Randomize Every (ms).
 
+The UI may present these together for usability, but their ownership remains split: Port/Unit ID/Start/Count are MMA2 parameters; `Randomize Every (ms)` values are random-runtime parameters.
+
 `Randomize Every` uses a fixed millisecond unit. There is no unit selector. Each FC has its own independent randomization interval.
 
 No individual address/value editor is required.
@@ -208,19 +324,32 @@ Zero count may represent an unused function-code area if supported by the eventu
 
 ### Save / Apply Behavior
 
-`Save / Apply` is one deliberate operation:
+`Save / Apply` validates both parameter domains, then routes each changed domain to its proper consumer:
 
 ```text
 USER EDITS DEVICE
 → VALIDATE FORM
-→ SUBMIT SIMULATOR CONFIGURATION INTENT
-→ SHARED MMA2 CONFIG AUTHORITY CHECKS CONFLICTS
-→ REJECT WITH EXPLICIT ERROR
-   OR
-→ GENERATE/UPDATE EFFECTIVE MMA2 CONFIG IF STRUCTURE CHANGED
-→ RESTART MMA2 IF STRUCTURAL MMA2 CONFIG CHANGED
-→ UPDATE RANDOMIZER SCHEDULES
-→ VERIFY RUNTIME
+→ CLASSIFY CHANGED PARAMETERS
+     │
+     ├── MMA2 PARAMETERS CHANGED
+     │      ↓
+     │   SUBMIT MMA2 CONFIGURATION INTENT
+     │      ↓
+     │   SHARED MMA2 CONFIG AUTHORITY CHECKS CONFLICTS
+     │      ↓
+     │   REJECT OR COMPOSE EFFECTIVE MMA2 CONFIG
+     │      ↓
+     │   RESTART/RELOAD MMA2 WHEN REQUIRED
+     │
+     └── RANDOM-RUNTIME PARAMETERS CHANGED
+            ↓
+         UPDATE SIMULATOR RANDOM-RUNTIME CONFIG
+            ↓
+         RELOAD/UPDATE FC SCHEDULERS
+            ↓
+         NO MMA2 RESTART FOR TIMING-ONLY CHANGE
+
+→ VERIFY AFFECTED RUNTIME
 → UPDATE DEVICE STATUS
 ```
 
@@ -238,7 +367,7 @@ Validation should surface at least:
 
 A rejected save leaves the previously active configuration intact.
 
-Structural changes such as Port, Unit ID, Start, or Count may require MMA2 restart. A change only to `Randomize Every (ms)` belongs to simulator scheduling and should not by itself require an MMA2 restart where the runtime design permits scheduler-only reload.
+Structural changes such as Port, Unit ID, Start, or Count may require MMA2 restart. A change only to `Randomize Every (ms)` belongs to simulator scheduling and does not by itself require an MMA2 restart.
 
 ### Runtime Information
 
@@ -287,9 +416,10 @@ Initial UI excludes:
 
 Keep the first simulator intentionally small:
 
-- configure ranges and independent per-FC randomization intervals;
+- configure MMA2 structural parameters and simulator-owned per-FC random-runtime parameters;
 - generate/submit its MMA2 configuration requirements without taking exclusive ownership of shared MMA2 configuration;
 - restart MMA2 only when structural MMA2 configuration changes through the eventual configuration/lifecycle authority;
+- update random-runtime schedules independently without restarting MMA2;
 - populate configured FC1-FC4 ranges on their own schedules through raw ingest;
 - allow real external Modbus clients to read the simulated device.
 

@@ -98,6 +98,17 @@ Parent files may use `## Zoom In`; children may use `## Zoom Out`.
 
 ## Registry
 
-No semantic context baseline has been generated yet.
+Baseline Commit: cb869da3caeed040478e67ecb0a01c5f93b3a66b
+Working Tree: clean
+Audited Uncommitted Overlay: none
 
-The next direct `BLACK SHEEP WALL` invocation must bootstrap `ICC/context/` from existing repository truth and replace this placeholder with the resulting baseline metadata and context registry.
+| Context | Source Dependencies |
+| --- | --- |
+| `context/L0-project.md` | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
+| `context/governance.md` | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
+| `context/donor-licensing.md` | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
+| `context/network-exposure.md` | `docs/NETWORK_EXPOSURE.md` |
+| `context/planning-workflow.md` | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
+| `context/brainstorm-topics.md` | `planning/Brainstorm/port-config-and-socket-deployment.md`, `planning/Brainstorm/osjs-base-webapp-init.md` |
+
+Baseline commit: `cb869da3caeed040478e67ecb0a01c5f93b3a66b` - HEAD at audit time; working tree clean, no uncommitted overlay recorded. Context files under `ICC/context/` summarize established repository truth; commit `cb869da` need not equal the commit that stores them per the ICC state model.

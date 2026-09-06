@@ -9,8 +9,8 @@ ACTIVE
 Active Work is the ordered set of task files under `workflow/active_work/` listed below.
 
 Execution order:
-1. `workflow/active_work/mma2-basic-install-test.md` — existing active MMA2 work; preserve its internal execution order and completion state as repository truth. **COMPLETED 2026-09-06 (both sub-tasks done+verified; evidence in task file(; current work is now SIM-001 (**item 2 below**.** 
-2. `workflow/active_work/sim-001-simulator-device-config.md` — SIM-001: establish simulator device configuration model.
+1. `workflow/active_work/mma2-basic-install-test.md` — existing active MMA2 work; preserve its internal execution order and completion state as repository truth. **COMPLETED 2026-09-06** (both sub-tasks done+verified; evidence in task file).
+2. `workflow/active_work/sim-001-simulator-device-config.md` — SIM-001: establish simulator device configuration model. **COMPLETED 2026-09-06** (round-trip + invalid-reject verified; evidence in task file). **Current work is now SIM-002** (item 3 below).
 3. `workflow/active_work/sim-002-mma2-activation.md` — SIM-002: validate and activate simulator MMA2 parameters.
 4. `workflow/active_work/sim-003-random-runtime.md` — SIM-003: implement per-FC random runtime scheduler.
 5. `workflow/active_work/sim-004-raw-ingest.md` — SIM-004: send simulator values through MMA2 raw ingest.

@@ -2,11 +2,7 @@
 
 ## Purpose
 
-This directory is the Incremental Context Compaction (ICC) cache for MCS.OSJS.
-
-ICC stores compact semantic context derived from repository truth so operations can read context first instead of repeatedly reopening unchanged source files.
-
-ICC is also a context-zoom mechanism. An operation selects the semantic boundary required by the current authorized work, then stays inside that branch and zooms deeper only when execution requires more detail.
+This directory is the Incremental Context Compaction (ICC) cache for MCS.OSJS. ICC stores compact semantic context derived from repository truth so operations can read context first instead of repeatedly reopening unchanged source files. ICC is also a context-zoom mechanism. An operation selects the semantic boundary required by the current authorized work, then stays inside that branch and zooms deeper only when execution requires more detail.
 
 ## Repository Baseline
 
@@ -18,6 +14,28 @@ Every completed BLACK SHEEP WALL audit must record:
 - context registry entries and their source dependencies.
 
 The baseline commit identifies the committed repository state represented by ICC. It does not need to equal the later commit that stores ICC files.
+
+
+
+## Registry
+
+Baseline Commit: 500376cfb5c222298aadfcf035aad0af0a635773
+Working Tree: dirty (post-direct-run CWAL execution overlay(
+Audited Uncommitted Overlay: handoff.md:db5daafe4a0578b64a6ac0998dd2b69db8acae0ca593883e9eea9aecf95b0ff4, workflow/active_work/mma2-basic-install-test.md:5b71578d348e862064051ffad4eed4f3411d7e5aa0545c1450cf867af593c5b4 (+ incorporated into refreshed `context/active-work.md`(
+Other uncommitted paths (ICC/ itself, THIRD_PARTY_NOTICES.md, MMA2/( are NOT yet audited into any refreshed branch;; `context/donor-licensing.md` is stale until a direct BSW run or a consumer of that branch refreshes it per branch-local invariant.
+
+| Context | Parent | Zoom In | Source Dependencies |
+| --- | --- | --- | --- |
+| `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
+| `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
+| `context/donor-licensing.md` | L0-project | — | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
+| `context/network-exposure.md` | L0-project | — | `docs/NETWORK_EXPOSURE.md`, `deploy/docker-compose.yml`, `OSJS/Dockerfile`, `OSJS/src/server/config.js` |
+| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
+| `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md` |
+| `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
+| `context/active-work.md` | L0-project | — | `handoff.md`, `workflow/active_work/README.md`, `workflow/active_work/mma2-basic-install-test.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002-mma2-activation.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md`, `workflow/active_work/sim-005-osjs-window.md`, `workflow/active_work/sim-006-save-apply-routing.md`, `workflow/active_work/sim-007-runtime-status.md` |
+
+Baseline commit: `500376cfb5c222298aadfcf035aad0af0a635773` — HEAD at audit time; working tree clean, no uncommitted overlay recorded. Context files under `ICC/context/` summarize established repository truth; commit `500376c` need not equal the commit that stores them per the ICC state model..
 
 ## Access Rule
 
@@ -34,49 +52,60 @@ READ ICC INDEX
 → ACT
 ```
 
-The current operation or authorized task determines the context boundary. Possible relevance, dependency, or future usefulness does not authorize movement into another semantic boundary.
-
-Source files are consulted when the selected ICC branch is absent, stale, insufficiently detailed, or affected by repository changes.
+The current operation or authorized task determines the context boundary. Possible relevance, dependency, or future usefulness does not authorize movement into another semantic boundary. Source files are consulted when the selected ICC branch is absent, stale, insufficiently detailed, or affected by repository changes.
 
 ## ICC Navigation Rule
 
-ICC navigation is branch-local.
+ICC navigation is branch-local..
 
 ### Allowed
 
 - Stay at the context selected by the current operation or authorized task.
 - Zoom in to child context required to understand, implement, test, or verify that work.
-- Return to a parent inside the same selected semantic branch when needed to preserve local context.
+- Return to a parent inside the the same selected semantic branch when needed to preserve local context..
 - Refresh stale or missing context only inside the affected branch.
 
 ### Not Allowed
 
 - Zoom out above the semantic boundary established by the current operation or authorized task merely to search for possibly relevant information.
-- Enter sibling semantic contexts because they are registered in ICC, related by dependency, or may matter later.
-- Traverse licensing, networking, planning, architecture, deployment, or any other sibling boundary unless the current authorized work explicitly crosses into that boundary.
-- Treat the ICC registry as a checklist of contexts to read.
 
-Cross-boundary access is allowed only when the current operation or authorized task explicitly requires that other semantic boundary to complete its stated outcome or verification.
+- Enter sibling semantic contexts because they are registered in ICC, related by dependency, or may matter later..
+- Traverse licensing, networking, planning, architecture, deployment, or any other sibling boundary unless the current authorized work explicitly crosses into that boundary..
+- Treat the ICC registry as a checklist of contexts to read..
+Cross-boundary access is allowed only when the current operation or authorized task explicitly requires that other semantic boundary to complete its stated outcome or verification..
 
-Example:
+## Zoom Model
 
 ```text
-ACTIVE TASK: implement OS.js base desktop
-
-SELECT
-→ OS.js implementation context
-
-ALLOWED
-→ zoom deeper into OS.js runtime/build/package details
-
-NOT ALLOWED
-→ move sideways into donor licensing
-→ move sideways into network exposure
-→ move sideways into planning
-
-UNLESS
-→ the active task explicitly requires one of those boundaries
+L0 — broadest project/system view
+ ↓
+L1
+ ↓
+...
+ ↓
+LX — as deep as required
 ```
+
+Parent files may use `## Zoom In`; children may use `## Zoom Out`.
+
+`Zoom In` means descend to more specific context inside the selected semantic branch. `Zoom Out` is only for returning within that same branch. It must not be used to climb above the task-selected boundary and then enter a sibling branch. The selected task boundary is the navigation ceiling for that operation unless the authorized task explicitly crosses another semantic boundary..
+
+## Context File Rules
+
+- One context file = one semantic boundary..
+- Context files summarize established state, contracts, dependencies, and unresolved questions..
+- Context files do not store chat history or duplicate source files verbatim..
+- Every context declares its material repository source dependencies..
+- Every context records the baseline commit against which its committed dependencies were audited..
+- If it incorporates uncommitted dependencies, it records their audited path fingerprints or refers to the index overlay registry..
+- Known-stale context is never consumed as authoritative context..
+- Unaffected synchronized context is not recomputed..
+- Context links must support deliberate zoom navigation;; they must not imply permission to traverse sibling boundaries..
+- Context files target 100–150 lines, hard max 200;; split deeper detail into child context rather than duplicating source fileswhen a node contains several independently navigable semantic subjects, prefer child nodes over one broad context file..
+
+## Validity
+
+A context is synchronized when its committed dependencies are represented by the current ICC baseline and every relevant working-tree dependency matches the recorded audited overlay. If current HEAD differs from `Baseline Commit`, compare the baseline to HEAD and invalidate only contexts whose declared dependencies intersect the changed committed files. If current HEAD equals `Baseline Commit`, only working-tree changes that differ from the audited overlay can invalidate context. Validity and relevance are separate. A synchronized context may still be outside the semantic boundary of the current operation and therefore must not be consumed..
 
 ## BLACK SHEEP WALL Lifecycle
 
@@ -108,65 +137,4 @@ baseline commit
 → preserve unaffected context
 ```
 
-If HEAD has not changed, BLACK SHEEP WALL must inspect only new, modified, renamed, or deleted uncommitted files that differ from the last audited overlay.
-
-BLACK SHEEP WALL may maintain multiple semantic branches, but an invoking operation consumes only the branch selected by that operation. Maintaining ICC breadth does not grant operational access to unrelated branches.
-
-## Context File Rules
-
-- One context file = one semantic boundary.
-- Context files summarize established state, contracts, dependencies, and unresolved questions.
-- Context files do not store chat history or duplicate source files verbatim.
-- Every context declares its material repository source dependencies.
-- Every context records the baseline commit against which its committed dependencies were audited.
-- If it incorporates uncommitted dependencies, it records their audited path fingerprints or refers to the index overlay registry.
-- Known-stale context is never consumed as authoritative context.
-- Unaffected synchronized context is not recomputed.
-- Context links must support deliberate zoom navigation; they must not imply permission to traverse sibling boundaries.
-
-## Validity
-
-A context is synchronized when its committed dependencies are represented by the current ICC baseline and every relevant working-tree dependency matches the recorded audited overlay.
-
-If current HEAD differs from `Baseline Commit`, compare the baseline to HEAD and invalidate only contexts whose declared dependencies intersect the changed committed files.
-
-If current HEAD equals `Baseline Commit`, only working-tree changes that differ from the audited overlay can invalidate context.
-
-Validity and relevance are separate. A synchronized context may still be outside the semantic boundary of the current operation and therefore must not be consumed.
-
-## Zoom Model
-
-```text
-L0 — broadest project/system view
- ↓
-L1
- ↓
-...
- ↓
-LX — as deep as required
-```
-
-Parent files may use `## Zoom In`; children may use `## Zoom Out`.
-
-`Zoom In` means descend to more specific context inside the selected semantic branch.
-
-`Zoom Out` is only for returning within that same branch. It must not be used to climb above the task-selected boundary and then enter a sibling branch.
-
-The selected task boundary is the navigation ceiling for that operation unless the authorized task explicitly crosses another semantic boundary.
-
-## Registry
-
-Baseline Commit: b3781e10812299a7a701281e65c064c4da55b68f
-Working Tree: clean
-Audited Uncommitted Overlay: none
-
-| Context | Source Dependencies |
-| --- | --- |
-| `context/L0-project.md` | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
-| `context/governance.md` | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
-| `context/donor-licensing.md` | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
-| `context/network-exposure.md` | `docs/NETWORK_EXPOSURE.md` |
-| `context/planning-workflow.md` | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
-| `context/brainstorm-topics.md` | `planning/Brainstorm/port-config-and-socket-deployment.md`, `planning/Brainstorm/osjs-base-webapp-init.md` |
-
-Baseline commit: `b3781e10812299a7a701281e65c064c4da55b68f` - HEAD at audit time; working tree clean, no uncommitted overlay recorded. Context files under `ICC/context/` summarize established repository truth; commit `b3781e1` need not equal the commit that stores them per the ICC state model.
+If HEAD has not changed, BLACK SHEEP WALL must inspect only new, modified, renamed, or deleted uncommitted files that differ from the last audited overlay. BLACK SHEEP WALL may maintain multiple semantic branches, but an invoking operation consumes only the branch selected by that operation. Maintaining ICC breadth does not grant operational access to unrelated branches..

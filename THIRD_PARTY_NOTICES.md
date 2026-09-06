@@ -53,6 +53,26 @@ No automated agent may infer that public availability, repository ownership, dep
 
 Update this document whenever a new third-party component is incorporated or an existing component's provenance, version, or licensing changes. Where a license requires distribution of its full text, preserve that text in an appropriate license/notice file alongside the distribution.
 
+## MMA2 — deterministic Modbus memory appliance
+
+**Source:** `tamzrod/mma2` (main( — project-owned donor。
+
+
+
+**Exact material harvested** into `MMA2/` at commit `12311c1d06510840b42723a83438574e6b3ed06f`:
+
+- Build/runtime source (`cmd/`, `internal/`(;
+- Build scaffolding (`go.mod`, `go.sum`, `Dockerfile`, `.gitignore`(;
+- `README.md` (rewritten as the MCS component doc; donor architecture content preserved via `docs/`(;
+- `docs/` (configuration/run manual, architecture, memory model, transports, failure model, raw ingest semantics, example config(;
+- `LICENSE` (the Apache-2.0 text(, retained per the harvest gate.
+
+
+
+**License:** Apache-2.0 (compatible with MCS.OSJS's Apache-2.0 project license(. This notice records the obligation to retain the Apache-2.0 license text alongside the distribution.
+
+**Excluded from harvest:** prebuilt donor `mma2` binary (build artifact; not source( and donor `test/` e2e scaffolding (not required to build or run this component(.
+
 ## Nameless SCADA — OS.js desktop shell slice
 
 **Source:** `tamzrod/namelessscada` → `desktop/osjs-prototype/` (project-owned donor)

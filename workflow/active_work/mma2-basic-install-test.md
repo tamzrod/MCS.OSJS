@@ -4,14 +4,21 @@ Status: ACTIVE. Human-promoted work authorized for JR execution.
 
 ## Execution Order
 
-1. `MMA2-001` — Import MMA2 and prove a clean build.
-2. `MMA2-002` — Run MMA2 and prove one basic Modbus memory path.
+1. `MMA2-001` — Import MMA2 and prove a clean build. **DONE** — completed+verified per evidence below.
+2. `MMA2-002` — Run MMA2 and prove one basic Modbus memory path. **CURRENT** — not yet started.
 
 JR must complete and verify `MMA2-001` before starting `MMA2-002`.
 
 ---
 
 ## MMA2-001 — Import MMA2 and prove a clean build
+
+**Completion evidence (recorded by CWAL 2026-09-06(:**
+- Imported `tamzrod/mma2` @ `12311c1d06510840b42723a83438574e6b3ed06f` into repository-root `MMA2/`; delivered as an independent component boundary (`cmd/`+`internal/`, `go.mod/go.sum/Dockerfile/.gitignore`, `README.md`, `docs/`, `LICENSE`; prebuilt donor binary + donor `test/` e2e scaffolding excluded).
+- Clean build from `MMA2/`:  `go build -o /tmp/mma2-build-check ./cmd/mma2` — exit 0, binary produced, Go 1.25.0 toolchain.
+- No-donor-checkout dependency proven:  build succeeds with `/tmp/mma2-probe` donor checkout renamed away (exit 0).
+- Provenance/license recorded in `MMA2/README.md` and `THIRD_PARTY_NOTICES.md` per harvest gate; Apache-2.0 text retained in `MMA2/LICENSE`.
+
 
 ### Primary outcome
 

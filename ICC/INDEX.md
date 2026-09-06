@@ -6,6 +6,8 @@ This directory is the Incremental Context Compaction (ICC) cache for MCS.OSJS.
 
 ICC stores compact semantic context derived from repository truth so operations can read context first instead of repeatedly reopening unchanged source files.
 
+ICC is also a context-zoom mechanism. An operation selects the semantic boundary required by the current authorized work, then stays inside that branch and zooms deeper only when execution requires more detail.
+
 ## Repository Baseline
 
 Every completed BLACK SHEEP WALL audit must record:
@@ -19,17 +21,62 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Access Rule
 
-Repository-dependent operations use ICC first.
+Repository-dependent operations use ICC first, but ICC-first does not authorize browsing all ICC context.
 
 ```text
 READ ICC INDEX
-→ LOCATE RELEVANT CONTEXT
-→ VALIDATE BASELINE / OVERLAY
-→ CURRENT: USE ICC
-→ STALE OR MISSING: BLACK SHEEP WALL REFRESHES AFFECTED CONTEXT ONLY
+→ IDENTIFY THE SEMANTIC BOUNDARY SELECTED BY THE CURRENT OPERATION / AUTHORIZED TASK
+→ LOCATE THAT CONTEXT BRANCH
+→ VALIDATE BASELINE / OVERLAY FOR THAT BRANCH
+→ CURRENT: USE THAT BRANCH
+→ NEED MORE DETAIL: ZOOM IN WITHIN THE SAME BRANCH
+→ STALE OR MISSING: BLACK SHEEP WALL REFRESHES ONLY THE AFFECTED CONTEXT
+→ ACT
 ```
 
-Source files are consulted when relevant ICC context is absent, stale, insufficiently detailed, or affected by repository changes.
+The current operation or authorized task determines the context boundary. Possible relevance, dependency, or future usefulness does not authorize movement into another semantic boundary.
+
+Source files are consulted when the selected ICC branch is absent, stale, insufficiently detailed, or affected by repository changes.
+
+## ICC Navigation Rule
+
+ICC navigation is branch-local.
+
+### Allowed
+
+- Stay at the context selected by the current operation or authorized task.
+- Zoom in to child context required to understand, implement, test, or verify that work.
+- Return to a parent inside the same selected semantic branch when needed to preserve local context.
+- Refresh stale or missing context only inside the affected branch.
+
+### Not Allowed
+
+- Zoom out above the semantic boundary established by the current operation or authorized task merely to search for possibly relevant information.
+- Enter sibling semantic contexts because they are registered in ICC, related by dependency, or may matter later.
+- Traverse licensing, networking, planning, architecture, deployment, or any other sibling boundary unless the current authorized work explicitly crosses into that boundary.
+- Treat the ICC registry as a checklist of contexts to read.
+
+Cross-boundary access is allowed only when the current operation or authorized task explicitly requires that other semantic boundary to complete its stated outcome or verification.
+
+Example:
+
+```text
+ACTIVE TASK: implement OS.js base desktop
+
+SELECT
+→ OS.js implementation context
+
+ALLOWED
+→ zoom deeper into OS.js runtime/build/package details
+
+NOT ALLOWED
+→ move sideways into donor licensing
+→ move sideways into network exposure
+→ move sideways into planning
+
+UNLESS
+→ the active task explicitly requires one of those boundaries
+```
 
 ## BLACK SHEEP WALL Lifecycle
 
@@ -63,6 +110,8 @@ baseline commit
 
 If HEAD has not changed, BLACK SHEEP WALL must inspect only new, modified, renamed, or deleted uncommitted files that differ from the last audited overlay.
 
+BLACK SHEEP WALL may maintain multiple semantic branches, but an invoking operation consumes only the branch selected by that operation. Maintaining ICC breadth does not grant operational access to unrelated branches.
+
 ## Context File Rules
 
 - One context file = one semantic boundary.
@@ -73,6 +122,7 @@ If HEAD has not changed, BLACK SHEEP WALL must inspect only new, modified, renam
 - If it incorporates uncommitted dependencies, it records their audited path fingerprints or refers to the index overlay registry.
 - Known-stale context is never consumed as authoritative context.
 - Unaffected synchronized context is not recomputed.
+- Context links must support deliberate zoom navigation; they must not imply permission to traverse sibling boundaries.
 
 ## Validity
 
@@ -81,6 +131,8 @@ A context is synchronized when its committed dependencies are represented by the
 If current HEAD differs from `Baseline Commit`, compare the baseline to HEAD and invalidate only contexts whose declared dependencies intersect the changed committed files.
 
 If current HEAD equals `Baseline Commit`, only working-tree changes that differ from the audited overlay can invalidate context.
+
+Validity and relevance are separate. A synchronized context may still be outside the semantic boundary of the current operation and therefore must not be consumed.
 
 ## Zoom Model
 
@@ -95,6 +147,12 @@ LX — as deep as required
 ```
 
 Parent files may use `## Zoom In`; children may use `## Zoom Out`.
+
+`Zoom In` means descend to more specific context inside the selected semantic branch.
+
+`Zoom Out` is only for returning within that same branch. It must not be used to climb above the task-selected boundary and then enter a sibling branch.
+
+The selected task boundary is the navigation ceiling for that operation unless the authorized task explicitly crosses another semantic boundary.
 
 ## Registry
 

@@ -52,3 +52,29 @@ No automated agent may infer that public availability, repository ownership, dep
 ## Maintenance
 
 Update this document whenever a new third-party component is incorporated or an existing component's provenance, version, or licensing changes. Where a license requires distribution of its full text, preserve that text in an appropriate license/notice file alongside the distribution.
+
+## Nameless SCADA — OS.js desktop shell slice
+
+**Source:** `tamzrod/namelessscada` → `desktop/osjs-prototype/` (project-owned donor)
+
+**Exact material harvested** into `OSJS/` at commit `13e66df0f4f2137e436b9dbf0f48cc2f0e85f67c` (main:
+
+- OS.js client bootstrap + config + scss + html templateand custom panel/session/autostart/taskbar/desktop-icon providers.
+
+- OS.js server bootstrap + config + a minimal `/healthz` route and a classic-icon route serving the local icon theme dist.
+
+
+- Local packages: `NamelessClassicIcons` (original Windows-2000-inspired greyscale SVG icon set;and `NamelessWorkstationTheme` (classic workstation theme;, plus `scripts/build-local-packages.js` (deterministic local package build harness..
+- Build/run scaffolding: `webpack.config.js`, `.babelrc`, `package.json`, `Dockerfile`, `.gitignore`.
+
+**License:** the donor shell prototype package declaration `"license": "BSD-2-Clause"` applies to the harvested slice (donor repo ships no LICENSE file; upstream OS.js framework packages retain their own BSD-2-Clause licenses,. BSD-2-Clause requires retaining the copyright notice, license conditions,and disclaimer; this notice records the obligation..
+
+**Retained notices:** no per-file copyright/license headers existin the donor slice; the package.json license declaration was retained in the harvested copy. A copy of the BSD-2-Clause text should be shipped alongside any redistribution of OSJS/ (see "License texts" note below..
+
+**Excluded from harvest:** all donor application packages (AutoStart,, Dnp3Editor,, InfluxExplorer,, Ingestor,, ModbusEditor,, TagManager,, TaskbarSettings,, TestApp,,, sample/test apps, SCADA/Governor/Ingestor/Modbus/DNP3/Tag-Manager server+client integration providers,bridge/realtime/data providers, donor domain docs,tests, wallpapers,and other assets without build/run referencesin the kept shell.
+
+
+
+## License texts
+
+License texts required for redistribution of the harvested OS.js slice:the BSD-2-Clause text (declared by the donor `desktop/osjs-prototype/package.json`)and the OS.js framework's BSD-2-Clause texts supplied with the corresponding npm packages.. These texts should be retained in a dedicated license/notice area alongside the distribution as the application becomes distributable per the licensing policy above..

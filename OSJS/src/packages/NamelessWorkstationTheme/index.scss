@@ -1,0 +1,507 @@
+// Nameless Workstation theme — Windows-2000-inspired classic workstation
+// visual language for the OS.js prototype.
+//
+// Design rules (SHELL-004):
+// - Light 3D-object chrome on a restrained neutral desktop field, the
+//   unmistakable Windows-2000 visual language: a classic grey button face,
+//   1px beveled edges, navy-blue active title bar with white title text,
+//   and a muted grey inactive title bar. This is a generic classic palette;
+//   no Microsoft/Windows bitmap asset, branding, or copyrighted artwork is
+//   bundled. Colors and geometry are independently recreated.
+// - The color system is explicit and applied consistently across every shell
+//   surface listed in the SHELL-004 acceptance (desktop background,
+//   active/inactive title bars, title-bar text, window body, menus, menu
+//   selection, buttons, bevel highlights/shadows, taskbar, selected task
+//   buttons, disabled controls, status/tray surfaces, desktop selection).
+// - Classic 2px bevels: raised (white top/left, dark-grey + black
+//   bottom/right) for buttons/window borders; sunken (dark top/left, white
+//   bottom/right) for input fields.
+
+// --- Windows-2000-inspired palette (CSS-variable tokens on .osjs-root) ---
+$face:        #c0c0c0;  // 3D object / button face (classic Win button face)
+$face-light:  #d4d4d4;  // window body / menu surface (slightly lighter than face)
+$face-dark:   #b0b0b0;  // taskbar surface (slightly darker than face)
+$desktop:     #3c6ea6;  // restrained blue desktop field (neutral)
+
+// Title bars
+$title-active-from:   #0a246a;  // navy blue (active title bar start)
+$title-active-to:     #3a6ea5;  // blue (active title bar end)
+$title-inactive-from: #7a7a7a;  // grey (inactive title bar start)
+$title-inactive-to:   #b5b5b5;  // light grey (inactive title bar end)
+$title-text-active:   #ffffff;  // white text on active title bar
+$title-text-inactive: #d8d8d8;  // light grey text on inactive title bar
+
+// Text
+$text:        #000000;  // primary text (black on light chrome)
+$text-muted:  #808080;  // disabled / muted text
+$text-on-accent: #ffffff; // text on a selected (navy) item
+
+// Bevel edges
+$bevel-hi:    #ffffff;  // raised highlight (top/left)
+$bevel-mid:   #dfdfdf;  // raised inner highlight
+$bevel-lo:    #808080;  // raised shadow (bottom/right)
+$bevel-outer: #000000;  // raised outer edge (darkest)
+
+// Selection / accent (menu selection, selected task button, desktop selection)
+$select:      #000080;  // navy selection background (classic Win selected)
+$select-fg:   #ffffff;  // white text on navy selection
+
+$border:      #808080;  // generic grey border
+
+$font-family: Tahoma, "Segoe UI", Geneva, Verdana, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+
+// --- Raised (outset) 2px bevel: white top/left, dark + black bottom/right. ---
+@mixin bevel-outset {
+  border-style: solid;
+  border-width: 2px;
+  border-color: $bevel-hi $bevel-lo $bevel-lo $bevel-hi;
+  // Inner mid highlight via a 1px inset box-shadow for the classic depth.
+  box-shadow: inset 1px 1px 0 $bevel-mid, inset -1px -1px 0 $face-dark;
+}
+
+// --- Sunken (inset) 2px bevel: dark top/left, white bottom/right. ---
+@mixin bevel-inset {
+  border-style: solid;
+  border-width: 2px;
+  border-color: $bevel-lo $bevel-hi $bevel-hi $bevel-lo;
+  box-shadow: inset 1px 1px 0 $face-dark, inset -1px -1px 0 $bevel-mid;
+}
+
+// --- Thin raised 1px bevel (for compact controls). ---
+@mixin bevel-outset-thin {
+  border-style: solid;
+  border-width: 1px;
+  border-color: $bevel-hi $bevel-lo $bevel-lo $bevel-hi;
+}
+
+// --- Thin sunken 1px bevel. ---
+@mixin bevel-inset-thin {
+  border-style: solid;
+  border-width: 1px;
+  border-color: $bevel-lo $bevel-hi $bevel-hi $bevel-lo;
+}
+
+// --- Root: expose the tokens as CSS variables and set base type. ---
+.osjs-root {
+  font-family: $font-family;
+  color: $text;
+  font-size: 13px;
+
+  // Expose the palette so applications can stay on-theme without re-declaring.
+  --face: #{$face};
+  --face-light: #{$face-light};
+  --face-dark: #{$face-dark};
+  --desktop: #{$desktop};
+  --title-active-from: #{$title-active-from};
+  --title-active-to: #{$title-active-to};
+  --title-inactive-from: #{$title-inactive-from};
+  --title-inactive-to: #{$title-inactive-to};
+  --title-text-active: #{$title-text-active};
+  --title-text-inactive: #{$title-text-inactive};
+  --text: #{$text};
+  --text-muted: #{$text-muted};
+  --select: #{$select};
+  --select-fg: #{$select-fg};
+  --bevel-hi: #{$bevel-hi};
+  --bevel-lo: #{$bevel-lo};
+  --border: #{$border};
+}
+
+// --- Scrollbars: light bevelled, no rounded corners. ---
+::-webkit-scrollbar { width: 16px; height: 16px; }
+::-webkit-scrollbar-button {
+  @include bevel-outset-thin;
+  background: $face; color: $text; display: block;
+}
+::-webkit-scrollbar-track { @include bevel-inset-thin; background: $face; }
+::-webkit-scrollbar-track-piece { background: $face; }
+::-webkit-scrollbar-thumb { @include bevel-outset-thin; background: $face; }
+::-webkit-resizer, ::-webkit-scrollbar-corner { background: $face; }
+
+// --- Desktop field: restrained dark-blue, classic flat workspace. ---
+// OSFIN-003: the base @osjs/client CSS sets `.osjs-root { background-image:
+// url(<stock wallpaper png>) }` (the OS.js default wallpaper). Without
+// neutralizing it, that wallpaper PNG renders on top of the configured
+// background-color — the "still purple/stock wallpaper" defect. The
+// desktop.settings.background config uses `style: "color"` (so OS.js does
+// not re-set an image inline), and this rule removes the stock image so
+// the flat `$desktop` color fills the desktop. No custom wallpaper engine.
+.osjs-root { background-image: none !important; }
+.osjs-desktop { background-color: $desktop; }
+
+// --- Panel (taskbar): classic grey, raised top edge, no big shadow. ---
+.osjs-panel {
+  background: $face;
+  color: $text;
+  box-shadow: none;
+  border-top: 1px solid $bevel-hi;
+}
+.osjs-panel-item--clickable { cursor: pointer; transition: none; }
+.osjs-panel-item--clickable:hover {
+  background-color: $select;
+  color: $select-fg;
+  box-shadow: none;
+}
+
+// --- Start button (OSIA-008). ---
+// The stock OS.js panel `menu` item renders <img> + <span>{LBL_MENU}</span>
+// and invokes the stock osjs/contextmenu launcher on click — that mechanism
+// is NOT replaced. The classic Start treatment is theme-only: a compact
+// raised-bevel button whose label reads "Start". The locale string "Menu"
+// is hidden and the Start label supplied via ::after because the panel item
+// has no per-item label option; the project-owned start-here.svg (already
+// wired in client config) is the icon.
+.osjs-panel-item[data-name=menu] {
+  padding: 2px 2px 2px 0;
+}
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable {
+  @include bevel-outset;
+  background: $face;
+  color: $text;
+  display: flex;
+  align-items: center;
+  padding: 1px 10px 1px 5px;
+}
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable:hover {
+  background: $face;  // classic shell: no navy fill on hover (hover-effect 'None')
+  color: $text;
+}
+// OSUI-013: operator-configurable Start button hover effect. The body
+// class comes from the persisted nameless/taskbar -> hoverEffect setting
+// (restored by the nameless-taskbar provider); independent from the
+// open/close click animation. Default (no class) = None, the current
+// classic treatment above. Effects apply ONLY while hovered.
+body.nameless-hover-color .osjs-panel-item[data-name=menu] .osjs-panel-item--clickable:hover {
+  background: $select;
+  color: $select-fg;
+}
+@keyframes nameless-hover-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.12); }
+}
+body.nameless-hover-animate .osjs-panel-item[data-name=menu] .osjs-panel-item--clickable:hover {
+  > img {
+    animation: nameless-hover-pulse 0.55s ease-in-out infinite alternate;
+  }
+}
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable:active {
+  @include bevel-inset;
+  box-shadow: none;
+}
+// Menu-open state (OSIA-013): sustained pressed treatment while the stock
+// contextmenu is open; the client bootstrap toggles this class in sync with
+// the presence of .osjs-contextmenu in the DOM.
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable.nameless-menu-open {
+  @include bevel-inset;
+  box-shadow: none;
+}
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable > span {
+  display: none;  // locale LBL_MENU ("Menu") replaced by the Start label below
+}
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable::after {
+  content: "Start";
+  font-weight: bold;
+  font-size: 13px;
+  letter-spacing: .02em;
+  padding-left: 5px;
+}
+.osjs-panel-item[data-name=menu] .osjs-panel-item--clickable > img {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+}
+// Active window task button vs inactive.
+.osjs-panel-item[data-name=windows] > div[data-focused=true] {
+  background: $select;
+  color: $select-fg;
+  @include bevel-outset-thin;
+}
+.osjs-panel-item[data-name=windows] > div[data-focused=false] {
+  @include bevel-outset-thin;
+  background: $face;
+  color: $text;
+  opacity: 1;
+}
+.osjs-panel-item[data-name=windows] > div[data-focused=false] > * { opacity: .65; }
+
+// OSUI-NEW-003 (icon/button ratio): operator-configurable taskbar icon
+// ratio. The body CSS property --nameless-taskbar-icon-ratio (restored by
+// the nameless-taskbar provider, set live by Taskbar Settings) scales ONLY
+// the icon inside each taskbar window button: the button's own box is never
+// resized, the icon stays proportional (width follows height), and any
+// icon content exceeding the button bounds is clipped by the button.
+// Ratio 1 (=100%) reproduces the classic ~13px (stock 1em) icon on the
+// standard button height; icons taller than the button intentionally
+// overflow and clip.
+//
+// OSUI-NEW-003 (taskbar height): the button box MUST be a fixed size. The
+// earlier calc(38% * ratio) icon height resolved its percentage against the
+// button's indefinite height — a sizing cycle: the img fell back to its
+// natural 32px, inflated the button to ~49px, and the panel grew from
+// ~33px to ~52px whenever a window opened. A definite 13px base and a fixed
+// 32px border-box button (the content-sized height at ratio 1: 15px text
+// line + 2x.6667em stock padding) keep the panel height driven by the
+// menu/clock items whether or not task buttons are present.
+.osjs-panel-item[data-name=windows] .osjs-panel-item--clickable {
+  overflow: hidden;
+  height: 32px;
+  box-sizing: border-box;
+
+  > img {
+    height: calc(13px * var(--nameless-taskbar-icon-ratio, 1));
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+.osjs-search-input {
+  @include bevel-inset-thin;
+  background-color: #fff;
+  color: $text;
+}
+.osjs-search-result.osjs__active,
+.osjs-search-result:hover { background-color: $select; color: $select-fg; }
+
+// --- Desktop icon selection: navy, not blue-modern. ---
+.osjs-desktop-iconview__entry--selected .osjs-desktop-iconview__entry__icon { background: $select; }
+.osjs-desktop-iconview__entry--selected .osjs-desktop-iconview__entry__label { background: $select; color: $select-fg; }
+
+// --- Windows: raised 2px bevel, no rounded corners, light surface. ---
+.osjs-window {
+  @include bevel-outset;
+  background: $face;
+  border-radius: 0;
+  box-shadow: 2px 2px 4px rgba(0,0,0,.35);
+}
+.osjs-window[data-focused=false] { opacity: 1; }
+.osjs-window[data-loading=true] { pointer-events: none; }
+.osjs-window[data-loading=true]:after { background: rgba(0,0,0,.4); }
+
+// Window control buttons: plain grey bevelled squares (no red/green/yellow).
+.osjs-window-button > div {
+  @include bevel-outset-thin;
+  background: $face;
+  position: relative;
+}
+.osjs-window-button > div:hover { background: $face-light; }
+.osjs-window-button > div:active { @include bevel-inset-thin; background: $face-dark; }
+
+// Classic Win9x/2000 window-control glyphs (drawn via CSS so the OS.js
+// button DOM/click behavior is unchanged). Each glyph centers in the 15px
+// button face; line color is solid black on the grey face.
+$glyph: #000;
+
+// minimize: a single horizontal bar at the bottom-center.
+.osjs-window-button[data-action="minimize"] > div::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 7px;
+  height: 2px;
+  margin-left: -3.5px;
+  background: $glyph;
+}
+
+// maximize: a square outline centered in the face.
+.osjs-window-button[data-action="maximize"] > div::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border: 1px solid $glyph;
+  box-sizing: border-box;
+}
+
+// restore (shown when the window is maximized): two overlapping outlined
+// squares — back one offset up/left, front one offset down/right.
+.osjs-window[data-maximized="true"] .osjs-window-button[data-action="maximize"] > div::after {
+  width: 7px;
+  height: 7px;
+  margin: -2px 0 0 -4px;       // front square, offset down/right
+}
+.osjs-window[data-maximized="true"] .osjs-window-button[data-action="maximize"] > div::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -4px 0 0 -2px;       // back square, offset up/left
+  border: 1px solid $glyph;
+  box-sizing: border-box;
+}
+
+// close: an X — two diagonal bars crossed at the center.
+.osjs-window-button[data-action="close"] > div::before,
+.osjs-window-button[data-action="close"] > div::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 2px;
+  margin: -1px 0 0 -4.5px;
+  background: $glyph;
+}
+.osjs-window-button[data-action="close"] > div::before { transform: rotate(45deg); }
+.osjs-window-button[data-action="close"] > div::after  { transform: rotate(-45deg); }
+
+// Window header: classic title bar — navy gradient when active, grey when inactive.
+.osjs-window-header {
+  padding: 2px 3px;
+  background: linear-gradient(to right, $title-active-from, $title-active-to);
+  border-bottom: 1px solid $bevel-lo;
+  color: $title-text-active;
+}
+.osjs-window[data-focused=false] .osjs-window-header {
+  background: linear-gradient(to right, $title-inactive-from, $title-inactive-to);
+  color: $title-text-inactive;
+}
+.osjs-window-title {
+  text-align: left;
+  font-weight: 700;
+  padding-left: 2px;
+}
+.osjs-window[data-focused=false] .osjs-window-title { font-weight: 400; }
+.osjs-window-icon { margin-right: .35em; }
+
+// --- GUI buttons: raised bevel, invert on press. ---
+.osjs-gui-button > button {
+  @include bevel-outset-thin;
+  background: $face;
+  color: $text;
+  border-radius: 0;
+  padding: 2px 10px;
+}
+.osjs-gui-button > button:focus { outline: 1px dotted $text; outline-offset: -3px; }
+.osjs-gui-button > button:active,
+.osjs-gui-button > button[active=true] {
+  @include bevel-inset-thin;
+  background: $face;
+  outline: 0 none;
+}
+.osjs-gui-button > button:disabled { color: $text-muted; }
+
+// --- Input fields: sunken bevel, white surface. ---
+.osjs-gui-field input,
+.osjs-gui-field select,
+.osjs-gui-field textarea,
+.osjs-gui-input input,
+.osjs-gui-input select,
+.osjs-gui-input textarea {
+  @include bevel-inset-thin;
+  background: #fff;
+  color: $text;
+  border-radius: 0;
+  font-family: $font-family;
+}
+.osjs-gui-field input:focus,
+.osjs-gui-field select:focus,
+.osjs-gui-field textarea:focus,
+.osjs-gui-input input:focus,
+.osjs-gui-input select:focus,
+.osjs-gui-input textarea:focus { outline: 1px dotted $text; outline-offset: -2px; }
+.osjs-gui-field input:disabled,
+.osjs-gui-field select:disabled,
+.osjs-gui-field textarea:disabled,
+.osjs-gui-input input:disabled,
+.osjs-gui-input select:disabled,
+.osjs-gui-input textarea:disabled { color: $text-muted; background: $face; }
+
+// --- Tabs: bevelled headers, active blends into pane. ---
+.osjs-gui-tabs-header > div { @include bevel-outset-thin; background: $face; }
+.osjs-gui-tabs-header > div.osjs__active { border-bottom-color: $face-light; background: $face-light; }
+.osjs-gui-tabs-panes { margin-top: -1px; }
+.osjs-gui-tabs-panes > div { @include bevel-inset-thin; background: $face-light; }
+.osjs-gui-tabs-panes > div.osjs__active { background: $face-light; }
+
+// --- Toggle (checkbox/radio): light bevel. ---
+.osjs-gui-toggle-field > label > span.osjs-toggle-input:before {
+  @include bevel-outset-thin;
+  background: $face;
+  color: $text;
+}
+.osjs-gui-toggle-field > label > span.osjs-toggle-input:before:focus { outline: 1px dotted $text; }
+.osjs-gui-toggle-field > label > span.osjs-toggle-input:before:active,
+.osjs-gui-toggle-field > label > span.osjs-toggle-input:before[active=true] {
+  @include bevel-inset-thin;
+  background: $face;
+  outline: 0 none;
+}
+.osjs-gui-toggle-field > label > span.osjs-toggle-input:before:disabled { color: $text-muted; }
+.osjs-gui-toggle-field > label > span.osjs-toggle-input:after { margin: 1px; }
+.osjs-gui-toggle-field > label > input[type=radio] + span.osjs-toggle-input:before { border-radius: 100%; }
+
+// --- Range sliders: light bevel. ---
+.osjs-gui-range-field > input[type=range] { background: transparent; border: 0; margin: 0; padding: 0; height: 2em; -webkit-appearance: none; width: 100%; }
+.osjs-gui-range-field > input[type=range]::-webkit-slider-runnable-track { width: 100%; height: .5em; background: $face-dark; border: 0; cursor: pointer; }
+.osjs-gui-range-field > input[type=range]::-webkit-slider-thumb { @include bevel-outset-thin; height: 1em; width: 1em; border-radius: 0; background: $face; margin-top: -.25em; cursor: pointer; -webkit-appearance: none; }
+.osjs-gui-range-field > input[type=range]::-moz-range-track { width: 100%; height: .5em; background: $face-dark; border: 0; cursor: pointer; }
+.osjs-gui-range-field > input[type=range]::-moz-range-thumb { @include bevel-outset-thin; height: 1em; width: 1em; border-radius: 0; background: $face; margin-top: -.25em; cursor: pointer; }
+
+// --- Icon view: light sunken surface, navy selection. ---
+.osjs-gui-icon-view-wrapper { @include bevel-inset-thin; background: $face-light; color: $text; }
+.osjs-gui-icon-view-wrapper:focus { outline: 1px dotted $text; }
+.osjs-gui-icon-view-wrapper:disabled { color: $text-muted; }
+.osjs-gui-icon-view-wrapper .osjs__active .osjs__image,
+.osjs-gui-icon-view-wrapper .osjs__active .osjs__label { background: $select; color: $select-fg; }
+
+// --- Menus: classic raised-bevel popup, compact typography (OSIA-010). ---
+// Applies to the stock osjs/contextmenu Start menu and all GUI menus — the
+// menu mechanism/lifecycle is untouched; presentation only.
+.osjs-gui-menu ul {
+  box-shadow: 2px 2px 4px rgba(0,0,0,.35);
+  background: $face;
+  color: $text;
+  @include bevel-outset;   // raised 2px classic bevel instead of flat 1px black
+  padding: 2px;
+  font-family: $font-family;
+  font-size: 13px;
+}
+.osjs-gui-menu li > div > span { padding: 2px 18px 2px 6px; }
+.osjs-gui-menu li:hover > div > span { background-color: $select; color: $select-fg; }
+.osjs-gui-menu .osjs__disabled { color: $text-muted; }
+// Classic etched separator (groove): dark line with white underline.
+.osjs-gui-menu-separator {
+  height: 2px;
+  padding: 0;
+  margin: 2px;
+  background: $bevel-lo;
+  border-bottom: 1px solid $bevel-hi;
+}
+.osjs-gui-menubar > div { cursor: pointer; padding: 2px 6px; }
+.osjs-gui-menubar > div:hover { background-color: $select; color: $select-fg; }
+
+// --- Notifications: light panel. ---
+.osjs-notification { box-shadow: 2px 2px 4px rgba(0,0,0,.35); background: $face; color: $text; border: 1px solid $bevel-outer; }
+.osjs-notification .osjs-notification-title { font-weight: 700; }
+.osjs-notification .osjs-notification-message { margin-top: 1em; }
+
+// --- Progress bar: sunken, navy fill. ---
+.osjs-gui-progressbar-wrapper { @include bevel-inset-thin; background: #fff; color: $text; }
+.osjs-gui-progressbar-value { background: $select; }
+
+// --- List view: light, navy selection, zebra in light grey. ---
+.osjs-gui-list-view .osjs__active { background: $select; color: $select-fg; }
+.osjs-gui-list-view .rows:not([data-zebra=false]) > div:nth-child(odd):not(.osjs__active) { background-color: $face-light; }
+.osjs-gui-list-view-wrapper { @include bevel-inset-thin; background: #fff; color: $text; }
+.osjs-gui-list-view-wrapper:focus { outline: 1px dotted $text; }
+.osjs-gui-list-view-wrapper:disabled { color: $text-muted; }
+.osjs-gui-list-view-header { background: $face; border: 1px solid $bevel-lo; }
+
+// --- Styled box: sunken. ---
+.osjs-gui-box-styled { @include bevel-inset-thin; background: $face-light; color: $text; }
+.osjs-gui-box-styled:focus { outline: 1px dotted $text; }
+.osjs-gui-box-styled:disabled { color: $text-muted; }
+
+// --- Expander header: light. ---
+.osjs-gui-expander-header { background: $face; border: 1px solid $bevel-lo; }
+
+// --- Window minimize animation: fade opacity (standard-theme behavior). ---
+.osjs-window[data-minimized=true] { opacity: 0; pointer-events: none; display: block; }
+.osjs-window[data-minimized=false] { display: block; }
+.osjs-window:not([data-moving=true]):not([data-resizing=true]) { transition: opacity .1s ease-in-out; }
+.osjs-panel-item[data-name=windows] > div { transition: none; }

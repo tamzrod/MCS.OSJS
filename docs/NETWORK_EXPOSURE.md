@@ -79,7 +79,7 @@ Internal MCS.OSJS components must not be forced to masquerade as external Modbus
 
 This directive does not yet define:
 
-- exact TCP port numbers;
+- exact TCP port numbers (except the OS.js management port, fixed below in "OS.js management port"; MMA2 port numbers remain undecided);
 - how many MMA2 listeners a deployment must create;
 - how MMA2 memory spaces map to listeners;
 - whether internal components use TCP, Unix sockets, or direct APIs;
@@ -94,3 +94,19 @@ Those details must be defined in the appropriate architecture and implementation
 When implementing deployment or networking, JR must preserve the following boundary unless a later authorized architecture decision replaces it:
 
 > **MCS.OSJS exposes one OS.js management endpoint and one or more MMA2 Modbus TCP endpoints. Orchestrator and Modbus Replicator remain internal-only and do not receive host-published ports by default.**
+
+## OS.js management port
+
+Assigned per OSJS-003:the shell listens on **TCP 18209** by default
+(a deterministic, unoccupied, non-colliding port for this appliance:
+
+```text
+OSJS/src/server/config.js    default port (PORT env var overrides)
+OSJS/Dockerfile                EXPOSE 18209
+OSJS/README.md                run instructions use -p 18209:18209
+```
+
+The full OS.js desktop UI (HTTP+S WebSocket) serves on this port. This
+assignment resolves the "exact TCP port numbers" non-goal for the OS.js
+endpoint only;the MMA2 Modbus TCP port numbers remain architecture-task
+decisions per the directive above.

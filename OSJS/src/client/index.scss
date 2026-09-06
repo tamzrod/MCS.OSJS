@@ -1,0 +1,170 @@
+// Client base stylesheet (REWORK-002).
+//
+// The OS.js base provider stylesheets (@osjs/client, @osjs/gui,
+// @osjs/dialogs, @osjs/panels dist/main.css) are imported in the JS entry
+// (src/client/index.js) so webpack inlines them into the bundle CSS. SCSS
+// `@import "~@osjs/.../dist/main.css"` does NOT inline under dart-sass
+// (it emits a plain CSS @import that css-loader does not resolve), which
+// is why the previous comment-only file produced an empty dist/osjs.css —
+// the root cause of the purple desktop, oversized panel, full-width icon
+// selection, and unstyled windows. See REWORK-001 audit in handoff.md.
+//
+// The NamelessWorkstationTheme package supplies the Win2000-inspired
+// overrides (loaded as a runtime <link> after the bundle, so it wins the
+// cascade). This file only needs document-level guarantees.
+
+// Ensure the document fills the viewport so the desktop surface covers it.
+body,
+html {
+  width: 100%;
+  height: 100%;
+}
+
+// OSUI-008: Windows 2000-style classic Start Menu vertical band. The band
+// element is prepended to the stock #osjs-context-menu root by
+// nameless-menu-panel-item.js (see panels/nameless-start-menu-band.js); it
+// renders the `ROD DESKTOP` text vertically on the menu's left edge with a
+// classic blue gradient. The band is text-only — no icons, no interactive
+// content — and the stock menu entries are untouched.
+//
+// Layout: the band is an absolutely positioned overlay in core.$root,
+// aligned to the menu root by nameless-start-menu-band.js (inserting it
+// INTO the hyperapp-rendered menu was rejected: the stock index-based diff
+// threw and aborted re-renders, leaving stale menu content). While the
+// Start Menu is open, the helper marks the menu root with
+// `nameless-start-menu--banded`; the rules below then reserve the band's
+// width (margin) and give the entry list the classic tall sidebar height
+// (the band's vertical text needs ~150px — the Win2000 sidebar look), so
+// the overlay, entries, and menu frame read as one menu. The marker class
+// is additive and therefore survives hyperapp's constant-class patches.
+//
+// OSUI-009: Windows 2000 reference menus keep blank, non-interactive
+// spacer space below the last entry alongside the band strip. The banded
+// entry list therefore gets `padding-bottom` of three classic slot
+// heights (one slot = one entry row, 20px in this build). This is
+// padding, NOT menu entries: hyperapp's vnode tree is
+// untouched, no fake `<li>` exists, and the blank area carries no
+// hover/cursor/action — pointer events there hit the inert menu
+// background, which neither launches anything nor closes the menu.
+// Height permitting, three slots always fit below the entries; if the
+// viewport were ever too small, the stock clamp still keeps the menu
+// above the taskbar (OSUI-007 invariant).
+.nameless-start-menu-band {
+  position: absolute;
+  width: 28px;
+  z-index: 9999999999; // same layer as .osjs-gui-menu; later in DOM paints above
+  background: linear-gradient(to bottom, #2a6ce8 0%, #1442a2 45%, #0a2d6b 80%, #062051 100%);
+  color: #ffffff;
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none; // visual chrome only — the menu underneath keeps all behavior
+
+  .nameless-start-menu-band__text {
+    display: block;
+    padding: 10px 0;
+    box-sizing: border-box;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+}
+
+#osjs-context-menu.nameless-start-menu--banded > ul {
+  margin-left: 28px;
+  min-height: 152px;
+  // OSUI-009: 3 blank spacer slots (3 x the 20px classic entry row
+  // height = 60px) below the last entry — pure padding, no fake entries.
+  padding-bottom: 60px;
+}
+
+// OSUI-012: optional Start Menu open/close click animation. The stock
+// context menu toggles inline `display: block/none` on the shared
+// #osjs-context-menu element, which cannot be CSS-transitioned; when the
+// operator enables the animation (body.nameless-menu-animation), the
+// hidden state is realized with visibility+opacity instead, letting the
+// close fade out, and the open transition plays a short pop. Geometry,
+// anchoring and menu contents are untouched; when disabled the stock
+// instant display toggle applies verbatim.
+@keyframes nameless-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+body.nameless-menu-animation #osjs-context-menu[style*="display: block"] {
+  animation: nameless-menu-pop 0.12s ease-out;
+}
+
+body.nameless-menu-animation #osjs-context-menu[style*="display: none"] {
+  display: block !important;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s linear, visibility 0s 0.15s;
+}
+
+// OSUI-NEW-006: while a desktop icon is being dragged, suppress text
+// selection and show the move cursor; the dragged entry itself is
+// absolutely positioned inline by nameless-desktop-icons.js.
+body.nameless-icon-dragging {
+  user-select: none;
+
+  .osjs-desktop-iconview__entry {
+    cursor: move;
+  }
+}
+
+// OSUI-NEW-007: Start Menu drag-and-drop ghost + drop-target feedback and
+// the New Folder context overlay. The ghost is a detached clone (the
+// hyperapp-managed menu DOM is never moved); the overlay lives OUTSIDE the
+// shared context-menu subtree, same discipline as the ROD DESKTOP band.
+.nameless-menu-dnd__ghost {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  background: #d4d0c8;
+  border: 1px solid #808080;
+  padding: 2px 6px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.nameless-menu-dnd__target > .osjs-gui-menu-container,
+.nameless-menu-dnd__target.osjs-gui-menu-entry > .osjs-gui-menu-container {
+  outline: 1px dashed #000080;
+  outline-offset: -1px;
+}
+
+.nameless-new-folder-menu {
+  position: fixed;
+  z-index: 99999;
+  background: #d4d0c8;
+  border: 1px solid #808080;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.35);
+  padding: 2px;
+}
+
+.nameless-new-folder-menu__item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  padding: 3px 16px;
+  cursor: pointer;
+}
+
+.nameless-new-folder-menu__item:hover {
+  background: #000080;
+  color: #ffffff;
+}

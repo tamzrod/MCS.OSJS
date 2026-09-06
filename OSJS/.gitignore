@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.log
+.dockerignore
+
+# SHELL-004: OS.js runtime / build-generated artifacts, never committed.
+# packages.json + dist/metadata.json are produced by `npm run package:discover`;
+# vfs/ is the demo user's runtime VFS home; session-store.db is the session
+# store. All are regenerated on `docker build` / first run.
+packages.json
+vfs/
+session-store.db
+package-lock.json

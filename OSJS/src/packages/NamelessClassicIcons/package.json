@@ -1,0 +1,9 @@
+{
+  "name": "nameless-classic-icons",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Original Windows-2000-inspired greyscale SVG icon set for the Nameless SCADA shell (SHELL-004)",
+  "osjs": {
+    "type": "package"
+  }
+}

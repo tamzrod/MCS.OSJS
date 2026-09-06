@@ -1,0 +1,9 @@
+{
+  "name": "nameless-workstation-theme",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nameless SCADA Windows-2000-inspired workstation theme (SHELL-004)",
+  "osjs": {
+    "type": "package"
+  }
+}

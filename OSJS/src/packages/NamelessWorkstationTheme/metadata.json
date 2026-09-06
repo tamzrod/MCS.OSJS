@@ -1,0 +1,14 @@
+{
+  "type": "theme",
+  "name": "NamelessWorkstationTheme",
+  "title": {
+    "en_EN": "Nameless Workstation"
+  },
+  "description": {
+    "en_EN": "Windows-2000-inspired classic workstation theme for Nameless SCADA"
+  },
+  "files": [
+    "main.js",
+    "main.css"
+  ]
+}

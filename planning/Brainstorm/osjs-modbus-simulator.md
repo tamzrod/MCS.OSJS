@@ -117,6 +117,139 @@ MMA2 Modbus TCP
 = external client-facing protocol path
 ```
 
+## Initial Simulator UI Plan
+
+Keep the UI intentionally small. The first version is a device-definition editor and runtime-status surface, not a live SCADA-style value editor.
+
+### Main Window
+
+Use one OS.js application window with a simple two-pane layout:
+
+```text
++---------------------------------------------------------------+
+| Modbus Simulator                              [Add Device]     |
++----------------------+----------------------------------------+
+| Simulated Devices    | Selected Device                        |
+|                      |                                        |
+| Device 1   RUNNING   | Name      [____________________]       |
+| Device 2   STOPPED   | Port      [_____]                      |
+| Device 3   ERROR     | Unit ID   [___]                        |
+|                      |                                        |
+|                      | FC1 Coils                              |
+|                      | Start [_____]   Count [_____]          |
+|                      |                                        |
+|                      | FC2 Discrete Inputs                    |
+|                      | Start [_____]   Count [_____]          |
+|                      |                                        |
+|                      | FC3 Holding Registers                  |
+|                      | Start [_____]   Count [_____]          |
+|                      |                                        |
+|                      | FC4 Input Registers                    |
+|                      | Start [_____]   Count [_____]          |
+|                      |                                        |
+|                      | Random update: every 60 seconds        |
+|                      |                                        |
+|                      | [Delete]              [Save / Apply]   |
++----------------------+----------------------------------------+
+```
+
+### Device List
+
+The left pane represents simulator-owned device definitions only.
+
+Each row should show enough information to identify runtime state without exposing implementation detail:
+
+- device name;
+- listener port;
+- Unit ID;
+- status: `RUNNING`, `STOPPED`, or `ERROR`.
+
+Selecting a row loads that device into the editor on the right.
+
+`Add Device` creates a new unsaved simulator definition. `Delete` removes only the selected simulator-owned definition and must not remove configuration owned by Replicator or another MMA2 producer.
+
+### Device Editor
+
+The first version needs only:
+
+- Name;
+- listener Port;
+- Unit ID;
+- FC1 Start + Count;
+- FC2 Start + Count;
+- FC3 Start + Count;
+- FC4 Start + Count.
+
+No individual address/value editor is required.
+
+Zero count may represent an unused function-code area if supported by the eventual simulator/config schema; this must be validated rather than assumed during implementation.
+
+### Save / Apply Behavior
+
+`Save / Apply` is one deliberate structural operation:
+
+```text
+USER EDITS DEVICE
+→ VALIDATE FORM
+→ SUBMIT SIMULATOR CONFIGURATION INTENT
+→ SHARED MMA2 CONFIG AUTHORITY CHECKS CONFLICTS
+→ REJECT WITH EXPLICIT ERROR
+   OR
+→ GENERATE/UPDATE EFFECTIVE MMA2 CONFIG
+→ RESTART MMA2 IF STRUCTURAL CONFIG CHANGED
+→ VERIFY RUNTIME
+→ UPDATE DEVICE STATUS
+```
+
+The browser/UI must not directly overwrite the effective MMA2 configuration file.
+
+Validation should surface at least:
+
+- invalid/missing port;
+- invalid Unit ID;
+- invalid start/count ranges;
+- listener conflict;
+- Unit/range ownership conflict with another MMA2 producer;
+- MMA2 configuration/start failure.
+
+A rejected save leaves the previously active configuration intact.
+
+### Runtime Information
+
+The first UI does not need a live register table. It only needs enough runtime feedback to prove the simulator is operating:
+
+```text
+Status: RUNNING
+Port: 1502
+Unit ID: 1
+Random update: every 60 seconds
+Last random update: <timestamp when available>
+```
+
+The periodic randomizer remains automatic and fixed at one-minute intervals in the initial version. There is no per-device waveform/randomization editor.
+
+### UI Scope Boundary
+
+Initial UI includes:
+
+- list simulated devices;
+- add/select/edit/delete simulator-owned device definitions;
+- configure port, Unit ID, and FC1-FC4 start/count;
+- save/apply structural configuration;
+- show validation/configuration conflicts;
+- show basic runtime state and last random update when available.
+
+Initial UI excludes:
+
+- raw YAML editing;
+- direct MMA2 configuration editing;
+- individual register/coil value editing;
+- live memory tables;
+- charts;
+- waveform/ramp/sine/script configuration;
+- Replicator configuration;
+- arbitrary MMA2 lifecycle controls unrelated to simulator-owned definitions.
+
 ## Initial Intent
 
 Keep the first simulator intentionally small:

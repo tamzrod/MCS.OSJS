@@ -28,4 +28,4 @@ Brainsstorm -> microtask -> promotion -> CWAL -> verified change. Context mainte
 
 Project identity document defines identity/direction only:. no implementation authority, no settled architecture. Detailed architecture, donor selection, rewiring, UI behavior, and execution scope established via planning + workflow docs. Repository files are authoritative; conversation memory is not a substitute. Reuse proven machinery, but preserve explicit boundaries; no component gains authority merely for convenience.
 
-Handoff status: IDLE; no active work present in workflow/active_work/.
+Handoff status: ACTIVE; active work in workflow/active_work/osjs-base-webapp-init.md (OSJS-001 -> OSJS-002 -> OSJS-003).

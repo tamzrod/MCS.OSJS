@@ -1,6 +1,6 @@
 # Governance and Operation Discipline
 
-Baseline commit: cb869da3caeed040478e67ecb0a01c5f93b3a66b
+Baseline commit: b3781e10812299a7a701281e65c064c4da55b68f
 Working tree: clean
 Source dependencies: AGENTS.md, BLACK_SHEEP_WALL.md, ICC/INDEX.md, operation cwal.md, handoff.md, workflow/active_work/README.md
 

@@ -156,7 +156,7 @@ The selected task boundary is the navigation ceiling for that operation unless t
 
 ## Registry
 
-Baseline Commit: cb869da3caeed040478e67ecb0a01c5f93b3a66b
+Baseline Commit: b3781e10812299a7a701281e65c064c4da55b68f
 Working Tree: clean
 Audited Uncommitted Overlay: none
 
@@ -169,4 +169,4 @@ Audited Uncommitted Overlay: none
 | `context/planning-workflow.md` | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
 | `context/brainstorm-topics.md` | `planning/Brainstorm/port-config-and-socket-deployment.md`, `planning/Brainstorm/osjs-base-webapp-init.md` |
 
-Baseline commit: `cb869da3caeed040478e67ecb0a01c5f93b3a66b` - HEAD at audit time; working tree clean, no uncommitted overlay recorded. Context files under `ICC/context/` summarize established repository truth; commit `cb869da` need not equal the commit that stores them per the ICC state model.
+Baseline commit: `b3781e10812299a7a701281e65c064c4da55b68f` - HEAD at audit time; working tree clean, no uncommitted overlay recorded. Context files under `ICC/context/` summarize established repository truth; commit `b3781e1` need not equal the commit that stores them per the ICC state model.

@@ -1,33 +1,21 @@
-# Active Work Program (Simulator + MMA2
+# Active Work Program (Simulator + MMA2)
 
-Baseline commit: e286569affe3bb06ad18d7c490e494af62525d71
-Working tree: dirty (post-CWAL MMA2-002 overlay(
-Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002-mma2-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml
+Baseline commit: 8cb9f0c08ae4e5717ce22d4423fd297eba03d170
+Working tree: clean
+Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002-mma2-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/validate.go
 Parent: L0-project
-Zoom In:(none; leaf node(
+Zoom In: simulator-device-config
 Zoom Out: L0-project
 
-## Execution Order (handoff
+## Execution Order (handoff)
 
-JR executes only work present in workflow/active_work/ + reflected in handoff, in this order:
+1. `mma2-basic-install-test.md` — **COMPLETED** 2026-09-06 (MMA2-001 import+build; MMA2-002 smoke test).
+2. `sim-001-simulator-device-config.md` — **COMPLETED** 2026-09-06. Simulator-owned two-domain persist under `$OSJS_DATA_DIR/config/simulator/devices.yaml`. See Zoom In `simulator-device-config`.
+3. `sim-002-mma2-activation.md` — **CURRENT**. Validate+activate simulator MMA2 params against shared MMA2 namespace. Task sizing 4/10; split if composition and lifecycle are independently unresolved.
+4. `sim-003-random-runtime.md` — per-FC random runtime scheduler.
+5. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.
+6. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.
+7. `sim-006-save-apply-routing.md` — Save & Apply routing.
+8. `sim-007-runtime-status.md` — runtime status surface.
 
-1. `mma2-basic-install-test.md` — MMA2 basic install+test program;; **COMPLETED** (both sub-tasks DONE+verified 2026-09-06(; evidence recorded in the task file(.
-   - `MMA2-001` (import+clean build(:  imported `tamzrod/mma2`@`12311c1d...6ed06f` into repo-root `MMA2/`; clean Go 1.25.0 build; no donor-checkout dep;provenance recorded.
-
-   - `MMA2-002` (run+Modbus TCP smoke test(:  minimal repo config `MMA2/testdata/smoke-test.yaml` (127.0.0.1:5020, unit 1, holding 0..10, explicit allow-all policy — MMA2 authority defaults-to-deny(; FC6 write 1234 + FC3 read exact match (raw PDU + pymodbus 3.15.0(; stop/restart listener rebind + read path responds clean. Docker n/a (direct run(.
-   **Current work: SIM-001** (item 2(.
-2. `sim-001-simulator-device-config.md` — SIM-001:  establish simulator device configuration model (name/enabled, MMA2 parameter domain (port,unit_id,FC1-FC4 start/count(, random-runtime domain (FC1-FC4 Randomize Every(ms,(; persist under verified host-mounted configuration root; load back; validate before replacing last valid; keep simulator-owned config separate from effective MMA2 runtime config. Non-scope:  no MMA2 activation/restart, no shared collision resolution, no value generation, no raw ingest, no UI, no Replicator. Verify:  round-trip exact values both domains; invalid inputs rejected without replacing previous valid; NO invented host path — repository/runtime truth required..
-3. `sim-002-mma2-activation.md` — SIM-002:  validate+activate simulator MMA2 params against shared MMA2 namespace; interpret listener/Unit/FC/start/count via actual MMA2 addressing model in repository truth; detect collisions before modifying active MMA2 config; reject conflicting requests without changing active state; compose/update only simulator-owned contribution to effective MMA2 config; restart/reload only when structural change requires; verify MMA2 exposes accepted listener/Unit/ranges. Non-scope:  scheduler, raw ingest, UI, Replicator beyond ownership boundary, MMA2 addressing redesign. Acceptance:   one non-conflicting accepted+exposed; one deliberate conflict rejected before replacement; after rejected/failed activation previous config remains operational. If inspection reveals composition+lifecycle control independently unresolved, split before execution..
-4. `sim-003-random-runtime.md` — SIM-003:  per-FC random runtime scheduler (FC1-FC4 independent millisecond intervals(; generate bool FC1/FC2, uint16 FC3/FC4; track last/next state; timing-only change without MMA2 restart. Non-scope:  structural MMA2 changes, collision validation, raw-ingest transport (this task(, UI, ramps/sines/scripts/manual values. Verify:  four visibly different short intervals, multiple cycles, record cadence+value types; change one interval and prove only scheduler timing changes..
-5. `sim-004-raw-ingest.md` — SIM-004:  send simulator values through MMA2 raw ingest exclusively(repository-truth raw-ingest format(; target only simulator-owned ranges; verify per enabled FC area one value reaches MMA2 memory; real external Modbus TCP client reads at least one value from each enabled FC area after update. Non-scope:  direct-memory bypass, Modbus-write population, structural MMA2 config changes, scheduler redesign, UI..
-6. `sim-005-osjs-window.md` — SIM-005:  approved OS.js Modbus Simulator window (device list/search, Add/Duplicate/Delete/Save & Apply/Discard, Name/Listen Port/Unit ID/Enabled, FC1-FC4 Start+Count+Randomize Every (ms(, calculated ranges(; bind form to simulator-owned definitions; edits affect simulator-owned definitions only, never directly modify effective MMA2 config. Non-scope:  backend MMA2 activation, scheduler, raw ingest, live register table, charts/waveforms/scripts/raw YAML, Replicator. Verify:  open app, edit/duplicate/delete/discard, exact field round-trip through SIM-001 persistence without touching effective MMA2 config..
-7. `sim-006-save-apply-routing.md` — SIM-006:  Save & Apply classifies changed params (Port/Unit ID/FC Start/Count = MMA2 structural; Randomize Every(ms( = random-runtime((, routes structural via SIM-002 and timing-only via SIM-003; validate before activate; preserve previous active valid state when validation/downstream activation fails; surface success/error to UI. Verify:  exactly three saves from UI (structural, timing-only, invalid/conflicting(; record path invoked+final runtime state per case..
-8. `sim-007-runtime-status.md` — SIM-007:  runtime status surface (selected-device RUNNING/STOPPED/ERROR, MMA2 status, raw-ingest status, FC1-FC4 last/next update, total configured points for selected device(; refresh without becoming live register viewer. Verify:  run one device with different FC intervals, compare displayed runtime state against scheduler/MMA2 evidence; total points equals configured FC counts..
-
-A later task does not authorize skipping an incomplete dependency. Promotion rule:  whenever Active Workload changes, update handoff.md in the same promotion/change..
-
-## Cross-Cutting Program Truth
-
-- All simulator program work derives from the approved brainstorm (planning/Brainstorm/osjs-modbus-simulator.md( and shared MMA2 config-authority boundary contract (see brainstorm-topics(.
-- MMA2-001/002 (from planning/microtask/mma2-basic-install-test.md( import `tamzrod/mma2` as repository-root `MMA2/` independent component; MMA2 config is startup-loaded+immutable; runtime verification must use Docker `network_mode: "host"` when containerized and no MMA2 `ports:` publishing.
-- Active Work is consumed only through Operation CWAL.; workflow/active_work/ contains only human-promoted tasks; if empty, stop and wait for human promotion..
+A later task does not authorize skipping an incomplete dependency.

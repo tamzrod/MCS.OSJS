@@ -1,41 +1,51 @@
-# Microtask OSJS-001 — Copy Nameless SCADA OS.js Base Web App
+# Microtask OSJS-001 — Copy Nameless SCADA Basic OS.js Desktop
 
 ## ID and Title
 
 - ID: `OSJS-001`
-- Title: Copy the Nameless SCADA OS.js base web app into `OSJS/`
+- Title: Copy the Nameless SCADA basic OS.js desktop into `OSJS/`
 
 ## Primary Outcome
 
-The existing OS.js base web app from the Nameless SCADA donor is copied into a new top-level `OSJS/` directory in MCS.OSJS, preserving the donor application structure so it can be used as the starting point for later MCS.OSJS work.
+MCS.OSJS contains a runnable basic OS.js desktop copied from the Nameless SCADA donor, without copying the donor SCADA applications.
 
 ## Scope
 
 - Source: `tamzrod/namelessscada` → `desktop/osjs-prototype/`.
 - Destination: repository-root `OSJS/`.
-- Copy the complete donor OS.js base web app tree into `OSJS/`.
-- Preserve the donor directory structure and files as copied.
+- Copy only the donor files required to build, start, and render the basic OS.js desktop shell.
+- Preserve the basic desktop appearance/configuration required for the shell to run.
+- Keep only runtime/build files and shell assets that are actually required by the basic desktop.
+
+## Explicit Exclusions
+
+Do not copy donor application packages or application-specific integration code.
+
+At minimum, exclude the application content under `desktop/osjs-prototype/src/packages/`, including SCADA/editor/management applications such as Ingestor, ModbusEditor, Dnp3Editor, TagManager, AutoStart, TaskbarSettings, and other donor applications.
+
+Also exclude application-specific client/server providers, tests, scripts, or assets when they exist only to support those excluded applications.
 
 ## Non-Scope
 
-- No architectural rewiring.
-- No Orchestrator, Replicator, or MMA2 integration.
+- No Orchestrator, Replicator, MMA2, Modbus, DNP3, Tag Manager, or Ingestor integration.
 - No port changes.
+- No new application development.
 - No UI redesign.
-- No cleanup, renaming, refactoring, or removal of donor applications/assets.
+- No architectural rewiring beyond removing references required to prevent excluded donor applications from being loaded.
 - No unrelated repository changes.
 
 ## Acceptance Criteria
 
-1. `OSJS/` exists at the MCS.OSJS repository root.
-2. The contents of Nameless SCADA `desktop/osjs-prototype/` are copied into `OSJS/` with the donor tree preserved.
-3. No files outside `OSJS/` are changed by this task.
+1. `OSJS/` exists at the MCS.OSJS repository root and contains the basic OS.js desktop runtime/build structure from the donor.
+2. The OS.js desktop can build/start and render the basic desktop shell.
+3. Donor SCADA/application packages are not present or loaded in the copied desktop.
 
 ## Verification
 
-- Compare the donor `desktop/osjs-prototype/` tree against the new `OSJS/` tree and verify the copied paths match.
-- Verify key donor files such as `package.json`, client/server source, packages, assets, and build/runtime files exist under `OSJS/`.
-- Verify the task diff is confined to `OSJS/`.
+- Build/start the copied OS.js desktop from `OSJS/` using the donor's applicable base runtime workflow.
+- Verify the OS.js desktop shell renders successfully.
+- Verify excluded donor applications are absent from the desktop/package discovery and are not available from the desktop menus/application launcher.
+- Verify the implementation diff is confined to `OSJS/`.
 
 ## Dependencies
 
@@ -44,7 +54,7 @@ The existing OS.js base web app from the Nameless SCADA donor is copied into a n
 
 ## Sizing Assessment
 
-- One primary outcome: copy one existing application tree from donor to destination.
-- No design decisions or rewiring.
-- One verification workflow: donor-tree versus destination-tree comparison.
+- One primary outcome: produce a runnable basic OS.js desktop from the existing donor shell.
+- Selection is bounded by a clear rule: shell/runtime required for desktop boot stays; donor applications and their integration code do not.
+- One verification workflow: build/start desktop and confirm donor applications are absent.
 - Size: good JR task.

@@ -2,166 +2,335 @@
 
 ## Purpose
 
-BLACK SHEEP WALL is the repository-understanding and context-compaction operation for MCS.OSJS.
+BLACK SHEEP WALL maintains ICC as a compact, token-efficient cache of repository truth.
 
-It maintains ICC as a compact cache of repository truth. It is not an authorization mechanism.
+Its job is not to repeatedly understand the whole repository. Its job is to avoid repeated repository reading by building a baseline once, then patching only the context invalidated by repository changes.
 
-BLACK SHEEP WALL has two operating modes:
+> The cheapest valid context refresh wins.
 
-1. **Direct maintenance mode** — explicitly invoked by the human to compact or refresh repository context.
-2. **Delegated branch refresh** — invoked by another operation such as CWAL because that operation's selected ICC branch is stale or missing.
+BLACK SHEEP WALL is not an authorization mechanism. It cannot grant work, promote tasks, choose future work, or widen an invoking operation.
 
-These modes must not be confused.
+## Core Invariant
 
-## Direct Invocation
+> Full repository audit is allowed only when no valid ICC baseline exists.
 
-When the user directly says `BLACK SHEEP WALL`, perform repository context compaction.
+Once a valid baseline exists, BLACK SHEEP WALL is strictly incremental.
 
-### First Run / Missing Baseline
+```text
+NO BASELINE
+→ bootstrap full audit once
+→ build ICC hierarchy
+→ establish baseline
+
+BASELINE EXISTS
+→ never full-audit again
+→ inspect repository delta only
+→ patch affected ICC context only
+```
+
+Unchanged repository files, unchanged ICC nodes, and unrelated semantic branches should consume no repository-reading context during an incremental run.
+
+## Mode 1 — Bootstrap
+
+Bootstrap is used only when ICC has no valid baseline or the ICC state is genuinely unusable as a baseline.
 
 ```text
 READ CURRENT HEAD
-→ AUDIT ALL RELEVANT REPOSITORY CONTEXT
+→ AUDIT REPOSITORY CONTEXT REQUIRED TO ESTABLISH THE INITIAL MODEL
 → DISCOVER SEMANTIC BOUNDARIES
-→ BUILD A SEMANTIC ZOOM TREE
-→ COMPACT INTO ICC/context/
+→ BUILD ICC FOLDER / ZOOM HIERARCHY
+→ COMPACT REPOSITORY TRUTH INTO ICC/context/
 → UPDATE ICC/INDEX.md
-→ STAMP BASELINE WITH CURRENT HEAD COMMIT
-→ RECORD ANY AUDITED UNCOMMITTED FILE OVERLAYS
-→ VERIFY TREE + CONTEXT
+→ STAMP BASELINE WITH CURRENT HEAD
+→ RECORD AUDITED UNCOMMITTED OVERLAY IF PRESENT
+→ VERIFY HIERARCHY + STATE
+→ STOP
 ```
 
-A missing ICC baseline is not grounds to do nothing. It requires bootstrap compaction of the repository context that already exists.
+Bootstrap may inspect broadly because there is no previous state from which to calculate a delta.
 
-### Subsequent Direct Run
+After bootstrap succeeds, this broad audit behavior is disabled for normal BLACK SHEEP WALL operation.
 
-Do not rescan unchanged repository files.
+## Mode 2 — Incremental Maintenance
+
+Every BLACK SHEEP WALL run after bootstrap begins from the existing ICC baseline.
 
 ```text
-READ ICC BASELINE
+READ ICC STATE METADATA
 → READ CURRENT HEAD
-→ IF HEAD CHANGED: DIFF BASELINE..HEAD
-→ INSPECT ONLY COMMITTED FILES CHANGED SINCE BASELINE
-→ INSPECT CURRENT UNCOMMITTED FILES
-→ COMPARE UNCOMMITTED CONTENT WITH LAST AUDITED OVERLAY
-→ REFRESH ONLY AFFECTED ICC NODES / BRANCHES
-→ RESTRUCTURE ONLY WHERE SEMANTIC BOUNDARIES ACTUALLY CHANGED
-→ PRESERVE UNAFFECTED NODES / BRANCHES
-→ UPDATE BASELINE / OVERLAY METADATA
-→ VERIFY TREE + CONTEXT
+→ DETERMINE DELTA FROM LAST AUDITED ICC STATE
+     │
+     ├── committed delta: baseline..HEAD
+     └── working-tree delta: new / modified / renamed / deleted files
+→ INSPECT ONLY CHANGED PATHS
+→ MAP EACH CHANGED PATH TO ITS EXISTING ICC SEMANTIC BRANCH
+→ REFRESH DEEPEST AFFECTED NODE FIRST
+→ PROPAGATE UPWARD ONLY IF PARENT SUMMARY TRUTH CHANGED
+→ CREATE / RESTRUCTURE A BRANCH ONLY IF SEMANTIC STRUCTURE CHANGED
+→ PRESERVE ALL UNAFFECTED CONTEXT
+→ UPDATE BASELINE / OVERLAY STATE
+→ VERIFY AFFECTED PATHS ONLY
+→ STOP
 ```
 
-If current HEAD is unchanged from the ICC baseline, a repeated direct BLACK SHEEP WALL run updates only new, modified, renamed, or deleted uncommitted files whose current state differs from the last audited overlay.
+BLACK SHEEP WALL must not perform a repository-wide audit merely because the human invoked it directly.
 
-A direct run is repository-wide in scope but incremental in inspection. Repository-wide does not mean reread every repository file or regenerate every context node.
+Direct invocation after bootstrap means: **maintain the ICC from repository delta**.
 
-## Semantic Zoom Tree
+## Delta Rules
 
-ICC must be generated as a traversable semantic hierarchy, not a flat bag of summaries.
+### HEAD Changed
 
-The broadest project node is the root. More specific semantic boundaries descend beneath it. Detail that belongs to one boundary becomes a child of that boundary rather than a sibling merely because it has its own file.
-
-Example shape only; actual nodes must be discovered from repository truth:
+If current HEAD differs from the ICC baseline:
 
 ```text
-L0 project
-├── governance
-├── architecture
-│   ├── component A
-│   │   ├── build/import
-│   │   └── runtime
-│   └── component B
-├── networking
-├── planning
-│   ├── brainstorm
-│   └── microtask
-└── provenance
+DIFF baseline..HEAD
+→ obtain changed/new/deleted/renamed paths
+→ inspect those paths only
+→ map them to ICC context
 ```
 
-Do not manufacture empty branches merely to match this example. Generate only semantic nodes supported by repository content.
+Do not reopen unchanged files to confirm that they are still unchanged.
 
-### Context Node Contract
+### HEAD Unchanged
 
-Every generated context node must declare enough metadata for deterministic navigation:
+If current HEAD equals the ICC baseline:
 
-- **Semantic Boundary** — what knowledge this node owns.
-- **Parent** — the one node reached by Zoom Out; root declares `none`.
-- **Zoom In** — only the direct child nodes that may be entered from this node.
-- **Source Dependencies** — material repository paths represented by this node.
-- **Baseline State** — commit/overlay state against which those dependencies were audited.
+```text
+CHECK WORKING-TREE DELTA
+→ compare changed paths against audited overlay fingerprints
+→ inspect only paths whose content/state differs from the last audited overlay
+```
 
-A node may also state unresolved questions or established contracts when they belong to that semantic boundary.
+If there is no committed or working-tree delta, BLACK SHEEP WALL should perform no context rebuild.
 
-The ICC index is a registry and entry map. Registry presence is not navigation permission.
+```text
+NO DELTA
+→ ICC remains valid
+→ no repository context inspection
+→ no ICC regeneration
+→ STOP
+```
+
+## Token-Efficiency Rule
+
+ICC exists to reduce context use. BLACK SHEEP WALL must therefore optimize for minimum repository reading.
+
+```text
+UNCHANGED REPOSITORY FILE
+→ 0 inspection
+
+UNCHANGED ICC NODE
+→ 0 regeneration
+
+UNRELATED SEMANTIC BRANCH
+→ 0 inspection
+
+CHANGED FILE
+→ inspect only required changed content
+
+DEEPEST AFFECTED ICC NODE
+→ patch required summary
+
+PARENT NODE
+→ patch only if its zoomed-out truth changed
+```
+
+Do not load extra context "for completeness", "to be safe", or because it may become relevant later.
+
+## ICC Semantic Folder Hierarchy
+
+ICC is a semantic zoom tree represented by folders and files.
+
+The filesystem structure itself should guide context navigation.
+
+```text
+ICC/
+└── context/
+    ├── PROJECT.md                 ← broadest project overview
+    │
+    ├── architecture/
+    │   ├── ARCHITECTURE.md        ← zoomed-out architecture overview
+    │   ├── mma2/
+    │   │   ├── MMA2.md            ← zoomed-out MMA2 overview
+    │   │   ├── config/
+    │   │   │   ├── CONFIG.md      ← config overview
+    │   │   │   └── ...            ← deeper config details
+    │   │   └── runtime/
+    │   │       ├── RUNTIME.md     ← runtime overview
+    │   │       └── ...            ← deeper runtime details
+    │   ├── osjs/
+    │   │   ├── OSJS.md
+    │   │   └── ...
+    │   ├── replicator/
+    │   │   ├── REPLICATOR.md
+    │   │   └── ...
+    │   └── orchestrator/
+    │       ├── ORCHESTRATOR.md
+    │       └── ...
+    │
+    ├── networking/
+    │   ├── NETWORKING.md
+    │   └── ...
+    │
+    ├── workflow/
+    │   ├── WORKFLOW.md
+    │   └── ...
+    │
+    └── provenance/
+        ├── PROVENANCE.md
+        └── ...
+```
+
+This is a shape rule, not a fixed required folder list. Actual semantic branches must be derived from repository truth.
+
+### Folder Rule
+
+A semantic folder is a navigation boundary.
+
+The overview file at the root of that folder contains the **Zoom Out view of everything beneath that folder**.
+
+Subfolders contain deeper semantic detail.
+
+```text
+FOLDER
+= semantic boundary
+
+OVERVIEW FILE AT FOLDER ROOT
+= zoomed-out summary of that boundary
+
+SUBFOLDER
+= allowed Zoom In boundary
+
+DEEPER FILE
+= specific context required only when deeper detail is needed
+```
+
+Do not flatten unrelated semantic levels into sibling files when one clearly belongs beneath another.
+
+## Zoom Navigation
+
+A repository-dependent operation begins at the smallest useful semantic boundary for its authorized outcome.
+
+```text
+SELECT RELEVANT ICC FOLDER
+→ READ ITS OVERVIEW FILE
+→ ENOUGH?
+     YES → ACT
+     NO  → ZOOM IN TO RELEVANT SUBFOLDER
+→ READ THAT SUBFOLDER OVERVIEW
+→ REPEAT ONLY AS NEEDED
+```
 
 ### Zoom In
 
-Zoom In means moving from the current context node to one of its declared direct children because the current authorized operation needs more specific information inside the same semantic branch.
+Zoom In means descending into a child folder inside the currently selected semantic branch.
 
 ```text
-CURRENT NODE
-→ choose required declared child
-→ ZOOM IN
-→ continue inside that child boundary
+architecture/mma2/MMA2.md
+        ↓
+need runtime detail
+        ↓
+architecture/mma2/runtime/RUNTIME.md
+        ↓
+need raw-ingest detail
+        ↓
+architecture/mma2/runtime/raw-ingest.md
 ```
-
-An operation must not skip sideways to a sibling merely because the sibling looks relevant.
 
 ### Zoom Out
 
-Zoom Out means returning only to the current node's declared parent.
+Zoom Out means returning to the overview of the current branch's parent.
+
+Zoom Out is for summarization and orientation inside the selected branch. It must not be used to climb above the operation's semantic ceiling and then enter unrelated sibling branches.
+
+### Sideways Navigation
+
+Sibling traversal is prohibited unless the current authorized outcome explicitly requires both boundaries.
+
+Possible relevance is not authority.
+
+## Change-to-Context Mapping
+
+Incremental BLACK SHEEP WALL starts from changed repository paths, not from a tour of ICC.
+
+Example:
 
 ```text
-CHILD
-→ ZOOM OUT
-→ DECLARED PARENT
+changed repository file:
+MMA2/runtime/raw_ingest.cpp
+
+        ↓ map
+
+ICC/context/
+└── architecture/
+    └── mma2/
+        └── runtime/
+            └── raw-ingest.md
 ```
 
-Zoom Out is not permission to escape the operation's navigation ceiling. If the declared parent lies above the ceiling selected by the invoking operation, stop at the ceiling.
+Refresh `raw-ingest.md` first.
 
-Zoom Out must never be used as a route to climb to a common ancestor and then enter an unrelated sibling branch.
+Then ask whether the changed truth affects the parent summary:
 
-### Cross-Branch Rule
+```text
+raw-ingest.md changed
+        ↓
+Does RUNTIME.md summary truth change?
+        ├── NO  → leave RUNTIME.md untouched
+        └── YES → patch RUNTIME.md
+                    ↓
+              Does MMA2.md summary truth change?
+                    ├── NO  → stop propagation
+                    └── YES → patch MMA2.md
+```
 
-Crossing into another semantic branch requires the current authorized task/outcome to explicitly require that boundary for implementation, understanding, testing, or verification.
+Do not automatically rewrite ancestors.
 
-Possible relevance, dependency in another context, future usefulness, or registry proximity is insufficient authority.
+## New Files and Structural Changes
 
-When a task explicitly crosses boundaries, each required branch is selected deliberately; this does not open other siblings.
+When a changed/new path does not map to an existing ICC node:
+
+```text
+NEW CHANGED PATH
+→ identify its closest existing semantic parent
+→ determine whether it belongs in an existing node
+→ if necessary create one child node/folder
+→ update only the affected parent overview/linkage
+```
+
+Do not rediscover the whole ICC tree because one new semantic boundary appeared.
+
+Reorganize an existing branch only when repository changes actually altered that branch's semantic structure.
 
 ## Delegated Branch Refresh
 
-When BLACK SHEEP WALL is invoked by CWAL, planning, brainstorming, promotion, or another bounded operation, the invoking operation must already have selected a semantic branch/node.
+When BLACK SHEEP WALL is invoked by CWAL, planning, promotion, execution, or another bounded operation, that operation supplies the semantic boundary.
 
-That selected node is the navigation ceiling and refresh boundary.
+That boundary is the navigation ceiling and refresh ceiling.
 
 ```text
-RECEIVE SELECTED SEMANTIC NODE
-→ READ ICC STATE FOR THAT NODE
-→ FOLLOW DECLARED CHILD LINKS ONLY WHEN MORE DETAIL IS REQUIRED
-→ CHECK ONLY SOURCE DEPENDENCIES IN THE SELECTED NODE / REQUIRED DESCENDANTS
-→ IF HEAD CHANGED: DIFF ONLY TO DETERMINE WHETHER THOSE DEPENDENCIES CHANGED
-→ INSPECT ONLY CHANGED DEPENDENCIES INSIDE THAT BRANCH
-→ REFRESH ONLY THAT NODE / REQUIRED CHILD CONTEXT
-→ DO NOT DISCOVER OR REPAIR STALE SIBLING CONTEXT
-→ RETURN TO INVOKING OPERATION
+RECEIVE SELECTED BRANCH
+→ READ ITS ICC STATE
+→ CHECK WHETHER REPOSITORY DELTA INTERSECTS THAT BRANCH'S SOURCES
+→ NO INTERSECTION: USE EXISTING ICC AND RETURN
+→ INTERSECTION:
+     inspect changed dependencies only
+     patch deepest affected node
+     propagate upward only inside selected branch when needed
+→ RETURN
 ```
 
-### Branch-Local Invariant
-
-> Staleness outside the selected semantic branch is irrelevant to the invoking operation.
+Staleness outside the selected branch is irrelevant to the invoking operation.
 
 A delegated refresh must not:
 
 - inventory all stale ICC contexts;
-- repair unrelated stale context;
-- open sibling contexts because changed files may affect them;
+- inspect unrelated repository changes;
+- repair sibling branches;
 - update broad project context merely because HEAD advanced;
-- turn task execution into repository-maintenance work;
-- navigate directly from the ICC registry into arbitrary nodes;
-- Zoom Out above the selected navigation ceiling.
-
-If a changed file belongs to several ICC contexts, refresh only the context that lies inside the selected branch. Other affected contexts remain stale until a direct BLACK SHEEP WALL run or an operation that selects those branches needs them.
+- raise the navigation ceiling;
+- turn task execution into repository-maintenance work.
 
 ## ICC State Model
 
@@ -173,74 +342,95 @@ committed repository truth at BASELINE COMMIT
 audited uncommitted working-tree overlay
 ```
 
-The baseline commit is the repository HEAD used as the committed source baseline during the audit. It is not required to equal the commit that later stores ICC files; this avoids a self-referential commit-marker loop.
+The baseline commit is the repository HEAD used as the committed source baseline during the last successful audit/refresh.
 
-For uncommitted files, ICC must record enough state to determine whether the current working-tree content is the same content that was audited. Prefer a content hash or equivalent deterministic fingerprint per audited path.
+For uncommitted files, record enough deterministic state to tell whether the working-tree content is identical to the version already audited. A content hash or equivalent fingerprint is preferred.
+
+## Context Node Metadata
+
+Each semantic overview/detail node should retain only metadata needed for deterministic maintenance and navigation:
+
+- Semantic Boundary
+- Parent / Zoom Out target
+- direct Zoom In children
+- Source Dependencies
+- Baseline / overlay state relevant to those dependencies
+
+Do not duplicate large source content inside ICC.
 
 ## Operation Prelude
 
-Repository-dependent operations are ICC-first, but **branch selection precedes refresh and navigation proceeds inward**.
+Repository-dependent operations are ICC-first and branch-first.
 
 ```text
-READ ICC/INDEX.md
-→ LOCATE OPERATION AUTHORITY / REQUESTED OUTCOME
-→ SELECT SEMANTIC NODE / BRANCH
-→ SET THAT NODE AS NAVIGATION CEILING
-→ CHECK BASELINE + WORKING-TREE OVERLAY FOR THAT NODE
-→ CURRENT? USE NODE
-→ NEED MORE DETAIL? ZOOM IN THROUGH DECLARED CHILD
-→ STALE/MISSING? DELEGATED REFRESH INSIDE THAT BRANCH ONLY
+IDENTIFY AUTHORIZED OUTCOME
+→ SELECT SMALLEST RELEVANT ICC BRANCH
+→ READ THAT BRANCH OVERVIEW
+→ CHECK WHETHER ITS SOURCE DEPENDENCIES CHANGED
+→ CURRENT? USE ICC
+→ STALE? REFRESH CHANGED DEPENDENCIES ONLY
+→ NEED MORE DETAIL? ZOOM IN
 → ACT
 ```
 
-An operation must not reopen source files merely because they exist. It should use synchronized ICC context first. Repository source is consulted when selected ICC context is missing, stale, insufficient for the requested detail, or must be verified against changed content.
+The ICC index is a registry/state map. It is not a checklist of context to read.
 
-## Validity Rules
-
-Selected ICC context is current only when:
-
-1. its committed source dependencies are represented by the relevant ICC baseline state;
-2. no source dependency inside the selected branch has changed without being incorporated; and
-3. every uncommitted source dependency it claims to represent matches the recorded audited overlay state.
-
-When HEAD differs from the recorded baseline, do not automatically refresh every context touched by the repository diff. First intersect changed paths with the source dependencies of the **selected branch**. Refresh only when that intersection is non-empty.
-
-If HEAD is unchanged, inspect only uncommitted dependencies inside the selected branch whose current state differs from the recorded overlay.
-
-## Boundary Rule
+## Boundary Rules
 
 BLACK SHEEP WALL cannot:
 
 - grant execution authority;
 - promote work;
 - choose future work;
-- let CWAL inspect Planning to select tasks;
-- let brainstorming implement code;
-- widen a bounded operation;
-- raise the selected branch's navigation ceiling;
-- convert unrelated ICC staleness into work for the invoking operation;
-- treat the ICC index as a flat menu of contexts to browse.
-
-The invoking operation retains authority and scope. BLACK SHEEP WALL only establishes synchronized repository understanding inside that scope.
+- widen a task or planning operation;
+- perform a new full audit when a valid baseline exists;
+- inspect unchanged files merely to reconfirm them;
+- regenerate unaffected ICC nodes;
+- browse unrelated semantic branches;
+- raise an invoking operation's navigation ceiling;
+- treat the ICC registry as a menu to browse.
 
 ## Verification
 
-A BLACK SHEEP WALL run is not complete until it verifies:
+### Bootstrap Verification
 
-1. every generated node declares its semantic boundary, parent, direct children, source dependencies, and baseline state;
-2. every declared child points to an existing context node;
-3. every non-root parent points to an existing context node;
-4. parent/child relationships agree in both directions;
-5. no node is reachable only by arbitrary registry lookup when it should belong beneath a semantic parent;
-6. affected source changes are represented in the appropriate nodes;
-7. unaffected nodes were not needlessly regenerated during an incremental run;
-8. the ICC index reflects the resulting tree and baseline/overlay state.
+Verify the initial hierarchy, source mappings, overview/child relationships, and baseline state.
+
+### Incremental Verification
+
+Verify only what the delta could have affected:
+
+1. each changed repository path was mapped to the correct ICC branch;
+2. deepest affected context reflects current repository truth;
+3. parent summaries were changed only where their summarized truth changed;
+4. new/deleted/renamed semantic nodes are reflected where necessary;
+5. unrelated sibling branches were not inspected or regenerated;
+6. baseline/overlay metadata now represents the audited state.
+
+Do not perform a full-tree verification after every incremental update unless the change itself altered the tree structure globally.
 
 ## Context Size
 
-Context files should stay compact and semantic.
+ICC context should remain compact.
 
-- target: 100–150 lines;
-- hard maximum: 200 lines;
-- split deeper detail into a child context rather than duplicating source files;
-- when a node contains several independently navigable semantic subjects, prefer child nodes over one broad context file.
+- overview files summarize only their semantic folder;
+- deeper detail belongs in subfolders/files;
+- avoid duplicating child detail in parent summaries;
+- prefer the smallest context necessary for the operation;
+- if an overview becomes too large, move detail deeper instead of expanding the overview.
+
+## Mental Model
+
+```text
+ICC
+= compressed semantic cache
+
+BLACK SHEEP WALL BOOTSTRAP
+= build cache once
+
+BLACK SHEEP WALL AFTER BASELINE
+= incremental cache invalidation + patch
+
+NOT
+= repository re-analysis
+```

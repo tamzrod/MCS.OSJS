@@ -2,55 +2,111 @@
 
 Status: ACTIVE. Human-promoted work authorized for JR execution.
 
-## MMA2-001 — Install MMA2 and prove one basic Modbus memory path
+## Execution Order
+
+1. `MMA2-001` — Import MMA2 and prove a clean build.
+2. `MMA2-002` — Run MMA2 and prove one basic Modbus memory path.
+
+JR must complete and verify `MMA2-001` before starting `MMA2-002`.
+
+---
+
+## MMA2-001 — Import MMA2 and prove a clean build
 
 ### Primary outcome
 
-A repository-root `MMA2/` component sourced from `tamzrod/mma2` builds and runs successfully, and one minimal Modbus TCP write/read smoke test proves the imported MMA2 memory path works end to end.
+A repository-root `MMA2/` component sourced from `tamzrod/mma2` exists as an independent component and builds cleanly from repository-owned source without requiring the donor checkout at build or runtime.
 
 ### Scope
 
 - Create repository-root `MMA2/` as the MMA2 component boundary.
-- Import only the donor material required to build and run MMA2 from `tamzrod/mma2`.
-- Preserve MMA2 as an independently bounded component; do not merge its implementation into OS.js or another component.
-- Add one minimal MMA2 configuration for the smoke test.
-- Configure one Modbus TCP ingress listener, one Unit ID, and a small memory range sufficient for the test.
-- Build MMA2 from the imported source.
-- Start MMA2 with the minimal configuration.
-- Verify the configured TCP listener is actually bound.
-- Write one known value to one configured holding-register address through Modbus TCP.
-- Read the same address back and verify the returned value exactly matches the written value.
-- Stop MMA2, start it again with the same configuration, and verify the listener returns cleanly.
-- If Docker is used for any runtime verification, use `network_mode: "host"`; do not introduce Docker `ports:` mappings for MMA2 Modbus TCP.
+- Import only donor material required to build and run MMA2 from `tamzrod/mma2`.
+- Preserve MMA2 as an independently bounded component.
+- Make only the minimum repository-local adjustments required for the imported component to build.
+- Perform a clean build from `MMA2/`.
 
 ### Non-scope
 
-- No Replicator integration.
-- No Orchestrator integration.
-- No OS.js MMA2 configuration UI.
-- No multi-port testing.
-- No multi-Unit-ID stress testing.
-- No persistence redesign.
-- No container consolidation work beyond respecting the existing host-network requirement if Docker is used for verification.
-- No protocol expansion beyond the basic Modbus TCP smoke test.
-- No unrelated refactoring of donor MMA2 behavior.
+- No MMA2 runtime smoke test.
+- No Modbus client write/read test.
+- No listener verification.
+- No restart verification.
+- No Replicator, Orchestrator, or OS.js integration.
+- No unrelated donor refactoring.
 
 ### Acceptance criteria
 
-1. `MMA2/` contains the donor-derived source and build/runtime material required for MMA2 to compile and start as its own component.
-2. A clean MMA2 build succeeds from the imported source without relying on the donor repository checkout at runtime.
-3. MMA2 starts from a minimal repository-owned configuration and the configured Modbus TCP listener is confirmed bound.
-4. A real Modbus TCP client writes a known register value and reads the same address back with an exact value match.
-5. After MMA2 is stopped and restarted with the same configuration, the listener binds again and a read of the configured memory path succeeds without startup, configuration, or listener errors.
-6. No Docker bridge/NAT port publishing is introduced for MMA2; if Docker participates in the verification path, host networking is used.
+1. `MMA2/` contains the donor-derived source and build/runtime material required for MMA2 as its own component.
+2. A clean build succeeds from the imported repository source.
+3. The build does not depend on the separate donor repository checkout.
 
 ### Verification method
 
-Perform one end-to-end verification workflow and record evidence for each stage:
+```text
+VERIFY MMA2/ COMPONENT BOUNDARY
+→ CLEAN BUILD FROM MMA2/
+→ VERIFY BUILD SUCCESS
+→ VERIFY NO DONOR CHECKOUT DEPENDENCY
+```
+
+Required evidence:
+
+- imported source location;
+- exact clean-build command;
+- successful build result;
+- evidence that the build uses repository-root `MMA2/`, not the donor checkout.
+
+### Dependencies
+
+- MMA2 donor repository `tamzrod/mma2` as implementation source.
+
+### Sizing assessment
+
+Size: **3 / 10**.
+
+One bounded implementation surface and one build-verification workflow.
+
+---
+
+## MMA2-002 — Run MMA2 and prove one basic Modbus memory path
+
+### Primary outcome
+
+The repository-owned MMA2 build starts from one minimal configuration and passes one end-to-end Modbus TCP write/read/restart smoke test.
+
+### Scope
+
+- Add one minimal repository-owned MMA2 configuration.
+- Configure one Modbus TCP ingress listener, one Unit ID, and a small memory range sufficient for the test.
+- Start the repository-owned MMA2 build with that configuration.
+- Verify the configured TCP listener is bound.
+- Write one known value to one configured holding-register address using a real Modbus TCP client.
+- Read the same address back and verify an exact value match.
+- Stop and restart MMA2 with the same configuration.
+- Verify the listener returns and the Modbus read path responds after restart.
+- If Docker participates in runtime verification, use `network_mode: "host"` and do not introduce Docker `ports:` mappings for MMA2 Modbus TCP.
+
+### Non-scope
+
+- No donor import work except a defect discovered in the already-completed `MMA2-001` result.
+- No Replicator integration.
+- No Orchestrator integration.
+- No OS.js MMA2 configuration UI.
+- No multi-port or multi-Unit-ID stress testing.
+- No persistence redesign.
+- No protocol expansion beyond the basic Modbus TCP smoke test.
+
+### Acceptance criteria
+
+1. MMA2 starts from a minimal repository-owned configuration and the configured Modbus TCP listener is confirmed bound.
+2. A real Modbus TCP client writes a known holding-register value and reads the same address back with an exact value match.
+3. After stop/restart with the same configuration, the listener binds again and the Modbus read path responds without startup, configuration, or listener errors.
+4. If Docker is used, MMA2 uses host networking and no Docker bridge/NAT port publishing is introduced.
+
+### Verification method
 
 ```text
-CLEAN BUILD
-→ START MMA2 WITH TEST CONFIG
+START MMA2 WITH TEST CONFIG
 → VERIFY LISTENER
 → MODBUS WRITE ONE REGISTER
 → MODBUS READ SAME REGISTER
@@ -58,30 +114,28 @@ CLEAN BUILD
 → STOP MMA2
 → RESTART MMA2
 → VERIFY LISTENER RETURNS
-→ VERIFY MODBUS READ PATH STILL RESPONDS
+→ VERIFY MODBUS READ PATH RESPONDS
 ```
 
 Required evidence:
 
-- exact build command and successful result;
-- exact MMA2 start command and configuration path;
+- exact start command and configuration path;
 - listener inspection showing the configured address/port is bound by MMA2;
-- exact Modbus client command/tool used for the write and its target Unit ID/address/value;
-- exact Modbus client command/tool used for the read and the returned value;
-- explicit comparison showing written value equals read value;
+- exact Modbus client/tool and target Unit ID/address/value;
+- returned read value and explicit equality check;
 - stop/restart evidence;
 - post-restart listener and Modbus response evidence;
-- if Docker is used, runtime/config evidence showing host networking and absence of MMA2 `ports:` publishing.
+- if Docker is used, host-network evidence and absence of MMA2 `ports:` publishing.
 
-File-copy evidence alone is not completion evidence.
+File-copy or build evidence alone is not completion evidence for this task.
 
 ### Dependencies
 
-- Existing MCS.OSJS network directive requiring Docker `network_mode: "host"` for the appliance when containerized.
-- MMA2 donor repository `tamzrod/mma2` as the implementation source.
+- `MMA2-001` completed and verified.
+- Existing MCS.OSJS network directive requiring Docker `network_mode: "host"` when containerized.
 
 ### Sizing assessment
 
-Size: **4 / 10**.
+Size: **3 / 10**.
 
-This is acceptable as one JR task because import, build, launch, and the single Modbus write/read/restart check all serve one primary outcome and one continuous verification workflow. Split only if execution exposes an independent blocker that can be verified separately.
+One runtime behavior surface and one continuous end-to-end verification workflow. Toolchain/import uncertainty belongs to `MMA2-001`, not this task.

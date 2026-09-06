@@ -19,10 +19,9 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 500376cfb5c222298aadfcf035aad0af0a635773
-Working Tree: dirty (post-direct-run CWAL execution overlay(
-Audited Uncommitted Overlay: handoff.md:db5daafe4a0578b64a6ac0998dd2b69db8acae0ca593883e9eea9aecf95b0ff4, workflow/active_work/mma2-basic-install-test.md:5b71578d348e862064051ffad4eed4f3411d7e5aa0545c1450cf867af593c5b4 (+ incorporated into refreshed `context/active-work.md`(
-Other uncommitted paths (ICC/ itself, THIRD_PARTY_NOTICES.md, MMA2/( are NOT yet audited into any refreshed branch;; `context/donor-licensing.md` is stale until a direct BSW run or a consumer of that branch refreshes it per branch-local invariant.
+Baseline Commit: e286569affe3bb06ad18d7c490e494af62525d71
+Working Tree: dirty (post-CWAL MMA2-002 overlay(
+Audited Uncommitted Overlay: handoff.md:3430c7041fce5dacee2c6b3210a674b0f968c1063d461e31cd21027793890a29, workflow/active_work/mma2-basic-install-test.md:a2eaf02e1bf5afd4be5fcc9a60c64c79cb4f7d2a5adfad512c1e6bb4add93838, MMA2/testdata/smoke-test.yaml:eb4ca9d1c91b4ed39705605795c5d9beb1fcaec1eb4be477fc80e2c934163a48 (+ incorporated into refreshed `context/active-work.md`; other branches unrecorded per branch-local invariant(
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

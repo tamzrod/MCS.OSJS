@@ -1,0 +1,20 @@
+# MMA2-002 smoke-test configuration (repository-owned minimal fixture
+#
+# One Modbus TCP ingress listener on loopback, one Unit ID, one small
+# holding-register range sufficient for the one write/read/restart smoke test..
+# Explicit allow-all policy required (MMA2 authority defaults-to-deny with no rules per authority.go(;; no state sealing= memory immediately accessible..
+listeners:
+  - id: smoke-test
+    listen: 127.0.0.1:5020
+    memory:
+      - unit_id: 1
+        holding_registers:
+          start:  0
+          count:  10
+        policy:
+          rules:
+            - id: allow-all
+              source_ip:
+                - 127.0.0.1
+                - ::1
+              allow_fc: [1,2,3,4,5,6,15,16]

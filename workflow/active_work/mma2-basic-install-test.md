@@ -5,7 +5,7 @@ Status: ACTIVE. Human-promoted work authorized for JR execution.
 ## Execution Order
 
 1. `MMA2-001` — Import MMA2 and prove a clean build. **DONE** — completed+verified per evidence below.
-2. `MMA2-002` — Run MMA2 and prove one basic Modbus memory path. **CURRENT** — not yet started.
+2. `MMA2-002` — Run MMA2 and prove one basic Modbus memory path. **DONE** — completed+verified per evidence below.
 
 JR must complete and verify `MMA2-001` before starting `MMA2-002`.
 
@@ -76,6 +76,16 @@ One bounded implementation surface and one build-verification workflow.
 ---
 
 ## MMA2-002 — Run MMA2 and prove one basic Modbus memory path
+
+**Completion evidence (recorded by CWAL 2026-09-06(:**
+- Minimal repo-owned config: `MMA2/testdata/smoke-test.yaml` (listener `127.0.0.1:5020`, unit 1, holding registers 0..10; explicit allow-all policy — MMA2 authority defaults-to-deny with no rules per `authority.go`, excluding the "No Policy = Allow" doc claim(.)
+- Start command: `/tmp/mma2 /workspace/project/MCS.OSJS/MMA2/testdata/smoke-test.yaml` (binary built via `go build -o /tmp/mma2 ./cmd/mma2`(. Verify: log `ingress smoke-test listening on 127.0.0.1:5020` + socket connect BOUND-OK.
+- Real Modbus TCP client (raw standard Modbus TCP PDU — FC6 write single register(( wrote value 1234 to holding addr 0, unit 1; response `0001 0000 0006 01 06 0000 04d2` (write-echo, no exception(.
+- Read back via FC3: response `0002 0000 0005 01 03 02 04d2` — value 0x04D2 = 1234 — exact match.
+- Second independent real client, pymodbus 3.15.0 (ModbusTcpClient(: wrote 1234, read back 1234, explicit equality `1234 == 1234 True`.
+- Stop/restart with same config:  both log + socket confirm listener rebinds `127.0.0.1:5020`; post-restart FC3 read path responds (addr 0 =value 0 — fresh in-memory zeroed store(; no startup/config/listener errors in restart log.
+- Docker: n/a — direct binary run, no Docker used;trivially no `ports:` mapping introduced.
+
 
 ### Primary outcome
 

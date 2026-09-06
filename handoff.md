@@ -10,15 +10,18 @@ Active Work is the ordered set of task files under `workflow/active_work/` liste
 
 Execution order:
 1. `workflow/active_work/mma2-basic-install-test.md` — existing active MMA2 work; preserve its internal execution order and completion state as repository truth. **COMPLETED 2026-09-06** (both sub-tasks done+verified; evidence in task file).
-2. `workflow/active_work/sim-001-simulator-device-config.md` — SIM-001: establish simulator device configuration model. **COMPLETED 2026-09-06** (round-trip + invalid-reject verified; evidence in task file). **Current work is now SIM-002** (item 3 below).
-3. `workflow/active_work/sim-002-mma2-activation.md` — SIM-002: validate and activate simulator MMA2 parameters.
-4. `workflow/active_work/sim-003-random-runtime.md` — SIM-003: implement per-FC random runtime scheduler.
-5. `workflow/active_work/sim-004-raw-ingest.md` — SIM-004: send simulator values through MMA2 raw ingest.
-6. `workflow/active_work/sim-005-osjs-window.md` — SIM-005: build the approved OS.js Modbus Simulator window.
-7. `workflow/active_work/sim-006-save-apply-routing.md` — SIM-006: route Save & Apply to the correct parameter consumer.
-8. `workflow/active_work/sim-007-runtime-status.md` — SIM-007: show simulator runtime status.
+2. `workflow/active_work/sim-001-simulator-device-config.md` — SIM-001: establish simulator device configuration model. **COMPLETED 2026-09-06** (round-trip + invalid-reject verified; evidence in task file).
+3. `workflow/active_work/sim-002a-mma2-config-ownership.md` — SIM-002A: compose simulator MMA2 configuration with persistent YAML ownership protection. **CURRENT — execute this first.**
+4. `workflow/active_work/sim-002b-mma2-lifecycle-activation.md` — SIM-002B: activate the already-valid effective MMA2 configuration and verify live Modbus exposure. Execute only after SIM-002A is completed and verified.
+5. `workflow/active_work/sim-003-random-runtime.md` — SIM-003: implement per-FC random runtime scheduler.
+6. `workflow/active_work/sim-004-raw-ingest.md` — SIM-004: send simulator values through MMA2 raw ingest.
+7. `workflow/active_work/sim-005-osjs-window.md` — SIM-005: build the approved OS.js Modbus Simulator window.
+8. `workflow/active_work/sim-006-save-apply-routing.md` — SIM-006: route Save & Apply to the correct parameter consumer.
+9. `workflow/active_work/sim-007-runtime-status.md` — SIM-007: show simulator runtime status.
 
-JR must execute and verify simulator tasks in SIM-001 → SIM-007 dependency order. A later task does not authorize skipping an incomplete dependency.
+JR must execute and verify simulator tasks in SIM-001 → SIM-002A → SIM-002B → SIM-003 → SIM-004 → SIM-005 → SIM-006 → SIM-007 dependency order. A later task does not authorize skipping an incomplete dependency.
+
+SIM-002A establishes the shared MMA2 ownership boundary before lifecycle activation proceeds. `(port, unit_id)` is the unique reservation key shared by Simulator and Replicator. Each persisted effective MMA2 reservation carries a machine-readable YAML `owner` entry. Ownership is first-come-first-save; a program may modify or delete only reservations it owns, and attempts to overwrite or remove another program's reservation must be rejected.
 
 ## Execution Rule
 

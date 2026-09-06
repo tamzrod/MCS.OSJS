@@ -19,7 +19,25 @@ Every candidate connection between these components, and from the appliance to t
 
 These are prerequisites for the future program architecture and rewiring plan (construction stage 4,and must be planned before contracts are written.
 
+## Constraint Input: MMA2 Host Network Operation
 
+Status: input from the human for brainstorming. Not a decision; not a contract yet.
+
+MMA2 must operate on the host network adapter, not merely inside the container's internal network, because it needs to filter IP traffic.in
+
+This changes the socket deployment picture, because MMA2's sockets cannot be treated like ordinary container-internal sockets..
+
+
+
+Planning questions this raises (left open here:
+
+- Does "host network adapter" mean all host interfaces, or a specific adapter set that MMA2 filters?
+- Is MMA2 passive (observing/mirroring IP) or active(intercepting/forwarding IP)? Raw sockets, TUN/TAP, BPF/eBPF,and iptables hooks have very different socket and privilege requirements. The filter model must be known before socket contracts can be planned.
+
+- If MMA2 runs in the host network namespace, how does it communicate with container-resident components (Orchestrator, Replicator, OS.js)?
+- Under which OS privileges does MMA2 run,and what does that imply for the single-container appliance model?
+- Which MMA2 sockets bind on host interfaces,and which (if any) remain container-internal?(and how is that distinction configured)
+- Does the host-adapter requirement force a different deployment shape than "one container"?(e.g., host network mode, a privileged sidecar, or a host-level process) or can it be satisfied inside the container model?
 
 ## Initial Scope Candidates
 

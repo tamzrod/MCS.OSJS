@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Operation CWAL is the mandatory execution-discipline mode for MCS.OSJS. It prevents context drift and unauthorized work.
+Operation CWAL is the mandatory execution-discipline mode for MCS.OSJS. It prevents context drift and unauthorized work while allowing already-authorized Active Work to proceed continuously.
 
 When the user says **Operation CWAL**, immediately follow:
 
@@ -11,44 +11,29 @@ OPERATION CWAL
 → READ AGENTS.md
 → READ BLACK_SHEEP_WALL.md
 → READ ICC/INDEX.md FIRST
-→ LOCATE AUTHORITY
-→ SELECT ACTIVE TASK SEMANTIC BRANCH
+→ READ handoff.md
+→ LOCATE CURRENT ACTIVE MICROTASK
+→ SELECT ITS SEMANTIC BRANCH
 → SET THAT BRANCH AS THE NAVIGATION CEILING
-→ VALIDATE ONLY RELEVANT ICC INSIDE THAT BRANCH
-→ USE ICC IF CURRENT
-→ REFRESH ONLY STALE AFFECTED CONTEXT INSIDE THAT BRANCH
+→ BLACK SHEEP WALL: VALIDATE / SURGICALLY REFRESH THAT BRANCH ONLY IF NEEDED
 → FOLLOW WORKFLOW
-→ ACT
-→ VERIFY
+→ IMPLEMENT
+→ TEST
+→ VERIFY ACCEPTANCE CRITERIA
+→ UPDATE EVIDENCE / ACTIVE STATE
+→ UPDATE handoff.md
+→ COMMIT
+→ PUSH TO main
+→ VERIFY origin/main CONTAINS THE COMPLETION COMMIT
+→ BLACK SHEEP WALL: SURGICALLY ABSORB ONLY THE JUST-PUSHED DELTA INTO ICC
+→ IF ANOTHER ALREADY-AUTHORIZED ACTIVE MICROTASK EXISTS: CONTINUE AUTOMATICALLY
+→ OTHERWISE STOP
 → NEVER GUESS
 ```
 
-## 1. ICC-First Does Not Mean ICC-Wide
+## 1. Locate Authority First
 
-CWAL reads `ICC/INDEX.md` before reopening repository source files, but it must not validate or refresh the whole ICC registry.
-
-The index is used to locate context after execution authority is known. Registry presence is not relevance.
-
-After reading the index, CWAL immediately locates the current Active Work and selects the semantic branch required by that task. That branch becomes the navigation ceiling.
-
-```text
-READ ICC INDEX
-→ LOCATE ACTIVE WORK
-→ SELECT TASK BRANCH
-→ VALIDATE TASK BRANCH ONLY
-```
-
-If current HEAD differs from the ICC baseline, compare the baseline to HEAD only far enough to determine whether declared dependencies of the selected branch changed. Do not inventory, inspect, or repair stale sibling contexts.
-
-If HEAD is unchanged, inspect only uncommitted dependencies inside the selected branch whose state differs from the audited overlay.
-
-A stale ICC context outside the Active Work branch is irrelevant to the current execution. Do not refresh it, open it, or repair it.
-
-BLACK SHEEP WALL delegated from CWAL operates only inside this selected branch.
-
-## 2. Locate Authority
-
-Read `handoff.md` and locate the current Active Work task.
+Read `handoff.md` and locate the current Active Work microtask.
 
 For execution state, the authoritative source is:
 
@@ -56,20 +41,81 @@ For execution state, the authoritative source is:
 workflow/active_work/
 ```
 
-`handoff.md` is the current execution handoff and must agree with Active Work.
+`handoff.md` is the persisted execution handoff and must agree with Active Work.
 
-Do not read Planning or future tasks to decide what to execute.
+Do not read Planning or future work to choose execution targets.
 
 If authority cannot be located or conflicts cannot be resolved from repository rules, stop and report the conflict.
 
-## 3. Select Semantic Branch
+Human authorization happens when work is promoted into Active Work. Once multiple microtasks are already authorized there, CWAL does not require another human approval between them.
 
-The active task selects the semantic branch.
+## 2. ICC-First Does Not Mean ICC-Wide
+
+CWAL uses ICC as compressed repository context. It must not validate, refresh, or browse the whole ICC registry.
+
+After locating the active microtask, select only the semantic branch required by that task. That branch becomes the navigation ceiling.
+
+```text
+ACTIVE MICROTASK
+→ SELECT ITS ICC BRANCH
+→ USE CURRENT CONTEXT
+→ NEED MORE DETAIL? ZOOM IN INSIDE THAT BRANCH
+→ STALE/MISSING? DELEGATE BLACK SHEEP WALL INSIDE THAT BRANCH ONLY
+```
+
+If current HEAD differs from the ICC baseline, inspect the delta only far enough to determine whether dependencies of the selected branch changed.
+
+If HEAD is unchanged, inspect only changed uncommitted dependencies inside the selected branch.
+
+A stale ICC context outside the selected branch is irrelevant to the current microtask.
+
+## 3. BLACK SHEEP WALL Injection
+
+BLACK SHEEP WALL is injected into CWAL at two controlled points.
+
+### 3.1 Before Each Microtask
+
+Before implementation, validate the selected semantic branch.
+
+```text
+SELECT ACTIVE MICROTASK BRANCH
+→ CHECK ICC STATE FOR THAT BRANCH
+→ CURRENT? USE IT
+→ STALE/MISSING? INSPECT ONLY CHANGED DEPENDENCIES IN THAT BRANCH
+→ PATCH ONLY THE AFFECTED ICC NODE(S)
+→ EXECUTE
+```
+
+This delegated refresh must never perform a full repository audit.
+
+### 3.2 After Each Successful Push to main
+
+After the completed microtask has been pushed and `origin/main` verified, surgically update ICC from exactly that pushed delta.
+
+```text
+PREVIOUS ICC BASELINE
+        ↓
+NEW VERIFIED main
+        ↓
+DIFF ONLY THAT RANGE
+        ↓
+INSPECT ONLY CHANGED / NEW / DELETED / RENAMED PATHS
+        ↓
+UPDATE DEEPEST AFFECTED ICC NODE(S)
+        ↓
+PROPAGATE UPWARD ONLY IF PARENT SUMMARY TRUTH CHANGED
+        ↓
+UPDATE ICC BASELINE / STATE
+```
+
+The post-push BLACK SHEEP WALL step must not reopen unchanged files, unaffected ICC nodes, unrelated siblings, or the repository as a whole.
+
+## 4. Semantic Navigation Boundary
 
 Allowed navigation:
 
 ```text
-ACTIVE TASK
+ACTIVE MICROTASK
 → SELECT ITS ICC CONTEXT
 → ZOOM IN TO REQUIRED CHILD DETAIL
 → EXECUTE
@@ -78,7 +124,7 @@ ACTIVE TASK
 Not allowed:
 
 ```text
-ACTIVE TASK
+ACTIVE MICROTASK
 → ICC INDEX
 → CHECK EVERY STALE CONTEXT
 → REPAIR GOVERNANCE
@@ -88,30 +134,83 @@ ACTIVE TASK
 → RETURN TO TASK
 ```
 
-CWAL may cross into another semantic branch only when the active task itself explicitly requires that boundary for its stated outcome or verification.
+CWAL may cross into another semantic branch only when the active microtask itself explicitly requires that boundary for its stated outcome or verification.
 
-## 4. Follow Workflow
-
-Execute only the current human-authorized Active Work task and only within its defined scope.
-
-Do not promote work, invent work, expand scope, or silently resolve architectural questions.
-
-When Active Work contains ordered microtasks, complete and verify the current microtask before reading implementation detail for later microtasks unless that later detail is an explicit dependency of the current task.
-
-## 5. Act
+## 5. Execute Only Current Authorized Work
 
 Investigate, implement, test, and document only what the current active microtask authorizes.
 
-Repository source files are opened when synchronized ICC context inside the selected branch is insufficient for the implementation detail or when changed source inside that branch requires direct inspection.
+Do not promote work, invent work, expand scope, or silently resolve architectural questions.
 
-Do not perform unrelated ICC maintenance while executing product work.
+When Active Work contains ordered microtasks, do not preload implementation detail for later microtasks unless that detail is an explicit dependency of the current one.
 
-## 6. Verify
+Repository source files are opened only when synchronized ICC context inside the selected branch is insufficient for implementation or when changed source inside that branch requires direct inspection.
 
-Verify acceptance criteria against repository/runtime evidence. Do not mark work complete merely because code changed.
+## 6. Microtask Completion Boundary
 
-On completion, update the repository state required by the workflow, including Active Work and `handoff.md`.
+A microtask is not complete merely because the code works locally.
 
-## 7. Never Guess
+A microtask is complete only when all of the following have happened:
 
-If required authority, selected-branch context, dependencies, or evidence are missing: stop and report the missing authority or dependency rather than inferring it.
+```text
+IMPLEMENTATION COMPLETE
+→ TEST COMPLETE
+→ ACCEPTANCE CRITERIA VERIFIED
+→ REQUIRED EVIDENCE RECORDED
+→ ACTIVE WORK STATE UPDATED AS REQUIRED
+→ handoff.md UPDATED
+→ COMPLETION STATE COMMITTED
+→ COMMIT PUSHED TO main
+→ origin/main VERIFIED TO CONTAIN THAT COMMIT
+→ ICC SURGICALLY UPDATED FROM THAT PUSHED DELTA
+```
+
+The push to `main` is the checkpoint boundary between microtasks.
+
+Never begin the next microtask before the completed microtask and its handoff state are successfully pushed to `main` and verified there.
+
+## 7. Continuous Active-Work Loop
+
+After the post-push ICC update, inspect only the already-authorized Active Work state to determine whether another microtask is next.
+
+```text
+MICROTASK COMPLETE
+        ↓
+UPDATE handoff.md
+        ↓
+COMMIT
+        ↓
+PUSH main
+        ↓
+VERIFY origin/main
+        ↓
+SURGICAL BLACK SHEEP WALL ICC UPDATE
+        ↓
+NEXT ALREADY-AUTHORIZED ACTIVE MICROTASK?
+        │
+        ├── YES
+        │    ↓
+        │  SELECT ITS SEMANTIC BRANCH
+        │    ↓
+        │  PRE-TASK BLACK SHEEP WALL BRANCH VALIDATION
+        │    ↓
+        │  IMPLEMENT → TEST → VERIFY
+        │    ↓
+        │  UPDATE handoff → COMMIT → PUSH → VERIFY → ICC PATCH
+        │    ↓
+        │  LOOP
+        │
+        └── NO
+             ↓
+            STOP
+```
+
+Do not stop between already-authorized Active Work microtasks merely to request human authorization again.
+
+Do not inspect Planning to find additional work when Active Work becomes empty.
+
+## 8. Never Guess
+
+If required authority, selected-branch context, dependencies, runtime evidence, push verification, or repository state is missing, stop and report the missing authority or dependency rather than inferring it.
+
+If a push fails, `origin/main` cannot be verified, or the completion state is not safely persisted, do not advance to the next microtask.

@@ -6,9 +6,16 @@ BLACK SHEEP WALL is the repository-understanding and context-compaction operatio
 
 It maintains ICC as a compact cache of repository truth. It is not an authorization mechanism.
 
+BLACK SHEEP WALL has two operating modes:
+
+1. **Direct maintenance mode** — explicitly invoked by the human to compact or refresh repository context.
+2. **Delegated branch refresh** — invoked by another operation such as CWAL because that operation's selected ICC branch is stale or missing.
+
+These modes must not be confused.
+
 ## Direct Invocation
 
-When the user says `BLACK SHEEP WALL`, perform repository context compaction.
+When the user directly says `BLACK SHEEP WALL`, perform repository context compaction.
 
 ### First Run / Missing Baseline
 
@@ -25,7 +32,7 @@ READ CURRENT HEAD
 
 A missing ICC baseline is not grounds to do nothing. It requires bootstrap compaction of the repository context that already exists.
 
-### Subsequent Run
+### Subsequent Direct Run
 
 Do not rescan unchanged repository files.
 
@@ -42,7 +49,38 @@ READ ICC BASELINE
 → VERIFY
 ```
 
-If current HEAD is unchanged from the ICC baseline, a repeated BLACK SHEEP WALL run updates only new, modified, renamed, or deleted uncommitted files whose current state differs from the last audited overlay.
+If current HEAD is unchanged from the ICC baseline, a repeated direct BLACK SHEEP WALL run updates only new, modified, renamed, or deleted uncommitted files whose current state differs from the last audited overlay.
+
+## Delegated Branch Refresh
+
+When BLACK SHEEP WALL is invoked by CWAL, planning, brainstorming, promotion, or another bounded operation, the invoking operation must already have selected a semantic branch.
+
+That selected branch is the navigation ceiling and refresh boundary.
+
+```text
+RECEIVE SELECTED SEMANTIC BRANCH
+→ READ ICC STATE FOR THAT BRANCH
+→ CHECK ONLY THAT BRANCH'S DECLARED SOURCE DEPENDENCIES
+→ IF HEAD CHANGED: DIFF ONLY TO DETERMINE WHETHER THOSE DEPENDENCIES CHANGED
+→ INSPECT ONLY CHANGED DEPENDENCIES INSIDE THAT BRANCH
+→ REFRESH ONLY THAT BRANCH / REQUIRED CHILD CONTEXT
+→ DO NOT DISCOVER OR REPAIR STALE SIBLING CONTEXT
+→ RETURN TO INVOKING OPERATION
+```
+
+### Branch-Local Invariant
+
+> Staleness outside the selected semantic branch is irrelevant to the invoking operation.
+
+A delegated refresh must not:
+
+- inventory all stale ICC contexts;
+- repair unrelated stale context;
+- open sibling contexts because changed files may affect them;
+- update broad project context merely because HEAD advanced;
+- turn task execution into repository-maintenance work.
+
+If a changed file belongs to several ICC contexts, refresh only the context that lies inside the selected branch. Other affected contexts remain stale until a direct BLACK SHEEP WALL run or an operation that selects those branches needs them.
 
 ## ICC State Model
 
@@ -60,30 +98,32 @@ For uncommitted files, ICC must record enough state to determine whether the cur
 
 ## Operation Prelude
 
-Every repository-dependent operation must know and use BLACK SHEEP WALL, but source access is ICC-first:
+Repository-dependent operations are ICC-first, but **branch selection precedes refresh**.
 
 ```text
 READ ICC/INDEX.md
-→ LOCATE RELEVANT CONTEXT
-→ CHECK BASELINE + WORKING-TREE OVERLAY
+→ LOCATE OPERATION AUTHORITY / REQUESTED OUTCOME
+→ SELECT SEMANTIC BRANCH
+→ LOCATE CONTEXT INSIDE THAT BRANCH
+→ CHECK BASELINE + WORKING-TREE OVERLAY FOR THAT BRANCH
 → CURRENT? USE ICC
-→ STALE/MISSING? REFRESH ONLY AFFECTED CONTEXT
+→ STALE/MISSING? DELEGATED REFRESH OF THAT BRANCH ONLY
 → RETURN TO INVOKING OPERATION
 ```
 
-An operation must not reopen source files merely because they exist. It should use synchronized ICC context first. Repository source is consulted when ICC is missing, stale, insufficient for the requested detail, or must be verified against changed content.
+An operation must not reopen source files merely because they exist. It should use synchronized ICC context first. Repository source is consulted when selected ICC context is missing, stale, insufficient for the requested detail, or must be verified against changed content.
 
 ## Validity Rules
 
-Relevant ICC context is current only when:
+Selected ICC context is current only when:
 
-1. its baseline commit agrees with the ICC repository baseline for the committed state being represented; and
-2. no source dependency has changed since that baseline without being incorporated; and
+1. its committed source dependencies are represented by the relevant ICC baseline state;
+2. no source dependency inside the selected branch has changed without being incorporated; and
 3. every uncommitted source dependency it claims to represent matches the recorded audited overlay state.
 
-If HEAD differs from the recorded baseline, inspect the committed diff from baseline to HEAD and refresh only contexts affected by those changed files. Do not perform a full repository audit unless the baseline is missing, unusable, or repository history prevents a reliable incremental comparison.
+When HEAD differs from the recorded baseline, do not automatically refresh every context touched by the repository diff. First intersect changed paths with the source dependencies of the **selected branch**. Refresh only when that intersection is non-empty.
 
-If HEAD is unchanged, inspect only uncommitted changes since the last audit.
+If HEAD is unchanged, inspect only uncommitted dependencies inside the selected branch whose current state differs from the recorded overlay.
 
 ## Boundary Rule
 
@@ -94,9 +134,11 @@ BLACK SHEEP WALL cannot:
 - choose future work;
 - let CWAL inspect Planning to select tasks;
 - let brainstorming implement code;
-- widen a bounded operation.
+- widen a bounded operation;
+- raise the selected branch's navigation ceiling;
+- convert unrelated ICC staleness into work for the invoking operation.
 
-The invoking operation retains authority and scope. BLACK SHEEP WALL only establishes synchronized repository understanding.
+The invoking operation retains authority and scope. BLACK SHEEP WALL only establishes synchronized repository understanding inside that scope.
 
 ## Context Size
 

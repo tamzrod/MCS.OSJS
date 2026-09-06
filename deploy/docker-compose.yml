@@ -1,0 +1,38 @@
+# MCS.OSJS — OS.js basic desktop shell deployment.
+#
+# Builds the OSJS/ desktop image and serves the management/UI endpoint on
+# port 18209 (see docs/NETWORK_EXPOSURE.md、OSJS-003). Operator settings
+# (VFS home roots, session store) persist in the `osjs-data` named volume,
+# mounted at /data (OSJS_DATA_DIR,, so desktop state survives restarts.
+#
+# Usage:
+#   docker compose up -d --build
+#   docker compose logs -f
+#   docker compose down            (container only; volume persists)
+#   docker compose down -v        (container + volume; destroys desktop state)
+
+services:
+  osjs-shell:
+    build:
+      context: ../OSJS
+      dockerfile: Dockerfile
+    image: mcs-osjs-shell:latest
+    container_name: mcs-osjs-shell
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${OSJS_PORT:-18209}:18209"
+    environment:
+      PORT: "18209"
+      OSJS_DATA_DIR: "/data"
+    volumes:
+      - osjs-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:18209/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  osjs-data:

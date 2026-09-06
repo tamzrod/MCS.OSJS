@@ -1,0 +1,8 @@
+node_modules
+dist
+vfs
+session-store.db
+packages.json
+package-lock.json
+.git
+*.log

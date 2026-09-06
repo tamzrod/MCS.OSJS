@@ -1,7 +1,6 @@
 node_modules/
 dist/
 *.log
-.dockerignore
 
 # SHELL-004: OS.js runtime / build-generated artifacts, never committed.
 # packages.json + dist/metadata.json are produced by `npm run package:discover`;

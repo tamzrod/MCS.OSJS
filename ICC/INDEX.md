@@ -6,16 +6,27 @@ This directory is the Incremental Context Compaction (ICC) cache for MCS.OSJS.
 
 ICC provides compact, dependency-scoped repository understanding for agents.
 
+## Access Rule
+
+Repository-dependent operations consume ICC through BLACK SHEEP WALL.
+
+Before an operation relies on ICC context, it must read `BLACK_SHEEP_WALL.md` and run that prelude within the invoking operation's scope. BLACK SHEEP WALL determines whether the required context is valid, stale, or missing and performs only the necessary refresh.
+
+Directly reading an ICC context file does not by itself establish that the context is current.
+
 ## Lifecycle
 
 ```text
-AUDIT
+INVOKING OPERATION
+→ BLACK SHEEP WALL
+→ AUDIT REQUIRED CONTEXT
 → COMPACT
 → CACHE
 → repository changes
 → DEPENDENCY CHECK
 → INVALIDATE AFFECTED ONLY
-→ REFRESH
+→ REFRESH WHEN REQUIRED
+→ RETURN TO INVOKING OPERATION
 ```
 
 ## Rules
@@ -27,6 +38,8 @@ AUDIT
 - Known-stale context is never consumed.
 - Missing context is created only when required by an operation.
 - Unrelated valid context is left untouched.
+- BLACK SHEEP WALL is the mandatory validation/maintenance gateway for repository-dependent ICC consumption.
+- BLACK SHEEP WALL inherits the invoking operation's scope and never grants authority.
 
 ## Zoom Model
 

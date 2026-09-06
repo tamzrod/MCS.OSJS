@@ -1,12 +1,14 @@
 # Microtask Rules
 
-## Mandatory Context Prelude
+## ICC-First Context Rule
 
-Before applying these rules to repository-dependent work, read `BLACK_SHEEP_WALL.md` and run BLACK SHEEP WALL for the relevant task/planning scope.
+Before applying these rules to repository-dependent work, read `ICC/INDEX.md` first and use synchronized relevant ICC context.
 
-Sizing, splitting, acceptance criteria, dependencies, and promotion decisions must use context validated by that prelude rather than assumed-current ICC state.
+If required context is stale or missing, BLACK SHEEP WALL refreshes only the affected context. Do not recompute unchanged repository knowledge.
 
-BLACK SHEEP WALL does not authorize execution or promotion; it only establishes valid repository understanding for the invoking operation.
+Sizing, splitting, acceptance criteria, dependencies, and promotion decisions must be based on synchronized context.
+
+BLACK SHEEP WALL does not authorize execution or promotion; it only establishes current repository understanding.
 
 ## Core Rule
 
@@ -50,6 +52,6 @@ Each microtask should contain:
 
 A microtask remains planning material until a human promotes it.
 
-Before promotion, run BLACK SHEEP WALL for the selected task and workflow-state scope so the promotion is based on valid repository context.
+Before promotion, use synchronized ICC context for the selected task and workflow state. Refresh only stale affected context through BLACK SHEEP WALL.
 
 Promotion moves the selected task into `workflow/active_work/` and synchronizes `handoff.md`.

@@ -2,12 +2,12 @@
 
 This directory contains human-owned exploration, problem framing, alternatives, architectural questions, and candidate outcomes.
 
-## Mandatory Context Prelude
+## ICC-First Context Rule
 
-Before repository-dependent brainstorming, read `BLACK_SHEEP_WALL.md` and run BLACK SHEEP WALL within the brainstorm scope.
+Before repository-dependent brainstorming, read `ICC/INDEX.md` first and use synchronized relevant ICC context.
 
-Use only the relevant ICC context validated by that prelude. BLACK SHEEP WALL may refresh stale or missing required context, but it cannot authorize implementation or widen the brainstorm.
+If the context is stale or missing, use BLACK SHEEP WALL to refresh only the affected semantic context. Do not rescan unchanged repository sources when the ICC baseline and working-tree overlay are current.
 
-After context validation, return to Brainstorm.
+BLACK SHEEP WALL cannot authorize implementation or widen the brainstorm.
 
 Brainstorm material is not execution authority.

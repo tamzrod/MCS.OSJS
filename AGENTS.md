@@ -11,52 +11,58 @@ For every repository-dependent operation:
 ```text
 LOCATE COMMAND
 → READ BLACK_SHEEP_WALL.md
-→ RUN BLACK SHEEP WALL WITHIN INVOKING SCOPE
+→ READ ICC/INDEX.md FIRST
+→ VALIDATE ICC BASELINE AGAINST CURRENT HEAD + WORKING TREE
+→ USE ICC IF CURRENT
+→ IF STALE, REFRESH ONLY AFFECTED CONTEXT THROUGH BLACK SHEEP WALL
 → LOCATE AUTHORITY
-→ USE VALID ICC CONTEXT
 → ACT WITHIN OPERATION SCOPE
 → VERIFY AGAINST REPOSITORY SOURCE
 → NEVER GUESS
 ```
 
-BLACK SHEEP WALL is mandatory context infrastructure for repository-dependent work. It is not optional merely because the invoking operation already names files to read.
+BLACK SHEEP WALL is mandatory context infrastructure. ICC is the first-read context cache.
 
-## Commands
+## BLACK SHEEP WALL Modes
 
-- `Operation CWAL` → read `operation cwal.md`; that operation must invoke BLACK SHEEP WALL before consuming execution context.
-- `BLACK SHEEP WALL` → read `BLACK_SHEEP_WALL.md` and perform the context-maintenance operation directly.
+### Direct Invocation
 
-## Mandatory Context Prelude
+When the user says `BLACK SHEEP WALL`, perform repository-wide context compaction:
 
-Brainstorm, Planning, Microtask, Promotion, Operation CWAL, verification, and other repository-dependent operations must begin by reading `BLACK_SHEEP_WALL.md` and running its context prelude within the scope of the invoking operation.
+```text
+current HEAD
+→ audit repository context
+→ compact established repository truth into ICC
+→ stamp ICC with the HEAD commit used as baseline
+→ record audited uncommitted file overlays
+```
 
-BLACK SHEEP WALL:
+If an ICC baseline already exists, do not rescan unchanged repository files. Refresh only files changed since the recorded baseline and uncommitted files whose current content differs from the last audited overlay.
 
-- validates the ICC context needed by the operation;
-- refreshes stale or missing context only when required;
-- returns control to the invoking operation after context is valid;
-- does not grant authority, select work, or widen scope.
+### Invoked by Another Operation
 
-An operation must not bypass BLACK SHEEP WALL by reading ICC files directly and assuming they are current.
+The operation reads ICC first. If the relevant context is synchronized with current HEAD and any audited working-tree overlay, use ICC without reopening source files. If it is stale or missing, BLACK SHEEP WALL refreshes only the affected context, then returns control to the invoking operation.
+
+BLACK SHEEP WALL never grants authority, selects work, or widens scope.
 
 ## Workflow Boundaries
 
 ### Brainstorm / Planning
 
-Run BLACK SHEEP WALL for the planning scope first. Planning is human-owned. Brainstorming may define problems, alternatives, contracts, and proposed tasks, but it does not authorize implementation.
+Use ICC first. Refresh affected context through BLACK SHEEP WALL only when the relevant ICC state is stale or missing. Planning is human-owned and does not authorize implementation.
 
 ### Microtask
 
-Run BLACK SHEEP WALL for the relevant planning/task scope first. Microtasks translate approved intent into small, independently verifiable work items. Follow `planning/microtask/rules.md`.
+Use ICC first, refresh only stale affected context, then follow `planning/microtask/rules.md`.
 
 ### Promotion
 
-Run BLACK SHEEP WALL for the selected task and workflow state first. Promotion moves a human-selected microtask into `workflow/active_work/` and updates `handoff.md`.
+Use ICC first, refresh only stale affected context, then promote only the human-selected microtask and synchronize `handoff.md`.
 
 ### Operation CWAL
 
-Run BLACK SHEEP WALL for the Active Work scope first. CWAL executes only authorized Active Work. It must not inspect Planning to select future work.
+Use ICC first for Active Work context. Refresh only stale affected context. CWAL executes only authorized Active Work and must not inspect Planning to select future work.
 
 ## Repository Authority
 
-Current repository files are authoritative. Conversation memory and historical summaries are not substitutes for repository state.
+Repository files are authoritative. ICC is a compact cache of repository truth and may be trusted only when its recorded baseline and working-tree overlay match the repository state being used.

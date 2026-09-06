@@ -4,22 +4,23 @@ Planning is human-owned.
 
 It contains brainstorm material and decomposed microtasks that are not yet authorized for JR execution.
 
-## Mandatory Context Prelude
+## ICC-First Context Rule
 
-Every repository-dependent Planning operation must first read `BLACK_SHEEP_WALL.md` and run BLACK SHEEP WALL within the planning scope.
+Every repository-dependent Planning operation must know `BLACK_SHEEP_WALL.md` and read `ICC/INDEX.md` first.
 
-BLACK SHEEP WALL validates or refreshes the minimum required ICC context, then returns control to Planning. It does not authorize implementation or widen planning scope.
+If the relevant ICC context is synchronized with the current baseline commit and audited working-tree overlay, use ICC directly. If it is stale or missing, BLACK SHEEP WALL refreshes only the affected context before Planning continues.
 
-Planning must not consume ICC context by assuming it is current without this prelude.
+Planning must not reopen unchanged repository sources when synchronized ICC already contains the required context.
 
 ## Flow
 
 ```text
 PLANNING OPERATION
    ↓
-BLACK SHEEP WALL
+ICC FIRST
    ↓
-VALID RELEVANT CONTEXT
+CURRENT? USE CONTEXT
+STALE? BLACK SHEEP WALL REFRESHES AFFECTED ONLY
    ↓
 BRAINSTORM
    ↓

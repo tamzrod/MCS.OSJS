@@ -10,22 +10,28 @@ When the user says **Operation CWAL**, immediately follow:
 OPERATION CWAL
 → READ AGENTS.md
 → READ BLACK_SHEEP_WALL.md
-→ RUN BLACK SHEEP WALL FOR ACTIVE-WORK SCOPE
+→ READ ICC/INDEX.md FIRST
+→ VALIDATE RELEVANT ICC AGAINST CURRENT HEAD + WORKING TREE
+→ USE ICC IF CURRENT
+→ REFRESH ONLY STALE AFFECTED CONTEXT
 → LOCATE AUTHORITY
-→ READ VALID EXECUTION CONTEXT
 → FOLLOW WORKFLOW
 → ACT
 → VERIFY
 → NEVER GUESS
 ```
 
-## 1. Run BLACK SHEEP WALL
+## 1. ICC-First Context
 
-Before consuming ICC context or executing repository work, read `BLACK_SHEEP_WALL.md` and run its context-maintenance prelude for the current Active Work scope.
+CWAL reads ICC before reopening repository source files.
 
-BLACK SHEEP WALL validates or refreshes only the context required by CWAL. It does not grant execution authority, choose a task, inspect Planning to select future work, or widen Active Work.
+If the relevant ICC context is synchronized with the recorded baseline commit and audited working-tree overlay, use it directly.
 
-After the required context is valid, return to Operation CWAL.
+If current HEAD differs from the ICC baseline, compare the baseline to HEAD and refresh only context affected by changed committed files. If HEAD is unchanged, inspect only uncommitted files whose current state differs from the recorded audited overlay.
+
+Do not perform a full repository rescan unless the ICC baseline is missing, unusable, or cannot be incrementally reconciled.
+
+BLACK SHEEP WALL does not grant execution authority, choose a task, inspect Planning to select future work, or widen Active Work.
 
 ## 2. Locate Authority
 
@@ -43,28 +49,24 @@ Do not read Planning or future tasks to decide what to execute.
 
 If authority cannot be located or conflicts cannot be resolved from repository rules, stop and report the conflict.
 
-## 3. Read Valid Execution Context
-
-Use `ICC/INDEX.md` and only the minimum relevant ICC context validated by BLACK SHEEP WALL for the authorized Active Work.
-
-Known-stale context must not be consumed.
-
-## 4. Follow Workflow
+## 3. Follow Workflow
 
 Execute only the current human-authorized Active Work task and only within its defined scope.
 
 Do not promote work, invent work, expand scope, or silently resolve architectural questions.
 
-## 5. Act
+## 4. Act
 
 Investigate, implement, test, and document only what the active task authorizes.
 
-## 6. Verify
+Repository source files are opened when the synchronized ICC context is insufficient for the implementation detail or when changed source requires direct inspection.
+
+## 5. Verify
 
 Verify acceptance criteria against repository/runtime evidence. Do not mark work complete merely because code changed.
 
 On completion, update the repository state required by the workflow, including Active Work and `handoff.md`.
 
-## 7. Never Guess
+## 6. Never Guess
 
 If required authority, context, dependencies, or evidence are missing: stop and report the missing authority rather than inferring it.

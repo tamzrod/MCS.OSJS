@@ -18,10 +18,10 @@ The baseline commit identifies the committed repository state represented by ICC
 ## Registry
 
 Baseline Commit: 8cb9f0c08ae4e5717ce22d4423fd297eba03d170
-Working Tree: clean
-Audited Uncommitted Overlay: none
+Working Tree: dirty
+Audited Uncommitted Overlay: handoff.md, workflow/active_work/sim-002a-mma2-config-ownership.md, simulator/mma2_config.go, simulator/compose_test.go
 
-SIM-001 delta from previous baseline absorbed: `simulator/**`, `handoff.md`, `workflow/active_work/sim-001-simulator-device-config.md`. New node `context/simulator-device-config.md`. Refreshed `context/active-work.md`. Unrelated registry rows preserved.
+SIM-002A/SIM-002B split delta absorbed: `workflow/active_work/sim-002{,a,b}*md`, `handoff.md`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `planning/Brainstorm/mcs-three-app-model.md`. SIM-002A completed+verified. Refreshed `context/active-work.md` and `context/simulator-device-config.md`(branch now spans SIM-001 + SIM-002A). Unrelated registry rows preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -33,7 +33,7 @@ SIM-001 delta from previous baseline absorbed: `simulator/**`, `handoff.md`, `wo
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
 | `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go` |
-| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md` |
+| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md` |
 
 ## Access Rule
 

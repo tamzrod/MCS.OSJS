@@ -44,7 +44,7 @@ func simMMA2Params() MMA2Params {
 		FC1:    Area{Start: 0, Count: 64},
 		FC2:    Area{Start: 0, Count: 64},
 		FC3:    Area{Start: 0, Count: 100},
-		FC4:    Area{Start: 0, Count: 100},
+		FC4:    Area{Start: 0, Count: 105},
 	}
 }
 
@@ -101,7 +101,7 @@ func TestSaveAndComposeFreeReservationPersistsOwner(t *testing.T) {
 			if mem.HoldingRegs == nil || mem.HoldingRegs.Count != 100 {
 				t.Fatalf("fc3->holding_registers mapping wrong: %+v", mem.HoldingRegs)
 			}
-			if mem.InputRegs == nil || mem.InputRegs.Count != 100 {
+			if mem.InputRegs == nil || mem.InputRegs.Count != 105 {
 				t.Fatalf("fc4->input_registers mapping wrong: %+v", mem.InputRegs)
 			}
 			if mem.Policy == nil || len(mem.Policy.Rules) != 1 {

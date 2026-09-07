@@ -1,8 +1,16 @@
 # SIM-002A — Compose MMA2 Configuration with Ownership Protection
 
-Status: ACTIVE — human-promoted for JR execution.
+Status: DONE — completed+verified 2026-09-07 (CWAL).
 
 Source intent: split from `workflow/active_work/sim-002-mma2-activation.md` after its mandatory split gate was reached.
+
+## Completion evidence (recorded by CWAL 2026-09-07)
+
+- Composition boundary: repository-root `simulator/` composes the effective MMA2 config under `$OSJS_DATA_DIR/config/mma2/config.yaml` with ownership registry at `$OSJS_DATA_DIR/config/mma2/owners.yaml`;both written atomically via temp+rename.
+- `(port, unit_id)` is the unique reservation key;every persisted effective MMA2 reservation carries a machine-readable YAML `owner` entry (owners.yaml), first-come-first-save。
+- Ownership enforcement:free key → simulator may save/delete;existing key + same owner → update/delete;existing key + different owner → `ErrReservationOwnedByOther` rejected before any write, leaving prior effective config和 ownership registry byte-unchanged。
+- Foreign preservation:simulator compose/drop operates reservation-locally, merging into an existing listener on the same port,never touching other listeners'memory或 ownership entries。
+- Verification command:`cd simulator && go test -count=1 -v ./...` (Go 1.22.2)。 Six SIM-002A tests PASS (free-save persists+preserves foreign;collision reject unchanged;own-update preserves foreign;delete removes own only;foreign-delete reject;invalid-save no-persist)。 Also caught+fixed one implementation bug discovered during verification:FC4 input-registers mapping used FC3 start/count (copy-paste);fixed to FC4,and fixture/assertion strengthened (FC4 count 105) so that mapping is covered distinctly。
 
 ## Primary Outcome
 

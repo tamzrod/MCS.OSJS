@@ -11,8 +11,8 @@ Active Work is the ordered set of task files under `workflow/active_work/` liste
 Execution order:
 1. `workflow/active_work/mma2-basic-install-test.md` — existing active MMA2 work; preserve its internal execution order and completion state as repository truth. **COMPLETED 2026-09-06** (both sub-tasks done+verified; evidence in task file).
 2. `workflow/active_work/sim-001-simulator-device-config.md` — SIM-001: establish simulator device configuration model. **COMPLETED 2026-09-06** (round-trip + invalid-reject verified; evidence in task file).
-3. `workflow/active_work/sim-002a-mma2-config-ownership.md` — SIM-002A: compose simulator MMA2 configuration with persistent YAML ownership protection. **CURRENT — execute this first.**
-4. `workflow/active_work/sim-002b-mma2-lifecycle-activation.md` — SIM-002B: activate the already-valid effective MMA2 configuration and verify live Modbus exposure. Execute only after SIM-002A is completed and verified.
+3. `workflow/active_work/sim-002a-mma2-config-ownership.md` — SIM-002A: compose simulator MMA2 configuration with persistent YAML ownership protection. **COMPLETED 2026-09-07** (six ownership-enforcement tests verified; evidence in task file).
+4. `workflow/active_work/sim-002b-mma2-lifecycle-activation.md` — SIM-002B: activate the already-valid effective MMA2 configuration and verify live Modbus exposure. **CURRENT — execute this first.** Execute only after SIM-002A is completed and verified.
 5. `workflow/active_work/sim-003-random-runtime.md` — SIM-003: implement per-FC random runtime scheduler.
 6. `workflow/active_work/sim-004-raw-ingest.md` — SIM-004: send simulator values through MMA2 raw ingest.
 7. `workflow/active_work/sim-005-osjs-window.md` — SIM-005: build the approved OS.js Modbus Simulator window.

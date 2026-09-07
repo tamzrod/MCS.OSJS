@@ -1,8 +1,9 @@
 # Active Work Program (Simulator + MMA2)
 
 Baseline commit: 8cb9f0c08ae4e5717ce22d4423fd297eba03d170
-Working tree: clean
-Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002-mma2-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/validate.go
+Working tree: dirty
+Audited Overlay: handoff.md, workflow/active_work/sim-002a-mma2-config-ownership.md, simulator/compose_test.go, simulator/mma2_config.go
+Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-002b-mma2-lifecycle-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
@@ -11,11 +12,12 @@ Zoom Out: L0-project
 
 1. `mma2-basic-install-test.md` — **COMPLETED** 2026-09-06 (MMA2-001 import+build; MMA2-002 smoke test).
 2. `sim-001-simulator-device-config.md` — **COMPLETED** 2026-09-06. Simulator-owned two-domain persist under `$OSJS_DATA_DIR/config/simulator/devices.yaml`. See Zoom In `simulator-device-config`.
-3. `sim-002-mma2-activation.md` — **CURRENT**. Validate+activate simulator MMA2 params against shared MMA2 namespace. Task sizing 4/10; split if composition and lifecycle are independently unresolved.
-4. `sim-003-random-runtime.md` — per-FC random runtime scheduler.
-5. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.
-6. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.
-7. `sim-006-save-apply-routing.md` — Save & Apply routing.
-8. `sim-007-runtime-status.md` — runtime status surface.
+3. `sim-002a-mma2-config-ownership.md` — **COMPLETED 2026-09-07**. Compose+ownership protection (`(port,unit_id)` reservation keys, YAML `owner` registry at `$OSJS_DATA_DIR/config/mma2/owners.yaml`, `ErrReservationOwnedByOther` on foreign collision)。 Six tests in `simulator/compose_test.go` verified. See Zoom In `simulator-device-config`.
+4. `sim-002b-mma2-lifecycle-activation.md` — **CURRENT**. Activate the already-valid effective MMA2 configuration and verify live Modbus exposure。
+5. `sim-003-random-runtime.md` — per-FC random runtime scheduler.
+6. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.
+7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.
+8. `sim-006-save-apply-routing.md` — Save & Apply routing.
+9. `sim-007-runtime-status.md` — runtime status surface.
 
 A later task does not authorize skipping an incomplete dependency.

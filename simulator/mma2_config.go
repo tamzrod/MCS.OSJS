@@ -359,7 +359,7 @@ func memoryFromMMA2Params(p MMA2Params) MMA2Memory {
 		mem.HoldingRegs = &MMA2Area{Start: p.FC3.Start, Count: p.FC3.Count}
 	}
 	if p.FC4.Count > 0 {
-		mem.InputRegs = &MMA2Area{Start: p.FC3.Start, Count: p.FC3.Count}
+		mem.InputRegs = &MMA2Area{Start: p.FC4.Start, Count: p.FC4.Count}
 	}
 	mem.Policy = &MMA2Policy{Rules: []MMA2PolicyRule{
 		{

@@ -13,8 +13,8 @@ Execution order:
 2. `workflow/active_work/sim-001-simulator-device-config.md` — SIM-001: establish simulator device configuration model. **COMPLETED 2026-09-06** (round-trip + invalid-reject verified; evidence in task file).
 3. `workflow/active_work/sim-002a-mma2-config-ownership.md` — SIM-002A: compose simulator MMA2 configuration with persistent YAML ownership protection. **COMPLETED 2026-09-07** (six ownership-enforcement tests verified; evidence in task file).
 4. `workflow/active_work/sim-002b-mma2-lifecycle-activation.md` — SIM-002B: activate the already-valid effective MMA2 configuration and verify live Modbus exposure. **COMPLETED 2026-09-07** (live Modbus-TCP (5020,1) proven: coils →  64, discrete  64, holding+input  100, writes/read-backs round-trip, raw FC3 PDU hreg0=4321; MMA2 process healthy; evidence in task file).
-5. `workflow/active_work/sim-003-random-runtime.md` — SIM-003: implement per-FC random runtime scheduler. **CURRENT — execute this first.**
-6. `workflow/active_work/sim-004-raw-ingest.md` — SIM-004: send simulator values through MMA2 raw ingest.
+5. `workflow/active_work/sim-003-random-runtime.md` — SIM-003: implement per-FC random runtime scheduler. **COMPLETED 2026-09-07** (concurrent FC1-FC4 cadence + timing-only interval change without restart verified; evidence in task file).
+6. `workflow/active_work/sim-004-raw-ingest.md` — SIM-004: send simulator values through MMA2 raw ingest. **CURRENT — execute this first.**
 7. `workflow/active_work/sim-005-osjs-window.md` — SIM-005: build the approved OS.js Modbus Simulator window.
 8. `workflow/active_work/sim-006-save-apply-routing.md` — SIM-006: route Save & Apply to the correct parameter consumer.
 9. `workflow/active_work/sim-007-runtime-status.md` — SIM-007: show simulator runtime status.

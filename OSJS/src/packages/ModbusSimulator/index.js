@@ -1,277 +1,244 @@
-// SIM-005 — Modbus Simulator: device-list/editor window for simulator-owned
-// Modbus device definitions.
-//
-// Scope: SIM-005 edits only the simulator-owned persisted document through the
-// OS.js same-origin /api/devices proxy (which forwards to the loopback Go
-// bridge simulator/cmd/simbridge(. It never reads or writes effective MMA2 runtime
-// configuration (SIM-002A/B ownership + SIM-006 Save&Apply routing cover that.
-//
-// Explicitly OUT-OF-SCOPE for SIM-005 initial UI (per planning/Brainstorm/
-// osjs-modbus-simulator.md:: no raw YAML editing, no direct MMA2 config editing,
-// no individual register/coil editing, no live memory tables, no charts/
-// waveforms/ramp/sine/script config, no Replicator config.
- Those surfaces (if any(
-// arrive in later microtasks.
-//
-// The window provides: device list + search, Add, Duplicate, Delete,
-// Save & Apply, Discard, and an editor pane (Name, Enabled, Port, UnitID,
-// FC1-FC4 Start/Count + RandomizeEvery (ms), plus computed address ranges).
-// Save & Apply currently persists the document (Apply-to-live is SIM-006 scope):
-// the control exists now so operators build the muscle memory without an
-// intermediate UI churn in SIM-006.
-
 import './index.scss';
 import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
 
 const API_PATH = '/api/devices';
-
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
-const FC_LABELS = {fc1: 'Coils (FC1', fc2: 'Discrete (FC2', fc3: 'Holding (FC3', fc4: 'Input (FC4'};
-const FC_TYPES = {fc1: 'coil', fc2: 'discrete', fc3: 'holding', fc4: 'input'};
+const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
+const clone = value => JSON.parse(JSON.stringify(value));
+const numberValue = value => value === '' ? 0 : Number(value);
+const normalizeDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
 
-const NEW_DEVICE = (seq) => ({
-  name: 'Sim-PLC-' + seq,
+const blankDevice = sequence => ({
+  name: `Sim-PLC-${sequence}`,
   enabled: true,
   mma2: {
     port: 5020,
     unit_id: 1,
-    fc1: {start: typeof 0, count: typeof 0}, // placeholder — normalized below.
-
+    fc1: {start: 0, count: 16},
+    fc2: {start: 0, count: 16},
+    fc3: {start: 0, count: 16},
+    fc4: {start: 0, count: 16}
   },
-});
-
-const DEFAULT_FC = (fc, start, count, intervalMs) => ({
-  fc1: {start, count},
-  fc2: {start, count},
-  fc3: {start, count},
-  fc4: {start, count},
   random_runtime: {
-    fc1_interval_ms: intervalMs,
-    fc2_interval_ms: intervalMs,
-    fc3_interval_ms: intervalMs,
-    fc4_interval_ms: intervalMs
+    fc1_interval_ms: 1000,
+    fc2_interval_ms: 1000,
+    fc3_interval_ms: 1000,
+    fc4_interval_ms: 1000
   }
 });
 
-const cloneDevice = (d) => JSON.parse(JSON.stringify(d));
-
-const fcStart = (d, fc) => (d.mma2[fc] || {}).start || 0;
-const fcCount = (d, fc) => (d.mma2[fc] || {}).count || 0;
-const fcInterval = (d, fc) => (d.random_runtime[fc + '_interval_ms'] || 0);
-
-const fcEnd = (d, fc) => fcCount(d, fc) > 0 ? fcStart(d, fc) + fcCount(d, fc) - 1 : '-';
-
-const fmtAddr = (start, count) -> {
-  if (!count) return '-';
-  const last = start + count - 1;
-  return last === start ? String(start) : start + '..' + last;
+const addressRange = area => {
+  const start = Number(area && area.start) || 0;
+  const count = Number(area && area.count) || 0;
+  if (!count) return 'Unused';
+  const end = start + count - 1;
+  return start === end ? String(start) : `${start}-${end}`;
 };
 
-// Client-side mirror of simulator/validate.go (SIM-001. Server bridge re-validates
-// atomically on PUT; this gives inline feedback before a round-trip. Returns null
-// when valid, else a message string.
-
-const validateDevice = (d) => {
-  if (typeof d.name !== 'string' || !d.name.trim()) return 'Name is required';
-  const m = d.mma2 || {};
-  if (!m.port || m.port <= 0) return 'Port must be > 0';
-  if (m.unit_id > 255) return 'Unit ID must be <= 255';
-  const rr = d.random_runtime || {};
+const validateDevice = device => {
+  if (!device.name || !device.name.trim()) return 'Name is required.';
+  if (!device.mma2.port || device.mma2.port < 1 || device.mma2.port > 65535) return 'Listen Port must be between 1 and 65535.';
+  if (device.mma2.unit_id < 0 || device.mma2.unit_id > 255) return 'Unit ID must be between 0 and 255.';
   for (const fc of FC_KEYS) {
-    const a = m[fc] || {start: 0, count: 0};
-    const count = a.count || 0;
-    if (!count) continue;
-    const start = a.start || 0;
-    if (start + count > 0x10000) return FC_LABELS[fc] + ': start + count exceeds the 16-bit address space';
-    const iv = rr[fc + '_interval_ms'] || 0;
-    if (!iv) return FC_LABELS[fc] + ': Randomize Every (ms) must be > 0 when count > 0';
+    const area = device.mma2[fc];
+    if (area.start < 0 || area.start > 65535 || area.count < 0 || area.count > 65535) return `${FC_LABELS[fc]} values are outside the 16-bit address range.`;
+    if (area.start + area.count > 65536) return `${FC_LABELS[fc]} Start + Count exceeds the 16-bit address space.`;
+    if (area.count > 0 && device.random_runtime[`${fc}_interval_ms`] < 1) return `${FC_LABELS[fc]} Randomize Every must be greater than zero.`;
   }
   return null;
 };
 
-const escapeHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]);
-
-const EDITOR_TEMPLATE = (d, onInput) => {
-  const m = d.mma2 || {};
-  const rr = d.random_runtime || {};
-  const fields = FC_KEYS.map((fc) => `
-    <div class="sim-editor-fc sim-fc-${fc}">
-      <h4>${FC_LABELS[fc]}<span class="sim-fc-rangelabel">${fmtAddr(m[fc]?.start || 0, m[fc]?.count ||  ۰)}</span></h4>
-      <label>Start <input type="number" min="0" max="65535" value="${m[fc]?.start || 0}" data-fc="${fc}" data-field="start"></label>
-      <label>Count <input type="number" min="0" max="65536" value="${m[fc]?.count || 0}" data-fc="${fc}" data-field="count"></label>
-      <label>Randomize Every (ms) <input type="number" min="1" step="1" value="${rr[fc + '_interval_ms'] || 0}" data-fc="${fc}" data-field="interval"></label>
-    </div>`).join('';
-
-  return `
-    <div class="sim-editor" data-valid="true">
-      <div class="sim-editor-actions">
-        <label>Name <input type="text" data-field="name" value="${escapeHtml(d.name)}"></label>
-        <label class="sim-check">Enabled <input type="checkbox" data-field="enabled" ${d.enabled ? 'checked' : ''}></label>
-        <label>Port <input type="number" min="1" max="65535" value="${m.port || 0}" data-field="port"></label>
-        <label>Unit ID <input type="number" min="0" max="255" value="${m.unit_id ?? 0}" data-field="unit_id"></label>
-      </div>
-      <div class="sim-editor-fcs">${fields}</div>
-      <div class="sim-editor-status" role="status"></div>
-      <div class="sim-editor-actions">
-        <button type="button" class="sim-btn sim-primary" data-action="save">Save &amp; Apply</button>
-        <button type="button" class="sim-btn" data-action="discard">Discard</button>
-      </div>
-    </div>`;
+const element = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
 };
 
-const LIST_TEMPLATE = (doc, state, handlers) => {
-  const devices = (doc.devices || []).filter((d) => {
-    if (!state.search) return true;
-    const q = state.search.toLowerCase();
-    return (d.name || '').toLowerCase().includes(q;
-  }));
-  const rows = devices.map((d, i) => {
-    const selected = state.selected === i ? ' sim-row-selected' : '';
-    const name = escapeHtml(d.name);
-    const port = d.mma2?.port || '-';
-    const off = d.enabled ? '' : ' sim-row-off';
-    return `<div class="sim-row${selected}${off}" data-index="${i}">
-      <span class="sim-row-name">${name}</span>
-      <span class="sim-row-meta">port ${port} · ${FC_KEYS.filter((fc) => fcCount(d, fc)).length} FCs</span>
-    </div>`;
-  }).join('';
-
-  return `<div class="sim-listpane">
-      <div class="sim-list-search"><input type="text" placeholder="Search devices…" value="${escapeHtml(state.search)}" data-action="search"></div>
-      <div class="sim-list-actions">
-        <button type="button" class="sim-btn" data-action="add">Add</button>
-        <button type="button" class="sim-btn" data-action="duplicate">Duplicate</button>
-        <button type="button" class="sim-btn sim-danger" data-action="delete">Delete</button>
-      </div>
-      <div class="sim-list">${rows || '<div class="sim-empty">No devices</div>'}</div>
-    </div>`;
+const button = (label, action, className = '') => {
+  const node = element('button', `sim-button ${className}`.trim(), label);
+  node.type = 'button';
+  node.dataset.action = action;
+  return node;
 };
 
-const RENDER = (win, proc, state) => {
-  const doc = state.doc;
-  const onInput = (e) => {
-    const el = e.target;
-    const fc = el.dataset.fc;
-    if (fc) {
-      const field = el.dataset.field;
-      const val = field === 'interval' ? Number(el.value ? el.value : 0) : field === 'count' ? Number(el.value ? el.value : 0) : Number(el.value ? el.value : 0);
-      state.draft.mma2[fc][field] = val;
-      refreshEditor(win, proc, state, e);
-    } else if (el.dataset.field === 'enabled') {
-      state.draft.enabled = el.checked;
-      refreshEditor(win, proc, state, e);
-    } else {
-      const field = el.dataset.field;
-      const val = el.type === 'number' ? Number(el.value ? el.value : 0) : el.value;
-      state.draft.mma2[field] = val;
-      if (field === 'name') state.draft.name = el.value;
-      if (field === 'port') state.draft.mma2.port = el.value ? Number(el.value) : 0;
-      if (field === 'unit_id') state.draft.mma2.unit_id = el.value ? Number(el.value) : 0;
-      refreshEditor(win, proc, state, e);
-    }
-  };
-
-  const onListClick = (e) => {
-    const row = e.target.closest('.sim-row');
-    if (row) selectDevice(win, proc, state, Number(row.dataset.index）；
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    if (action === 'add') {
-      const seq = (state.doc.devices || []).length + 1;
-      const base = NEW_DEVICE(seq;
-      const fresh = Object.assign({}, base, {mma2: Object.assign({}, base.mma2, DEFAULT_FC}), random_runtime: base.random_runtime});
-      state.doc.devices = cloneDevice(fresh);
-      state.doc.devices.push(cloneDevice(fresh));
-      state.draft = cloneDevice(fresh);
-      state.selected = state.doc.devices.length - 1;
-      state.dirty = true;
-      saveDoc(win, proc, state,
-    } else if (action === 'duplicate') {
-      if (state.selected == null) return;
-      const src = cloneDevice(state.doc.devices[state.selected];
-      src.name = src.name + ' (copy)';
-      state.doc.devices.push(src;
-      state.selected = state.doc.devices.length - 1;
-      state.draft = cloneDevice(src;
-      state.dirty = true;
-      saveDoc(win, proc, state,
-    } else if (action === 'delete') {
-      if (state.selected == null) return;
-      state.doc.devices.splice(state.selected, 1;
-      state.selected = Math.min(state.selected, state.doc.devices.length - 1) >= 0 ? Math.min(state.selected, state.doc.devices.length - 1) : null;
-      state.draft = state.selected == null ? newBlankDevice() : cloneDevice(state.doc.devices[state.selected];
-      state.dirty = true;
-      saveDoc(win, proc, state,
-    } else if (action === 'search') {
-      // handled via input
-    }
-  };
-
-  const root = win.$content.ownerDocument;
-  win.$content.querySelector('.sim-listpane').replaceWith(htmlToNode(win, LIST_TEMPLATE(doc, state, {}));
-  win.$content.querySelector('.sim-listpane').addEventListener('click', onListClick);
-  const search = win.$content.querySelector('[data-action="search"]');
-  search.oninput = (e) => {state.search = e.target.value; refreshEditor(win, proc, state, e);};
-};
-
-const htmlToNode = (win, html) => {
-  const root = win.$content.ownerDocument.createElement('div');
-  root.innerHTML = html;
-  return root.firstElementChild;
-};
-
-const refreshEditor = (win, proc, state, srcEvent) => {
-  if (!state.draft) return;
-  const error = validateDevice(state.draft;
-  const editor = win.$content.querySelector('.sim-editor');
-  if (editor) editor.replaceWith(htmlToNode(win, EDITOR_TEMPLATE(state.draft, null)));
-  const status = win.$content.querySelector('.sim-editor-status');
-  if (error) {status.textContent = error; win.$content.querySelector('.sim-editor').dataset.valid = 'false';}
-  const inputs = win.$content.querySelectorAll('.sim-editor input');
-  inputs.forEach((el) => el.addEventListener('input', onInput));
-  const buttons = win.$content.querySelectorAll('.sim-editor [data-action]');
-  buttons.forEach((btn) => btn.addEventListener('click', (e) => {
-    const action = btn.dataset.action;
-    if (action === 'save') saveDoc(win, proc, state);
-    if (action === 'discard') {state.draft = state.selected == null ? newBlankDevice() : cloneDevice(state.doc.devices[state.selected]; refreshEditor(win, proc, state, e);}
-  }));
-  const rangeLabel = win.$content.querySelector('.sim-editor-fc .sim-fc-rangelabel';
-  FC_KEYS.forEach((fc) => {
-    const el = win.$content.querySelector('.sim-fc-' + fc + ' .sim-fc-rangelabel';
-    if (el) el.textContent = fmtAddr(fcStart(state.draft, fc), fcCount(state.draft, fc));
+const field = (label, value, settings, onChange) => {
+  const wrapper = element('label', settings.className || 'sim-field');
+  wrapper.appendChild(element('span', 'sim-field-label', label));
+  const control = document.createElement('input');
+  control.type = settings.type || 'number';
+  control.value = value;
+  ['min', 'max', 'step'].forEach(key => {
+    if (settings[key] !== undefined) control[key] = settings[key];
   });
+  control.addEventListener('input', event => onChange(event.target.value));
+  wrapper.appendChild(control);
+  return wrapper;
 };
 
-const newBlankDevice = () => cloneDevice(Object.assign({}, NEW_DEVICE(0), {mma2: Object.assign({}, NEW_DEVICE(0).mma2, DEFAULT_FC}));
+const register = (core, args, options, metadata) => {
+  const proc = core.make('osjs/application', {args, options, metadata});
+  const win = proc.createWindow({
+    id: 'ModbusSimulatorWindow',
+    title: metadata.title && metadata.title.en_EN ? metadata.title.en_EN : 'Modbus Simulator',
+    dimension: {width: 920, height: 620},
+    position: 'center'
+  });
+  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'Loading simulator definitions...', error: false, saving: false};
+  const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
+  const setMessage = (message, error = false) => Object.assign(state, {message, error});
 
-const selectDevice = (win, proc, state, index) => {
-  state.selected = index;
-  state.draft = cloneDevice(state.doc.devices[index];
-  refreshEditor(win, proc, state, null);
+  const renderEditor = root => {
+    const pane = element('section', 'sim-editor-pane');
+    const device = selectedDevice();
+    if (!device) {
+      pane.appendChild(element('div', 'sim-empty', 'Select a device or choose Add.'));
+      root.appendChild(pane);
+      return;
+    }
+    pane.appendChild(element('h2', 'sim-editor-title', 'Device Definition'));
+    const identity = element('div', 'sim-identity-grid');
+    identity.appendChild(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
+    const enabled = element('label', 'sim-checkbox');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = device.enabled;
+    checkbox.addEventListener('change', event => { device.enabled = event.target.checked; });
+    enabled.append(checkbox, element('span', '', 'Enabled'));
+    identity.appendChild(enabled);
+    identity.appendChild(field('Listen Port', device.mma2.port, {min: 1, max: 65535}, value => { device.mma2.port = numberValue(value); }));
+    identity.appendChild(field('Unit ID', device.mma2.unit_id, {min: 0, max: 255}, value => { device.mma2.unit_id = numberValue(value); }));
+    pane.appendChild(identity);
+
+    const table = element('div', 'sim-fc-table');
+    const header = element('div', 'sim-fc-row sim-fc-header');
+    ['Function', 'Start', 'Count', 'Randomize Every (ms)', 'Address Range'].forEach(label => header.appendChild(element('span', '', label)));
+    table.appendChild(header);
+    FC_KEYS.forEach(fc => {
+      const row = element('div', 'sim-fc-row');
+      const area = device.mma2[fc];
+      const updateRange = () => {
+        const range = row.querySelector('.sim-range');
+        if (range) range.textContent = addressRange(area);
+      };
+      row.appendChild(element('strong', '', FC_LABELS[fc]));
+      row.appendChild(field('Start', area.start, {min: 0, max: 65535, className: 'sim-cell-field'}, value => { area.start = numberValue(value); updateRange(); }));
+      row.appendChild(field('Count', area.count, {min: 0, max: 65535, className: 'sim-cell-field'}, value => { area.count = numberValue(value); updateRange(); }));
+      row.appendChild(field('Interval', device.random_runtime[`${fc}_interval_ms`], {min: 0, step: 1, className: 'sim-cell-field'}, value => { device.random_runtime[`${fc}_interval_ms`] = numberValue(value); }));
+      row.appendChild(element('span', 'sim-range', addressRange(area)));
+      table.appendChild(row);
+    });
+    pane.appendChild(table);
+    const validation = validateDevice(device);
+    if (validation) pane.appendChild(element('div', 'sim-validation', validation));
+    const actions = element('div', 'sim-editor-actions');
+    const saveButton = button(state.saving ? 'Saving...' : 'Save & Apply', 'save', 'sim-primary');
+    saveButton.disabled = Boolean(validation) || state.saving;
+    actions.append(saveButton, button('Discard', 'discard'));
+    pane.appendChild(actions);
+    root.appendChild(pane);
+  };
+
+  const render = () => {
+    const root = element('div', 'modbus-simulator');
+    const sidebar = element('aside', 'sim-sidebar');
+    const search = document.createElement('input');
+    search.className = 'sim-search';
+    search.type = 'search';
+    search.placeholder = 'Search devices...';
+    search.value = state.search;
+    search.addEventListener('input', event => {
+      state.search = event.target.value;
+      const query = state.search.trim().toLowerCase();
+      sidebar.querySelectorAll('.sim-device-row').forEach(row => {
+        row.hidden = Boolean(query) && !row.textContent.toLowerCase().includes(query);
+      });
+    });
+    sidebar.appendChild(search);
+    const listActions = element('div', 'sim-list-actions');
+    listActions.append(button('Add', 'add'), button('Duplicate', 'duplicate'), button('Delete', 'delete', 'sim-danger'));
+    sidebar.appendChild(listActions);
+    const list = element('div', 'sim-device-list');
+    const query = state.search.trim().toLowerCase();
+    state.document.devices.forEach((device, index) => {
+      if (query && !device.name.toLowerCase().includes(query)) return;
+      const row = button('', 'select', index === state.selected ? 'sim-device-selected' : '');
+      row.dataset.index = String(index);
+      row.classList.add('sim-device-row');
+      row.append(element('strong', '', device.name || 'Unnamed device'), element('span', '', `Port ${device.mma2.port} - Unit ${device.mma2.unit_id}${device.enabled ? '' : ' - Disabled'}`));
+      list.appendChild(row);
+    });
+    if (!list.children.length) list.appendChild(element('div', 'sim-empty', 'No matching devices.'));
+    sidebar.appendChild(list);
+    root.appendChild(sidebar);
+    renderEditor(root);
+    root.appendChild(element('div', `sim-status${state.error ? ' sim-status-error' : ''}`, state.message));
+    win.$content.replaceChildren(root);
+  };
+
+  const save = async () => {
+    const error = state.document.devices.map(validateDevice).find(Boolean);
+    if (error) { setMessage(error, true); render(); return; }
+    state.saving = true;
+    setMessage('Saving simulator definitions...');
+    render();
+    try {
+      const saved = normalizeDocument(await core.request(API_PATH, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(state.document)}, 'json'));
+      state.document = clone(saved);
+      state.persisted = clone(saved);
+      if (state.selected !== null && state.selected >= saved.devices.length) state.selected = null;
+      setMessage('Simulator definitions saved. Live MMA2 application is handled by SIM-006.');
+    } catch (error) {
+      setMessage(`Save failed: ${error.message || error}`, true);
+    } finally {
+      state.saving = false;
+      render();
+    }
+  };
+
+  win.on('destroy', () => proc.destroy());
+  win.render($content => {
+    win.$content = $content;
+    $content.addEventListener('click', event => {
+      const target = event.target.closest('[data-action]');
+      if (!target) return;
+      const action = target.dataset.action;
+      if (action === 'select') {
+        state.selected = Number(target.dataset.index);
+        setMessage('Editing a simulator-owned definition.');
+      } else if (action === 'add') {
+        state.document.devices.push(blankDevice(state.document.devices.length + 1));
+        state.selected = state.document.devices.length - 1;
+        setMessage('New device added locally. Save & Apply to persist it.');
+      } else if (action === 'duplicate' && selectedDevice()) {
+        const copy = clone(selectedDevice());
+        copy.name = `${copy.name} (copy)`;
+        state.document.devices.push(copy);
+        state.selected = state.document.devices.length - 1;
+        setMessage('Device duplicated locally. Save & Apply to persist it.');
+      } else if (action === 'delete' && selectedDevice()) {
+        state.document.devices.splice(state.selected, 1);
+        state.selected = state.document.devices.length ? Math.min(state.selected, state.document.devices.length - 1) : null;
+        setMessage('Device deleted locally. Save & Apply to persist it.');
+      } else if (action === 'discard') {
+        state.document = clone(state.persisted);
+        state.selected = state.document.devices.length ? Math.min(state.selected || 0, state.document.devices.length - 1) : null;
+        setMessage('Unapplied changes discarded.');
+      } else if (action === 'save') {
+        save();
+        return;
+      }
+      render();
+    });
+    core.request(API_PATH, {}, 'json').then(value => {
+      state.document = clone(normalizeDocument(value));
+      state.persisted = clone(state.document);
+      state.selected = state.document.devices.length ? 0 : null;
+      setMessage(state.document.devices.length ? 'Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
+    }).catch(error => setMessage(`Load failed: ${error.message || error}`, true)).finally(render);
+  });
+  return proc;
 };
 
-const saveDoc = (win, proc, state) => {
-  const doc = {devices: (state.doc.devices || []).map(cloneDevice)};
-  const error = doc.devices.some((d) => validateDevice(d);
-  if (error) {
-    const status = win.$content.querySelector('.sim-editor-status';
-    if (status) status.textContent = 'Fix validation errors before saving';
-    return;
-  }
-  const btn = win.$content.querySelector('[data-action="save"]');
-  if (btn) btn.disabled = true;
-  proc.request(API_PATH, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(doc)}, 'json')
-    .then((saved) => {
-      state.doc = saved;
-      state.dirty = false;
-      if (state.selected != null) state.draft = cloneDevice((saved.devices || [])[state.selected] || newBlankDevice();
-      refreshEditor(win, proc, state, null);
-    })
-    .catch((err) => {
-      const status = win.$content.querySelector('.sim-editor-status';
-      if (status) status.textContent = 'Save failed: ' + (err && err.message ? err.message : String(err));
-    })
-    .finally(() => {if (btn) btn.disabled = false;}
-};
+osjs.register(applicationName, register);

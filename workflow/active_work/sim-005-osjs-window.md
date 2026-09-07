@@ -1,6 +1,6 @@
 # SIM-005 — Build the Approved OS.js Modbus Simulator Window
 
-Status: ACTIVE — human-promoted for JR execution.
+Status: COMPLETED — verified 2026-09-08.
 
 Source intent: `planning/Brainstorm/osjs-modbus-simulator.md`.
 
@@ -36,6 +36,8 @@ An OS.js Modbus Simulator application opens with the approved device-list/editor
 ## Verification
 
 Open the application, create/select/edit/duplicate/delete/discard simulator definitions, and verify exact field round-trip through SIM-001 persistence without touching effective MMA2 config.
+
+**Evidence (2026-09-08):** Replaced the corrupt `OSJS/src/packages/ModbusSimulator/index.js` with an ASCII-clean OS.js application and added `index.scss`. The application provides the approved two-pane searchable device list/editor, Add/Duplicate/Delete, Save & Apply/Discard, Name/Enabled/Listen Port/Unit ID, FC1-FC4 Start/Count/Randomize Every fields, calculated address ranges, inline validation, and same-origin JSON persistence. Corrected the blocking missing parenthesis in `OSJS/src/server/providers/simulator-bridge.js`. In an isolated runtime (`OSJS_DATA_DIR=/tmp/mcs-osjs-cwal-data`), a real in-app browser opened the desktop application, added and edited `CWAL Test PLC` (port 15020), saved it, duplicated/deleted it locally, and verified Discard restored the persisted definition. `GET /api/devices` and the resulting `config/simulator/devices.yaml` matched exactly; the isolated data tree contained no MMA2 effective-config artifact. `node --check src/server/providers/simulator-bridge.js`, `npm run build:local-packages`, `npm run build`, `gofmt -l .`, `go vet ./...`, and `go test -count=1 ./...` all passed (Go tests used loopback socket permission).
 
 ## Dependencies
 

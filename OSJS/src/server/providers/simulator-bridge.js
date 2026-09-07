@@ -54,7 +54,7 @@ class SimulatorBridgeRouteProvider {
       res.status(503).json({error: 'simulator bridge not running'});
     });
     if (method === 'PUT' && req.body && typeof req.body === 'object') {
-      outbound.write(JSON.stringify(req.body);
+      outbound.write(JSON.stringify(req.body));
     }
     outbound.end();
   }

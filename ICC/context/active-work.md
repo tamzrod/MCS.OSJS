@@ -1,9 +1,9 @@
 # Active Work Program (Simulator + MMA2)
 
-Baseline commit: 8cb9f0c08ae4e5717ce22d4423fd297eba03d170
-Working tree: dirty
-Audited Overlay: handoff.md, workflow/active_work/sim-002a-mma2-config-ownership.md, simulator/compose_test.go, simulator/mma2_config.go
-Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-002b-mma2-lifecycle-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go
+Baseline commit: 7cef8dd
+Working tree: clean
+Audited Overlay: (none (clean tree(;committed delta 21264ab..7cef8dd absorbed(handoff.md, workflow/active_work/sim-003-random-runtime.md, simulator/scheduler.go, simulator/scheduler_test.go(
+Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-002b-mma2-lifecycle-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
@@ -14,8 +14,8 @@ Zoom Out: L0-project
 2. `sim-001-simulator-device-config.md` — **COMPLETED** 2026-09-06. Simulator-owned two-domain persist under `$OSJS_DATA_DIR/config/simulator/devices.yaml`. See Zoom In `simulator-device-config`.
 3. `sim-002a-mma2-config-ownership.md` — **COMPLETED 2026-09-07**. Compose+ownership protection (`(port,unit_id)` reservation keys, YAML `owner` registry at `$OSJS_DATA_DIR/config/mma2/owners.yaml`, `ErrReservationOwnedByOther` on foreign collision)。 Six tests in `simulator/compose_test.go` verified. See Zoom In `simulator-device-config`.
 4. `sim-002b-mma2-lifecycle-activation.md` — **COMPLETED 2026-09-07**. Live MMA2 proven through the composed effective config (process healthy; Modbus-TCP (5020, 1) coils/discrete 64 + holding/input 100 read/write; raw PDU hreg0=4321). See Zoom In `simulator-device-config`.
-5. `sim-003-random-runtime.md` — per-FC random runtime scheduler.
-6. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.
+5. `sim-003-random-runtime.md` — per-FC random runtime scheduler.**COMPLETED 2026-09-07** (scheduler.go+scheduler_test.go;both tests pass;timing-only UpdateTiming never restarts MMA2(. See Zoom In `simulator-device-config`.
+6. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.**CURRENT — execute first.**
 7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.
 8. `sim-006-save-apply-routing.md` — Save & Apply routing.
 9. `sim-007-runtime-status.md` — runtime status surface.

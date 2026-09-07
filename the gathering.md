@@ -2,125 +2,118 @@
 
 ## Purpose
 
-`THE GATHERING` is the read-only workflow status command for MCS.OSJS.
+`THE GATHERING` is the read-only committed-status command for MCS.OSJS.
 
-It gathers the project's current workflow state into one concise report so the human can see what is active, what is being planned, what is pending or blocked, and where execution currently stands.
+It reports the current workflow position from the repository's committed `HEAD` only.
 
-> Gather status. Do not change status.
+> Gather committed status. Ignore everything outside the commit. Make no changes.
 
-## Authority
+## Authority Boundary
 
-`THE GATHERING` has explicit read authority across the workflow boundaries required to produce the report:
+`THE GATHERING` may inspect only the committed state needed for these four views:
 
-- `ICC/INDEX.md`;
-- relevant workflow context under `ICC/context/`;
-- `handoff.md`;
-- `workflow/active_work/`;
-- `planning/microtask/`;
-- workflow items that are pending, blocked, or completed when those states are represented by authoritative workflow sources.
+1. **Active Work**
+2. **Handoff**
+3. **Microtask Planning**
+4. **Brainstorm**
 
-This cross-boundary authority is read-only and exists only for status reporting.
+ICC is the primary status context and should satisfy most reads.
 
-`THE GATHERING` cannot:
+Primary ICC sources are:
 
-- execute Active Work;
-- promote a microtask;
-- create or modify planning;
-- choose the next task;
-- reorder work;
-- change task status;
-- widen an existing task;
-- refresh ICC context;
-- invoke BLACK SHEEP WALL as a maintenance action;
-- modify `handoff.md`;
-- modify repository files.
+- `ICC/INDEX.md`
+- relevant committed workflow context under `ICC/context/`, especially context for Active Work, planning/microtasks, and brainstorm topics
 
-## Context Rule
+Authoritative committed fallback sources are limited to:
 
-Repository truth remains authoritative, but ICC is the primary status source for THE GATHERING.
+- `handoff.md`
+- `workflow/active_work/`
+- `planning/microtask/`
+- `planning/Brainstorm/`
 
-Start with `ICC/INDEX.md` and the relevant workflow context under `ICC/context/`. Most status reporting should be satisfied from this context without re-reading the full repository workflow surface.
+Do not expand beyond these workflow surfaces merely to produce a status report.
 
-Use current HEAD and working-tree state only to determine whether the relevant ICC context still matches the repository state.
+## Commit Rule
 
-If the relevant ICC context is current, report from ICC.
+The committed repository state at current `HEAD` is the complete observation boundary.
 
-If the relevant ICC context is stale, missing, incomplete, or conflicts with repository state:
+`THE GATHERING` must ignore:
 
-1. do not refresh it;
-2. do not invoke BLACK SHEEP WALL to repair it;
-3. read only the minimum authoritative workflow sources needed to establish current status;
-4. report the stale or conflicting context explicitly;
-5. continue the status report using the best available repository truth.
+- dirty working-tree state;
+- uncommitted files or overlays;
+- staged-but-uncommitted changes;
+- temporary files;
+- local runtime state;
+- implementation/code outside the four workflow status surfaces;
+- repository changes that are not part of current committed `HEAD`.
 
-A stale ICC context is a reportable condition, not authorization to modify anything.
+Do not compare ICC against the working tree.
 
-Do not perform a repository-wide audit for a status report.
+Do not reconcile committed status with local/uncommitted state.
+
+If ICC records working-tree or overlay information for another workflow, that information is irrelevant to THE GATHERING and must not trigger further inspection.
+
+## ICC Rule
+
+Use committed ICC first.
+
+If the relevant ICC context at `HEAD` already contains the needed status, report from it.
+
+If ICC is missing or insufficient for one of the four allowed views, read only the matching committed authoritative source:
+
+- Active Work → `workflow/active_work/`
+- Handoff → `handoff.md`
+- Microtask Planning → `planning/microtask/`
+- Brainstorm → `planning/Brainstorm/`
+
+Do not refresh ICC.
+
+Do not invoke BLACK SHEEP WALL.
+
+Do not treat an ICC baseline mismatch as authorization to inspect outside the committed status boundary. Report only what current committed `HEAD` establishes.
 
 ## Report Flow
 
 ```text
 THE GATHERING
-→ READ ICC/INDEX.md
-→ SELECT WORKFLOW STATUS BOUNDARY
-→ READ RELEVANT ICC CONTEXT
-→ CHECK ICC BASELINE AGAINST CURRENT REPOSITORY STATE
-→ IF CURRENT: REPORT FROM ICC
-→ IF STALE/INCOMPLETE: READ MINIMUM AUTHORITATIVE SOURCES REQUIRED
-→ REPORT ANY STALE OR CONFLICTING CONTEXT
-→ REPORT STATUS
+→ IDENTIFY CURRENT COMMITTED HEAD
+→ READ COMMITTED ICC STATUS CONTEXT
+→ ACTIVE WORK
+→ HANDOFF
+→ MICROTASK PLANNING
+→ BRAINSTORM
+→ READ MATCHING COMMITTED FALLBACK SOURCE ONLY IF ICC IS INSUFFICIENT
+→ REPORT
 → MAKE NO CHANGES
 → STOP
 ```
 
-BLACK SHEEP WALL may be mentioned as the mechanism that can later refresh stale ICC context, but THE GATHERING must never run that refresh itself.
-
 ## Required Report
-
-The report should be concise and organized around these views.
 
 ### Active Work
 
-Show the current Active Work inventory and identify the task currently authorized for execution according to repository truth.
+Show the committed Active Work inventory and identify the task currently authorized for execution.
 
-Prefer the relevant ICC workflow context when current. Include dependency/blocking state where it is explicitly represented.
+Dependency, waiting, blocked, next, or completed information may be shown when it is already represented inside Active Work or Handoff. Do not search additional workflow surfaces to construct those categories.
+
+### Handoff
+
+Show the committed handoff position:
+
+- current authorized work;
+- explicit next/dependency information when present.
 
 ### Microtask Planning
 
-Show the current microtask planning inventory and its represented state.
+Show the committed microtask planning inventory and represented state.
 
-Prefer ICC context when it already contains the current planning state. Read `planning/microtask/` only when needed to fill a missing or stale status boundary.
+Planning is not promoted or executable unless the committed workflow authority explicitly says so.
 
-Do not interpret a planned microtask as promoted or executable unless repository authority explicitly says so.
+### Brainstorm
 
-### Pending / Blocked
+Show the committed brainstorm inventory/topics and their represented state.
 
-Show work that is waiting, pending, or blocked when that state can be established from current ICC context or the authoritative workflow sources.
-
-Do not invent a queue from file ordering alone.
-
-### Handoff / Current Position
-
-Show the current handoff position, including the current task and explicitly established next/dependency information.
-
-Prefer current ICC context. Read `handoff.md` directly when validation or stale context requires it.
-
-### Completed
-
-Summarize completed workflow items when useful to understand current position. Keep this compact; THE GATHERING is primarily a current-status view, not a project history report.
-
-## Stale Context Reporting
-
-When ICC is stale or conflicts with repository truth, include a compact warning such as:
-
-```text
-CONTEXT WARNING
-ICC workflow context is stale against current repository state.
-Status below was read from the minimum authoritative workflow sources required.
-BLACK SHEEP WALL refresh is required separately.
-```
-
-Do not repair the condition during THE GATHERING.
+Brainstorm material is exploratory and does not authorize implementation.
 
 ## Output Shape
 
@@ -128,36 +121,45 @@ Conceptually:
 
 ```text
 MCS.OSJS — THE GATHERING
+HEAD: <commit>
 
 ACTIVE WORK
-<current active-work status>
-
-MICROTASK PLANNING
-<current microtask planning status>
-
-PENDING / BLOCKED
-<waiting or blocked work established by repository truth>
+<status>
 
 HANDOFF
 Current: <current authorized work>
-Next:    <explicit next/dependency state, if established>
+Next:    <explicit next/dependency state if present>
 
-COMPLETED
-<compact recent/relevant completion state>
+MICROTASK PLANNING
+<planning inventory/status>
+
+BRAINSTORM
+<brainstorm inventory/status>
 ```
 
-Exact formatting may vary. Repository state must not.
+Keep the report concise. This is a current committed-status view, not a repository audit or project history report.
 
 ## Core Invariant
 
 ```text
 THE GATHERING
-= OBSERVE + GATHER + REPORT
+= COMMITTED HEAD
++ ICC FIRST
++ ACTIVE WORK
++ HANDOFF
++ MICROTASK
++ BRAINSTORM
++ REPORT
 
-NOT
-= PLAN + PROMOTE + EXECUTE + REFRESH + MODIFY
+THE GATHERING
+!= WORKING TREE
+!= UNCOMMITTED STATE
+!= BLACK SHEEP WALL
+!= REPOSITORY AUDIT
+!= IMPLEMENTATION INSPECTION
+!= MODIFY
 ```
 
-If repository sources disagree, report the disagreement rather than resolving it by assumption.
+If the four allowed committed sources disagree, report the disagreement rather than resolving it by assumption.
 
 Never guess.

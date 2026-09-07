@@ -17,11 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 7cef8dd
-Working Tree: clean
-Audited Uncommitted Overlay:(none (clean tree(.
+Baseline Commit: cfe704c
+Working Tree: dirty
+Audited Uncommitted Overlay: `simulator/raw_ingest.go` (sha256 ecb30acb1acc090f)`, `simulator/raw_ingest_test.go` (sha256 6c646d7e4c343f65)`
 
-Committed delta 21264ab..7cef8dd absorbed: `handoff.md`, `workflow/active_work/sim-003-random-runtime.md`, `simulator/scheduler.go`, `simulator/scheduler_test.go`. SIM-003 completed+verified 2026-09-07 (scheduler + tests;both tests pass;timing-only update never restarts MMA2(;SIM-004 promoted CURRENT in handoff.. Refreshed `context/active-work.md` (SIM-003 row COMPLETED; SIM-004 CURRENT( and `context/simulator-device-config.md`(added SIM-003 scheduler established-truth section;( title now SIM-001+SIM-002A+SIM-003(. Unrelated registry rows preserved.
+Committed delta: none since this session's start (shallow clone HEAD cfe704c).
+
+SIM-004 completed+verified 2026-09-07. Added `simulator/raw_ingest.go` (MMA2 raw-ingest v1 client; encodeRawPacket bits-LSB-first/regs big-endian; Send( drives simulator-generated FC1-FC4 values into simulator-owned MMA2 memory exclusively via raw ingest( and `simulator/raw_ingest_test.go` (4 tests: bits/regs encoding frames + real-TCP Send round-trip with OK/reject responses + unconfigured-FC rejection(;gofmt/vet clean; `go test -count=1 ./...` -> ok; SIM-004 marked COMPLETED in handoff; CURRENT advanced to SIM-005;sim-004 task file records verification evidence.. Refreshed `context/active-work.md` (SIM-004 COMPLETED;SIM-005 CURRENT( and `context/simulator-device-config.md`(added SIM-004 raw-ingest established-truth section;( title now SIM-001+SIM-002A+SIM-003+SIM-004(. Unrelated registry rows preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -32,8 +34,8 @@ Committed delta 21264ab..7cef8dd absorbed: `handoff.md`, `workflow/active_work/s
 | `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go` |
-| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md` |
+| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go` |
+| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md` |
 
 ## Access Rule
 

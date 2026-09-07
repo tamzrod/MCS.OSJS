@@ -1,10 +1,9 @@
-# Simulator Device Config + MMA2 Compose/Ownership + Scheduler (SIM-001 + SIM-002A + SIM-003)
+# Simulator Device Config + MMA2 Compose/Ownership + Scheduler + Raw Ingest (SIM-001 + SIM-002A + SIM-003 + SIM-004)
 
-Baseline commit: 7cef8dd
-Working tree: clean
-Audited Overlay: (none (clean tree(;committed delta 21264ab..7cef8dd absorbed (handoff.md, workflow/active_work/sim-003-random-runtime.md, simulator/scheduler.go, simulator/scheduler_test.go((
-Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/README.md, deploy/docker-compose.yml, OSJS/src/server/config.js, MMA2/internal/config/validate.go, planning/Brainstorm/osjs-modbus-simulator.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-003-random-runtime.md
-Parent: active-work
+Baseline commit: cfe704c
+Working tree: dirty
+Audited Overlay: `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go` (sha256 fingerprints registered in ICC/INDEX.md)
+Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/README.md, deploy/docker-compose.yml, OSJS/src/server/config.js, MMA2/internal/config/validate.go, planning/Brainstorm/osjs-modbus-simulator.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md`, workflow/active_work/sim-003-random-runtime.md`, workflow/active_work/sim-004-raw-ingest.md, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`
 Zoom In:(none; leaf node)
 Zoom Out: active-work
 
@@ -19,7 +18,7 @@ One device has two persisted domains:
 
 Host-mounted root is `OSJS_DATA_DIR` only (`osjs-data` volume -> `/data`). Persist path: `$OSJS_DATA_DIR/config/simulator/devices.yaml`. Unset env is an error; no invented host path.
 
-Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unused FC count  ﻿0; start+count within 16-bit space; configured FC requires interval_ms >​ 0. Invalid SaveOne leaves prior file bytes unchanged.
+Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unused FC count  ﻿0; start+count within 16-bit space; configured FC requires interval_ms > 0. Invalid SaveOne leaves prior file bytes unchanged.
 
 ## Established truth (SIM-002A)
 
@@ -36,3 +35,9 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - Timing state: per-FC `last`/`next` tracked in scheduler;`Timing()` returns snapshot map for SIM-007 runtime-status surface;;`Stop()` closes stop channel,waits goroutine exit(.
 - Timing-only change: `UpdateTiming(RandomRuntimeParams)` recomputes only affected FC's next deadline from now,preserves existing last-update state,and never touches MMA2(config/owners/memory/process(` — no restart,no config writes (per SIM-003 Acceptance Criteria 3 and SIM-006 routing boundary(.
 - SIM-003 is DONE(2026-09-07(. `simulator/scheduler_test.go` (139 lines( covers cadence concurrency(FC1 5ms vs FC2 10ms>8 vs >=4 fires in ~105ms;; FC3/FC4 count 0 never fired( and interval-change-without-restart(FC3 9ms→2ms next deadline recomputed,FC1/FC2/FC4 retained(;`go vet ./...` clean;`go test -count=1 ./...` → `ok github.com/tamzrod/MCS.OSJS/simulator 0.162s`(.
+
+## Established truth (SIM-004 raw ingest)
+
+- `simulator/raw_ingest.go` implements the MMA2 raw-ingest v1 client:`encodeRawPacket(unitID, addr, count uint16, area uint8, values Values)` frames the MMA2 raw-ingest byte contract introduced by SIM-002B(header RI+version+area+BE uint16 unitID/addr/count+payload;FC1/FC2 coil/discrete values pack LSB-first bit regions,FC3/FC4 register values are big-endian uint16;`sendRawPacket(addr string, pkt []byte)` dials TCP, sends one frame, reads one response byte,,response mismatch -> error.
+- `(*RawIngestClient.Send(v Values)` is the sole simulator-to-MMA2 memory path:it maps FC1-FC4 mnemonics onto the device simulator-owned MMA2 ranges,rejects unconfigured count-0 areas,and targets exclusively raw ingest—no direct-memory and no Modbus-write population.
+- SIM-004 is DONE(2026-09-07(. `simulator/raw_ingest_test.go` (4 tests): bit-area LSB packing bytes,,reg-area big-endian bytes,,real-TCP Send round-trip against a fixture server honoring frames with OK(0x06(/reject(0x21( responses,,and unconfigured-FC rejection(;`gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` -> `ok github.com/tamzrod/MCS.OSJS/simulator`.`

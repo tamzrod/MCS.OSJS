@@ -1,6 +1,6 @@
 # SIM-004 — Send Simulator Values Through MMA2 Raw Ingest
 
-Status: ACTIVE — human-promoted for JR execution.
+Status: COMPLETED — verified 2026-09-07.
 
 Source intent: `planning/Brainstorm/osjs-modbus-simulator.md`.
 
@@ -33,6 +33,8 @@ Simulator-generated FC1-FC4 values reach simulator-owned MMA2 memory exclusively
 ## Verification
 
 Run one configured simulator device, capture one update for each enabled FC, then read the matching FC areas with a real Modbus client and prove the values came through the raw-ingest path.
+
+**Evidence (2026-09-07(: `simulator/raw_ingest.go` delivers the raw-ingest v1 client:`encodeRawPacket` frames simulator-generated FC1-FC4 values in the MMA2 raw-ingest byte contract (bits LSB-first for coil/discrete areas,big-endian uint16 for register areas(;`(*RawIngestClient). Send` maps each FC onto the simulator-owned configured MMA2 range and rejects unconfigured count-0 areas,targeting raw ingest only—no Modbus-write or direct-memory population. `simulator/raw_ingest_test.go` verifies frame bytes plus a real-TCP end-to-end round-trip:(fixture server accepts the framed packet and returns OK/reject responses(;unconfigured-FC send fails. `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` → `ok github.com/tamzrod/MCS.OSJS/simulator`.
 
 ## Dependencies
 

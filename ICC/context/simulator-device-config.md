@@ -1,6 +1,6 @@
 # Simulator Device Config + MMA2 Compose/Ownership + Scheduler + Raw Ingest + SaveDocument + Loopback Bridge (SIM-001 + SIM-002A + SIM-003 + SIM-004 + SIM-005-backend)
 
-Baseline commit: b69c46caaeb861a70a676a9f24a84f8b36b856d0
+Baseline commit: 32db1e6c70e05c54213ffed2fc20ed5390cdd04d
 Working tree: clean
 Audited Overlay: (none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEAD, alongside `simulator/bridge.go`+`simulator/bridge_test.go`.
 Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/README.md, deploy/docker-compose.yml, OSJS/src/server/config.js, MMA2/internal/config/validate.go, planning/Brainstorm/osjs-modbus-simulator.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md`, workflow/active_work/sim-003-random-runtime.md`, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`, simulator/bridge.go`, simulator/bridge_test.go`

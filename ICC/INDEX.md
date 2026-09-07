@@ -17,7 +17,7 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: b69c46caaeb861a70a676a9f24a84f8b36b856d0
+Baseline Commit: 32db1e6c70e05c54213ffed2fc20ed5390cdd04d
 Working Tree: clean
 Audited Uncommitted Overlay: (none( (files once audited as overlay — `simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go` — are now committed in HEAD(.
 

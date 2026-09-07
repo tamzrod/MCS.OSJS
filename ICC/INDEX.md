@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 48c12c28cd1a00be4694253168965fc799359b85
-Working Tree: dirty
-Audited Uncommitted Overlay: `simulator/device.go` (sha256 c78248da6fb05ad9bd03e171c5b4daae6ae4c63a7840ad3efa1108d1262052bb)`, `simulator/store.go` (sha256 b919ee794aeeebf67566728bda472cdb88b5978f4133244a9d34e6f5bfa2df90)`, `simulator/store_document_test.go` (sha256 b40077092f70ffe28257bc542d716e9b3fdeea29fc443aacd231ebd413dadca5)`
+Baseline Commit: b69c46caaeb861a70a676a9f24a84f8b36b856d0
+Working Tree: clean
+Audited Uncommitted Overlay: (none( (files once audited as overlay — `simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go` — are now committed in HEAD(.
 
-Committed delta since cfe704c baseline: `b2ffe7e` committed SIM-004 raw-ingest files (`simulator/raw_ingest.go`,`simulator/raw_ingest_test.go`; previously audited overlay, now in HEAD( and refreshed ICC context+handoff; `6112b24`+ `48c12c2` touched `the gathering.md` only (workflow read-only cosine — no ICC branch dependency(.
+Committed delta since 48c12c2 baseline: `b69c46c` committed the SIM-005 backend persistence + loopback bridge delta (`simulator/device.go` JSON tags; `simulator/store.go` `SaveDocument(Document)` multi-device atomic save; new `simulator/store_document_test.go` (3 multi-device tests(; new `simulator/bridge.go`+`simulator/bridge_test.go` loopback JSON bridge `BridgePath=/api/devices` GET/PUT on the simulator-owned document only;and refreshed ICC context files+INDEX committed with that delta(.
 
-SIM-005 in progress 2026-09-07. Working-tree delta: JSON tags on all simulator model structs (`simulator/device.go`; loopback bridge wire format(; `Store.SaveDocument(Document)` multi-device atomic save in `simulator/store.go` (`SaveOne` delegates; invalid device aborts whole save leaving prior bytes(; new `simulator/store_document_test.go` (3 tests: multi-device exact roundtrip, invalid device atomic-rollback, add/duplicate/delete reshape persistence(; `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` -> `ok github.com/tamzrod/MCS.OSJS/simulator`. Refreshed `context/active-work.md` and `context/simulator-device-config.md` for SIM-005 delta. Unrelated registry rows preserved.
+SIM-005 in progress 2026-09-07. Backend persistence layer committed at HEAD `b69c46c`; osjs window frontend build + bridge hosting remain pending. `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` -> `ok github.com/tamzrod/MCS.OSJS/simulator`. Rebased ICC baseline/overlay onto HEAD for the selected SIM-005 branch only. Unrelated registry rows preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

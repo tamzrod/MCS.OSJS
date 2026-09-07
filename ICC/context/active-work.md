@@ -13,7 +13,7 @@ Zoom Out: L0-project
 1. `mma2-basic-install-test.md` — **COMPLETED** 2026-09-06 (MMA2-001 import+build; MMA2-002 smoke test).
 2. `sim-001-simulator-device-config.md` — **COMPLETED** 2026-09-06. Simulator-owned two-domain persist under `$OSJS_DATA_DIR/config/simulator/devices.yaml`. See Zoom In `simulator-device-config`.
 3. `sim-002a-mma2-config-ownership.md` — **COMPLETED 2026-09-07**. Compose+ownership protection (`(port,unit_id)` reservation keys, YAML `owner` registry at `$OSJS_DATA_DIR/config/mma2/owners.yaml`, `ErrReservationOwnedByOther` on foreign collision)。 Six tests in `simulator/compose_test.go` verified. See Zoom In `simulator-device-config`.
-4. `sim-002b-mma2-lifecycle-activation.md` — **CURRENT**. Activate the already-valid effective MMA2 configuration and verify live Modbus exposure。
+4. `sim-002b-mma2-lifecycle-activation.md` — **COMPLETED 2026-09-07**. Live MMA2 proven through the composed effective config (process healthy; Modbus-TCP (5020, 1) coils/discrete 64 + holding/input 100 read/write; raw PDU hreg0=4321). See Zoom In `simulator-device-config`.
 5. `sim-003-random-runtime.md` — per-FC random runtime scheduler.
 6. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.
 7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.

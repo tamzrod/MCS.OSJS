@@ -21,7 +21,7 @@ Baseline Commit: 8cb9f0c08ae4e5717ce22d4423fd297eba03d170
 Working Tree: dirty
 Audited Uncommitted Overlay: handoff.md, workflow/active_work/sim-002a-mma2-config-ownership.md, simulator/mma2_config.go, simulator/compose_test.go
 
-SIM-002A/SIM-002B split delta absorbed: `workflow/active_work/sim-002{,a,b}*md`, `handoff.md`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `planning/Brainstorm/mcs-three-app-model.md`. SIM-002A completed+verified. Refreshed `context/active-work.md` and `context/simulator-device-config.md`(branch now spans SIM-001 + SIM-002A). Unrelated registry rows preserved.
+SIM-002A/SIM-002B split delta absorbed: `workflow/active_work/sim-002{,a,b}*md`, `handoff.md`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `planning/Brainstorm/mcs-three-app-model.md`. SIM-002A completed+verified. SIM-002B completed+verified 2026-09-07. Refreshed `context/active-work.md`(SIM-002B row now COMPLETED; SIM-003 row promoted CURRENT-first per handoff.. `context/simulator-device-config.md` unchanged(no branch content change. Unrelated registry rows preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

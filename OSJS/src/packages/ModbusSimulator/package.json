@@ -1,0 +1,9 @@
+{
+  "name": "modbus-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCS.OSJS Modbus Simulator device-list/editor window (SIM-005.",
+  "osjs": {
+    "type": "package"
+  }
+}

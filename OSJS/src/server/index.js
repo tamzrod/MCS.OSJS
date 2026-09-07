@@ -18,6 +18,11 @@ const {
 
 const HealthRouteProvider = require('./providers/health.js');
 const {ClassicIconsRouteProvider} = require('./providers/classic-icons.js');
+// SIM-005: same-origin /api/devices proxy to the internal simulator bridge
+// (simulator/cmd/simbridge on 127.0.0.1:18211(. The route forwards only
+// the simulator-owned device document; effective MMA2 config is never exposed.
+
+const SimulatorBridgeRouteProvider = require('./providers/simulator-bridge.js');
 const config = require('./config.js');
 const osjs = new Core(config, {});
 
@@ -33,6 +38,7 @@ osjs.register(AuthServiceProvider);
 osjs.register(SettingsServiceProvider, {args: {adapter: 'fs'}});
 osjs.register(HealthRouteProvider);
 osjs.register(ClassicIconsRouteProvider);
+osjs.register(SimulatorBridgeRouteProvider);
 
 const shutdown = signal => (error) => {
   if (error instanceof Error) {

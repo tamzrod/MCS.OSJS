@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: cfe704c
+Baseline Commit: 48c12c28cd1a00be4694253168965fc799359b85
 Working Tree: dirty
-Audited Uncommitted Overlay: `simulator/raw_ingest.go` (sha256 ecb30acb1acc090f)`, `simulator/raw_ingest_test.go` (sha256 6c646d7e4c343f65)`
+Audited Uncommitted Overlay: `simulator/device.go` (sha256 c78248da6fb05ad9bd03e171c5b4daae6ae4c63a7840ad3efa1108d1262052bb)`, `simulator/store.go` (sha256 b919ee794aeeebf67566728bda472cdb88b5978f4133244a9d34e6f5bfa2df90)`, `simulator/store_document_test.go` (sha256 b40077092f70ffe28257bc542d716e9b3fdeea29fc443aacd231ebd413dadca5)`
 
-Committed delta: none since this session's start (shallow clone HEAD cfe704c).
+Committed delta since cfe704c baseline: `b2ffe7e` committed SIM-004 raw-ingest files (`simulator/raw_ingest.go`,`simulator/raw_ingest_test.go`; previously audited overlay, now in HEAD( and refreshed ICC context+handoff; `6112b24`+ `48c12c2` touched `the gathering.md` only (workflow read-only cosine — no ICC branch dependency(.
 
-SIM-004 completed+verified 2026-09-07. Added `simulator/raw_ingest.go` (MMA2 raw-ingest v1 client; encodeRawPacket bits-LSB-first/regs big-endian; Send( drives simulator-generated FC1-FC4 values into simulator-owned MMA2 memory exclusively via raw ingest( and `simulator/raw_ingest_test.go` (4 tests: bits/regs encoding frames + real-TCP Send round-trip with OK/reject responses + unconfigured-FC rejection(;gofmt/vet clean; `go test -count=1 ./...` -> ok; SIM-004 marked COMPLETED in handoff; CURRENT advanced to SIM-005;sim-004 task file records verification evidence.. Refreshed `context/active-work.md` (SIM-004 COMPLETED;SIM-005 CURRENT( and `context/simulator-device-config.md`(added SIM-004 raw-ingest established-truth section;( title now SIM-001+SIM-002A+SIM-003+SIM-004(. Unrelated registry rows preserved.
+SIM-005 in progress 2026-09-07. Working-tree delta: JSON tags on all simulator model structs (`simulator/device.go`; loopback bridge wire format(; `Store.SaveDocument(Document)` multi-device atomic save in `simulator/store.go` (`SaveOne` delegates; invalid device aborts whole save leaving prior bytes(; new `simulator/store_document_test.go` (3 tests: multi-device exact roundtrip, invalid device atomic-rollback, add/duplicate/delete reshape persistence(; `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` -> `ok github.com/tamzrod/MCS.OSJS/simulator`. Refreshed `context/active-work.md` and `context/simulator-device-config.md` for SIM-005 delta. Unrelated registry rows preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ SIM-004 completed+verified 2026-09-07. Added `simulator/raw_ingest.go` (MMA2 raw
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
 | `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go` |
-| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md` |
+| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md`, `workflow/active_work/sim-005-osjs-window.md`, `workflow/active_work/sim-006-save-apply-routing.md` |
 
 ## Access Rule
 

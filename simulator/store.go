@@ -60,13 +60,24 @@ func (s Store) Load() (Document, error) {
 	return doc, nil
 }
 
-// SaveOne validates def and replaces the persisted document with that single
-// definition. Invalid input leaves the previous file bytes unchanged.
+// SaveOne validates defand replaces the persisted document with that single
+// definition. Invalid input leaves the previous file bytes unchanged..
 func (s Store) SaveOne(def DeviceDefinition) error {
-	if err := ValidateDevice(def); err != nil {
-		return err
+	return s.SaveDocument(Document{Devices: []DeviceDefinition{def}})
+}
+
+// SaveDocument validates every device in doc and atomically replaces the
+// persisted document. This is the multi-device persistence path the approved
+// OS.js simulator window (SIM-005( uses:Add/Duplicate/Delete/edit all
+// operate on the full simulator-owned document before one atomic save. Invalid
+// input leaves the previous file bytes unchanged..
+func (s Store) SaveDocument(doc Document) error {
+	for i := range doc.Devices {
+		if err := ValidateDevice(doc.Devices[i]); err != nil {
+			return err
+		}
 	}
-	return s.replace(Document{Devices: []DeviceDefinition{def}})
+	return s.replace(doc)
 }
 
 func (s Store) replace(doc Document) error {

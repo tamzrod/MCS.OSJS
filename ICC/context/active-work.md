@@ -1,9 +1,9 @@
 # Active Work Program (Simulator + MMA2)
 
-Baseline commit: cfe704c
+Baseline commit: 48c12c28cd1a00be4694253168965fc799359b85
 Working tree: dirty
-Audited Overlay: `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go` (sha256 fingerprints registered in ICC/INDEX.md)
-Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-002b-mma2-lifecycle-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`
+Audited Overlay:`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go` (sha256 fingerprints registered in ICC/INDEX.md; raw_ingest now committed in HEAD(`
+Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-002b-mma2-lifecycle-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/store_document_test.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
@@ -16,7 +16,7 @@ Zoom Out: L0-project
 4. `sim-002b-mma2-lifecycle-activation.md` — **COMPLETED 2026-09-07**. Live MMA2 proven through the composed effective config (process healthy; Modbus-TCP (5020, 1) coils/discrete 64 + holding/input 100 read/write; raw PDU hreg0=4321). See Zoom In `simulator-device-config`.
 5. `sim-003-random-runtime.md` — per-FC random runtime scheduler.**COMPLETED 2026-09-07** (scheduler.go+scheduler_test.go;both tests pass;timing-only UpdateTiming never restarts MMA2(. See Zoom In `simulator-device-config`.
 6. `sim-004-raw-ingest.md` — raw ingest into MMA2 memory.**COMPLETED 2026-09-07** (`simulator/raw_ingest.go` + `simulator/raw_ingest_test.go`; MMA2 raw-ingest v1 client; bits-LSB-first/regs big-endian frames; Send( exclusively via raw ingest(; 4 tests incl real-TCP round-trip;gofmt/vet clean; `go test -count=1 ./...` ok. See Zoom In `simulator-device-config`.
-7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.**CURRENT — execute first.**
+7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window.**CURRENT — execute first.** Backend persistence layer in progress (committed delta none; working-tree: JSON tags on simulator model `simulator/device.go` (loopback bridge wire format(; `Store.SaveDocument(Document)` multi-device atomic save `simulator/store.go` (SaveOne delegates(; `simulator/store_document_test.go` (3 tests: multi-device exact roundtrip / invalid-device atomic rollback / add-duplicate-delete reshape( pass; `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` ok(. OS.js window frontend build remains pending.**
 8. `sim-006-save-apply-routing.md` — Save & Apply routing.
 9. `sim-007-runtime-status.md` — runtime status surface.
 

@@ -5,38 +5,40 @@ package simulator
 // together but remain separate domains with separate future consumers.
 // This file is not MMA2 effective runtime configuration.
 type DeviceDefinition struct {
-	Name          string              `yaml:"name"`
-	Enabled       bool                `yaml:"enabled"`
-	MMA2          MMA2Params          `yaml:"mma2"`
-	RandomRuntime RandomRuntimeParams `yaml:"random_runtime"`
+	Name          string              `yaml:"name" json:"name"`
+	Enabled       bool                `yaml:"enabled" json:"enabled"`
+	MMA2          MMA2Params          `yaml:"mma2" json:"mma2"`
+	RandomRuntime RandomRuntimeParams `yaml:"random_runtime" json:"random_runtime"`
 }
 
-// MMA2Params is the simulator's request for MMA2 listener/Unit/FC structure.
-// SIM-001 persists this domain only; it does not activate MMA2.
+// MMA2Params is the simulator's request for MMA2 listener/Unit/FC structure..
+// SIM-001 persists this domain only; it does not activate MMA2..
+// JSON tags wire the same structs through the loopback simulator-server bridge
+// (SIM-005( so browser edits round-trip through the SIM-001 Go model..
 type MMA2Params struct {
-	Port   uint16 `yaml:"port"`
-	UnitID uint16 `yaml:"unit_id"`
-	FC1    Area   `yaml:"fc1"`
-	FC2    Area   `yaml:"fc2"`
-	FC3    Area   `yaml:"fc3"`
-	FC4    Area   `yaml:"fc4"`
+	Port   uint16 `yaml:"port" json:"port"`
+	UnitID uint16 `yaml:"unit_id" json:"unit_id"`
+	FC1    Area   `yaml:"fc1" json:"fc1"`
+	FC2    Area   `yaml:"fc2" json:"fc2"`
+	FC3    Area   `yaml:"fc3" json:"fc3"`
+	FC4    Area   `yaml:"fc4" json:"fc4"`
 }
 
-// Area is one function-code memory window. Count 0 means the area is unused.
+// Area is one function-code memory window. Count 0 means the area is unused..
 type Area struct {
-	Start uint16 `yaml:"start"`
-	Count uint16 `yaml:"count"`
+	Start uint16 `yaml:"start" json:"start"`
+	Count uint16 `yaml:"count" json:"count"`
 }
 
-// RandomRuntimeParams is the simulator-owned per-FC randomization schedule.
+// RandomRuntimeParams is the simulator-owned per-FC randomization schedule..
 type RandomRuntimeParams struct {
-	FC1IntervalMS uint32 `yaml:"fc1_interval_ms"`
-	FC2IntervalMS uint32 `yaml:"fc2_interval_ms"`
-	FC3IntervalMS uint32 `yaml:"fc3_interval_ms"`
-	FC4IntervalMS uint32 `yaml:"fc4_interval_ms"`
+	FC1IntervalMS uint32 `yaml:"fc1_interval_ms" json:"fc1_interval_ms"`
+	FC2IntervalMS uint32 `yaml:"fc2_interval_ms" json:"fc2_interval_ms"`
+	FC3IntervalMS uint32 `yaml:"fc3_interval_ms" json:"fc3_interval_ms"`
+	FC4IntervalMS uint32 `yaml:"fc4_interval_ms" json:"fc4_interval_ms"`
 }
 
-// Document is the on-disk simulator-owned store. It is not an MMA2 config file.
+// Document is the on-disk simulator-owned store. It is not an MMA2 config file..
 type Document struct {
-	Devices []DeviceDefinition `yaml:"devices"`
+	Devices []DeviceDefinition `yaml:"devices" json:"devices"`
 }

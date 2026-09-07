@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 575a413fad4b035212f7ada42c276b1e15736699
+Baseline Commit: 28d27f9f74c097e03723ff8e731e898e28b57ea4
 Working Tree: clean
 Audited Uncommitted Overlay: (none( (files once audited as overlay — `simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go` — are now committed in HEAD(.
 
 Committed delta since 48c12c2 baseline: `b69c46c` committed the SIM-005 backend persistence + loopback bridge delta (`simulator/device.go` JSON tags; `simulator/store.go` `SaveDocument(Document)` multi-device atomic save; new `simulator/store_document_test.go` (3 multi-device tests(; new `simulator/bridge.go`+`simulator/bridge_test.go` loopback JSON bridge `BridgePath=/api/devices` GET/PUT on the simulator-owned document only;and refreshed ICC context files+INDEX committed with that delta(.
 
-SIM-005 in progress 2026-09-07. Backend persistence layer committed at HEAD `b69c46c`; osjs window frontend build + bridge hosting remain pending. `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` -> `ok github.com/tamzrod/MCS.OSJS/simulator`. Rebased ICC baseline/overlay onto HEAD for the selected SIM-005 branch only. Unrelated registry rows preserved.
+SIM-005 completed and verified at pushed commit `28d27f9` on 2026-09-08. The corrupt Modbus Simulator frontend was replaced, `index.scss` added, the same-origin proxy syntax repaired, and real-browser add/edit/save/duplicate/delete/discard plus exact SIM-001 persistence round-trip verified without effective MMA2 config writes. Local/full OS.js builds, server syntax check, gofmt, vet, and Go tests pass. SIM-006 is CURRENT. Only the selected Active Work simulator branch was refreshed; unrelated registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

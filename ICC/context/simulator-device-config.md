@@ -1,6 +1,6 @@
 # Simulator Device Config + MMA2 Compose/Ownership + Scheduler + Raw Ingest + SaveDocument + Loopback Bridge (SIM-001 + SIM-002A + SIM-003 + SIM-004 + SIM-005-backend)
 
-Baseline commit: 575a413fad4b035212f7ada42c276b1e15736699
+Baseline commit: 28d27f9f74c097e03723ff8e731e898e28b57ea4
 Working tree: clean
 Audited Overlay: (none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEAD, alongside `simulator/bridge.go`+`simulator/bridge_test.go`.
 Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/README.md, deploy/docker-compose.yml, OSJS/src/server/config.js, MMA2/internal/config/validate.go, planning/Brainstorm/osjs-modbus-simulator.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md`, workflow/active_work/sim-003-random-runtime.md`, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`, simulator/bridge.go`, simulator/bridge_test.go`
@@ -46,3 +46,9 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - `Store.SaveDocument(doc Document)` (`simulator/store.go`) is the multi-device atomic save path the approved OS.js window (SIM-005)uses for Add/Duplicate/Delete/edit:it validates every device in doc first;any invalid device aborts the whole save leavingthe previously persisted file bytes unchanged;then one atomic temp+rename replace( persists the entire simulator-owned document. `SaveOne` now delegates to `SaveDocument(Document{Devices: []DeviceDefinition{def}}}`preserving SIM-001 single-device semantics.
 - All simulator model structs in `simulator/device.go` (DeviceDefinition, MMA2Params, Area, RandomRuntimeParams, Document(now carry both `yaml` and `json` tags;the JSON wire format bridges browser form values to the SIM-001 Go model via the loopback simulator-server bridge (SIM-005; no backend MMA2 activation in scope(.
 - `simulator/store_document_test.go` proves exact multi-device round-trip through Store, atomic rejection on invalid device without replacing prior bytes,and the Add/Duplicate/Delete load-modify-save reshape persisting the whole document. `gofmt -l .` clean;`go vet ./...` clean;`go test -count=1 ./...` -> `ok github.com/tamzrod/MCS.OSJS/simulator`.`
+
+## Established truth (SIM-005 OS.js window)
+
+- `OSJS/src/packages/ModbusSimulator/index.js` and `index.scss` implement the approved two-pane searchable device-list/editor and bind all simulator-owned fields/actions to the SIM-001 JSON document through same-origin `GET/PUT /api/devices`.
+- Add, Duplicate, Delete, and edits remain local until Save & Apply; Discard restores the last persisted snapshot. SIM-005 does not activate MMA2; the UI explicitly leaves live application to SIM-006.
+- Real-browser verification proved open/add/edit/save/duplicate/delete/discard and exact JSON/YAML round-trip in an isolated data root containing no effective MMA2 config. Production package/full builds, server syntax check, gofmt, vet, and Go tests pass. SIM-005 completed at pushed commit `28d27f9`.

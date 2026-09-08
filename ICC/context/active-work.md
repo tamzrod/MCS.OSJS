@@ -1,6 +1,6 @@
 # Active Work Program (Simulator + MMA2)
 
-Baseline commit: e14ee96
+Baseline commit: 24fd5b1
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
 Source dependencies: handoff.md, workflow/active_work/*, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/store_document_test.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, OSJS/src/packages/ModbusSimulator/
@@ -23,4 +23,4 @@ Zoom Out: L0-project
 
 11. `sim-009-serve-simulator-through-mma2.md` — **SUPERSEDED 2026-09-08** by SIM-010…SIM-017; its premise (Simulator owns+activates a managed MMA2 child( was an incorrect architecture assumption. Current authoritative boundary: MMA2 auto-starts on boot; Simulator must not START/STOP/SPAWN/KILL/REPLACE it; only RESTART (SIM-014( after a committed valid shared-config change; values enter via Raw Ingest; no `simbridge` service and no Simulator config API. SIM-009's committed apply.go ready-gate delta (pre-ready schedulers unarmed; truthful STOPPED/ERROR status( remains in HEAD at `83a5b69`.
 
-SIM-001…SIM-008 are complete+verified. SIM-010 completed at `0b356da`; SIM-011 completed at `82d6ac6`. SIM-012 — Local Simulator Configuration Path — **COMPLETED 2026-09-08** at pushed commit `e14ee96`: the UI loads/saves exact documents through server-backed OS.js settings with no Simulator API or MMA2 write; live all-field reload and CRUD/discard verification passed. SIM-013 — Compose Shared MMA2 Config — is now CURRENT. SIM-010…SIM-017 remain human-promoted in dependency order.
+SIM-001…SIM-008 are complete+verified. SIM-010 through SIM-012 are complete. SIM-013 — Compose Shared MMA2 Config — **COMPLETED 2026-09-08** at pushed commit `24fd5b1`: enabled-only Simulator reservations compose transactionally; foreign fields survive; the complete candidate uses MMA2's authoritative validation; collision/invalid candidates leave artifacts unchanged. SIM-014 — MMA2 RESTART-only Control — is now CURRENT. SIM-010…SIM-017 remain human-promoted in dependency order.

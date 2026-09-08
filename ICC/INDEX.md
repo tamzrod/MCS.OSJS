@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: e14ee96
+Baseline Commit: 24fd5b1
 Working Tree: clean
 Audited Uncommitted Overlay: (none).
 
-Committed delta through `e14ee96`: SIM-011 removed Simulator-owned MMA2 lifecycle behavior at `82d6ac6`; SIM-012 then persisted the UI document through the existing server-backed OS.js settings service under `mcs/modbus-simulator.document`, with no Simulator HTTP API or MMA2 config write. The handoff advances SIM-013 to current.
+Committed delta through `24fd5b1`: SIM-012 added local OS.js-settings persistence at `e14ee96`; SIM-013 then made shared MMA2 composition enabled-only, preserved foreign YAML fields/reservations, validated the complete candidate through MMA2's authoritative validator, and safely committed config plus ownership artifacts. The handoff advances SIM-014 to current.
 
-Refreshed Active Work branch only at `e14ee96`: the simulator-device-config leaf records SIM-012's local settings persistence; active-work and the handoff-derived L0 summary advance SIM-013 to current. Unrelated sibling registry rows are preserved.
+Refreshed Active Work branch only at `24fd5b1`: the simulator-device-config leaf records SIM-013's validated shared-config transaction; active-work and the handoff-derived L0 summary advance SIM-014 to current. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -34,7 +34,7 @@ Refreshed Active Work branch only at `e14ee96`: the simulator-device-config leaf
 | `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go`, `simulator/apply.go`, `simulator/apply_test.go` |
+| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `MMA2/pkg/configvalidate/validate.go`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `simulator/apply.go`, `simulator/apply_test.go` |
 | `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md`, `workflow/active_work/sim-005-osjs-window.md`, `workflow/active_work/sim-006-save-apply-routing.md`, `workflow/active_work/sim-007-runtime-status.md`, `workflow/active_work/sim-008-managed-mma2-lifecycle.md`, `workflow/active_work/sim-009-serve-simulator-through-mma2.md`, `workflow/active_work/sim-010-remove-simulator-bridge-api.md`, `workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md` |
 
 ## Access Rule

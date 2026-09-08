@@ -1,6 +1,6 @@
 # Simulator Device Config + MMA2 Compose/Ownership + Scheduler + Raw Ingest + SaveDocument + Loopback Bridge (SIM-001 + SIM-002A + SIM-003 + SIM-004 + SIM-005-backend)
 
-Baseline commit: 28d27f9f74c097e03723ff8e731e898e28b57ea4
+Baseline commit: 9532c31
 Working tree: clean
 Audited Overlay: (none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEAD, alongside `simulator/bridge.go`+`simulator/bridge_test.go`.
 Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/README.md, deploy/docker-compose.yml, OSJS/src/server/config.js, MMA2/internal/config/validate.go, planning/Brainstorm/osjs-modbus-simulator.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md`, workflow/active_work/sim-003-random-runtime.md`, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`, simulator/bridge.go`, simulator/bridge_test.go`
@@ -52,3 +52,9 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - `OSJS/src/packages/ModbusSimulator/index.js` and `index.scss` implement the approved two-pane searchable device-list/editor and bind all simulator-owned fields/actions to the SIM-001 JSON document through same-origin `GET/PUT /api/devices`.
 - Add, Duplicate, Delete, and edits remain local until Save & Apply; Discard restores the last persisted snapshot. SIM-005 does not activate MMA2; the UI explicitly leaves live application to SIM-006.
 - Real-browser verification proved open/add/edit/save/duplicate/delete/discard and exact JSON/YAML round-trip in an isolated data root containing no effective MMA2 config. Production package/full builds, server syntax check, gofmt, vet, and Go tests pass. SIM-005 completed at pushed commit `28d27f9`.
+
+## Established truth (SIM-006 Save & Apply routing)
+
+- `simulator/apply.go` validates and classifies full-document edits as `mma2-structural`, `random-runtime`, or `no-change`; only the selected downstream consumer runs, and the simulator document is persisted only after downstream success.
+- Structural edits compose the complete simulator reservation set through SIM-002 ownership rules and replace schedulers; timing-only edits call `Scheduler.UpdateTiming` without MMA2 configuration writes. Applying bridge responses expose the path/message to the OS.js status bar.
+- Unit/HTTP tests prove all routes and prior-state preservation. Three browser saves proved structural port change, timing-only interval change, and rejected duplicate reservation with the last valid document/config intact. SIM-006 completed at pushed commit `9532c31`.

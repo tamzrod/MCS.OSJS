@@ -73,6 +73,33 @@ func TestBridgeRejectsInvalidAtomic(t *testing.T) {
 	}
 }
 
+func TestApplyingBridgeReturnsSelectedPath(t *testing.T) {
+	root := t.TempDir()
+	store := Store{Root: root}
+	base := Document{Devices: []DeviceDefinition{validDevice()}}
+	if err := store.SaveDocument(base); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &applyRecorder{}
+	router := NewApplyRouter(store, recorder, recorder)
+	ts := httptest.NewServer(NewApplyingBridge(store, router))
+	defer ts.Close()
+	edited := cloneDocument(base)
+	edited.Devices[0].RandomRuntime.FC1IntervalMS++
+	resp := mustPut(t, ts.URL+BridgePath, mustJSON(t, edited))
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("PUT status %d", resp.StatusCode)
+	}
+	var result ApplyResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Path != ApplyTiming || recorder.timing != 1 || recorder.structural != 0 {
+		t.Fatalf("apply result=%+v recorder=%+v", result, recorder)
+	}
+}
+
 func mustJSON(t *testing.T, v interface{}) string {
 	t.Helper()
 	b, err := json.Marshal(v)

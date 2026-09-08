@@ -151,6 +151,51 @@ func (s Store) SaveAndCompose(def DeviceDefinition) error {
 	return s.saveOwners(owners)
 }
 
+// ComposeDocument replaces only simulator-owned reservations with the complete
+// edited simulator document while preserving all foreign ownership. The caller
+// persists the simulator document after this downstream structural path
+// succeeds, allowing ApplyRouter to keep the prior document active on error.
+func (s Store) ComposeDocument(doc Document) error {
+	for i := range doc.Devices {
+		if err := ValidateDevice(doc.Devices[i]); err != nil {
+			return fmt.Errorf("device %d: %w", i, err)
+		}
+	}
+	cfg, err := s.loadEffective()
+	if err != nil {
+		return err
+	}
+	owners, err := s.loadOwners()
+	if err != nil {
+		return err
+	}
+	for _, def := range doc.Devices {
+		for _, reservation := range owners.Reservations {
+			if reservation.Port == def.MMA2.Port && reservation.UnitID == def.MMA2.UnitID && reservation.Owner != ProducerSimulator {
+				return fmt.Errorf("%w: (%d,%d) owned by %q", ErrReservationOwnedByOther, def.MMA2.Port, def.MMA2.UnitID, reservation.Owner)
+			}
+		}
+	}
+	cfg, owners = dropSimulatorReservations(cfg, owners)
+	seen := make(map[mma2Key]bool)
+	for _, def := range doc.Devices {
+		if !hasMMA2Areas(def.MMA2) {
+			continue
+		}
+		key := mma2Key{port: def.MMA2.Port, unitID: def.MMA2.UnitID}
+		if seen[key] {
+			return fmt.Errorf("duplicate simulator MMA2 reservation (%d,%d)", key.port, key.unitID)
+		}
+		seen[key] = true
+		cfg = mergeReservation(cfg, def.MMA2, memoryFromMMA2Params(def.MMA2))
+		owners.Reservations = append(owners.Reservations, OwnershipEntry{Port: key.port, UnitID: key.unitID, Owner: ProducerSimulator})
+	}
+	if err := s.saveEffective(cfg); err != nil {
+		return err
+	}
+	return s.saveOwners(owners)
+}
+
 // DeleteAndCompose removes the simulator-owned reservation for(port,unit_id)
 // from the effective MMA2 configuration and ownership registry, preserving all
 // foreign-owned reservations untouched. Deleting another program's reservation

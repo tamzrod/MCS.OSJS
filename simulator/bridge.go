@@ -15,11 +15,16 @@ const BridgePath = "/api/devices"
 // Bridge serves the simulator-owned device document over JSON on an internal
 // loopback listener. It is a transport only: validation lives in ValidateDevice.
 type Bridge struct {
-	store Store
+	store   Store
+	applier *ApplyRouter
 }
 
 func NewBridge(store Store) *Bridge {
 	return &Bridge{store: store}
+}
+
+func NewApplyingBridge(store Store, applier *ApplyRouter) *Bridge {
+	return &Bridge{store: store, applier: applier}
 }
 
 func (b Bridge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +52,15 @@ func (b Bridge) put(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&doc); err != nil {
 		http.Error(w, "invalid document JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if b.applier != nil {
+		result, err := b.applier.Apply(doc)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			return
+		}
+		writeJSON(w, http.StatusOK, result)
 		return
 	}
 	if err := b.store.SaveDocument(doc); err != nil {

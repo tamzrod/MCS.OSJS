@@ -38,13 +38,18 @@ func main() {
 	}
 
 	store := simulator.Store{Root: root}
+	router, timing, err := simulator.NewRuntimeApplyRouter(store)
+	if err != nil {
+		log.Fatalf("simbridge: initialize Save & Apply routing: %v", err)
+	}
+	defer timing.Stop()
 	ln, err := net.Listen("tcp", BridgeAddr)
 	if err != nil {
 		log.Fatalf("simbridge: bind %s failed: %v", BridgeAddr, err)
 	}
 	log.Printf("simbridge: serving simulator-owned device document on %s", BridgeAddr)
 
-	srv := &http.Server{Handler: simulator.NewBridge(store)}
+	srv := &http.Server{Handler: simulator.NewApplyingBridge(store, router)}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

@@ -8,6 +8,7 @@ const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holdi
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
 const normalizeDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
+const applyDocument = value => value && value.document ? normalizeDocument(value.document) : normalizeDocument(value);
 
 const blankDevice = sequence => ({
   name: `Sim-PLC-${sequence}`,
@@ -184,11 +185,12 @@ const register = (core, args, options, metadata) => {
     setMessage('Saving simulator definitions...');
     render();
     try {
-      const saved = normalizeDocument(await core.request(API_PATH, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(state.document)}, 'json'));
+      const response = await core.request(API_PATH, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(state.document)}, 'json');
+      const saved = applyDocument(response);
       state.document = clone(saved);
       state.persisted = clone(saved);
       if (state.selected !== null && state.selected >= saved.devices.length) state.selected = null;
-      setMessage('Simulator definitions saved. Live MMA2 application is handled by SIM-006.');
+      setMessage(response.message || 'Simulator definitions saved.');
     } catch (error) {
       setMessage(`Save failed: ${error.message || error}`, true);
     } finally {

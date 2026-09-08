@@ -1,6 +1,6 @@
 # SIM-006 — Route Save & Apply to the Correct Parameter Consumer
 
-Status: ACTIVE — human-promoted for JR execution.
+Status: COMPLETED — verified 2026-09-08.
 
 Source intent: `planning/Brainstorm/osjs-modbus-simulator.md`.
 
@@ -35,6 +35,8 @@ Source intent: `planning/Brainstorm/osjs-modbus-simulator.md`.
 ## Verification
 
 From the UI, perform exactly three saves: one structural change, one timing-only change, and one invalid/conflicting change. Record which path is invoked and prove final runtime state matches the expected result for each case.
+
+**Evidence (2026-09-08):** Added `simulator/apply.go` with validation-first document classification and explicit `mma2-structural`, `random-runtime`, and `no-change` outcomes. Structural changes route through the SIM-002 ownership/composition consumer and rebuild the simulator schedulers; timing-only changes route through `Scheduler.UpdateTiming` and do not touch MMA2 configuration. The bridge now returns the selected path/message and the OS.js window surfaces it. Browser verification performed exactly three saves: port 15020→15021 reported the MMA2 structural path; FC1 timing 1000→1250 ms reported random-runtime update without restart; a second device conflicting on `(15021,1)` returned HTTP 422. The final persisted document retained one device at port 15021 with FC1 interval 1250, while effective MMA2 config and ownership retained the single simulator reservation. `apply_test.go` and the applying-bridge test prove route counts, validation-before-consumer behavior, and preservation of prior persisted state on downstream rejection. `gofmt -l .`, `go vet ./...`, `go test -count=1 ./...`, and `npm run build:local-packages` pass.
 
 ## Dependencies
 

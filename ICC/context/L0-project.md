@@ -31,7 +31,7 @@ Project identity document defines identity/direction only:  no implementation au
 
 Handoff status: ACTIVE. MMA2-001/002 and simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009's premise was superseded. Active Work execution order (promoted sequence: SIM-010 → SIM-017:
 
-SIM-010 (current: remove Simulator bridge + config API(, SIM-011 (remove Simulator MMA2 lifecycle ownership(, SIM-012 (local Simulator config path(, SIM-013 (compose Simulator-owned entries into shared MMA2 config(, SIM-014 (MMA2 RESTART-only control(, SIM-015 (run simulation after successful MMA2 apply(, SIM-016 (restore enabled simulations on boot(,, SIM-017 (end-to-end verification(. MMA2 auto-starts on boot; Simulator must not own its lifecycle; only RESTART after a committed valid shared-config change; no `simbridge`/Simulator config API. Detail in Zoom In `active-work`.
+SIM-010 (**COMPLETED 2026-09-08**; bridge + config API removed at `0b356da`(, SIM-011 (remove Simulator MMA2 lifecycle ownership(, SIM-012 (local Simulator config path(, SIM-013 (compose Simulator-owned entries into shared MMA2 config(, SIM-014 (MMA2 RESTART-only control(, SIM-015 (run simulation after successful MMA2 apply(, SIM-016 (restore enabled simulations on boot(,, SIM-017 (end-to-end verification(. MMA2 auto-starts on boot; Simulator must not own its lifecycle; only RESTART after a committed valid shared-config change; no `simbridge`/Simulator config API. Detail in Zoom In `active-work`.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 

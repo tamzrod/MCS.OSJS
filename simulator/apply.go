@@ -109,6 +109,17 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 	return nil
 }
 
+// ArmSchedules arms enabled schedules for theat committed document after the
+// full Save & Apply chain (shared-config commit -> MMA2 RESTART -> readiness(
+// has succeeded. It replaces prior schedules so each successful apply re-arms
+// with the latest persisted state (SIM-015(。
+func (a *SchedulerApplier) ArmSchedules(doc Document) {
+	a.mu.Lock()
+	a.ready = true
+	a.mu.Unlock()
+	a.replaceSchedulers(doc)
+}
+
 func (a *SchedulerApplier) ApplyTiming(previous, edited Document) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -264,6 +275,14 @@ func (r *ApplyRouter) Apply(edited Document) (ApplyResult, error) {
 	}
 	if err := r.store.SaveDocument(edited); err != nil {
 		return ApplyResult{}, err
+	}
+	// SIM-015: schedules may arm only after the full chain (commit, restarted,
+	// ready,persisted( succeeded. The live SchedulerApplier owns arming; plumbing
+	// fakes (e.g. applyRecorder( don't arm schedules..
+	if path == ApplyStructural {
+		if armer, ok := r.structural.(*SchedulerApplier); ok {
+			armer.ArmSchedules(edited)
+		}
 	}
 	return ApplyResult{Document: edited, Path: path, Message: applyMessage(path)}, nil
 }

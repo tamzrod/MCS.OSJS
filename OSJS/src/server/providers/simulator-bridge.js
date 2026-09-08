@@ -32,12 +32,13 @@ class SimulatorBridgeRouteProvider {
     }
     const target = this.options.bridgeAddress || process.env.SIMBRIDGE_ADDR || DEFAULT_BRIDGE;
     express.route('get', '/api/devices', (req, res) => this.forward(req, res, target, 'GET'));
+    express.route('get', '/api/devices/status', (req, res) => this.forward(req, res, target, 'GET', '/api/devices/status?name=' + encodeURIComponent(String(req.query.name || ''))));
     express.route('put', '/api/devices', (req, res) => this.forward(req, res, target, 'PUT'));
     return Promise.resolve(true);
   }
 
-  forward(req, res, target, method) {
-    const outbound = http.request({hostname: '127.0.0.1', port: Number(target.split(':').pop()) || 18211, path:'/api/devices', method, headers: {'content-type': 'application/json'}}, (upstream) => {
+  forward(req, res, target, method, path = '/api/devices') {
+    const outbound = http.request({hostname: '127.0.0.1', port: Number(target.split(':').pop()) || 18211, path, method, headers: {'content-type': 'application/json'}}, (upstream) => {
       const chunks = [];
       upstream.on('data', (c) => chunks.push(c));
       upstream.on('end', () => {

@@ -2,13 +2,48 @@ package simulator
 
 import (
 	"errors"
+	"net"
+	"strconv"
 	"testing"
+	"time"
 )
 
 type applyRecorder struct {
 	structural int
 	timing     int
 	err        error
+}
+
+func TestSchedulerApplierRuntimeStatusMatchesTimingAndPoints(t *testing.T) {
+	fixture := newRawFixture(t, rawRespOK, rawRespOK, rawRespOK, rawRespOK)
+	_, portText, err := net.SplitHostPort(fixture.ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(portText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	device := validDevice()
+	device.Name = "status-device"
+	device.MMA2.Port = uint16(port)
+	device.RandomRuntime = RandomRuntimeParams{FC1IntervalMS: 5, FC2IntervalMS: 7, FC3IntervalMS: 9, FC4IntervalMS: 11}
+	applier := NewSchedulerApplier(Store{Root: t.TempDir()}, Document{Devices: []DeviceDefinition{device}})
+	defer applier.Stop()
+	time.Sleep(25 * time.Millisecond)
+	status, err := applier.RuntimeStatus(device.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPoints := uint32(device.MMA2.FC1.Count) + uint32(device.MMA2.FC2.Count) + uint32(device.MMA2.FC3.Count) + uint32(device.MMA2.FC4.Count)
+	if status.TotalPoints != wantPoints || status.MMA2 != "RUNNING" || status.Device != "RUNNING" {
+		t.Fatalf("runtime status=%+v", status)
+	}
+	for _, fc := range []string{"fc1", "fc2", "fc3", "fc4"} {
+		if status.FC[fc].Last == "" || status.FC[fc].Last == "Never" || status.FC[fc].Next == "" {
+			t.Fatalf("%s timing missing: %+v", fc, status.FC[fc])
+		}
+	}
 }
 
 func (r *applyRecorder) ApplyStructural(_, _ Document) error { r.structural++; return r.err }

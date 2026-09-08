@@ -2,7 +2,10 @@ package simulator
 
 import (
 	"fmt"
+	"net"
 	"reflect"
+	"sync"
+	"time"
 )
 
 type ApplyPath string
@@ -25,26 +28,50 @@ type TimingApplier interface {
 // scheduler per persisted device and applies timing-only edits without touching
 // MMA2 configuration. Generated values continue through SIM-004 raw ingest.
 type SchedulerApplier struct {
+	mu         sync.Mutex
 	store      Store
 	schedulers map[string]*Scheduler
+	devices    map[string]DeviceDefinition
+	rawErrors  map[string]string
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
-	a := &SchedulerApplier{store: store, schedulers: make(map[string]*Scheduler)}
+	a := &SchedulerApplier{store: store, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
 	a.replaceSchedulers(initial)
 	return a
 }
 
 func (a *SchedulerApplier) replaceSchedulers(doc Document) {
-	for _, scheduler := range a.schedulers {
+	a.mu.Lock()
+	old := a.schedulers
+	a.schedulers = make(map[string]*Scheduler)
+	a.devices = make(map[string]DeviceDefinition)
+	a.rawErrors = make(map[string]string)
+	a.mu.Unlock()
+	for _, scheduler := range old {
 		scheduler.Stop()
 	}
-	a.schedulers = make(map[string]*Scheduler)
 	for _, def := range doc.Devices {
 		device := def
-		a.schedulers[device.Name] = NewScheduler(device, func(values Values) {
-			_ = NewRawIngestClient(device).Send(values)
+		a.mu.Lock()
+		a.devices[device.Name] = device
+		a.mu.Unlock()
+		if !device.Enabled {
+			continue
+		}
+		scheduler := NewScheduler(device, func(values Values) {
+			err := NewRawIngestClient(device).Send(values)
+			a.mu.Lock()
+			if err == nil {
+				delete(a.rawErrors, device.Name)
+			} else {
+				a.rawErrors[device.Name] = err.Error()
+			}
+			a.mu.Unlock()
 		})
+		a.mu.Lock()
+		a.schedulers[device.Name] = scheduler
+		a.mu.Unlock()
 	}
 }
 
@@ -57,6 +84,8 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 }
 
 func (a *SchedulerApplier) ApplyTiming(previous, edited Document) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if len(previous.Devices) != len(edited.Devices) {
 		return fmt.Errorf("timing apply cannot change device inventory")
 	}
@@ -66,6 +95,7 @@ func (a *SchedulerApplier) ApplyTiming(previous, edited Document) error {
 			return fmt.Errorf("scheduler for %q is unavailable", previous.Devices[i].Name)
 		}
 		scheduler.UpdateTiming(def.RandomRuntime)
+		a.devices[def.Name] = def
 		if def.Name != previous.Devices[i].Name {
 			delete(a.schedulers, previous.Devices[i].Name)
 			a.schedulers[def.Name] = scheduler
@@ -75,9 +105,66 @@ func (a *SchedulerApplier) ApplyTiming(previous, edited Document) error {
 }
 
 func (a *SchedulerApplier) Stop() {
-	for _, scheduler := range a.schedulers {
+	a.mu.Lock()
+	schedulers := a.schedulers
+	a.schedulers = make(map[string]*Scheduler)
+	a.mu.Unlock()
+	for _, scheduler := range schedulers {
 		scheduler.Stop()
 	}
+}
+
+type FCRuntimeStatus struct {
+	Last string `json:"last"`
+	Next string `json:"next"`
+}
+
+type DeviceRuntimeStatus struct {
+	Name        string                     `json:"name"`
+	Device      string                     `json:"device_status"`
+	MMA2        string                     `json:"mma2_status"`
+	RawIngest   string                     `json:"raw_ingest_status"`
+	RawError    string                     `json:"raw_ingest_error,omitempty"`
+	TotalPoints uint32                     `json:"total_points"`
+	FC          map[string]FCRuntimeStatus `json:"fc"`
+}
+
+func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, error) {
+	a.mu.Lock()
+	device, ok := a.devices[name]
+	scheduler := a.schedulers[name]
+	rawError := a.rawErrors[name]
+	a.mu.Unlock()
+	if !ok {
+		return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name)
+	}
+	status := DeviceRuntimeStatus{Name: name, Device: "STOPPED", MMA2: "STOPPED", RawIngest: "WAITING", RawError: rawError, FC: make(map[string]FCRuntimeStatus)}
+	status.TotalPoints = uint32(device.MMA2.FC1.Count) + uint32(device.MMA2.FC2.Count) + uint32(device.MMA2.FC3.Count) + uint32(device.MMA2.FC4.Count)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", fmt.Sprint(device.MMA2.Port)), 150*time.Millisecond)
+	if err == nil {
+		status.MMA2 = "RUNNING"
+		_ = conn.Close()
+	}
+	if !device.Enabled {
+		return status, nil
+	}
+	if rawError != "" {
+		status.RawIngest = "ERROR"
+		status.Device = "ERROR"
+	} else if status.MMA2 == "RUNNING" {
+		status.RawIngest = "OK"
+		status.Device = "RUNNING"
+	}
+	if scheduler != nil {
+		for fc, timing := range scheduler.Timing() {
+			last := "Never"
+			if !timing.Last.IsZero() {
+				last = timing.Last.Format(time.RFC3339Nano)
+			}
+			status.FC[fmt.Sprintf("fc%d", fc)] = FCRuntimeStatus{Last: last, Next: timing.Next.Format(time.RFC3339Nano)}
+		}
+	}
+	return status, nil
 }
 
 func NewRuntimeApplyRouter(store Store) (*ApplyRouter, *SchedulerApplier, error) {

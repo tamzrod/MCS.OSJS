@@ -1,6 +1,6 @@
 # SIM-007 — Show Simulator Runtime Status
 
-Status: ACTIVE — human-promoted for JR execution.
+Status: COMPLETED — verified 2026-09-08.
 
 Source intent: `planning/Brainstorm/osjs-modbus-simulator.md`.
 
@@ -34,6 +34,8 @@ The OS.js simulator window displays enough runtime state to prove the selected d
 ## Verification
 
 Run one simulator device with different FC intervals, observe multiple update cycles, and compare displayed runtime state against scheduler/MMA2 evidence.
+
+**Evidence (2026-09-08):** Added selected-device runtime status to the applying bridge and OS.js window. `SchedulerApplier.RuntimeStatus` reports device `RUNNING`/`STOPPED`/`ERROR`, MMA2 TCP reachability, observed raw-ingest state/error, exact total FC point count, and per-FC scheduler `Last`/`Next` timestamps. The UI polls the selected device once per second and renders a compact status summary plus FC1-FC4 timing rows without exposing register values or history. `TestSchedulerApplierRuntimeStatusMatchesTimingAndPoints` ran all four FCs at distinct 5/7/9/11 ms intervals against a live raw-ingest fixture and proved RUNNING MMA2/device state, populated last/next times, and exact configured-point total. Real-browser verification displayed the isolated device's truthful ERROR/STOPPED/ERROR state with total 64 and advancing FC1-FC4 last/next timestamps while MMA2 was intentionally absent. `gofmt -l .`, `go vet ./...`, `go test -count=1 ./...`, `node --check`, `npm run build:local-packages`, and `npm run build` pass.
 
 ## Dependencies
 

@@ -33,9 +33,29 @@ func (b Bridge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		b.get(w, r)
 	case r.Method == http.MethodPut && r.URL.Path == BridgePath:
 		b.put(w, r)
+	case r.Method == http.MethodGet && r.URL.Path == BridgePath+"/status":
+		b.status(w, r)
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (b Bridge) status(w http.ResponseWriter, r *http.Request) {
+	if b.applier == nil {
+		http.Error(w, "runtime status unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	provider, ok := b.applier.timing.(*SchedulerApplier)
+	if !ok {
+		http.Error(w, "runtime status unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	status, err := provider.RuntimeStatus(r.URL.Query().Get("name"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	writeJSON(w, http.StatusOK, status)
 }
 
 func (b Bridge) get(w http.ResponseWriter, r *http.Request) {

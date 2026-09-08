@@ -86,7 +86,7 @@ const register = (core, args, options, metadata) => {
     dimension: {width: 920, height: 620},
     position: 'center'
   });
-  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'Loading simulator definitions...', error: false, saving: false};
+  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'Loading simulator definitions...', error: false, saving: false, runtime: null};
   const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
   const setMessage = (message, error = false) => Object.assign(state, {message, error});
 
@@ -131,6 +131,26 @@ const register = (core, args, options, metadata) => {
       table.appendChild(row);
     });
     pane.appendChild(table);
+
+    const runtime = state.runtime && state.runtime.name === device.name ? state.runtime : null;
+    const runtimePanel = element('section', 'sim-runtime');
+    runtimePanel.appendChild(element('h3', '', 'Runtime Status'));
+    const summary = element('div', 'sim-runtime-summary');
+    [['Device', runtime && runtime.device_status], ['MMA2', runtime && runtime.mma2_status], ['Raw Ingest', runtime && runtime.raw_ingest_status], ['Total Points', runtime && runtime.total_points]].forEach(([label, value]) => {
+      const item = element('div', 'sim-runtime-item');
+      item.append(element('span', '', label), element('strong', '', value === null || value === undefined ? 'UNKNOWN' : String(value)));
+      summary.appendChild(item);
+    });
+    runtimePanel.appendChild(summary);
+    const timings = element('div', 'sim-runtime-timings');
+    FC_KEYS.forEach(fc => {
+      const timing = runtime && runtime.fc && runtime.fc[fc];
+      const row = element('div', 'sim-runtime-fc');
+      row.append(element('strong', '', fc.toUpperCase()), element('span', '', `Last: ${timing ? timing.last : 'Unknown'}`), element('span', '', `Next: ${timing ? timing.next : 'Unknown'}`));
+      timings.appendChild(row);
+    });
+    runtimePanel.appendChild(timings);
+    pane.appendChild(runtimePanel);
     const validation = validateDevice(device);
     if (validation) pane.appendChild(element('div', 'sim-validation', validation));
     const actions = element('div', 'sim-editor-actions');
@@ -199,7 +219,24 @@ const register = (core, args, options, metadata) => {
     }
   };
 
-  win.on('destroy', () => proc.destroy());
+  const refreshStatus = async () => {
+    const device = selectedDevice();
+    if (!device) return;
+    try {
+      state.runtime = await core.request(`${API_PATH}/status?name=${encodeURIComponent(device.name)}`, {}, 'json');
+      const current = selectedDevice();
+      if (current && current.name === state.runtime.name) render();
+    } catch (error) {
+      state.runtime = {name: device.name, device_status: 'ERROR', mma2_status: 'UNKNOWN', raw_ingest_status: 'ERROR', total_points: 0, fc: {}};
+      render();
+    }
+  };
+
+  const statusTimer = setInterval(refreshStatus, 1000);
+  win.on('destroy', () => {
+    clearInterval(statusTimer);
+    proc.destroy();
+  });
   win.render($content => {
     win.$content = $content;
     $content.addEventListener('click', event => {
@@ -208,6 +245,7 @@ const register = (core, args, options, metadata) => {
       const action = target.dataset.action;
       if (action === 'select') {
         state.selected = Number(target.dataset.index);
+		state.runtime = null;
         setMessage('Editing a simulator-owned definition.');
       } else if (action === 'add') {
         state.document.devices.push(blankDevice(state.document.devices.length + 1));
@@ -238,7 +276,10 @@ const register = (core, args, options, metadata) => {
       state.persisted = clone(state.document);
       state.selected = state.document.devices.length ? 0 : null;
       setMessage(state.document.devices.length ? 'Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
-    }).catch(error => setMessage(`Load failed: ${error.message || error}`, true)).finally(render);
+    }).catch(error => setMessage(`Load failed: ${error.message || error}`, true)).finally(() => {
+      render();
+      refreshStatus();
+    });
   });
   return proc;
 };

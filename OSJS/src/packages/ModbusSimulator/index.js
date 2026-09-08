@@ -4,8 +4,6 @@ import {name as applicationName} from './metadata.json';
 
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
-const SETTINGS_NS = 'mcs/modbus-simulator';
-const SETTINGS_KEY = 'document';
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
 const normalizeDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
@@ -80,14 +78,32 @@ const field = (label, value, settings, onChange) => {
 
 const register = (core, args, options, metadata) => {
   const proc = core.make('osjs/application', {args, options, metadata});
-  const settings = core.make('osjs/settings');
   const win = proc.createWindow({
     id: 'ModbusSimulatorWindow',
     title: metadata.title && metadata.title.en_EN ? metadata.title.en_EN : 'Modbus Simulator',
     dimension: {width: 920, height: 620},
     position: 'center'
   });
-  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'No devices configured. Choose Add to begin.', error: false, saving: false};
+  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'Connecting to Simulator runtime...', error: false, saving: false};
+  const pending = new Map();
+  let requestSequence = 0;
+  const runtimeCall = (operation, payload = {}) => new Promise((resolve, reject) => {
+    const requestId = `${Date.now()}-${proc.pid}-${++requestSequence}`;
+    const timeout = setTimeout(() => {
+      pending.delete(requestId);
+      reject(new Error('Simulator runtime request timed out.'));
+    }, 26000);
+    pending.set(requestId, {resolve, reject, timeout});
+    proc.send({version: 1, request_id: requestId, operation, payload});
+  });
+  proc.on('ws:message', response => {
+    const entry = response && pending.get(response.request_id);
+    if (!entry) return;
+    clearTimeout(entry.timeout);
+    pending.delete(response.request_id);
+    if (response.ok) entry.resolve(response.result);
+    else entry.reject(new Error(response.error && response.error.message || 'Simulator runtime request failed.'));
+  });
   const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
   const setMessage = (message, error = false) => Object.assign(state, {message, error});
 
@@ -188,15 +204,14 @@ const register = (core, args, options, metadata) => {
     render();
     const edited = clone(normalizeDocument(state.document));
     try {
-      settings.set(SETTINGS_NS, SETTINGS_KEY, edited);
-      await settings.save();
-      state.document = clone(edited);
-      state.persisted = clone(edited);
-      if (state.selected !== null && state.selected >= edited.devices.length) state.selected = null;
-      setMessage('Simulator definitions saved locally.');
+      const result = await runtimeCall('apply', {document: edited});
+      const applied = clone(normalizeDocument(result.document));
+      state.document = applied;
+      state.persisted = clone(applied);
+      if (state.selected !== null && state.selected >= applied.devices.length) state.selected = null;
+      setMessage(`${result.message} Applied at ${new Date(result.completed_at).toLocaleString()}.`);
     } catch (error) {
-      settings.set(SETTINGS_NS, SETTINGS_KEY, clone(state.persisted));
-      setMessage(`Save failed: ${error.message || error}`, true);
+      setMessage(`Save & Apply failed: ${error.message || error}`, true);
     } finally {
       state.saving = false;
       render();
@@ -204,6 +219,11 @@ const register = (core, args, options, metadata) => {
   };
 
   win.on('destroy', () => {
+    pending.forEach(entry => {
+      clearTimeout(entry.timeout);
+      entry.reject(new Error('Simulator window closed.'));
+    });
+    pending.clear();
     proc.destroy();
   });
   win.render($content => {
@@ -239,12 +259,20 @@ const register = (core, args, options, metadata) => {
       }
       render();
     });
-    const persisted = normalizeDocument(settings.get(SETTINGS_NS, SETTINGS_KEY, {devices: []}));
-    state.document = clone(persisted);
-    state.persisted = clone(persisted);
-    state.selected = persisted.devices.length ? 0 : null;
-    setMessage(persisted.devices.length ? 'Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
     render();
+    runtimeCall('load')
+      .then(result => {
+        const persisted = normalizeDocument(result.document);
+        state.document = clone(persisted);
+        state.persisted = clone(persisted);
+        state.selected = persisted.devices.length ? 0 : null;
+        setMessage(persisted.devices.length ? 'Canonical Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
+        render();
+      })
+      .catch(error => {
+        setMessage(`Simulator runtime unavailable: ${error.message || error}`, true);
+        render();
+      });
   });
   return proc;
 };

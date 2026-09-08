@@ -246,7 +246,10 @@ func ServeRuntime(ctx context.Context, socketPath string, service *RuntimeServic
 
 func handleRuntimeConn(conn net.Conn, service *RuntimeService) {
 	defer conn.Close()
-	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+	// Structural apply may legitimately spend up to DefaultRestartReadyTimeout
+	// waiting for independently managed MMA2. Keep the local RPC alive long
+	// enough to return that truthful result to the browser.
+	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 	reader := bufio.NewReader(conn)
 	var size uint32
 	if err := binary.Read(reader, binary.BigEndian, &size); err != nil || size == 0 || size > maxRuntimeMessage {

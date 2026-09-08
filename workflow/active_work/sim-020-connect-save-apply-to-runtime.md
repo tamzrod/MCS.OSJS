@@ -1,6 +1,6 @@
 # SIM-020 — Connect OS.js Save & Apply to the Runtime
 
-Status: ACTIVE — promoted by user 2026-09-08; execute after SIM-019.
+Status: COMPLETED 2026-09-09 — canonical load and real Save & Apply verified.
 
 ## Primary outcome
 
@@ -30,6 +30,15 @@ Make the OS.js **Save & Apply** action submit the complete edited document to th
 ## Verification
 
 In the rebuilt OS.js application, perform one structural save, one timing-only save, and one rejected duplicate reservation; compare UI outcome, canonical document, MMA2 restart artifact behavior, and scheduler state.
+
+## Completion evidence
+
+- The window no longer reads or writes `mcs/modbus-simulator.document`; it loads the canonical Go `Store` document through runtime `load`.
+- Save & Apply sends the normalized complete document through runtime `apply`, stays pending for the real response, and advances the document/Discard snapshot only on success.
+- Successful responses display the actual apply classification message and completion time. Failure retains the edited form and prior applied Discard snapshot with the backend error.
+- Runtime connection framing now remains open beyond the legitimate 20-second MMA2 readiness timeout, so unavailable-MMA2 errors reach the UI instead of becoming a misleading client timeout.
+- Rebuilt-browser verification proved structural success, timing-only success with the explicit “without restarting MMA2” result, duplicate-reservation rejection, Discard restoration to one prior device, and canonical one-device reload.
+- JS syntax, OS.js local-package/full builds, full Go tests, and Go vet pass on 2026-09-09.
 
 ## Dependencies
 

@@ -1,9 +1,9 @@
-# Simulator Device Config + MMA2 Compose/Ownership + Scheduler + Raw Ingest + Independent MMA2 Boundary (SIM-001 → SIM-011)
+# Simulator Device Config + Local Persistence + MMA2 Compose/Ownership + Scheduler + Raw Ingest (SIM-001 → SIM-012)
 
-Baseline commit: 82d6ac6
+Baseline commit: e14ee96
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
-Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, simulator/README.md, workflow/active_work/sim-001-simulator-device-config.md through workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md
+Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, simulator/README.md, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-001-simulator-device-config.md through workflow/active_work/sim-012-local-simulator-config-path.md
 Zoom In:(none; leaf node)
 Zoom Out: active-work
 
@@ -80,3 +80,9 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - SIM-011 supersedes and removes SIM-008's process-ownership implementation. `simulator/lifecycle.go` and `lifecycle_test.go` no longer exist; Simulator code has no MMA2 spawn, signal, kill, stop, replace, `MMA2_BINARY`, `MMA2Lifecycle`, or `MMA2Activator` path.
 - `SchedulerApplier.ApplyStructural` performs ownership-safe `ComposeDocument` only. `SchedulerApplier.Stop` stops Simulator schedulers only. `NewRuntimeApplyRouter` composes persisted reservations but never activates MMA2 and keeps schedulers unarmed pending SIM-015's independent apply/readiness work.
 - `TestStructuralApplyAndStopDoNotControlIndependentMMA2` proves shared-config composition while an independent listener remains reachable after Simulator stop. Simulator formatting, vet, and full tests pass at pushed commit `82d6ac6`.
+
+## Established truth (SIM-012 local Simulator persistence)
+
+- The Modbus Simulator window stores its normalized document through the existing server-backed `osjs/settings` service under `mcs/modbus-simulator.document`. It loads that namespace on window render and advances its Discard snapshot only after `settings.save()` succeeds.
+- This is the standard per-user OS.js settings path (`/data/vfs/<user>/.osjs/settings.json`), not a Simulator HTTP API. Saving does not call Simulator Go composition, create shared MMA2 config, restart MMA2, or arm schedules.
+- Live rebuilt-container verification exercised add/edit/all fields/save/reload/duplicate/delete/discard and proved exact JSON field round-trip at pushed commit `e14ee96`; JS/package/full builds and Simulator regressions pass.

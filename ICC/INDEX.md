@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 82d6ac6
+Baseline Commit: e14ee96
 Working Tree: clean
 Audited Uncommitted Overlay: (none).
 
-Committed delta through `82d6ac6`: SIM-010 removed the bridge/config API at `0b356da`; SIM-011 then removed Simulator-owned MMA2 lifecycle behavior at `82d6ac6` by deleting `simulator/lifecycle.go` and its tests and removing activation/stop/replace calls from `simulator/apply.go`. Structural and boot paths now compose shared configuration only; runtime-router schedulers remain unarmed pending SIM-015. The handoff advances SIM-012 to current.
+Committed delta through `e14ee96`: SIM-011 removed Simulator-owned MMA2 lifecycle behavior at `82d6ac6`; SIM-012 then persisted the UI document through the existing server-backed OS.js settings service under `mcs/modbus-simulator.document`, with no Simulator HTTP API or MMA2 config write. The handoff advances SIM-013 to current.
 
-Refreshed Active Work branch only at `82d6ac6`: the simulator-device-config leaf records SIM-011's removal of lifecycle ownership; active-work and the handoff-derived L0 summary advance SIM-012 to current. Unrelated sibling registry rows are preserved.
+Refreshed Active Work branch only at `e14ee96`: the simulator-device-config leaf records SIM-012's local settings persistence; active-work and the handoff-derived L0 summary advance SIM-013 to current. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

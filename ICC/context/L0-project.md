@@ -1,6 +1,6 @@
 # L0 Project Context
 
-Baseline commit: 82d6ac6
+Baseline commit: e14ee96
 Working tree: clean
 Source dependencies: README.md, PROJECT_IDENTITY.md, handoff.md
 Parent: none
@@ -31,7 +31,7 @@ Project identity document defines identity/direction only:  no implementation au
 
 Handoff status: ACTIVE. MMA2-001/002 and simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009's premise was superseded. Active Work execution order (promoted sequence: SIM-010 → SIM-017:
 
-SIM-010 (**COMPLETED** at `0b356da`) removed the bridge/config API. SIM-011 (**COMPLETED** at `82d6ac6`) removed Simulator MMA2 process ownership; config paths compose only and runtime-router schedulers remain unarmed. SIM-012 (local Simulator config path) is CURRENT, followed by SIM-013 through SIM-017. MMA2 auto-starts independently; Simulator may eventually request only RESTART after a committed valid shared-config change. Detail in Zoom In `active-work`.
+SIM-010 completed at `0b356da`; SIM-011 completed at `82d6ac6`; SIM-012 completed at `e14ee96` with per-user OS.js-settings persistence and no Simulator API/MMA2 write. SIM-013 (compose Simulator-owned entries into shared MMA2 config) is CURRENT, followed by SIM-014 through SIM-017. MMA2 auto-starts independently; Simulator may eventually request only RESTART after a committed valid shared-config change. Detail in Zoom In `active-work`.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 

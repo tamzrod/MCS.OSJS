@@ -1,8 +1,8 @@
 # Planning Workflow
 
-Baseline commit: be8c1b6
-Working tree: clean
-Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md
+Baseline commit: a216187 + audited overlay (uncommitted delta described in ICC/INDEX.md); working tree: dirty (archive moves, handoff rewrite, new brainstorm topic.
+Audited Overlay: handoff.md; workflow/archive/README.md; sim-018 through sim-022 moved active_work->archive (retired or completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic}.
+Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
 Zoom In: brainstorm-topics
 Zoom Out: L0-project
@@ -13,7 +13,7 @@ Planning is human-owned; contains brainstorm material and decomposed microtasks 
 
 ## Brainstorm
 
-Human-owned exploration/framing/alternatives/questions/candidates. Not execution authority. ICC-first before repository-dependent brainstorming. BSW may refresh stale/missing affected context only;cannot authorize implementation or widen scope. Topic files live under planning/Brainstorm/ (current:  mma2-basic-install-test.md, osjs-modbus-simulator.md(; prior topics port-config-and-socket-deployment.md and osjs-base-webapp-init.md were retired when superseded..
+Human-owned exploration/framing/alternatives/questions/candidates. Not execution authority. ICC-first before repository-dependent brainstorming. BSW may refresh stale/missing affected context only; cannot authorize implementation or widen scope. Topic files live under planning/Brainstorm/ (current: mma2-basic-install-test.md, osjs-modbus-simulator.md, mcs-three-app-model.md, modbus-simulator-status-display.md); prior topics port-config-and-socket-deployment.md and osjs-base-webapp-init.md were retired when superseded.
 
 ## Microtask Rules (per planning/microtask/rules.md
 
@@ -28,5 +28,7 @@ Human-owned exploration/framing/alternatives/questions/candidates. Not execution
 
 ## Current Planning Material (non-authoritative for execution
 
-- MMA2 basic install+test brainstorm + microtask (MMA2-001/002( — source of the active MMA2-001/002 active work; MMA2-001 later split in execution into import+build vs runtime smoke-test (active MMA2-002 preserves internal execution order (+completion state( as repository truth(.
-- OS.js Modbus Simulator brainstorm (approved simulator UI, two parameter domains, shared MMA2 config boundary, save/apply routing, runtime status( — source of active SIM-001…SIM-007 program. See brainstorm-topics for content summary..
+- MMA2 basic install+test brainstorm + microtask (MMA2-001/002( — source of the archived MMA2-001/002 active work; MMA2-001 later split in execution into import+build vs runtime smoke-test (active MMA2-002 preserves internal execution order (+completion state( as repository truth(.
+- OS.js Modbus Simulator brainstorm (approved simulator UI, two parameter domains, shared MMA2 config boundary, save/apply routing, runtime status( — source of the SIM-001…SIM-020 archived program. See brainstorm-topics for content summary.
+
+- Modbus Simulator status display brainstorm (new 2026-09-08; HUMAN-OWNED, placement UNDECIDED, minimalist preferred( — display MMA2 status + Simulator status inside the Modbus Simulator app. See brainstorm-topics for content summary. Non-authoritative; no microtask promoted yet..

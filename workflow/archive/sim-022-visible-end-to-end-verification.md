@@ -1,6 +1,8 @@
 # SIM-022 — Verify the Visible Simulator-to-MMA2 Flow End to End
 
-Status: ACTIVE — promoted by user 2026-09-08; execute after SIM-020 and SIM-021.
+Status: RETIRED — 2026-09-08 by human decision. Not completed;the end-to-end verification remains future work pending the restarted status-display brainstorm. This record stays for preservation.
+
+
 
 ## Primary outcome
 

@@ -1,8 +1,8 @@
 # Brainstorm Topics
 
-Baseline commit: be8c1b6
-Working tree: clean
-Source dependencies: planning/Brainstorm/mma2-basic-install-test.md, planning/Brainstorm/osjs-modbus-simulator.md, planning/Brainstorm/mcs-three-app-model.md
+Baseline commit: a216187 + audited overlay (uncommitted delta described in ICC/INDEX.md); working tree: dirty (archive moves, handoff rewrite, new brainstorm topic.
+Audited Overlay: handoff.md; workflow/archive/README.md; sim-018 through sim-022 moved active_work->archive (retired or completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic}.
+Source dependencies: planning/Brainstorm/mma2-basic-install-test.md, planning/Brainstorm/osjs-modbus-simulator.md, planning/Brainstorm/mcs-three-app-model.md, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: planning-workflow
 Zoom In:(none; leaf node(
 Zoom Out: planning-workflow
@@ -48,3 +48,13 @@ A focused device-definition editor + runtime-status surface (NOT a live SCADA-st
 ## Topic: MCS Three-App MMA2 Usage Model (brainstorm, non-authoritative)
 
 MCS exposes separate Simulator, Replicator, and Memory Appliance applications over one neutral MMA2 memory/runtime engine. Simulator generates values into MMA2; Replicator acquires external Modbus values and pushes them into MMA2; Memory Appliance exposes MMA2 directly for third-party use. Each application retains its own intent and lifecycle, while shared `(port, unit_id)` ownership prevents cross-application overwrite or deletion. The model does not authorize implementation. The immediate simulator lifecycle gap has been decomposed into planning-only `SIM-008` and `SIM-009` microtasks.
+
+## Topic: Modbus Simulator Status Display (brainstorm, HUMAN-OWNED, placement UNDECIDED
+
+Intent: display **MMA2 status** and **Simulator status** inside themodbus Simulator app, minimalism preferred. Placement inside the app is deliberately undecided;candidate zones are: bottom status bar, device-list row chips, editor-pane status strip, collapsible runtime-status section, or a dedicated top status header row. No decision yet;user will choosethe placement.
+
+Relevant data already exists: `SchedulerApplier.RuntimeStatus` (MMA2 RUNNING/RESTARTING/WAITING/STOPPED/ERROR; Simulator device RUNNING/STOPPED/ERROR; Raw Ingest OK/WAITING/ERROR; per-FC last/next timing, configured point counts, total points, last apply outcome( and the SIM-018/019/020 pipeline already carries a versioned `status` RPC over the authenticated OS.js session WebSocket -> allowlisted relay -> Unix-domain socket. No new transport,Go API,HTTP route,or TCP listener is proposed.
+
+Open questions: placement;(global MMA2 vs per-device Simulator scoping mix;; refresh cadence (1s polling vs event-push vs on-action(;; steady-state vs transient message bar split;; detail depth (dots vs full FC timing(;; zero-device/runtime-down/restart-wait display states.
+
+Non-authoritative. Once the human picks placement, decompose microtask(s) and promote through the normal workflow. Retired SIM-021 reopens here as brainstorming.

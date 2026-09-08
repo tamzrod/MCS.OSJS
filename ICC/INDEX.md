@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: de439fc
-Working Tree: clean
-Audited Uncommitted Overlay:(none).
+Baseline Commit:a216187
+Working Tree: dirty
+Audited Uncommitted Overlay: handoff.md; workflow/archive/README.md; sim-018/sim-019/sim-020 moved active_work->archive; sim-021/sim-022 moved active_work->archive (retired, not completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic; ICC nodes refreshed herein.
 
-Committed delta through `de439fc`: SIM-018 through SIM-020 are complete. The UI now loads the canonical Go document and waits for the real apply result; SIM-021 is current.
+Committed+overlay delta: SIM-018 through SIM-020 complete and archived; SIM-021and SIM-022 retired (not completed( into archive;`workflow/active_work/` is empty;the status-display question is reopened as a human-owned brainstorm (`planning/Brainstorm/modbus-simulator-status-display.md`, placement undecided, minimalist preferred, non-authoritative(.
 
-Refreshed only the Active Work/simulator branch at `de439fc`. Unrelated sibling registry rows are preserved.
+Refreshed only the Active Work/planning-status branch at `a216187`+overlay. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -31,8 +31,8 @@ Refreshed only the Active Work/simulator branch at `de439fc`. Unrelated sibling 
 | `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
 | `context/donor-licensing.md` | L0-project | — | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
 | `context/network-exposure.md` | L0-project | — | `docs/NETWORK_EXPOSURE.md`, `deploy/docker-compose.yml`, `OSJS/Dockerfile`, `OSJS/src/server/config.js` |
-| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
-| `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md` |
+| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/Brainstorm/modbus-simulator-status-display.md` |
+| `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md`, `planning/Brainstorm/modbus-simulator-status-display.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
 | `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `workflow/archive/*`, `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `OSJS/src/packages/ModbusSimulator/*` |
 | `context/simulator-device-config.md` | active-work | — | `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/internal/config/validate.go`, `workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md` through `workflow/active_work/sim-022-visible-end-to-end-verification.md`, `workflow/archive/sim-001-simulator-device-config.md` through `workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md` |

@@ -1,6 +1,6 @@
 # SIM-021 — Restore Truthful Runtime Status in the OS.js Window
 
-Status: ACTIVE — promoted by user 2026-09-08; execute after SIM-020.
+Status: RETIRED — 2026-09-08 by human decision. Not completed;simulator window status work moves into the new brainstorm topic (`modbus-simulator-status-display.md`(, where placement remains undecided. This record stays for preservation.
 
 ## Primary outcome
 

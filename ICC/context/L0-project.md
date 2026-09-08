@@ -1,6 +1,6 @@
 # L0 Project Context
 
-Baseline commit: 55f6d44
+Baseline commit: de439fc
 Working tree: clean
 Source dependencies: README.md, PROJECT_IDENTITY.md, handoff.md
 Parent: none
@@ -31,7 +31,7 @@ Project identity document defines identity/direction only:  no implementation au
 
 Handoff status: COMPLETE. MMA2-001/002 and Simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009 was superseded; the corrected SIM-010 → SIM-017 sequence is completed and verified.
 
-SIM-017's real-MMA2 capstone completed at `57c8714`, proving independent boot, restore, safe apply/restart, changing Raw Ingest schedules, FC1–FC4 reads, negative boundaries, foreign preservation, and reboot resume. Completed/superseded predecessor records were archived at `6069fef`. SIM-018 and SIM-019 are complete; SIM-020 is current. Detail in Zoom In `active-work`.
+SIM-017's real-MMA2 capstone completed at `57c8714`, proving independent boot, restore, safe apply/restart, changing Raw Ingest schedules, FC1–FC4 reads, negative boundaries, foreign preservation, and reboot resume. Completed/superseded predecessor records were archived at `6069fef`. SIM-018 through SIM-020 are complete; SIM-021 is current. Detail in Zoom In `active-work`.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 

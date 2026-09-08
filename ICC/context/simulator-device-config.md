@@ -1,6 +1,6 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-022)
 
-Baseline commit: 55f6d44
+Baseline commit: de439fc
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
 Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md through workflow/active_work/sim-022-visible-end-to-end-verification.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
@@ -124,3 +124,9 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - Versioned, bounded, length-prefixed `load`, `apply`, and `status` RPC runs only on `$OSJS_DATA_DIR/run/modbus-simulator.sock`; mutations serialize and duplicate request IDs replay a cached response rather than applying twice.
 - The ModbusSimulator package's server handler uses the existing authenticated OS.js application WebSocket and allowlists the three operations before relaying to the Unix socket. It creates no HTTP route.
 - Tests prove socket framing/single ownership and real-router structural, timing-only, rejection, and unavailable-MMA2 behavior. The runtime image exposes no port.
+
+## Established truth (SIM-020 UI apply integration)
+
+- The OS.js window no longer uses per-user settings as Simulator config. It loads the canonical Go Store through runtime `load` and submits the complete normalized document through runtime `apply`.
+- Only a successful `ApplyRouter.Apply` response advances the persisted/Discard snapshot and displays an applied classification plus completion time. A failure retains the edited form and prior applied snapshot.
+- Browser verification covered structural success, timing-only no-restart, duplicate rejection, Discard, and canonical reload. The local RPC deadline permits the complete MMA2 readiness error to reach the UI.

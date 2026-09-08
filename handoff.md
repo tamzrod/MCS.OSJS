@@ -2,7 +2,7 @@
 
 ## Status
 
-ACTIVE — SIM-011 current. SIM-010 through SIM-017 are human-promoted for sequential execution.
+ACTIVE — SIM-012 current. SIM-010 through SIM-017 are human-promoted for sequential execution.
 
 ## Current Active Work
 
@@ -10,8 +10,8 @@ Prior MMA2 work and SIM-001 through SIM-008 are completed and verified. SIM-009 
 
 Execution order:
 1. `workflow/active_work/sim-010-remove-simulator-bridge-api.md` — SIM-010: remove Simulator bridgeand config API. **COMPLETED 2026-09-08** (removed `simulator/cmd/simbridge`, `simulator/bridge.go`, `simulator/bridge_test.go`, OS.js `simulator-bridge` provider + `/api/devices` + `/api/devices/status` routes, `SIMBRIDGE_ADDR`/`SIMULATOR_BRIDGE_ADDR`; removed bridge-served runtime-status UI polling/panel and bridge-reachability failure strings; preserved model/persistence/composition/ownership/scheduler/raw-ingest/UI. `gofmt -l .`, `go vet ./...`, `go test -count=1 ./...`, `node --check`, `npm run build:local-packages`, `npm run build` all pass.
-2. `workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md` — SIM-011: remove Simulator ownership of MMA2 lifecycle. **CURRENT**.
-3. `workflow/active_work/sim-012-local-simulator-config-path.md` — SIM-012: establish local Simulator configuration path without a config HTTP API.
+2. `workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md` — SIM-011: remove Simulator ownership of MMA2 lifecycle. **COMPLETED 2026-09-08** (deleted child-process lifecycle/start-stop-replace/rollback code and tests; structural/boot paths now compose only; Simulator stop leaves independent MMA2 untouched; schedulers remain unarmed pending SIM-015; affected formatting, vet, tests, and static checks pass).
+3. `workflow/active_work/sim-012-local-simulator-config-path.md` — SIM-012: establish local Simulator configuration path without a config HTTP API. **CURRENT**.
 4. `workflow/active_work/sim-013-compose-shared-mma2-config.md` — SIM-013: safely compose Simulator-owned entries into shared MMA2 config.
 5. `workflow/active_work/sim-014-mma2-restart-only-control.md` — SIM-014: add MMA2 RESTART-only control.
 6. `workflow/active_work/sim-015-run-simulation-after-mma2-apply.md` — SIM-015: run schedules and Raw Ingest after successful MMA2 apply/readiness.

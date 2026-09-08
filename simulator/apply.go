@@ -1,32 +1,12 @@
 package simulator
 
 import (
-	"errors"
 	"fmt"
 	"net"
-	"os"
 	"reflect"
 	"sync"
 	"time"
 )
-
-func readOptionalFile(path string) ([]byte, bool, error) {
-	b, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		return nil, false, nil
-	}
-	return b, err == nil, err
-}
-
-func restoreOptionalFile(path string, data []byte, existed bool) error {
-	if !existed {
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		return nil
-	}
-	return os.WriteFile(path, data, 0o644)
-}
 
 type ApplyPath string
 
@@ -51,18 +31,17 @@ type SchedulerApplier struct {
 	mu         sync.Mutex
 	store      Store
 	ready      bool
-	lifecycle  MMA2Activator
 	schedulers map[string]*Scheduler
 	devices    map[string]DeviceDefinition
 	rawErrors  map[string]string
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
-	return newSchedulerApplier(store, initial, nil, true)
+	return newSchedulerApplier(store, initial, true)
 }
 
-func newSchedulerApplier(store Store, initial Document, lifecycle MMA2Activator, ready bool) *SchedulerApplier {
-	a := &SchedulerApplier{store: store, lifecycle: lifecycle, ready: ready, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
+func newSchedulerApplier(store Store, initial Document, ready bool) *SchedulerApplier {
+	a := &SchedulerApplier{store: store, ready: ready, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
 	a.replaceSchedulers(initial)
 	return a
 }
@@ -102,32 +81,12 @@ func (a *SchedulerApplier) replaceSchedulers(doc Document) {
 }
 
 func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
-	configBefore, configExisted, err := readOptionalFile(a.store.EffectiveConfigPath())
-	if err != nil {
-		return err
-	}
-	ownersBefore, ownersExisted, err := readOptionalFile(a.store.OwnershipPath())
-	if err != nil {
-		return err
-	}
 	if err := a.store.ComposeDocument(edited); err != nil {
 		return err
 	}
-	if a.lifecycle != nil {
-		cfg, err := a.store.loadEffective()
-		if err == nil {
-			err = a.lifecycle.Activate(a.store.EffectiveConfigPath(), cfg)
-		}
-		if err != nil {
-			configRestoreErr := restoreOptionalFile(a.store.EffectiveConfigPath(), configBefore, configExisted)
-			ownersRestoreErr := restoreOptionalFile(a.store.OwnershipPath(), ownersBefore, ownersExisted)
-			return errors.Join(err, configRestoreErr, ownersRestoreErr)
-		}
-	}
-	a.mu.Lock()
-	a.ready = true
-	a.mu.Unlock()
-	a.replaceSchedulers(edited)
+	// MMA2 is an independently managed appliance. Structural apply only composes
+	// its shared configuration; it must not start, stop, or replace MMA2. Scheduler
+	// arming after an independently observed apply/readiness event belongs to SIM-015.
 	return nil
 }
 
@@ -159,9 +118,6 @@ func (a *SchedulerApplier) Stop() {
 	a.mu.Unlock()
 	for _, scheduler := range schedulers {
 		scheduler.Stop()
-	}
-	if a.lifecycle != nil {
-		_ = a.lifecycle.Stop()
 	}
 }
 
@@ -230,38 +186,13 @@ func NewRuntimeApplyRouter(store Store) (*ApplyRouter, *SchedulerApplier, error)
 	if err != nil {
 		return nil, nil, err
 	}
-	// Ownership-safe restore mirrors ApplyStructural:, compose the persisted simulator
-	// document into the effective MMA2 config, activate the resulting listeners, and
-	// only arm schedulers when activation succeeded. On failure the router stays alive so the
-	// UI can surface a truthful ERROR/STOPPED state until a later accepted structural
-	// Save & Apply recovers the service..
+	// Compose persisted Simulator reservations into the shared MMA2 configuration,
+	// but never manage the independently started MMA2 process. Schedulers remain
+	// unarmed until the post-apply readiness work introduced by SIM-015.
 	if err := store.ComposeDocument(initial); err != nil {
-		configBefore, configExisted, err := readOptionalFile(store.EffectiveConfigPath())
-		if err != nil {
-			return nil, nil, err
-		}
-		ownersBefore, ownersExisted, err := readOptionalFile(store.OwnershipPath())
-		if err != nil {
-			return nil, nil, err
-		}
-		configRestoreErr := restoreOptionalFile(store.EffectiveConfigPath(), configBefore, configExisted)
-		ownersRestoreErr := restoreOptionalFile(store.OwnershipPath(), ownersBefore, ownersExisted)
-		return nil, nil, errors.Join(err, configRestoreErr, ownersRestoreErr)
-	}
-	cfg, err := store.loadEffective()
-	if err != nil {
 		return nil, nil, err
 	}
-	lifecycle := NewMMA2Lifecycle()
-	ready := false
-	if err := lifecycle.Activate(store.EffectiveConfigPath(), cfg); err != nil {
-		// Restoration failure keeps the router alive so the UI can surface a truthful
-		// ERROR state and a later accepted structural apply can recover the service.
-		_ = err
-	} else {
-		ready = true
-	}
-	timing := newSchedulerApplier(store, initial, lifecycle, ready)
+	timing := newSchedulerApplier(store, initial, false)
 	return NewApplyRouter(store, timing, timing), timing, nil
 }
 

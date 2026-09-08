@@ -1,6 +1,6 @@
 # SIM-011 — Remove Simulator Ownership of MMA2 Lifecycle
 
-Status: ACTIVE — promoted for sequential execution after SIM-010.
+Status: COMPLETED 2026-09-08.
 
 ## Primary outcome
 
@@ -33,6 +33,15 @@ MMA2 owns its own boot/start lifecycle. The Simulator may never START, STOP, SPA
 ## Verification
 
 Unit/static verification proving no Simulator runtime path invokes MMA2 start/stop/spawn/replace behavior; affected tests pass.
+
+## Completion evidence
+
+- Deleted `simulator/lifecycle.go` and its child-process replacement/rollback tests.
+- Removed `MMA2Activator` from `SchedulerApplier`; structural apply and boot restore now compose shared configuration only and never activate or stop MMA2.
+- Kept schedulers unarmed on the runtime-router path pending SIM-015's independent apply/readiness contract.
+- `TestStructuralApplyAndStopDoNotControlIndependentMMA2` proves structural composition succeeds and stopping the Simulator leaves an independently managed listener reachable.
+- `gofmt -l .`, `go vet ./...`, and `go test -count=1 ./...` pass in `simulator/`.
+- Static search finds no `MMA2Lifecycle`, `MMA2Activator`, `MMA2_BINARY`, process spawn/signal/kill, or `Activate` path in Simulator Go code.
 
 ## Dependencies
 

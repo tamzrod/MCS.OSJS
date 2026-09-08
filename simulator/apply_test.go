@@ -19,7 +19,7 @@ func TestSchedulerApplierReadyGatePreventsArmingAndFalseHealth(t *testing.T) {
 	device.Name = "gate-device"
 	device.MMA2.Port = 15039
 	device.RandomRuntime = RandomRuntimeParams{FC1IntervalMS: 5, FC2IntervalMS: 5, FC3IntervalMS: 5, FC4IntervalMS: 5}
-	applier := newSchedulerApplier(Store{Root: t.TempDir()}, Document{Devices: []DeviceDefinition{device}}, nil, false)
+	applier := newSchedulerApplier(Store{Root: t.TempDir()}, Document{Devices: []DeviceDefinition{device}}, false)
 	defer applier.Stop()
 	time.Sleep(25 * time.Millisecond)
 	if len(applier.schedulers) != 0 {
@@ -34,6 +34,51 @@ func TestSchedulerApplierReadyGatePreventsArmingAndFalseHealth(t *testing.T) {
 	}
 	if len(status.FC) != 0 {
 		t.Fatalf("not-ready status must not advertise FC timing: %+v", status.FC)
+	}
+}
+
+func TestStructuralApplyAndStopDoNotControlIndependentMMA2(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+
+	store := Store{Root: t.TempDir()}
+	device := validDevice()
+	device.Name = "independent-mma2"
+	device.MMA2.Port = uint16(listener.Addr().(*net.TCPAddr).Port)
+	applier := newSchedulerApplier(store, Document{}, false)
+	if err := applier.ApplyStructural(Document{}, Document{Devices: []DeviceDefinition{device}}); err != nil {
+		t.Fatal(err)
+	}
+	if len(applier.schedulers) != 0 {
+		t.Fatalf("structural apply armed schedulers before independent MMA2 apply/readiness: %d", len(applier.schedulers))
+	}
+	applier.Stop()
+
+	conn, err := net.DialTimeout("tcp", listener.Addr().String(), 100*time.Millisecond)
+	if err != nil {
+		t.Fatalf("stopping Simulator affected independently managed MMA2 listener: %v", err)
+	}
+	_ = conn.Close()
+	config, err := store.loadEffective()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(config.Listeners) != 1 {
+		t.Fatalf("structural apply did not preserve shared config composition: %+v", config)
+	}
+	_, configuredPort, err := net.SplitHostPort(config.Listeners[0].Listen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, independentPort, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if configuredPort != independentPort {
+		t.Fatalf("structural apply did not preserve shared config composition: %+v", config)
 	}
 }
 

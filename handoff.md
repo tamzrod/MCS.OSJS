@@ -2,14 +2,14 @@
 
 ## Status
 
-ACTIVE — SIM-018 is complete; continue Operation CWAL with SIM-019.
+ACTIVE — SIM-018 and SIM-019 are complete; continue Operation CWAL with SIM-020.
 
 ## Current Active Work
 
 Execution order:
 
 1. `workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md` — **COMPLETED 2026-09-08**. Selected authenticated OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime; canonical document remains the Go Store; no Simulator HTTP/TCP API; MMA2 remains independently managed and restart-only.
-2. `workflow/active_work/sim-019-host-simulator-runtime-locally.md` — implement the long-lived local runtime owner and approved command/status contract.
+2. `workflow/active_work/sim-019-host-simulator-runtime-locally.md` — **COMPLETED 2026-09-09**. Added the long-lived Go runtime, bounded/idempotent Unix-socket load/apply/status protocol, authenticated OS.js application-WebSocket relay, restart-supervised deployment sidecar, contract tests, and no Simulator HTTP/TCP endpoint.
 3. `workflow/active_work/sim-020-connect-save-apply-to-runtime.md` — connect the OS.js Save & Apply action to the real `ApplyRouter` transaction.
 4. `workflow/active_work/sim-021-restore-truthful-runtime-status.md` — show MMA2, Simulator, Raw Ingest, apply, and per-FC timing status.
 5. `workflow/active_work/sim-022-visible-end-to-end-verification.md` — verify the complete visible workflow against real MMA2 and Modbus reads.

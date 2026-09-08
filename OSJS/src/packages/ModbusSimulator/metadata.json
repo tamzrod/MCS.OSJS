@@ -9,6 +9,7 @@
   "description": {
     "en_EN": "Edit simulator-owned Modbus device definitions (SIM-005). No live MMA2 configuration is exposed."
   },
+  "server": "server.js",
   "files": [
     "main.js",
     "main.css"

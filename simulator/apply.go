@@ -28,12 +28,13 @@ type TimingApplier interface {
 // scheduler per persisted device and applies timing-only edits without touching
 // MMA2 configuration. Generated values continue through SIM-004 raw ingest.
 type SchedulerApplier struct {
-	mu         sync.Mutex
-	store      Store
-	ready      bool
-	schedulers map[string]*Scheduler
-	devices    map[string]DeviceDefinition
-	rawErrors  map[string]string
+	mu             sync.Mutex
+	store          Store
+	ready          bool
+	restartTimeout time.Duration
+	schedulers     map[string]*Scheduler
+	devices        map[string]DeviceDefinition
+	rawErrors      map[string]string
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
@@ -41,7 +42,7 @@ func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
 }
 
 func newSchedulerApplier(store Store, initial Document, ready bool) *SchedulerApplier {
-	a := &SchedulerApplier{store: store, ready: ready, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
+	a := &SchedulerApplier{store: store, ready: ready, restartTimeout: DefaultRestartReadyTimeout, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
 	a.replaceSchedulers(initial)
 	return a
 }
@@ -84,9 +85,27 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 	if err := a.store.ComposeDocument(edited); err != nil {
 		return err
 	}
-	// MMA2 is an independently managed appliance. Structural apply only composes
-	// its shared configuration; it must not start, stop, or replace MMA2. Scheduler
-	// arming after an independently observed apply/readiness event belongs to SIM-015.
+	// MMA2 is an independently managed appliance. After a successful shared-config
+	// commit the Simulator requests exactly one MMA2 RESTART (SIM-014(, waits for
+	// readiness,and reports failure truthfully. It must not start, stop, spawn, kill,
+	// or replace MMA2; it never owns the appliance process. Scheduler arming after the
+	// observed apply/readiness event belongs to SIM-015..
+	cfg, err := a.store.loadEffective()
+	if err != nil {
+		return fmt.Errorf("load composed MMA2 config: %w", err)
+	}
+	ports := composedSimulatorPorts(edited)
+	if err := a.store.WriteRestartRequest(RestartRequestForConfig(time.Now(), cfg, ports)); err != nil {
+		return fmt.Errorf("mma2 restart request failed: %w", err)
+	}
+	if err := WaitMMA2Ready(ports, a.restartTimeout); err != nil {
+		return err
+	}
+	// Readiness confirmed: the request has been honored; clear it so no stale
+	// request survives into a later boot restore (SIM-016(..
+	if err := a.store.ClearRestartRequest(); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -211,18 +211,40 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 	return status, nil
 }
 
+// NewRuntimeApplyRouter builds the Simulator boot-restore path (SIM-016). It
+// loads the persisted definitions, composes the Simulator-owned reservations into
+// the shared MMA2 configuration (SIM-011), waits for the independently
+// auto-started MMA2 to accept the composed listener ports, and then arms enabled
+// schedules. Ordinary boot never restarts MMA2 and never writes a restart request.
+// If the appliance does not return ready, the router stays alive with schedules unarmed
+// so runtime status surfaces the unavailability truthfully (SIM-015 ready gate( and a
+// later Save & Apply can recover.
 func NewRuntimeApplyRouter(store Store) (*ApplyRouter, *SchedulerApplier, error) {
+	return newRuntimeApplyRouter(store, DefaultRestartReadyTimeout)
+}
+
+func newRuntimeApplyRouter(store Store, bootTimeout time.Duration) (*ApplyRouter, *SchedulerApplier, error) {
 	initial, err := store.Load()
 	if err != nil {
 		return nil, nil, err
 	}
 	// Compose persisted Simulator reservations into the shared MMA2 configuration,
-	// but never manage the independently started MMA2 process. Schedulers remain
-	// unarmed until the post-apply readiness work introduced by SIM-015.
+	// but never manage the independently started MMA2 process..
 	if err := store.ComposeDocument(initial); err != nil {
 		return nil, nil, err
 	}
 	timing := newSchedulerApplier(store, initial, false)
+	ports := composedSimulatorPorts(initial)
+	if len(ports) > 0 {
+		// SIM-016: an unchanged ordinary boot must not restart MMA2 merely because
+		//the Simulator started.. The appliance auto-started on boot and readsthe
+		// already-persisted config;wait for it to accept our composed listeners,then
+		// arm enabled schedules.. If it stays unavailable, remain alive with schedules
+		// unarmed so runtime status reportsthe truth (SIM-015 ready gate(.
+		if err := WaitMMA2Ready(ports, bootTimeout); err == nil {
+			timing.ArmSchedules(initial)
+		}
+	}
 	return NewApplyRouter(store, timing, timing), timing, nil
 }
 

@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 57c8714
+Baseline Commit: 6069fef
 Working Tree: clean
 Audited Uncommitted Overlay:(none).
 
-Committed delta through `57c8714`: SIM-017 added a verification-only real-MMA2 capstone. It proves independent boot, Simulator restore, changing scheduled Raw Ingest values, real FC1–FC4 Modbus reads, exactly one restart request after valid structural apply, rejection without restart or config damage, foreign reservation survival, and automatic reboot resume. The promoted SIM-010…SIM-017 sequence is complete.
+Committed delta through `6069fef`: all task records were reconfirmed complete or superseded and moved from `workflow/active_work/` to `workflow/archive/`. Stale ACTIVE markers on MMA2 basic, SIM-010, SIM-014, and SIM-015 were corrected. Active Work now contains only its README and authorizes nothing.
 
-Refreshed Active Work branch only at `57c8714`: the simulator-device-config leaf records SIM-017's real protocol/runtime evidence; active-work and the handoff-derived L0 summary record that no current microtask remains. Unrelated sibling registry rows are preserved.
+Refreshed Active Work branch only at `6069fef`: active-work records the empty queue and archived evidence location; simulator-device-config source paths now point to the archive. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -34,7 +34,7 @@ Refreshed Active Work branch only at `57c8714`: the simulator-device-config leaf
 | `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `MMA2/pkg/configvalidate/validate.go`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `simulator/apply.go`, `simulator/apply_test.go` |
+| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/README.md`, `workflow/archive/*`, `MMA2/testdata/smoke-test.yaml`, `MMA2/pkg/configvalidate/validate.go`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `simulator/apply.go`, `simulator/apply_test.go` |
 | `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md`, `workflow/active_work/sim-005-osjs-window.md`, `workflow/active_work/sim-006-save-apply-routing.md`, `workflow/active_work/sim-007-runtime-status.md`, `workflow/active_work/sim-008-managed-mma2-lifecycle.md`, `workflow/active_work/sim-009-serve-simulator-through-mma2.md`, `workflow/active_work/sim-010-remove-simulator-bridge-api.md`, `workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md` |
 
 ## Access Rule

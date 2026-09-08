@@ -1,14 +1,16 @@
-# Active Work Program (Simulator + MMA2) — SIM-010…SIM-017 complete
+# Active Work — Empty; Completed Program Archived
 
-Baseline commit: 57c8714
+Baseline commit: 6069fef
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
-Source dependencies: handoff.md, workflow/active_work/*, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/store_document_test.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, OSJS/src/packages/ModbusSimulator/
+Source dependencies: handoff.md, workflow/active_work/README.md, workflow/archive/*, MMA2/testdata/smoke-test.yaml, simulator/*, OSJS/src/packages/ModbusSimulator/
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
 
 ## Execution Order (handoff)
+
+No current Active Work microtask remains. The records below are archived completion evidence and do not authorize execution.
 
 1. `mma2-basic-install-test.md` — **COMPLETED** 2026-09-06 (MMA2-001 import+build; MMA2-002 smoke test).
 2. `sim-001-simulator-device-config.md` — **COMPLETED** 2026-09-06. Simulator-owned two-domain persist under `$OSJS_DATA_DIR/config/simulator/devices.yaml`. See Zoom In `simulator-device-config`.

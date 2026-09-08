@@ -1,9 +1,9 @@
 # Simulator Device Config + MMA2 Corrected Architecture — Verified End to End (SIM-001 → SIM-017)
 
-Baseline commit: 57c8714
+Baseline commit: 6069fef
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
-Source dependencies: MMA2/pkg/configvalidate/validate.go, simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, simulator/README.md, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-001-simulator-device-config.md through workflow/active_work/sim-017-end-to-end-simulator-mma2-verification.md
+Source dependencies: MMA2/pkg/configvalidate/validate.go, simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, simulator/README.md, OSJS/src/packages/ModbusSimulator/, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
 Zoom In:(none; leaf node)
 Zoom Out: active-work
 

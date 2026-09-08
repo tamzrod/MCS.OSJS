@@ -1,16 +1,24 @@
-# Active Work — Empty; Completed Program Archived
+# Active Work — Simulator Runtime Integration
 
-Baseline commit: 6069fef
+Baseline commit: a1f03e6
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
-Source dependencies: handoff.md, workflow/active_work/README.md, workflow/archive/*, MMA2/testdata/smoke-test.yaml, simulator/*, OSJS/src/packages/ModbusSimulator/
+Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
 
-## Execution Order (handoff)
+## Current Execution Order
 
-No current Active Work microtask remains. The records below are archived completion evidence and do not authorize execution.
+1. SIM-018 — **COMPLETED 2026-09-08**. Chose authenticated existing OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime. The Go Store is canonical; there is no Simulator HTTP/TCP API.
+2. SIM-019 — **ACTIVE**. Implement the long-lived runtime owner and approved local command/status contract.
+3. SIM-020 — **ACTIVE, after SIM-019**. Connect UI load and Save & Apply to the runtime.
+4. SIM-021 — **ACTIVE, after SIM-020**. Restore truthful MMA2, Simulator, Raw Ingest, apply, and per-FC status.
+5. SIM-022 — **ACTIVE, after SIM-020/SIM-021**. Visible real-MMA2 end-to-end verification.
+
+## Archived Execution Evidence
+
+The records below are archived predecessor evidence and do not authorize execution.
 
 1. `mma2-basic-install-test.md` — **COMPLETED** 2026-09-06 (MMA2-001 import+build; MMA2-002 smoke test).
 2. `sim-001-simulator-device-config.md` — **COMPLETED** 2026-09-06. Simulator-owned two-domain persist under `$OSJS_DATA_DIR/config/simulator/devices.yaml`. See Zoom In `simulator-device-config`.
@@ -25,4 +33,4 @@ No current Active Work microtask remains. The records below are archived complet
 
 11. `sim-009-serve-simulator-through-mma2.md` — **SUPERSEDED 2026-09-08** by SIM-010…SIM-017; its premise (Simulator owns+activates a managed MMA2 child( was an incorrect architecture assumption. Current authoritative boundary: MMA2 auto-starts on boot; Simulator must not START/STOP/SPAWN/KILL/REPLACE it; only RESTART (SIM-014( after a committed valid shared-config change; values enter via Raw Ingest; no `simbridge` service and no Simulator config API. SIM-009's committed apply.go ready-gate delta (pre-ready schedulers unarmed; truthful STOPPED/ERROR status( remains in HEAD at `83a5b69`.
 
-SIM-001…SIM-008 are complete+verified; SIM-009 was superseded. SIM-010 through SIM-016 are complete. SIM-017 — End-to-End Simulator+MMA2 Verification — **COMPLETED 2026-09-08** at pushed commit `57c8714`: a verification-only real-MMA2 harness proved independent boot, restore, changing schedules through Raw Ingest, FC1–FC4 reads, one restart after valid apply, no restart/config damage after rejection, foreign preservation, and reboot resume. The promoted sequence is complete; no current Active Work microtask remains.
+SIM-001…SIM-008 are complete+verified; SIM-009 was superseded. SIM-010 through SIM-016 are complete. SIM-017 — End-to-End Simulator+MMA2 Verification — **COMPLETED 2026-09-08** at pushed commit `57c8714`: a verification-only real-MMA2 harness proved independent boot, restore, changing schedules through Raw Ingest, FC1–FC4 reads, one restart after valid apply, no restart/config damage after rejection, foreign preservation, and reboot resume.

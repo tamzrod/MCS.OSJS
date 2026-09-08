@@ -1,9 +1,9 @@
-# Simulator Device Config + MMA2 Corrected Architecture — Verified End to End (SIM-001 → SIM-017)
+# Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-022)
 
-Baseline commit: 6069fef
+Baseline commit: a1f03e6
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
-Source dependencies: MMA2/pkg/configvalidate/validate.go, simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, simulator/README.md, OSJS/src/packages/ModbusSimulator/, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
+Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md through workflow/active_work/sim-022-visible-end-to-end-verification.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
 Zoom In:(none; leaf node)
 Zoom Out: active-work
 
@@ -109,3 +109,11 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - `simulator/e2e_test.go` is a verification-only harness that independently builds/starts/restarts real MMA2. The Simulator remains limited to shared-config composition, restart request, readiness, scheduling, and Raw Ingest.
 - The test proves boot restore, changing scheduled FC3 data, successful real Modbus reads for FC1/FC2/FC3/FC4, exactly one restart after a valid port edit, and new-listener readiness after reload.
 - Duplicate reservation is rejected with shared config byte-unchanged and no restart request. A foreign-owned reservation remains readable before/after apply and after reboot. Full MMA2 plus Simulator-router restart resumes the enabled schedule without manual apply or restart artifact. Race-enabled capstone passed at `57c8714`.
+
+## Established truth (SIM-018 local runtime boundary)
+
+- The browser uses the existing authenticated OS.js session WebSocket; an allowlisted OS.js server provider relays versioned `load`, `apply`, and `status` messages to a Unix-domain socket at `$OSJS_DATA_DIR/run/modbus-simulator.sock`. No Simulator HTTP route or TCP listener is permitted.
+- An independently supervised Go runtime owns the long-lived `ApplyRouter`, schedulers, and Raw Ingest clients. Closing the browser does not stop simulation.
+- `$OSJS_DATA_DIR/config/simulator/devices.yaml` is the single canonical document. OS.js per-user settings are not a second Simulator config store.
+- The runtime never owns MMA2 lifecycle. MMA2 auto-starts independently; Simulator retains only restart-request-plus-readiness behavior after committed structural apply, and generated values use Raw Ingest.
+- SIM-019 through SIM-022 are promoted in dependency order.

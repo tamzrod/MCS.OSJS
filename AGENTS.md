@@ -2,67 +2,102 @@
 
 ## Purpose
 
-This file is the bootstrap/router for agents working in MCS.OSJS. It is not a project diary and must not become an append-only history file.
+This file is the bootstrap/router for agents working in MCS.OSJS.
 
-## First Rule
+It defines **how to locate authority**, not the detailed behavior of each operation. Detailed rules belong in their directive files. Do not turn this file into project history, troubleshooting notes, implementation recipes, or an append-only diary.
 
-For every repository-dependent operation:
+## 1. Resolve the Command First
+
+Before applying any generic repository workflow, identify whether the user invoked a StarCraft directive.
+
+Exact directive phrases are command selectors:
+
+| Command | Authority | Mode |
+| --- | --- | --- |
+| `BLACK SHEEP WALL` | `BLACK_SHEEP_WALL.md` | Context audit / ICC synchronization |
+| `OPERATION CWAL` | `operation cwal.md` | Continuous execution of already-authorized Active Work |
+| `THE GATHERING` | `the gathering.md` | Read-only committed workflow status |
+
+When a StarCraft directive is invoked:
 
 ```text
-LOCATE COMMAND
-→ READ BLACK_SHEEP_WALL.md
-→ READ ICC/INDEX.md FIRST
-→ VALIDATE ICC BASELINE AGAINST CURRENT HEAD + WORKING TREE
+IDENTIFY DIRECTIVE
+→ READ AGENTS.md
+→ READ THAT DIRECTIVE FILE
+→ FOLLOW ITS OWN READ / WRITE / STOP BOUNDARIES
+→ DO NOT IMPORT BEHAVIOR FROM ANOTHER DIRECTIVE UNLESS IT EXPLICITLY CALLS IT
+→ NEVER GUESS
+```
+
+A directive file overrides the generic bootstrap where its rules are more specific.
+
+## 2. Generic Repository Operation
+
+For repository-dependent work that is **not** a StarCraft directive:
+
+```text
+READ ICC/INDEX.md FIRST
+→ CHECK WHETHER RELEVANT ICC CONTEXT MATCHES CURRENT REPOSITORY STATE
 → USE ICC IF CURRENT
-→ IF STALE, REFRESH ONLY AFFECTED CONTEXT THROUGH BLACK SHEEP WALL
-→ LOCATE AUTHORITY
-→ ACT WITHIN OPERATION SCOPE
+→ IF STALE OR MISSING, USE BLACK_SHEEP_WALL.md ONLY FOR THE AFFECTED CONTEXT
+→ LOCATE AUTHORITATIVE REPOSITORY SOURCE
+→ ACT WITHIN USER-AUTHORIZED SCOPE
 → VERIFY AGAINST REPOSITORY SOURCE
 → NEVER GUESS
 ```
 
-BLACK SHEEP WALL is mandatory context infrastructure. ICC is the first-read context cache.
+Repository files are authoritative. ICC is a compact context cache and is trusted only within the baseline/overlay rules defined by BLACK SHEEP WALL.
 
-## BLACK SHEEP WALL Modes
+## 3. StarCraft Boundaries
 
-### Direct Invocation
+### BLACK SHEEP WALL
 
-When the user says `BLACK SHEEP WALL`, perform repository-wide context compaction:
+Owns repository-context auditing and ICC synchronization.
+
+It does **not** grant implementation authority, select future work, or widen scope.
+
+### OPERATION CWAL
+
+Owns execution discipline.
+
+CWAL executes only work already authorized in `workflow/active_work/`. It must not inspect Planning to choose future work.
+
+Completion of one microtask is **not** a stop condition. If another already-authorized Active Work microtask exists, CWAL continues automatically according to `operation cwal.md`.
+
+### THE GATHERING
+
+Owns committed workflow-status reporting.
+
+THE GATHERING is read-only, observes committed `HEAD`, ignores uncommitted state, makes no changes, and must **not** invoke BLACK SHEEP WALL unless its own directive is explicitly changed to allow it.
+
+## 4. Workflow Authority
 
 ```text
-current HEAD
-→ audit repository context
-→ compact established repository truth into ICC
-→ stamp ICC with the HEAD commit used as baseline
-→ record audited uncommitted file overlays
+Planning / Brainstorm
+    = human-owned future or exploratory work
+
+planning/microtask/
+    = defined work awaiting promotion
+
+workflow/active_work/
+    = implementation authority
+
+handoff.md
+    = persisted execution position / continuation state
+
+ICC/
+    = compressed context, never execution authority
 ```
 
-If an ICC baseline already exists, do not rescan unchanged repository files. Refresh only files changed since the recorded baseline and uncommitted files whose current content differs from the last audited overlay.
+Promotion into Active Work is the authorization boundary. Planning alone never authorizes implementation.
 
-### Invoked by Another Operation
+## 5. Permanent Invariants
 
-The operation reads ICC first. If the relevant context is synchronized with current HEAD and any audited working-tree overlay, use ICC without reopening source files. If it is stale or missing, BLACK SHEEP WALL refreshes only the affected context, then returns control to the invoking operation.
-
-BLACK SHEEP WALL never grants authority, selects work, or widens scope.
-
-## Workflow Boundaries
-
-### Brainstorm / Planning
-
-Use ICC first. Refresh affected context through BLACK SHEEP WALL only when the relevant ICC state is stale or missing. Planning is human-owned and does not authorize implementation.
-
-### Microtask
-
-Use ICC first, refresh only stale affected context, then follow `planning/microtask/rules.md`.
-
-### Promotion
-
-Use ICC first, refresh only stale affected context, then promote only the human-selected microtask and synchronize `handoff.md`.
-
-### Operation CWAL
-
-Use ICC first for Active Work context. Refresh only stale affected context. CWAL executes only authorized Active Work and must not inspect Planning to select future work.
-
-## Repository Authority
-
-Repository files are authoritative. ICC is a compact cache of repository truth and may be trusted only when its recorded baseline and working-tree overlay match the repository state being used.
+1. Resolve the invoked operation before choosing tools or context paths.
+2. Read the smallest authoritative context required for the operation.
+3. Do not widen scope because related work is visible.
+4. Do not treat ICC, Planning, Brainstorm, or historical notes as implementation authority.
+5. Do not duplicate detailed directive logic in `AGENTS.md`; route to the directive file.
+6. Do not store task-specific discoveries, runbooks, debugging history, or completed-work summaries here.
+7. Verify claims against the repository state permitted by the active operation.
+8. If authoritative sources conflict and the active directive does not define resolution, report the conflict instead of guessing.

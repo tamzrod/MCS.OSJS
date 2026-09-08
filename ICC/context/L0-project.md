@@ -1,7 +1,7 @@
 # L0 Project Context
 
-Baseline commit: 500376cfb5c222298aadfcf035aad0af0a635773
-Working tree: clean
+Baseline commit: ceee393
+Working tree: clean except ICC maintenance edits
 Source dependencies: README.md, PROJECT_IDENTITY.md, handoff.md
 Parent: none
 Zoom In: governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work
@@ -27,26 +27,24 @@ Brainstorm -> microtask -> promotion -> CWAL -> verified change. Context mainten
 
 Project identity document defines identity/direction only:  no implementation authority, no settled architecture. Detailed architecture, donor selection, rewiring, UI behavior, and execution scope established via planning + workflow docs. Repository files are authoritative; conversation memory is not a substitute.
 
-## Current Execution State (handoff
+## Current Execution State (handoff)
 
-Handoff status: ACTIVE. Active Work execution order:
+Handoff status: COMPLETE. Active Work execution order:
 
-1. `workflow/active_work/mma2-basic-install-test.md` — MMA2-001 (import+build( then MMA2-002 (runtime write/read/restart smoke test(, preserving internal order as repository truth.
-2-8. `workflow/active_work/sim-001…sim-007.md` — simulator program in dependency order SIM-001 → SIM-007. A later task does not authorize skipping an incomplete dependency. JR executes only work present in workflow/active_work/ + reflected in handoff; Planning is not used to choose or widen work.
+1. MMA2-001/002 and simulator tasks SIM-001 through SIM-007 are completed and verified.
+2. No further Active Work task is currently authorized. Planning is not used to choose or widen work.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 
 - OS.js:  presentation/desktop shell — runnable base shell exists at OSJS/ (neutral, no SCADA backend coupling(.
 - Orchestrator:  lifecycle/control authority — not yet implemented.
 - Modbus Replicator:  acquisition/replication — not yet implemented.
-- MMA2:  deterministic Modbus memory appliance — import/activation planned in active work (MMA2-001/2, SIM-002/SIM-004(.
-- Simulator (new program(: OS.js Modbus device simulator using MMA2 as memory/runtime engine — active work SIM-001…SIM-007. Not part of the base four-component identity;and an OS.js application planned from the approved simulator brainstorm.
+- MMA2: deterministic Modbus memory appliance — imported, built, runtime-smoke-tested, and activated for simulator-owned configuration and raw ingest.
+- Simulator (new program): OS.js Modbus device simulator using MMA2 as memory/runtime engine — configuration, ownership, scheduling, raw ingest, OS.js editor, Save & Apply routing, and runtime status are complete through SIM-007. It is not part of the base four-component identity.
 
 
 
 ## Unresolved / Open
 
-- Shared MMA2 configuration-authority implementation (who composes/validates effective MMA2 config from multiple producers( is not yet settled (only a boundary contract in the simulator brainstorm..
-- Orchestrator/Replicator architecture, internal transport, persistence model:  remain planning-stage questions..
-- MMA2 Modbus TCP port numbers:  architecture-task decisions per network directive.
-
+- Orchestrator/Replicator architecture, internal transport, and persistence model remain planning-stage questions.
+- MMA2 Modbus TCP port numbers remain architecture-task decisions governed by the network directive.

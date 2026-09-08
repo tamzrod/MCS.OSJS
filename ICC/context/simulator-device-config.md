@@ -1,6 +1,6 @@
 # Simulator Device Config + MMA2 Compose/Ownership + Scheduler + Raw Ingest + SaveDocument + Loopback Bridge (SIM-001 + SIM-002A + SIM-003 + SIM-004 + SIM-005-backend)
 
-Baseline commit: 9532c31
+Baseline commit: ceee393
 Working tree: clean
 Audited Overlay: (none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEAD, alongside `simulator/bridge.go`+`simulator/bridge_test.go`.
 Source dependencies: simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/README.md, deploy/docker-compose.yml, OSJS/src/server/config.js, MMA2/internal/config/validate.go, planning/Brainstorm/osjs-modbus-simulator.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md`, workflow/active_work/sim-003-random-runtime.md`, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`, simulator/bridge.go`, simulator/bridge_test.go`
@@ -58,3 +58,9 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - `simulator/apply.go` validates and classifies full-document edits as `mma2-structural`, `random-runtime`, or `no-change`; only the selected downstream consumer runs, and the simulator document is persisted only after downstream success.
 - Structural edits compose the complete simulator reservation set through SIM-002 ownership rules and replace schedulers; timing-only edits call `Scheduler.UpdateTiming` without MMA2 configuration writes. Applying bridge responses expose the path/message to the OS.js status bar.
 - Unit/HTTP tests prove all routes and prior-state preservation. Three browser saves proved structural port change, timing-only interval change, and rejected duplicate reservation with the last valid document/config intact. SIM-006 completed at pushed commit `9532c31`.
+
+## Established truth (SIM-007 runtime status)
+
+- The applying bridge exposes selected-device runtime status: device RUNNING/STOPPED/ERROR, MMA2 TCP reachability, raw-ingest health/error, exact total configured points, and FC1-FC4 scheduler Last/Next timestamps.
+- The OS.js window polls once per second and renders only compact current status—no register table, history, chart, or new control behavior.
+- A live-fixture Go test proves RUNNING state, all four timing streams, and exact point total; real-browser verification proves truthful unavailable/error display when MMA2 is absent. SIM-007 completed at pushed commit `ceee393`.

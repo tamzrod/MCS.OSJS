@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 9532c31
+Baseline Commit: ceee393
 Working Tree: clean
 Audited Uncommitted Overlay: (none( (files once audited as overlay — `simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go` — are now committed in HEAD(.
 
 Committed delta since 48c12c2 baseline: `b69c46c` committed the SIM-005 backend persistence + loopback bridge delta (`simulator/device.go` JSON tags; `simulator/store.go` `SaveDocument(Document)` multi-device atomic save; new `simulator/store_document_test.go` (3 multi-device tests(; new `simulator/bridge.go`+`simulator/bridge_test.go` loopback JSON bridge `BridgePath=/api/devices` GET/PUT on the simulator-owned document only;and refreshed ICC context files+INDEX committed with that delta(.
 
-SIM-006 completed and verified at pushed commit `9532c31` on 2026-09-08. Save & Apply now classifies structural, timing-only, and no-change edits; routes structural changes through simulator-owned MMA2 composition and scheduler replacement; routes timing-only changes through `Scheduler.UpdateTiming`; and preserves prior persisted state on invalid/downstream failure. Exactly three browser saves proved structural, timing, and rejected-conflict outcomes. SIM-007 is CURRENT. Only the selected Active Work simulator branch was refreshed; unrelated registry rows are preserved.
+SIM-007 completed and verified at pushed commit `ceee393` on 2026-09-08. Selected-device runtime status now reports device/MMA2/raw-ingest state, exact total configured points, and FC1-FC4 last/next scheduler timing; live-fixture tests prove RUNNING status and real-browser verification proves truthful unavailable/error status. All authorized Active Work is complete. Only the selected Active Work simulator branch and its changed parent summary were refreshed; unrelated registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

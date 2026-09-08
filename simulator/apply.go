@@ -50,6 +50,7 @@ type TimingApplier interface {
 type SchedulerApplier struct {
 	mu         sync.Mutex
 	store      Store
+	ready      bool
 	lifecycle  MMA2Activator
 	schedulers map[string]*Scheduler
 	devices    map[string]DeviceDefinition
@@ -57,11 +58,11 @@ type SchedulerApplier struct {
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
-	return newSchedulerApplier(store, initial, nil)
+	return newSchedulerApplier(store, initial, nil, true)
 }
 
-func newSchedulerApplier(store Store, initial Document, lifecycle MMA2Activator) *SchedulerApplier {
-	a := &SchedulerApplier{store: store, lifecycle: lifecycle, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
+func newSchedulerApplier(store Store, initial Document, lifecycle MMA2Activator, ready bool) *SchedulerApplier {
+	a := &SchedulerApplier{store: store, lifecycle: lifecycle, ready: ready, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
 	a.replaceSchedulers(initial)
 	return a
 }
@@ -81,7 +82,7 @@ func (a *SchedulerApplier) replaceSchedulers(doc Document) {
 		a.mu.Lock()
 		a.devices[device.Name] = device
 		a.mu.Unlock()
-		if !device.Enabled {
+		if !a.ready || !device.Enabled {
 			continue
 		}
 		scheduler := NewScheduler(device, func(values Values) {
@@ -123,6 +124,9 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 			return errors.Join(err, configRestoreErr, ownersRestoreErr)
 		}
 	}
+	a.mu.Lock()
+	a.ready = true
+	a.mu.Unlock()
 	a.replaceSchedulers(edited)
 	return nil
 }
@@ -192,23 +196,30 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 		status.MMA2 = "RUNNING"
 		_ = conn.Close()
 	}
-	if !device.Enabled {
-		return status, nil
-	}
-	if rawError != "" {
-		status.RawIngest = "ERROR"
-		status.Device = "ERROR"
-	} else if status.MMA2 == "RUNNING" {
-		status.RawIngest = "OK"
-		status.Device = "RUNNING"
-	}
-	if scheduler != nil {
-		for fc, timing := range scheduler.Timing() {
-			last := "Never"
-			if !timing.Last.IsZero() {
-				last = timing.Last.Format(time.RFC3339Nano)
+	if a.ready {
+		if !device.Enabled {
+			return status, nil
+		}
+		if rawError != "" {
+			status.RawIngest = "ERROR"
+			status.Device = "ERROR"
+		} else if status.MMA2 == "RUNNING" {
+			status.RawIngest = "OK"
+			status.Device = "RUNNING"
+		}
+		if scheduler != nil {
+			for fc, timing := range scheduler.Timing() {
+				last := "Never"
+				if !timing.Last.IsZero() {
+					last = timing.Last.Format(time.RFC3339Nano)
+				}
+				status.FC[fmt.Sprintf("fc%d", fc)] = FCRuntimeStatus{Last: last, Next: timing.Next.Format(time.RFC3339Nano)}
 			}
-			status.FC[fmt.Sprintf("fc%d", fc)] = FCRuntimeStatus{Last: last, Next: timing.Next.Format(time.RFC3339Nano)}
+		}
+	} else {
+		status.RawIngest = "STOPPED"
+		if device.Enabled {
+			status.Device = "ERROR"
 		}
 	}
 	return status, nil
@@ -219,19 +230,38 @@ func NewRuntimeApplyRouter(store Store) (*ApplyRouter, *SchedulerApplier, error)
 	if err != nil {
 		return nil, nil, err
 	}
-	lifecycle := NewMMA2Lifecycle()
-	if _, err := os.Stat(store.EffectiveConfigPath()); err == nil {
-		cfg, loadErr := store.loadEffective()
-		if loadErr != nil {
-			return nil, nil, loadErr
+	// Ownership-safe restore mirrors ApplyStructural:, compose the persisted simulator
+	// document into the effective MMA2 config, activate the resulting listeners, and
+	// only arm schedulers when activation succeeded. On failure the router stays alive so the
+	// UI can surface a truthful ERROR/STOPPED state until a later accepted structural
+	// Save & Apply recovers the service..
+	if err := store.ComposeDocument(initial); err != nil {
+		configBefore, configExisted, err := readOptionalFile(store.EffectiveConfigPath())
+		if err != nil {
+			return nil, nil, err
 		}
-		if activateErr := lifecycle.Activate(store.EffectiveConfigPath(), cfg); activateErr != nil {
-			return nil, nil, activateErr
+		ownersBefore, ownersExisted, err := readOptionalFile(store.OwnershipPath())
+		if err != nil {
+			return nil, nil, err
 		}
-	} else if !os.IsNotExist(err) {
+		configRestoreErr := restoreOptionalFile(store.EffectiveConfigPath(), configBefore, configExisted)
+		ownersRestoreErr := restoreOptionalFile(store.OwnershipPath(), ownersBefore, ownersExisted)
+		return nil, nil, errors.Join(err, configRestoreErr, ownersRestoreErr)
+	}
+	cfg, err := store.loadEffective()
+	if err != nil {
 		return nil, nil, err
 	}
-	timing := newSchedulerApplier(store, initial, lifecycle)
+	lifecycle := NewMMA2Lifecycle()
+	ready := false
+	if err := lifecycle.Activate(store.EffectiveConfigPath(), cfg); err != nil {
+		// Restoration failure keeps the router alive so the UI can surface a truthful
+		// ERROR state and a later accepted structural apply can recover the service.
+		_ = err
+	} else {
+		ready = true
+	}
+	timing := newSchedulerApplier(store, initial, lifecycle, ready)
 	return NewApplyRouter(store, timing, timing), timing, nil
 }
 

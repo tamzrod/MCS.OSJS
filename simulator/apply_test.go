@@ -14,6 +14,29 @@ type applyRecorder struct {
 	err        error
 }
 
+func TestSchedulerApplierReadyGatePreventsArmingAndFalseHealth(t *testing.T) {
+	device := validDevice()
+	device.Name = "gate-device"
+	device.MMA2.Port = 15039
+	device.RandomRuntime = RandomRuntimeParams{FC1IntervalMS: 5, FC2IntervalMS: 5, FC3IntervalMS: 5, FC4IntervalMS: 5}
+	applier := newSchedulerApplier(Store{Root: t.TempDir()}, Document{Devices: []DeviceDefinition{device}}, nil, false)
+	defer applier.Stop()
+	time.Sleep(25 * time.Millisecond)
+	if len(applier.schedulers) != 0 {
+		t.Fatalf("schedulers armed before ready: %d", len(applier.schedulers))
+	}
+	status, err := applier.RuntimeStatus(device.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Device != "ERROR" || status.MMA2 != "STOPPED" || status.RawIngest != "STOPPED" {
+		t.Fatalf("not-ready status must be truthful failure: %+v", status)
+	}
+	if len(status.FC) != 0 {
+		t.Fatalf("not-ready status must not advertise FC timing: %+v", status.FC)
+	}
+}
+
 func TestSchedulerApplierRuntimeStatusMatchesTimingAndPoints(t *testing.T) {
 	fixture := newRawFixture(t, rawRespOK, rawRespOK, rawRespOK, rawRespOK)
 	_, portText, err := net.SplitHostPort(fixture.ln.Addr().String())

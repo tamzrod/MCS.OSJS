@@ -1,8 +1,8 @@
 # Brainstorm Topics
 
-Baseline commit: 500376cfb5c222298aadfcf035aad0af0a635773
+Baseline commit: be8c1b6
 Working tree: clean
-Source dependencies: planning/Brainstorm/mma2-basic-install-test.md, planning/Brainstorm/osjs-modbus-simulator.md
+Source dependencies: planning/Brainstorm/mma2-basic-install-test.md, planning/Brainstorm/osjs-modbus-simulator.md, planning/Brainstorm/mcs-three-app-model.md
 Parent: planning-workflow
 Zoom In:(none; leaf node(
 Zoom Out: planning-workflow
@@ -44,3 +44,7 @@ Persistent runtime configuration must live under the host-mounted MCS.OSJS data/
 ### Approved Simulator UI (SIM-005
 
 A focused device-definition editor + runtime-status surface (NOT a live SCADA-style value editor(:  two-pane layout — device list/search (simulator-owned definitions only; rows show name, listen port, Unit ID, status RUNNING/STOPPED/ERROR( + editor (Name, Listen Port, Unit ID, Enabled, FC1-FC4 rows Start+Count+Randomize Every (ms(, calculated address ranges(; controls Add/Duplicate/Delete/Save & Apply/Discard; runtime status area (MMA2 Status, Raw Ingest, per-FC last/next random update, Total Points(; bottom status bar. `Save & Apply` validates both domains, classifies changed params, routes structural via shared MMA2 config authority (restart/reload only when required( and timing-only to scheduler (no MMA2 restart(; rejected save leaves prior active config intact. UI must not directly overwrite effective MMA2 config file. Initial UI excludes:  raw YAML editing, direct MMA2 config editing, individual register/coil editing, live memory tables, charts, waveform/ramp/sine/script config, Replicator config, arbitrary MMA2 lifecycle controls unrelated to simulator definitions. Zero-count FC area possible unused(function-code unused( if supported by eventual schema. Keep first simulator intentionally small; advanced signal behavior not part of initial idea..
+
+## Topic: MCS Three-App MMA2 Usage Model (brainstorm, non-authoritative)
+
+MCS exposes separate Simulator, Replicator, and Memory Appliance applications over one neutral MMA2 memory/runtime engine. Simulator generates values into MMA2; Replicator acquires external Modbus values and pushes them into MMA2; Memory Appliance exposes MMA2 directly for third-party use. Each application retains its own intent and lifecycle, while shared `(port, unit_id)` ownership prevents cross-application overwrite or deletion. The model does not authorize implementation. The immediate simulator lifecycle gap has been decomposed into planning-only `SIM-008` and `SIM-009` microtasks.

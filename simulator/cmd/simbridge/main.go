@@ -24,12 +24,12 @@ import (
 	"github.com/tamzrod/MCS.OSJS/simulator"
 )
 
-// BridgeAddr is the loopback-only bind address for the internal simulator bridge.
+// DefaultBridgeAddr is the loopback-only bind address for the internal simulator bridge.
 // The fixed port (18211( is the deterministic internal companion to the OS.js
 // management port (18209( used by the OS.js server proxy route. It is loopback-
 // bound and never part of the external exposure contract.
 
-const BridgeAddr = "127.0.0.1:18211"
+const DefaultBridgeAddr = "127.0.0.1:18211"
 
 func main() {
 	root, err := simulator.ConfigRootFromEnv()
@@ -43,11 +43,15 @@ func main() {
 		log.Fatalf("simbridge: initialize Save & Apply routing: %v", err)
 	}
 	defer timing.Stop()
-	ln, err := net.Listen("tcp", BridgeAddr)
-	if err != nil {
-		log.Fatalf("simbridge: bind %s failed: %v", BridgeAddr, err)
+	bridgeAddr := os.Getenv("SIMULATOR_BRIDGE_ADDR")
+	if bridgeAddr == "" {
+		bridgeAddr = DefaultBridgeAddr
 	}
-	log.Printf("simbridge: serving simulator-owned device document on %s", BridgeAddr)
+	ln, err := net.Listen("tcp", bridgeAddr)
+	if err != nil {
+		log.Fatalf("simbridge: bind %s failed: %v", bridgeAddr, err)
+	}
+	log.Printf("simbridge: serving simulator-owned device document on %s", bridgeAddr)
 
 	srv := &http.Server{Handler: simulator.NewApplyingBridge(store, router)}
 

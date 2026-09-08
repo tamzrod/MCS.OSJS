@@ -19,5 +19,7 @@ Zoom Out: L0-project
 7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window. **COMPLETED 2026-09-08** at pushed commit `28d27f9` (two-pane editor, approved fields/actions/ranges, same-origin persistence, builds, Go suite, and real-browser round-trip verified without effective MMA2 writes).
 8. `sim-006-save-apply-routing.md` — Save & Apply routing. **COMPLETED 2026-09-08** at pushed commit `9532c31` (classification, correct consumers, rollback-on-rejection, bridge/UI status, tests, and three browser saves verified).
 9. `sim-007-runtime-status.md` — runtime status surface. **COMPLETED 2026-09-08** at pushed commit `ceee393` (device/MMA2/raw-ingest status, exact point total, FC1-FC4 timing, tests, builds, and browser verification complete).
+10. `sim-008-managed-mma2-lifecycle.md` — **COMPLETED 2026-09-08**, pending commit/push checkpoint. Managed child-process activation, readiness, replacement, rollback, and real MMA2 bind-failure recovery verified.
+11. `sim-009-serve-simulator-through-mma2.md` — authorized next after the SIM-008 push checkpoint.
 
-All authorized Active Work in this execution order is complete.
+SIM-008 is complete pending its CWAL commit/push checkpoint. SIM-009 is the next already-authorized Active Work task.

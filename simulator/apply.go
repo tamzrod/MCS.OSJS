@@ -1,12 +1,32 @@
 package simulator
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"sync"
 	"time"
 )
+
+func readOptionalFile(path string) ([]byte, bool, error) {
+	b, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return nil, false, nil
+	}
+	return b, err == nil, err
+}
+
+func restoreOptionalFile(path string, data []byte, existed bool) error {
+	if !existed {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		return nil
+	}
+	return os.WriteFile(path, data, 0o644)
+}
 
 type ApplyPath string
 
@@ -30,13 +50,18 @@ type TimingApplier interface {
 type SchedulerApplier struct {
 	mu         sync.Mutex
 	store      Store
+	lifecycle  MMA2Activator
 	schedulers map[string]*Scheduler
 	devices    map[string]DeviceDefinition
 	rawErrors  map[string]string
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
-	a := &SchedulerApplier{store: store, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
+	return newSchedulerApplier(store, initial, nil)
+}
+
+func newSchedulerApplier(store Store, initial Document, lifecycle MMA2Activator) *SchedulerApplier {
+	a := &SchedulerApplier{store: store, lifecycle: lifecycle, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
 	a.replaceSchedulers(initial)
 	return a
 }
@@ -76,8 +101,27 @@ func (a *SchedulerApplier) replaceSchedulers(doc Document) {
 }
 
 func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
+	configBefore, configExisted, err := readOptionalFile(a.store.EffectiveConfigPath())
+	if err != nil {
+		return err
+	}
+	ownersBefore, ownersExisted, err := readOptionalFile(a.store.OwnershipPath())
+	if err != nil {
+		return err
+	}
 	if err := a.store.ComposeDocument(edited); err != nil {
 		return err
+	}
+	if a.lifecycle != nil {
+		cfg, err := a.store.loadEffective()
+		if err == nil {
+			err = a.lifecycle.Activate(a.store.EffectiveConfigPath(), cfg)
+		}
+		if err != nil {
+			configRestoreErr := restoreOptionalFile(a.store.EffectiveConfigPath(), configBefore, configExisted)
+			ownersRestoreErr := restoreOptionalFile(a.store.OwnershipPath(), ownersBefore, ownersExisted)
+			return errors.Join(err, configRestoreErr, ownersRestoreErr)
+		}
 	}
 	a.replaceSchedulers(edited)
 	return nil
@@ -111,6 +155,9 @@ func (a *SchedulerApplier) Stop() {
 	a.mu.Unlock()
 	for _, scheduler := range schedulers {
 		scheduler.Stop()
+	}
+	if a.lifecycle != nil {
+		_ = a.lifecycle.Stop()
 	}
 }
 
@@ -172,7 +219,19 @@ func NewRuntimeApplyRouter(store Store) (*ApplyRouter, *SchedulerApplier, error)
 	if err != nil {
 		return nil, nil, err
 	}
-	timing := NewSchedulerApplier(store, initial)
+	lifecycle := NewMMA2Lifecycle()
+	if _, err := os.Stat(store.EffectiveConfigPath()); err == nil {
+		cfg, loadErr := store.loadEffective()
+		if loadErr != nil {
+			return nil, nil, loadErr
+		}
+		if activateErr := lifecycle.Activate(store.EffectiveConfigPath(), cfg); activateErr != nil {
+			return nil, nil, activateErr
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, nil, err
+	}
+	timing := newSchedulerApplier(store, initial, lifecycle)
 	return NewApplyRouter(store, timing, timing), timing, nil
 }
 

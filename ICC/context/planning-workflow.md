@@ -1,6 +1,6 @@
 # Planning Workflow
 
-Baseline commit: 500376cfb5c222298aadfcf035aad0af0a635773
+Baseline commit: be8c1b6
 Working tree: clean
 Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md
 Parent: L0-project

@@ -1,6 +1,6 @@
 # SIM-014 — Add MMA2 Restart-Only Control
 
-Status: ACTIVE — promoted for sequential execution after SIM-013.
+Status: COMPLETED 2026-09-08 — archived after verification.
 
 ## Primary outcome
 
@@ -39,6 +39,13 @@ MMA2 remains an independently managed appliance component that auto-starts on sy
 ## Verification
 
 Run MMA2 independently, apply a valid listener change, observe restart/reload and readiness, then prove invalid/rejected config does not trigger restart.
+
+## Completion evidence
+
+- `simulator/restart.go` defines the sole control request: a fingerprinted RESTART artifact written only after a successful shared-config commit, followed by readiness polling.
+- Successful readiness clears the request; timeout is returned truthfully and leaves the request pending. Rejected composition writes no request.
+- Restart-focused tests pass. The real SIM-017 harness observes exactly one request after a valid port edit, independently restarts MMA2, and confirms the reloaded listener is ready.
+- Static checks find no Simulator start, stop, spawn, kill, replace, or MMA2 process-ownership implementation.
 
 ## Dependencies
 

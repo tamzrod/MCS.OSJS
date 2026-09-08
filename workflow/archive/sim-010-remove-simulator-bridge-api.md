@@ -1,6 +1,6 @@
 # SIM-010 — Remove Simulator Bridge and Config API
 
-Status: ACTIVE — promoted for sequential execution.
+Status: COMPLETED 2026-09-08 — archived after verification.
 
 ## Primary outcome
 
@@ -35,6 +35,13 @@ The Simulator is a local MCS.OSJS application. There is no `simbridge` service a
 ## Verification
 
 Run affected Go and OS.js tests/builds and search the repository for bridge routes/environment variables to prove the removed boundary is no longer referenced by runtime code.
+
+## Completion evidence
+
+- Removed the `simbridge` command, Go bridge implementation/tests, OS.js bridge provider, Simulator configuration/status routes, bridge environment variables, and bridge-only UI behavior.
+- Current static search finds no `simbridge`, Simulator device API route, bridge address variable, or bridge-not-running failure string in runtime source.
+- Reusable Simulator model, persistence, composition, scheduler, Raw Ingest, and UI code remains present and is covered by the completed SIM-017 capstone.
+- `node --check`, local-package build, full OS.js build, MMA2 build, and the real Simulator/MMA2 integration verification pass on 2026-09-08.
 
 ## Dependencies
 

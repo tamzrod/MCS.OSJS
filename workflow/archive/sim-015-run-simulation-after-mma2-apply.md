@@ -1,6 +1,6 @@
 # SIM-015 — Run Simulation After Successful MMA2 Apply
 
-Status: ACTIVE — promoted for sequential execution after SIM-014.
+Status: COMPLETED 2026-09-08 — archived after verification.
 
 ## Primary outcome
 
@@ -34,6 +34,13 @@ Start or update Simulator schedules only after the shared MMA2 config is committ
 ## Verification
 
 Exercise one enabled four-area Simulator definition and observe scheduler timing plus MMA2 memory updates after successful apply; inject/observe readiness or ingest failure and verify state.
+
+## Completion evidence
+
+- `ApplyRouter` calls `ArmSchedules` only after structural composition, RESTART readiness, and Simulator document persistence succeed; disabled devices are not armed.
+- Restart/readiness failure returns before persistence or arming. Raw-Ingest errors remain visible through truthful runtime status.
+- Unit tests cover successful arming and restart-failure non-arming. The real SIM-017 harness observes advancing schedules, changing Raw-Ingest values, and successful FC1–FC4 Modbus reads.
+- The full Simulator suite and the real end-to-end capstone pass on 2026-09-08.
 
 ## Dependencies
 

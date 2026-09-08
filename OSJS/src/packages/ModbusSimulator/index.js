@@ -4,6 +4,8 @@ import {name as applicationName} from './metadata.json';
 
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
+const SETTINGS_NS = 'mcs/modbus-simulator';
+const SETTINGS_KEY = 'document';
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
 const normalizeDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
@@ -78,6 +80,7 @@ const field = (label, value, settings, onChange) => {
 
 const register = (core, args, options, metadata) => {
   const proc = core.make('osjs/application', {args, options, metadata});
+  const settings = core.make('osjs/settings');
   const win = proc.createWindow({
     id: 'ModbusSimulatorWindow',
     title: metadata.title && metadata.title.en_EN ? metadata.title.en_EN : 'Modbus Simulator',
@@ -183,12 +186,21 @@ const register = (core, args, options, metadata) => {
     state.saving = true;
     setMessage('Saving simulator definitions...');
     render();
-    state.document = clone(normalizeDocument(state.document));
-    state.persisted = clone(state.document);
-    if (state.selected !== null && state.selected >= state.document.devices.length) state.selected = null;
-    setMessage('Simulator definitions saved locally.');
-    state.saving = false;
-    render();
+    const edited = clone(normalizeDocument(state.document));
+    try {
+      settings.set(SETTINGS_NS, SETTINGS_KEY, edited);
+      await settings.save();
+      state.document = clone(edited);
+      state.persisted = clone(edited);
+      if (state.selected !== null && state.selected >= edited.devices.length) state.selected = null;
+      setMessage('Simulator definitions saved locally.');
+    } catch (error) {
+      settings.set(SETTINGS_NS, SETTINGS_KEY, clone(state.persisted));
+      setMessage(`Save failed: ${error.message || error}`, true);
+    } finally {
+      state.saving = false;
+      render();
+    }
   };
 
   win.on('destroy', () => {
@@ -227,6 +239,11 @@ const register = (core, args, options, metadata) => {
       }
       render();
     });
+    const persisted = normalizeDocument(settings.get(SETTINGS_NS, SETTINGS_KEY, {devices: []}));
+    state.document = clone(persisted);
+    state.persisted = clone(persisted);
+    state.selected = persisted.devices.length ? 0 : null;
+    setMessage(persisted.devices.length ? 'Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
     render();
   });
   return proc;

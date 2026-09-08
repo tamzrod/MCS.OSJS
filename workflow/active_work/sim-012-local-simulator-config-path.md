@@ -1,6 +1,6 @@
 # SIM-012 — Establish Local Simulator Configuration Path
 
-Status: ACTIVE — promoted for sequential execution after SIM-011.
+Status: COMPLETED 2026-09-08.
 
 ## Primary outcome
 
@@ -30,6 +30,14 @@ Allow the OS.js Modbus Simulator to create, load, edit, and save Simulator-owned
 ## Verification
 
 Exercise the local UI/persistence workflow and affected automated tests. Confirm persisted Simulator document content matches the edited definitions.
+
+## Completion evidence
+
+- The Modbus Simulator uses the existing server-backed `osjs/settings` service under `mcs/modbus-simulator.document`; no Simulator HTTP route or replacement bridge was introduced.
+- Save commits the normalized document through `settings.save()` and updates Discard state only after persistence succeeds; load restores the same document when the window opens.
+- Live rebuilt-container verification created `SIM012-RoundTrip`, edited enabled/port/unit plus all FC start/count/interval fields, saved, reloaded the desktop, and observed every value round-trip exactly. Duplicate, delete, and discard were also exercised.
+- `/data/vfs/demo/.osjs/settings.json` contains the exact Simulator document. The data volume contained no Simulator-created MMA2 config or lifecycle artifact.
+- `node --check`, `npm run build:local-packages`, `npm run build`, Simulator `go vet ./...`, and Simulator `go test -count=1 ./...` pass. Browser console had no application errors.
 
 ## Dependencies
 

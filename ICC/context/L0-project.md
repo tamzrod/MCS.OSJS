@@ -1,6 +1,6 @@
 # L0 Project Context
 
-Baseline commit: 24fd5b1
+Baseline commit: 57c8714
 Working tree: clean
 Source dependencies: README.md, PROJECT_IDENTITY.md, handoff.md
 Parent: none
@@ -29,9 +29,9 @@ Project identity document defines identity/direction only:  no implementation au
 
 ## Current Execution State (handoff)
 
-Handoff status: ACTIVE. MMA2-001/002 and simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009's premise was superseded. Active Work execution order (promoted sequence: SIM-010 → SIM-017:
+Handoff status: COMPLETE. MMA2-001/002 and Simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009 was superseded; the corrected SIM-010 → SIM-017 sequence is completed and verified.
 
-SIM-010 through SIM-013 are complete( SIM-013 at `24fd5b1`; SIM-014 ( MMA2 RESTART-only control( completed at `db2276c`; SIM-015 ( arm schedules after MMA2 apply/readiness( completed at `3652b98`. SIM-016 ( restore enabled simulations on boot( is CURRENT, followed by SIM-017. MMA2 auto-starts independently;Simulator may request only RESTART after a committed valid shared-config change. Detail in Zoom In `active-work`.
+SIM-017's real-MMA2 capstone completed at `57c8714`, proving independent boot, restore, safe apply/restart, changing Raw Ingest schedules, FC1–FC4 reads, negative boundaries, foreign preservation, and reboot resume. No current Active Work microtask remains. Detail in Zoom In `active-work`.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 

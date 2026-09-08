@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 6d24f7a
+Baseline Commit: 57c8714
 Working Tree: clean
 Audited Uncommitted Overlay:(none).
 
-Committed delta through `6d24f7a`: SIM-014 added the restart-only request+ready-wait+truthful failure surfacing at `db2276c`; SIM-015 then armed enabled schedules only after the full Save&Apply chain success at `3652b98`; SIM-016 then restored enabled simulations on boot at `6d24f7a` (boot router waits for independently auto-started MMA2 readiness and arms enabled schedules; unchanged ordinary boot neither restarts MMA2 nor writes a restart request;unavailable MMA2 leaves the router alive unarmed with truthful status(. The handoff advances SIM-017 to current.
+Committed delta through `57c8714`: SIM-017 added a verification-only real-MMA2 capstone. It proves independent boot, Simulator restore, changing scheduled Raw Ingest values, real FC1–FC4 Modbus reads, exactly one restart request after valid structural apply, rejection without restart or config damage, foreign reservation survival, and automatic reboot resume. The promoted SIM-010…SIM-017 sequence is complete.
 
-Refreshed Active Work branch only at `6d24f7a`: the simulator-device-config leaf records SIM-015.s scheduling-arm + SIM-016.s boot-restore contracts; active-workand the handoff-derived L0 summary advance SIM-017 to current. Unrelated sibling registry rows are preserved.
+Refreshed Active Work branch only at `57c8714`: the simulator-device-config leaf records SIM-017's real protocol/runtime evidence; active-work and the handoff-derived L0 summary record that no current microtask remains. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

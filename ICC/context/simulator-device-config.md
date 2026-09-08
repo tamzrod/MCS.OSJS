@@ -1,6 +1,6 @@
-# Simulator Device Config + Local Persistence + Validated MMA2 Composition + Scheduler + Raw Ingest + Restart-Only Request + Apply-Armed Schedules + Boot Restore( SIM-001 → SIM-016)
+# Simulator Device Config + MMA2 Corrected Architecture — Verified End to End (SIM-001 → SIM-017)
 
-Baseline commit: 6d24f7a
+Baseline commit: 57c8714
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
 Source dependencies: MMA2/pkg/configvalidate/validate.go, simulator/device.go, simulator/validate.go, simulator/store.go, simulator/store_test.go, simulator/store_document_test.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go, simulator/raw_ingest_test.go, simulator/apply.go, simulator/apply_test.go, simulator/README.md, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-001-simulator-device-config.md through workflow/active_work/sim-017-end-to-end-simulator-mma2-verification.md
@@ -104,3 +104,8 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 
 - Simulator boot path `NewRuntimeApplyRouter` loads persisted definitions, ownership-safe composes Simulator reservations into the already-persisted shared MMA2 config ( SIM-011 behavior(,then waits for the independently auto-started MMA2 to accept every composed listener port via `WaitMMA2Ready`,then arms enabled schedules through the SIM-015 arming gate. Ordinary unchanged boot neither restarts MMA2 nor writes a restart request. If MMA2 never becomes ready,the router survives alive with zero armed schedulers, truthful STOPPED/ERROR runtime status,and no restart artifact is created;a later Save & Apply can recover. Two boot tests in `simulator/boot_restore_test.go` prove armed-enabled-resume-without-restart-request,and unavailable-MMA2-no-arm-no-restart. Completed at pushed commit `6d24f7a`.
 
+## Established truth (SIM-017 end-to-end verification)
+
+- `simulator/e2e_test.go` is a verification-only harness that independently builds/starts/restarts real MMA2. The Simulator remains limited to shared-config composition, restart request, readiness, scheduling, and Raw Ingest.
+- The test proves boot restore, changing scheduled FC3 data, successful real Modbus reads for FC1/FC2/FC3/FC4, exactly one restart after a valid port edit, and new-listener readiness after reload.
+- Duplicate reservation is rejected with shared config byte-unchanged and no restart request. A foreign-owned reservation remains readable before/after apply and after reboot. Full MMA2 plus Simulator-router restart resumes the enabled schedule without manual apply or restart artifact. Race-enabled capstone passed at `57c8714`.

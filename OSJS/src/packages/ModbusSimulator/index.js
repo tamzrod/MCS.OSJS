@@ -2,13 +2,11 @@ import './index.scss';
 import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
 
-const API_PATH = '/api/devices';
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
 const normalizeDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
-const applyDocument = value => value && value.document ? normalizeDocument(value.document) : normalizeDocument(value);
 
 const blankDevice = sequence => ({
   name: `Sim-PLC-${sequence}`,
@@ -86,7 +84,7 @@ const register = (core, args, options, metadata) => {
     dimension: {width: 920, height: 620},
     position: 'center'
   });
-  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'Loading simulator definitions...', error: false, saving: false, runtime: null};
+  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'No devices configured. Choose Add to begin.', error: false, saving: false};
   const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
   const setMessage = (message, error = false) => Object.assign(state, {message, error});
 
@@ -132,25 +130,6 @@ const register = (core, args, options, metadata) => {
     });
     pane.appendChild(table);
 
-    const runtime = state.runtime && state.runtime.name === device.name ? state.runtime : null;
-    const runtimePanel = element('section', 'sim-runtime');
-    runtimePanel.appendChild(element('h3', '', 'Runtime Status'));
-    const summary = element('div', 'sim-runtime-summary');
-    [['Device', runtime && runtime.device_status], ['MMA2', runtime && runtime.mma2_status], ['Raw Ingest', runtime && runtime.raw_ingest_status], ['Total Points', runtime && runtime.total_points]].forEach(([label, value]) => {
-      const item = element('div', 'sim-runtime-item');
-      item.append(element('span', '', label), element('strong', '', value === null || value === undefined ? 'UNKNOWN' : String(value)));
-      summary.appendChild(item);
-    });
-    runtimePanel.appendChild(summary);
-    const timings = element('div', 'sim-runtime-timings');
-    FC_KEYS.forEach(fc => {
-      const timing = runtime && runtime.fc && runtime.fc[fc];
-      const row = element('div', 'sim-runtime-fc');
-      row.append(element('strong', '', fc.toUpperCase()), element('span', '', `Last: ${timing ? timing.last : 'Unknown'}`), element('span', '', `Next: ${timing ? timing.next : 'Unknown'}`));
-      timings.appendChild(row);
-    });
-    runtimePanel.appendChild(timings);
-    pane.appendChild(runtimePanel);
     const validation = validateDevice(device);
     if (validation) pane.appendChild(element('div', 'sim-validation', validation));
     const actions = element('div', 'sim-editor-actions');
@@ -204,37 +183,15 @@ const register = (core, args, options, metadata) => {
     state.saving = true;
     setMessage('Saving simulator definitions...');
     render();
-    try {
-      const response = await core.request(API_PATH, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(state.document)}, 'json');
-      const saved = applyDocument(response);
-      state.document = clone(saved);
-      state.persisted = clone(saved);
-      if (state.selected !== null && state.selected >= saved.devices.length) state.selected = null;
-      setMessage(response.message || 'Simulator definitions saved.');
-    } catch (error) {
-      setMessage(`Save failed: ${error.message || error}`, true);
-    } finally {
-      state.saving = false;
-      render();
-    }
+    state.document = clone(normalizeDocument(state.document));
+    state.persisted = clone(state.document);
+    if (state.selected !== null && state.selected >= state.document.devices.length) state.selected = null;
+    setMessage('Simulator definitions saved locally.');
+    state.saving = false;
+    render();
   };
 
-  const refreshStatus = async () => {
-    const device = selectedDevice();
-    if (!device) return;
-    try {
-      state.runtime = await core.request(`${API_PATH}/status?name=${encodeURIComponent(device.name)}`, {}, 'json');
-      const current = selectedDevice();
-      if (current && current.name === state.runtime.name) render();
-    } catch (error) {
-      state.runtime = {name: device.name, device_status: 'ERROR', mma2_status: 'UNKNOWN', raw_ingest_status: 'ERROR', total_points: 0, fc: {}};
-      render();
-    }
-  };
-
-  const statusTimer = setInterval(refreshStatus, 1000);
   win.on('destroy', () => {
-    clearInterval(statusTimer);
     proc.destroy();
   });
   win.render($content => {
@@ -245,7 +202,6 @@ const register = (core, args, options, metadata) => {
       const action = target.dataset.action;
       if (action === 'select') {
         state.selected = Number(target.dataset.index);
-		state.runtime = null;
         setMessage('Editing a simulator-owned definition.');
       } else if (action === 'add') {
         state.document.devices.push(blankDevice(state.document.devices.length + 1));
@@ -271,15 +227,7 @@ const register = (core, args, options, metadata) => {
       }
       render();
     });
-    core.request(API_PATH, {}, 'json').then(value => {
-      state.document = clone(normalizeDocument(value));
-      state.persisted = clone(state.document);
-      state.selected = state.document.devices.length ? 0 : null;
-      setMessage(state.document.devices.length ? 'Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
-    }).catch(error => setMessage(`Load failed: ${error.message || error}`, true)).finally(() => {
-      render();
-      refreshStatus();
-    });
+    render();
   });
   return proc;
 };

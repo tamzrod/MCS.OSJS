@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 7e63460
+Baseline Commit: 49c0c65
 Working Tree: clean
 Audited Uncommitted Overlay: (none).
 
-Committed delta since 48c12c2 baseline: `b69c46c` committed the SIM-005 backend persistence + loopback bridge delta (`simulator/device.go` JSON tags; `simulator/store.go` `SaveDocument(Document)` multi-device atomic save; new `simulator/store_document_test.go` (3 multi-device tests(; new `simulator/bridge.go`+`simulator/bridge_test.go` loopback JSON bridge `BridgePath=/api/devices` GET/PUT on the simulator-owned document only;and refreshed ICC context files+INDEX committed with that delta(.
+Committed delta since 7e63460 baseline: `83a5b69` (SIM-009 ready-gate delta in `simulator/apply.go`+`apply_test.go`: schedulers arm only when ready+enabled;ApplyStructural arms after successful compose+activate;RuntimeStatus gates truthful pre-ready STOPPED/ERROR/WAITING;boot activation failure keeps router alive unarmed(;`88a43f8` (superseded SIM-009's managed-MMA2 premise: MMA2 auto-starts on boot;Simulator never owns its lifecycle;only RESTART after committed valid shared-config change;no simbridge/Simulator config API(;`59f0940` (update project context+workflow(;`60698a1` (promoted the SIM-010 current … SIM-017 sequence in handoff.md+task files(;and prior partial ICC refresh baseliningthe Active Work branch at `7e63460`.
 
-SIM-008 completed and verified at pushed commit `7e63460` on 2026-09-08. Structural Save & Apply now activates a single managed MMA2 child from the ownership-validated effective configuration, verifies listener readiness plus child stability, replaces the process on structural changes, and restores prior config/service on failed activation. SIM-009 is the current authorized Active Work. Only the selected Active Work simulator branch and its changed parent summary were refreshed; unrelated registry rows are preserved.
+Refreshed Active Work branch only: active-work + simulator-device-config nodes re-baselined at `49c0c65` (SIM-009 committed delta, SIM-009 supersession,and SIM-010 current amongthe promoted sequence(;L0-project parent summary re-stamped + handoff-derived execution paragraph updated. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -34,8 +34,8 @@ SIM-008 completed and verified at pushed commit `7e63460` on 2026-09-08. Structu
 | `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md` |
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go` |
-| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md`, `workflow/active_work/sim-005-osjs-window.md`, `workflow/active_work/sim-006-save-apply-routing.md` |
+| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `MMA2/testdata/smoke-test.yaml`, `simulator/device.go`, `simulator/store.go`, `simulator/validate.go`, `simulator/scheduler.go`, `simulator/scheduler_test.go`, `simulator/raw_ingest.go`, `simulator/raw_ingest_test.go`, `simulator/apply.go`, `simulator/apply_test.go`, `simulator/lifecycle.go`, `simulator/lifecycle_test.go` |
+| `context/simulator-device-config.md` | active-work | — | `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/config.js`, `MMA2/internal/config/validate.go`, `planning/Brainstorm/osjs-modbus-simulator.md`, `workflow/active_work/sim-001-simulator-device-config.md`, `workflow/active_work/sim-002a-mma2-config-ownership.md`, `workflow/active_work/sim-003-random-runtime.md`, `workflow/active_work/sim-004-raw-ingest.md`, `workflow/active_work/sim-005-osjs-window.md`, `workflow/active_work/sim-006-save-apply-routing.md`, `workflow/active_work/sim-007-runtime-status.md`, `workflow/active_work/sim-008-managed-mma2-lifecycle.md`, `workflow/active_work/sim-009-serve-simulator-through-mma2.md`, `workflow/active_work/sim-010-remove-simulator-bridge-api.md` |
 
 ## Access Rule
 

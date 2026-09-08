@@ -2,15 +2,15 @@
 
 ## Status
 
-ACTIVE — SIM-010 current. SIM-010 through SIM-017 are human-promoted for sequential execution.
+ACTIVE — SIM-011 current. SIM-010 through SIM-017 are human-promoted for sequential execution.
 
 ## Current Active Work
 
 Prior MMA2 work and SIM-001 through SIM-008 are completed and verified. SIM-009 is superseded by the corrected architecture sequence below.
 
 Execution order:
-1. `workflow/active_work/sim-010-remove-simulator-bridge-api.md` — SIM-010: remove Simulator bridge and config API. **CURRENT**.
-2. `workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md` — SIM-011: remove Simulator ownership of MMA2 lifecycle.
+1. `workflow/active_work/sim-010-remove-simulator-bridge-api.md` — SIM-010: remove Simulator bridgeand config API. **COMPLETED 2026-09-08** (removed `simulator/cmd/simbridge`, `simulator/bridge.go`, `simulator/bridge_test.go`, OS.js `simulator-bridge` provider + `/api/devices` + `/api/devices/status` routes, `SIMBRIDGE_ADDR`/`SIMULATOR_BRIDGE_ADDR`; removed bridge-served runtime-status UI polling/panel and bridge-reachability failure strings; preserved model/persistence/composition/ownership/scheduler/raw-ingest/UI. `gofmt -l .`, `go vet ./...`, `go test -count=1 ./...`, `node --check`, `npm run build:local-packages`, `npm run build` all pass.
+2. `workflow/active_work/sim-011-remove-simulator-mma2-lifecycle-ownership.md` — SIM-011: remove Simulator ownership of MMA2 lifecycle. **CURRENT**.
 3. `workflow/active_work/sim-012-local-simulator-config-path.md` — SIM-012: establish local Simulator configuration path without a config HTTP API.
 4. `workflow/active_work/sim-013-compose-shared-mma2-config.md` — SIM-013: safely compose Simulator-owned entries into shared MMA2 config.
 5. `workflow/active_work/sim-014-mma2-restart-only-control.md` — SIM-014: add MMA2 RESTART-only control.

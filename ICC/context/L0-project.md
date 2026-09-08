@@ -1,7 +1,7 @@
 # L0 Project Context
 
-Baseline commit: ceee393
-Working tree: clean except ICC maintenance edits
+Baseline commit: 49c0c65
+Working tree: clean
 Source dependencies: README.md, PROJECT_IDENTITY.md, handoff.md
 Parent: none
 Zoom In: governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work
@@ -29,10 +29,9 @@ Project identity document defines identity/direction only:  no implementation au
 
 ## Current Execution State (handoff)
 
-Handoff status: COMPLETE. Active Work execution order:
+Handoff status: ACTIVE. MMA2-001/002 and simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009's premise was superseded. Active Work execution order (promoted sequence: SIM-010 → SIM-017:
 
-1. MMA2-001/002 and simulator tasks SIM-001 through SIM-007 are completed and verified.
-2. No further Active Work task is currently authorized. Planning is not used to choose or widen work.
+SIM-010 (current: remove Simulator bridge + config API(, SIM-011 (remove Simulator MMA2 lifecycle ownership(, SIM-012 (local Simulator config path(, SIM-013 (compose Simulator-owned entries into shared MMA2 config(, SIM-014 (MMA2 RESTART-only control(, SIM-015 (run simulation after successful MMA2 apply(, SIM-016 (restore enabled simulations on boot(,, SIM-017 (end-to-end verification(. MMA2 auto-starts on boot; Simulator must not own its lifecycle; only RESTART after a committed valid shared-config change; no `simbridge`/Simulator config API. Detail in Zoom In `active-work`.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 

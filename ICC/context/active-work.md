@@ -1,6 +1,6 @@
 # Active Work Program (Simulator + MMA2)
 
-Baseline commit: ceee393
+Baseline commit: 7e63460
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEAD, alongside `simulator/bridge.go`+`simulator/bridge_test.go`.
 Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/mma2-basic-install-test.md, workflow/active_work/sim-001-simulator-device-config.md, workflow/active_work/sim-002a-mma2-config-ownership.md, workflow/active_work/sim-002b-mma2-lifecycle-activation.md, workflow/active_work/sim-003-random-runtime.md, workflow/active_work/sim-004-raw-ingest.md, workflow/active_work/sim-005-osjs-window.md, workflow/active_work/sim-006-save-apply-routing.md, workflow/active_work/sim-007-runtime-status.md, MMA2/testdata/smoke-test.yaml, simulator/device.go, simulator/store.go, simulator/store_document_test.go, simulator/validate.go, simulator/mma2_config.go, simulator/compose_test.go, simulator/scheduler.go, simulator/scheduler_test.go, simulator/raw_ingest.go`, simulator/raw_ingest_test.go`, simulator/bridge.go`, simulator/bridge_test.go`, OSJS/src/server/providers/simulator-bridge.js`, OSJS/src/packages/ModbusSimulator/`
@@ -19,7 +19,7 @@ Zoom Out: L0-project
 7. `sim-005-osjs-window.md` — OS.js Modbus Simulator window. **COMPLETED 2026-09-08** at pushed commit `28d27f9` (two-pane editor, approved fields/actions/ranges, same-origin persistence, builds, Go suite, and real-browser round-trip verified without effective MMA2 writes).
 8. `sim-006-save-apply-routing.md` — Save & Apply routing. **COMPLETED 2026-09-08** at pushed commit `9532c31` (classification, correct consumers, rollback-on-rejection, bridge/UI status, tests, and three browser saves verified).
 9. `sim-007-runtime-status.md` — runtime status surface. **COMPLETED 2026-09-08** at pushed commit `ceee393` (device/MMA2/raw-ingest status, exact point total, FC1-FC4 timing, tests, builds, and browser verification complete).
-10. `sim-008-managed-mma2-lifecycle.md` — **COMPLETED 2026-09-08**, pending commit/push checkpoint. Managed child-process activation, readiness, replacement, rollback, and real MMA2 bind-failure recovery verified.
-11. `sim-009-serve-simulator-through-mma2.md` — authorized next after the SIM-008 push checkpoint.
+10. `sim-008-managed-mma2-lifecycle.md` — **COMPLETED 2026-09-08** at pushed commit `7e63460`. Managed child-process activation, readiness, replacement, rollback, and real MMA2 bind-failure recovery verified.
+11. `sim-009-serve-simulator-through-mma2.md` — **CURRENT** authorized Active Work after the verified SIM-008 checkpoint.
 
-SIM-008 is complete pending its CWAL commit/push checkpoint. SIM-009 is the next already-authorized Active Work task.
+SIM-008 is complete and pushed. SIM-009 is the current authorized Active Work task.

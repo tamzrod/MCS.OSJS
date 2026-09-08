@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: be8c1b6
-Working Tree: dirty
-Audited Uncommitted Overlay: promotion of `workflow/active_work/sim-008-managed-mma2-lifecycle.md`, `workflow/active_work/sim-009-serve-simulator-through-mma2.md`, and synchronized `handoff.md`; affected Active Work context pending refresh.
+Baseline Commit: 7e63460
+Working Tree: clean
+Audited Uncommitted Overlay: (none).
 
 Committed delta since 48c12c2 baseline: `b69c46c` committed the SIM-005 backend persistence + loopback bridge delta (`simulator/device.go` JSON tags; `simulator/store.go` `SaveDocument(Document)` multi-device atomic save; new `simulator/store_document_test.go` (3 multi-device tests(; new `simulator/bridge.go`+`simulator/bridge_test.go` loopback JSON bridge `BridgePath=/api/devices` GET/PUT on the simulator-owned document only;and refreshed ICC context files+INDEX committed with that delta(.
 
-SIM-007 completed and verified at pushed commit `ceee393` on 2026-09-08. Selected-device runtime status now reports device/MMA2/raw-ingest state, exact total configured points, and FC1-FC4 last/next scheduler timing; live-fixture tests prove RUNNING status and real-browser verification proves truthful unavailable/error status. All authorized Active Work is complete. Only the selected Active Work simulator branch and its changed parent summary were refreshed; unrelated registry rows are preserved.
+SIM-008 completed and verified at pushed commit `7e63460` on 2026-09-08. Structural Save & Apply now activates a single managed MMA2 child from the ownership-validated effective configuration, verifies listener readiness plus child stability, replaces the process on structural changes, and restores prior config/service on failed activation. SIM-009 is the current authorized Active Work. Only the selected Active Work simulator branch and its changed parent summary were refreshed; unrelated registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

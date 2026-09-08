@@ -1,6 +1,6 @@
 # SIM-009 — Serve Simulator Values Through MMA2
 
-Status: ACTIVE — authorized next after the SIM-008 completion checkpoint is pushed.
+Status: ACTIVE — current authorized CWAL task.
 
 ## Primary Outcome
 

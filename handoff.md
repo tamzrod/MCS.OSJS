@@ -2,7 +2,7 @@
 
 ## Status
 
-ACTIVE — SIM-008 complete pending commit/push checkpoint; SIM-009 authorized next.
+ACTIVE — SIM-009 current.
 
 ## Current Active Work
 
@@ -18,8 +18,8 @@ Execution order:
 7. `workflow/active_work/sim-005-osjs-window.md` — SIM-005: build the approved OS.js Modbus Simulator window. **COMPLETED 2026-09-08** (corrupt frontend replaced; two-pane device list/editor, all approved fields/actions/ranges, same-origin persistence, production builds, Go suite, and real-browser add/edit/save/duplicate/delete/discard round-trip verified without touching effective MMA2 configuration; evidence in task file).
 8. `workflow/active_work/sim-006-save-apply-routing.md` — SIM-006: route Save & Apply to the correct parameter consumer. **COMPLETED 2026-09-08** (structural/timing/no-change classifier, SIM-002/SIM-003 consumers, bridge/UI result surface, rollback-on-rejection tests, and exactly three browser saves verified; evidence in task file).
 9. `workflow/active_work/sim-007-runtime-status.md` — SIM-007: show simulator runtime status. **COMPLETED 2026-09-08** (selected-device/MMA2/raw-ingest state, exact point total, FC1-FC4 last/next timing, backend tests, builds, and browser verification complete; evidence in task file).
-10. `workflow/active_work/sim-008-managed-mma2-lifecycle.md` — SIM-008: activate ownership-validated effective MMA2 configuration through one managed lifecycle. **COMPLETED 2026-09-08**, pending commit/push checkpoint.
-11. `workflow/active_work/sim-009-serve-simulator-through-mma2.md` — SIM-009: serve generated simulator values through managed MMA2 and restore enabled devices at startup. **AUTHORIZED NEXT**, blocked only on SIM-008 commit/push verification.
+10. `workflow/active_work/sim-008-managed-mma2-lifecycle.md` — SIM-008: activate ownership-validated effective MMA2 configuration through one managed lifecycle. **COMPLETED 2026-09-08** at pushed commit `7e63460`.
+11. `workflow/active_work/sim-009-serve-simulator-through-mma2.md` — SIM-009: serve generated simulator values through managed MMA2 and restore enabled devices at startup. **CURRENT**.
 
 JR must execute and verify simulator tasks in SIM-001 → SIM-002A → SIM-002B → SIM-003 → SIM-004 → SIM-005 → SIM-006 → SIM-007 → SIM-008 → SIM-009 dependency order. A later task does not authorize skipping an incomplete dependency.
 

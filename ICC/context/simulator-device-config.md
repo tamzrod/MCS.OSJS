@@ -1,4 +1,4 @@
-# Simulator Device Config + Local Persistence + Validated MMA2 Composition + Scheduler + Raw Ingest + Restart-Only Request (SIM-001 → SIM-014)
+# Simulator Device Config + Local Persistence + Validated MMA2 Composition + Scheduler + Raw Ingest + Restart-Only Request + Apply-Armed Schedules ( SIM-001 → SIM-015)
 
 Baseline commit: 24fd5b1
 Working tree: clean
@@ -96,3 +96,7 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 ## Established truth (SIM-014 restart-only request)
 
 - SIM-014 added the single MMA2 control op the Simulator may issue after a successful shared-config commit: exactly one RESTART. `ApplyStructural` writes a machine-readable `restart-request.yaml` artifact beside `config.yaml`/`owners.yaml` (fingerprint+requested_at+composed ports( only after `ComposeDocument` succeeds, then waits for every composed listener port to accept a TCP dial (`WaitMMA2Ready`(,and clears the request only when readiness is confirmed. On restart/readiness failure it returns error without claiming apply success,and the request remains pending as truthful evidence. `composedSimulatorPorts` dedups enabled+area devices. No start/stop/spawn/kill/replace op, process ownership, HTTP API, or general MMA2 control API was added. Completed at pushed commit `db2276c`; four restart tests and live MMA2 reload (port 5020→5021( verified.
+## Established truth( SIM-015 scheduling arming after apply/readiness
+
+- ApplyRouter arms enabled schedules only after the full Save & Apply chain succeeds ( shared-config commit, MMA2 RESTART, ready,persisted(. `ArmSchedules` sets the ready gate and replaces prior schedules with the latest persisted state;disabled devices never arm;restart/readiness failure returns apply error before persistence with nothing armed. Raw-ingest faults surface truthfully via runtime status. Two arming tests+existing scheduler/raw-ingest suites pass. Completed at pushed commit `3652b98`.
+

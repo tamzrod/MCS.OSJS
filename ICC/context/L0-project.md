@@ -31,7 +31,7 @@ Project identity document defines identity/direction only:  no implementation au
 
 Handoff status: ACTIVE. MMA2-001/002 and simulator tasks SIM-001 through SIM-008 are completed+verified; SIM-009's premise was superseded. Active Work execution order (promoted sequence: SIM-010 → SIM-017:
 
-SIM-010 through SIM-013 are complete( SIM-013 at `24fd5b1`: enabled-only, foreign-preserving, authoritative validation and safe shared-config commit(. SIM-014 ( MMA2 RESTART-only control( completed at `db2276c`: request+wait+truthful-failure restart-only contract, live-reload verified. SIM-015 ( run schedules after MMA2 apply/readiness( is CURRENT,followed by SIM-016 through SIM-017. MMA2 auto-starts independently;;Simulator may request only RESTART after a committed valid shared-config change. Detail in Zoom In `active-work`.
+SIM-010 through SIM-013 are complete( SIM-013 at `24fd5b1`; SIM-014 ( MMA2 RESTART-only control( completed at `db2276c`; SIM-015 ( arm schedules after MMA2 apply/readiness( completed at `3652b98`. SIM-016 ( restore enabled simulations on boot( is CURRENT, followed by SIM-017. MMA2 auto-starts independently;Simulator may request only RESTART after a committed valid shared-config change. Detail in Zoom In `active-work`.
 
 ## Component Boundaries (starting hypotheses until revised by repository authority
 

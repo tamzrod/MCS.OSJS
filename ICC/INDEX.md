@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: db2276c
+Baseline Commit: 3652b98
 Working Tree: clean
 Audited Uncommitted Overlay: (none).
 
-Committed delta through `db2276c`: SIM-012 persisted Simulator definitions through OS.js settings at `e14ee96`; SIM-013 made shared MMA2 composition enabled-only with authoritative validation at `24fd5b1`; SIM-014 added the single restart-only control op ( restart-request artifact + ready wait + truthful failure surfacing( at `db2276c`. The handoff advances SIM-015 to current.
+Committed delta through `3652b98`: SIM-014 added the restart-only request+ready-wait+truthful failure surfacing at `db2276c`; SIM-015 then armed enabled schedules only after the full Save&Apply chain success at `3652b98`. The handoff advances SIM-016 to current.
 
-Refreshed Active Work branch only at `db2276c`:the simulator-device-config leaf records SIM-014's restart-only request contract; active-workand the handoff-derived L0 summary advance SIM-015 to current. Unrelated sibling registry rows are preserved.
+Refreshed Active Work branch only at `3652b98`:the simulator-device-config leaf records SIM-015.s scheduling-arm contract; active-workand the handoff-derived L0 summary advance SIM-016 to current. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

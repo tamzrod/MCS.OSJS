@@ -1,6 +1,6 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-022)
 
-Baseline commit: a1f03e6
+Baseline commit: 55f6d44
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
 Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md through workflow/active_work/sim-022-visible-end-to-end-verification.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
@@ -117,3 +117,10 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - `$OSJS_DATA_DIR/config/simulator/devices.yaml` is the single canonical document. OS.js per-user settings are not a second Simulator config store.
 - The runtime never owns MMA2 lifecycle. MMA2 auto-starts independently; Simulator retains only restart-request-plus-readiness behavior after committed structural apply, and generated values use Raw Ingest.
 - SIM-019 through SIM-022 are promoted in dependency order.
+
+## Established truth (SIM-019 local runtime host)
+
+- `modbus-simulator-runtime` retains one `NewRuntimeApplyRouter` and scheduler owner for its process lifetime and is independently restart-supervised in Compose with host networking and the shared `/data` volume.
+- Versioned, bounded, length-prefixed `load`, `apply`, and `status` RPC runs only on `$OSJS_DATA_DIR/run/modbus-simulator.sock`; mutations serialize and duplicate request IDs replay a cached response rather than applying twice.
+- The ModbusSimulator package's server handler uses the existing authenticated OS.js application WebSocket and allowlists the three operations before relaying to the Unix socket. It creates no HTTP route.
+- Tests prove socket framing/single ownership and real-router structural, timing-only, rejection, and unavailable-MMA2 behavior. The runtime image exposes no port.

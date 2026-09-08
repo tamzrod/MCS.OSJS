@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: a1f03e6
+Baseline Commit: 55f6d44
 Working Tree: clean
 Audited Uncommitted Overlay:(none).
 
-Committed delta through `a1f03e6`: SIM-018 through SIM-022 were explicitly promoted. SIM-018 selected the authenticated OS.js WebSocket relay to a Unix-domain socket and independently supervised Go runtime; SIM-019 is current.
+Committed delta through `55f6d44`: SIM-018 and SIM-019 are complete. The independently supervised Go runtime, Unix-socket RPC, OS.js application-WebSocket relay, and deployment sidecar are implemented; SIM-020 is current.
 
-Refreshed only the Active Work/simulator branch at `a1f03e6`. Unrelated sibling registry rows are preserved.
+Refreshed only the Active Work/simulator branch at `55f6d44`. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

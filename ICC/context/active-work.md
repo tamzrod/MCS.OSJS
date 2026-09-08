@@ -1,6 +1,6 @@
 # Active Work — Simulator Runtime Integration
 
-Baseline commit: a1f03e6
+Baseline commit: 55f6d44
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
 Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/
@@ -11,8 +11,8 @@ Zoom Out: L0-project
 ## Current Execution Order
 
 1. SIM-018 — **COMPLETED 2026-09-08**. Chose authenticated existing OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime. The Go Store is canonical; there is no Simulator HTTP/TCP API.
-2. SIM-019 — **ACTIVE**. Implement the long-lived runtime owner and approved local command/status contract.
-3. SIM-020 — **ACTIVE, after SIM-019**. Connect UI load and Save & Apply to the runtime.
+2. SIM-019 — **COMPLETED 2026-09-09**. Long-lived Go runtime, Unix RPC, OS.js WebSocket relay, and deployment sidecar verified without a Simulator HTTP/TCP endpoint.
+3. SIM-020 — **ACTIVE**. Connect UI load and Save & Apply to the runtime.
 4. SIM-021 — **ACTIVE, after SIM-020**. Restore truthful MMA2, Simulator, Raw Ingest, apply, and per-FC status.
 5. SIM-022 — **ACTIVE, after SIM-020/SIM-021**. Visible real-MMA2 end-to-end verification.
 

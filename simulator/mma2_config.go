@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"gopkg.in/yaml.v3"
+	"mma2/pkg/configvalidate"
 )
 
 // SIM-002A: the simulator composes its MMA2 structural request into the
@@ -50,39 +51,45 @@ type OwnershipDoc struct {
 // an effective MMA2 configuration without crossing module boundaries.le
 
 type MMA2Area struct {
-	Start uint16 `yaml:"start"`
-	Count uint16 `yaml:"count"`
+	Start uint16                 `yaml:"start"`
+	Count uint16                 `yaml:"count"`
+	Extra map[string]interface{} `yaml:",inline"`
 }
 
 type MMA2PolicyRule struct {
-	ID       string   `yaml:"id"`
-	SourceIP []string `yaml:"source_ip"`
-	AllowFC  []uint8  `yaml:"allow_fc"`
+	ID       string                 `yaml:"id"`
+	SourceIP []string               `yaml:"source_ip"`
+	AllowFC  []uint8                `yaml:"allow_fc"`
+	Extra    map[string]interface{} `yaml:",inline"`
 }
 
 type MMA2Policy struct {
-	Rules []MMA2PolicyRule `yaml:"rules"`
+	Rules []MMA2PolicyRule       `yaml:"rules"`
+	Extra map[string]interface{} `yaml:",inline"`
 }
 
 type MMA2Memory struct {
-	UnitID         uint16      `yaml:"unit_id"`
-	Coils          *MMA2Area   `yaml:"coils,omitempty"`
-	DiscreteInputs *MMA2Area   `yaml:"discrete_inputs,omitempty"`
-	HoldingRegs    *MMA2Area   `yaml:"holding_registers,omitempty"`
-	InputRegs      *MMA2Area   `yaml:"input_registers,omitempty"`
-	Policy         *MMA2Policy `yaml:"policy,omitempty"`
+	UnitID         uint16                 `yaml:"unit_id"`
+	Coils          *MMA2Area              `yaml:"coils,omitempty"`
+	DiscreteInputs *MMA2Area              `yaml:"discrete_inputs,omitempty"`
+	HoldingRegs    *MMA2Area              `yaml:"holding_registers,omitempty"`
+	InputRegs      *MMA2Area              `yaml:"input_registers,omitempty"`
+	Policy         *MMA2Policy            `yaml:"policy,omitempty"`
+	Extra          map[string]interface{} `yaml:",inline"`
 }
 
 type MMA2Listener struct {
-	ID     string       `yaml:"id"`
-	Listen string       `yaml:"listen"`
-	Memory []MMA2Memory `yaml:"memory"`
+	ID     string                 `yaml:"id"`
+	Listen string                 `yaml:"listen"`
+	Memory []MMA2Memory           `yaml:"memory"`
+	Extra  map[string]interface{} `yaml:",inline"`
 }
 
 // EffectiveMMA2Config is the composed MMA2 runtime configuration shape which
 // the simulator writes on behalf of its MMA2 requests.le
 type EffectiveMMA2Config struct {
-	Listeners []MMA2Listener `yaml:"listeners"`
+	Listeners []MMA2Listener         `yaml:"listeners"`
+	Extra     map[string]interface{} `yaml:",inline"`
 }
 
 type mma2Key struct {
@@ -129,10 +136,6 @@ func (s Store) SaveAndCompose(def DeviceDefinition) error {
 		}
 	}
 
-	if err := s.SaveOne(def); err != nil {
-		return err
-	}
-
 	cfg, owners = dropSimulatorReservations(cfg, owners)
 
 	if hasMMA2Areas(def.MMA2) {
@@ -145,10 +148,10 @@ func (s Store) SaveAndCompose(def DeviceDefinition) error {
 		})
 	}
 
-	if err := s.saveEffective(cfg); err != nil {
+	if err := s.commitMMA2Candidate(cfg, owners); err != nil {
 		return err
 	}
-	return s.saveOwners(owners)
+	return s.SaveOne(def)
 }
 
 // ComposeDocument replaces only simulator-owned reservations with the complete
@@ -179,7 +182,7 @@ func (s Store) ComposeDocument(doc Document) error {
 	cfg, owners = dropSimulatorReservations(cfg, owners)
 	seen := make(map[mma2Key]bool)
 	for _, def := range doc.Devices {
-		if !hasMMA2Areas(def.MMA2) {
+		if !def.Enabled || !hasMMA2Areas(def.MMA2) {
 			continue
 		}
 		key := mma2Key{port: def.MMA2.Port, unitID: def.MMA2.UnitID}
@@ -190,10 +193,45 @@ func (s Store) ComposeDocument(doc Document) error {
 		cfg = mergeReservation(cfg, def.MMA2, memoryFromMMA2Params(def.MMA2))
 		owners.Reservations = append(owners.Reservations, OwnershipEntry{Port: key.port, UnitID: key.unitID, Owner: ProducerSimulator})
 	}
-	if err := s.saveEffective(cfg); err != nil {
+	return s.commitMMA2Candidate(cfg, owners)
+}
+
+// commitMMA2Candidate validates the complete shared configuration before any
+// write, then atomically replaces each artifact. If the second replace fails,
+// the first artifact is restored byte-for-byte.
+func (s Store) commitMMA2Candidate(cfg EffectiveMMA2Config, owners OwnershipDoc) error {
+	cfgBytes, err := yaml.Marshal(&cfg)
+	if err != nil {
 		return err
 	}
-	return s.saveOwners(owners)
+	if err := configvalidate.YAML(cfgBytes); err != nil {
+		return fmt.Errorf("validate complete MMA2 candidate: %w", err)
+	}
+	ownerBytes, err := yaml.Marshal(&owners)
+	if err != nil {
+		return err
+	}
+	prior, priorErr := os.ReadFile(s.EffectiveConfigPath())
+	priorExisted := priorErr == nil
+	if priorErr != nil && !os.IsNotExist(priorErr) {
+		return priorErr
+	}
+	if err := s.replaceMMA2File(s.EffectiveConfigPath(), cfgBytes); err != nil {
+		return err
+	}
+	if err := s.replaceMMA2File(s.OwnershipPath(), ownerBytes); err != nil {
+		var restoreErr error
+		if priorExisted {
+			restoreErr = s.replaceMMA2File(s.EffectiveConfigPath(), prior)
+		} else {
+			restoreErr = os.Remove(s.EffectiveConfigPath())
+			if os.IsNotExist(restoreErr) {
+				restoreErr = nil
+			}
+		}
+		return errors.Join(err, restoreErr)
+	}
+	return nil
 }
 
 // DeleteAndCompose removes the simulator-owned reservation for(port,unit_id)
@@ -219,10 +257,7 @@ func (s Store) DeleteAndCompose(port, unitID uint16) error {
 
 	cfg, owners = dropOneSimulatorReservation(cfg, owners, key)
 
-	if err := s.saveEffective(cfg); err != nil {
-		return err
-	}
-	return s.saveOwners(owners)
+	return s.commitMMA2Candidate(cfg, owners)
 }
 
 // loadEffective reads the current effective MMA2 configuration;a missing file

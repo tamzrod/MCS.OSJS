@@ -12,6 +12,7 @@ import (
 // one foreign-owned(port,unit_id) reservation, e.g. a future Replicator.
 func foreignFixture(s Store) error {
 	cfg := EffectiveMMA2Config{
+		Extra: map[string]interface{}{"debug": true},
 		Listeners: []MMA2Listener{
 			{
 				ID:     "replicator-5020-1",
@@ -279,5 +280,92 @@ func TestSaveAndComposeRejectsInvalidBeforeAnyPersist(t *testing.T) {
 	}
 	if _, err := os.Stat(s.OwnershipPath()); !os.IsNotExist(err) {
 		t.Fatalf("invalid save wrote an ownership registry: %v", err)
+	}
+}
+
+func TestComposeDocumentIncludesOnlyEnabledAndPreservesForeign(t *testing.T) {
+	s := Store{Root: t.TempDir()}
+	if err := foreignFixture(s); err != nil {
+		t.Fatal(err)
+	}
+	enabled := validDevice()
+	enabled.Name = "enabled"
+	enabled.MMA2 = simMMA2Params()
+	disabled := enabled
+	disabled.Name = "disabled"
+	disabled.Enabled = false
+	disabled.MMA2.Port = 61002
+	if err := s.ComposeDocument(Document{Devices: []DeviceDefinition{enabled, disabled}}); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := s.loadEffective()
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[uint16]MMA2Memory{}
+	for _, listener := range cfg.Listeners {
+		for _, memory := range listener.Memory {
+			seen[listenPort(listener.Listen)] = memory
+		}
+	}
+	if len(seen) != 2 || seen[61000].HoldingRegs == nil || seen[61000].HoldingRegs.Count != 10 || seen[61001].InputRegs == nil || cfg.Extra["debug"] != true {
+		t.Fatalf("candidate did not preserve foreign and add enabled Simulator reservation: %+v", cfg)
+	}
+	if _, exists := seen[61002]; exists {
+		t.Fatalf("disabled Simulator definition was composed: %+v", cfg)
+	}
+}
+
+func TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged(t *testing.T) {
+	t.Run("foreign collision", func(t *testing.T) {
+		s := Store{Root: t.TempDir()}
+		if err := foreignFixture(s); err != nil {
+			t.Fatal(err)
+		}
+		assertComposeFailureUnchanged(t, s, func() error {
+			device := validDevice()
+			device.MMA2.Port = 61000
+			device.MMA2.UnitID = 1
+			return s.ComposeDocument(Document{Devices: []DeviceDefinition{device}})
+		})
+	})
+
+	t.Run("invalid complete candidate", func(t *testing.T) {
+		s := Store{Root: t.TempDir()}
+		invalid := EffectiveMMA2Config{Listeners: []MMA2Listener{
+			{ID: "duplicate", Listen: "0.0.0.0:61010"},
+			{ID: "duplicate", Listen: "0.0.0.0:61011"},
+		}}
+		if err := s.saveEffective(invalid); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.saveOwners(OwnershipDoc{}); err != nil {
+			t.Fatal(err)
+		}
+		assertComposeFailureUnchanged(t, s, func() error {
+			device := validDevice()
+			device.MMA2 = simMMA2Params()
+			return s.ComposeDocument(Document{Devices: []DeviceDefinition{device}})
+		})
+	})
+}
+
+func assertComposeFailureUnchanged(t *testing.T, s Store, compose func() error) {
+	t.Helper()
+	configBefore, err := os.ReadFile(s.EffectiveConfigPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ownersBefore, err := os.ReadFile(s.OwnershipPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := compose(); err == nil {
+		t.Fatal("expected composition failure")
+	}
+	configAfter, _ := os.ReadFile(s.EffectiveConfigPath())
+	ownersAfter, _ := os.ReadFile(s.OwnershipPath())
+	if string(configAfter) != string(configBefore) || string(ownersAfter) != string(ownersBefore) {
+		t.Fatal("failed composition modified shared MMA2 artifacts")
 	}
 }

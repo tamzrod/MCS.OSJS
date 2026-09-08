@@ -1,6 +1,6 @@
 # SIM-013 — Compose Simulator Entry Into Shared MMA2 Config
 
-Status: ACTIVE — promoted for sequential execution after SIM-012.
+Status: COMPLETED 2026-09-08.
 
 ## Primary outcome
 
@@ -36,6 +36,14 @@ If Simulator validation, ownership/collision validation, or complete MMA2 candid
 ## Verification
 
 Use fixture/shared configs containing both Simulator and foreign entries. Compare pre/post config and prove validation/collision failures leave the prior file intact.
+
+## Completion evidence
+
+- `ComposeDocument` now emits only enabled Simulator definitions, drops/replaces only Simulator-owned reservations, and preserves foreign listeners, memories, ownership entries, and non-Simulator root fields.
+- Added `mma2/pkg/configvalidate.YAML`, a non-runtime wrapper over MMA2's authoritative parser/validator; the complete marshaled candidate is validated before shared artifacts are written.
+- Candidate commit atomically replaces each file and restores the prior effective config byte-for-byte if ownership-registry replacement fails. No restart, process ownership, or scheduler arming was added.
+- Fixtures prove enabled translation/disabled omission, exact foreign preservation, own updates, foreign collision rejection, and invalid complete-candidate rejection with config/owners byte-unchanged.
+- Simulator `gofmt -l .`, `go vet ./...`, and `go test -count=1 ./...` pass; `go test -count=1 ./pkg/configvalidate` passes in MMA2.
 
 ## Dependencies
 

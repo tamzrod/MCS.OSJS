@@ -2,13 +2,25 @@
 
 ## Status
 
-COMPLETE — SIM-010 through SIM-017 are completed and verified. No current Active Work microtask remains.
+ACTIVE — SIM-018 is complete; continue Operation CWAL with SIM-019.
 
 ## Current Active Work
 
+Execution order:
+
+1. `workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md` — **COMPLETED 2026-09-08**. Selected authenticated OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime; canonical document remains the Go Store; no Simulator HTTP/TCP API; MMA2 remains independently managed and restart-only.
+2. `workflow/active_work/sim-019-host-simulator-runtime-locally.md` — implement the long-lived local runtime owner and approved command/status contract.
+3. `workflow/active_work/sim-020-connect-save-apply-to-runtime.md` — connect the OS.js Save & Apply action to the real `ApplyRouter` transaction.
+4. `workflow/active_work/sim-021-restore-truthful-runtime-status.md` — show MMA2, Simulator, Raw Ingest, apply, and per-FC timing status.
+5. `workflow/active_work/sim-022-visible-end-to-end-verification.md` — verify the complete visible workflow against real MMA2 and Modbus reads.
+
+All five tasks were explicitly promoted by the user on 2026-09-08. Complete and checkpoint each task through Operation CWAL before beginning the next.
+
+## Completed Predecessor Work
+
 Prior MMA2 work and SIM-001 through SIM-008 are completed and verified. SIM-009 is superseded by the corrected architecture sequence below.
 
-Execution order:
+Archived execution order:
 1. `workflow/archive/sim-010-remove-simulator-bridge-api.md` — SIM-010: remove Simulator bridgeand config API. **COMPLETED 2026-09-08** (removed `simulator/cmd/simbridge`, `simulator/bridge.go`, `simulator/bridge_test.go`, OS.js `simulator-bridge` provider + `/api/devices` + `/api/devices/status` routes, `SIMBRIDGE_ADDR`/`SIMULATOR_BRIDGE_ADDR`; removed bridge-served runtime-status UI polling/panel and bridge-reachability failure strings; preserved model/persistence/composition/ownership/scheduler/raw-ingest/UI. `gofmt -l .`, `go vet ./...`, `go test -count=1 ./...`, `node --check`, `npm run build:local-packages`, `npm run build` all pass.
 2. `workflow/archive/sim-011-remove-simulator-mma2-lifecycle-ownership.md` — SIM-011: remove Simulator ownership of MMA2 lifecycle. **COMPLETED 2026-09-08** (deleted child-process lifecycle/start-stop-replace/rollback code and tests; structural/boot paths now compose only; Simulator stop leaves independent MMA2 untouched; schedulers remain unarmed pending SIM-015; affected formatting, vet, tests, and static checks pass).
 3. `workflow/archive/sim-012-local-simulator-config-path.md` — SIM-012: establish local Simulator configuration path without a config HTTP API. **COMPLETED 2026-09-08** (Simulator definitions persist through the existing server-backed OS.js settings service under a dedicated namespace; exact all-field reload round-trip plus add/duplicate/delete/discard/save verified in the rebuilt UI; no MMA2 config/lifecycle artifact created; builds and affected tests pass).
@@ -18,7 +30,7 @@ Execution order:
 7. `workflow/archive/sim-016-restore-enabled-simulations-on-boot.md` — SIM-016: restore enabled simulations after boot while MMA2 auto-starts independently. **COMPLETED 2026-09-08** (boot router loads persisted definitions, ownership-safe compose, waits for independently auto-started MMA2 via `WaitMMA2Ready`, then arms enabled schedules through the SIM-015 arming gate; ordinary boot neither restarts MMA2 nor writes a restart request; if MMA2 never becomes ready, the router survives alive with schedules unarmed and truthful STOPPED/ERROR runtime status; two new boot-restore tests prove armed-enabled-resume-without-restart-request and unavailable-MMA2-no-arm-no-restart;`gofmt -l`,`go vet ./...`,`go test -count=1 ./...` all pass(.
 8. `workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md` — SIM-017: end-to-end architecture verification. **COMPLETED 2026-09-08** (verification-only real MMA2 harness proves independent boot, restore, changing Raw Ingest schedules, real FC1–FC4 reads, exactly one restart after valid apply, no restart/config damage after rejection, foreign preservation, and automatic reboot resume; race-enabled capstone and full Simulator suite pass).
 
-The promoted SIM-010 → SIM-017 sequence is complete. JR stops; Planning is not inspected for more work.
+The promoted SIM-010 → SIM-017 sequence is complete and archived.
 
 ## Architecture Boundary
 

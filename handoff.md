@@ -2,7 +2,7 @@
 
 ## Status
 
-ACTIVE — SIM-017 current. SIM-010 through SIM-017 are human-promoted for sequential execution.
+COMPLETE — SIM-010 through SIM-017 are completed and verified. No current Active Work microtask remains.
 
 ## Current Active Work
 
@@ -16,9 +16,9 @@ Execution order:
 5. `workflow/active_work/sim-014-mma2-restart-only-control.md` — SIM-014: add MMA2 RESTART-only control. **COMPLETED 2026-09-08** (new `simulator/restart.go` restart-request artifact beside the shared config(, written only after a successful `ComposeDocument` commit,, exactly one RESTART-plus-ready-wait per apply,,cleared after confirmed readiness,,left pending when restart unconfirmed;`WaitMMA2Ready` dials every composed listener port until accept or timeout; ApplyStructural reports restart/readiness failure truthfully without claiming apply success; four restart tests pass;live restart reload proven( MMA2 rebuilt with port 5020→5021 config swap;;new listener accepts after restart(; no other lifecycle operation added; no general control API.
 6. `workflow/active_work/sim-015-run-simulation-after-mma2-apply.md` — SIM-015: run schedulesand Raw Ingest after successful MMA2 apply/readiness. **COMPLETED 2026-09-08** (ApplyRouter arms enabled schedules only after the full Save & Apply chain( shared-config commit,, MMA2 RESTART,, readiness,,persistence( succeeded;`ArmSchedules` replaces prior scheduleswith the latest persisted state;disabled devices never arm;restart/readiness failure returns apply error before persistence,, arming nothing;,raw-ingest faults surfaced truthfully via runtime status;two new arming tests pass;existing scheduler+raw-ingest suites stay green(.
 7. `workflow/active_work/sim-016-restore-enabled-simulations-on-boot.md` — SIM-016: restore enabled simulations after boot while MMA2 auto-starts independently. **COMPLETED 2026-09-08** (boot router loads persisted definitions, ownership-safe compose, waits for independently auto-started MMA2 via `WaitMMA2Ready`, then arms enabled schedules through the SIM-015 arming gate; ordinary boot neither restarts MMA2 nor writes a restart request; if MMA2 never becomes ready, the router survives alive with schedules unarmed and truthful STOPPED/ERROR runtime status; two new boot-restore tests prove armed-enabled-resume-without-restart-request and unavailable-MMA2-no-arm-no-restart;`gofmt -l`,`go vet ./...`,`go test -count=1 ./...` all pass(.
-8. `workflow/active_work/sim-017-end-to-end-simulator-mma2-verification.md` — SIM-017: end-to-end architecture verification. **CURRENT**.
+8. `workflow/active_work/sim-017-end-to-end-simulator-mma2-verification.md` — SIM-017: end-to-end architecture verification. **COMPLETED 2026-09-08** (verification-only real MMA2 harness proves independent boot, restore, changing Raw Ingest schedules, real FC1–FC4 reads, exactly one restart after valid apply, no restart/config damage after rejection, foreign preservation, and automatic reboot resume; race-enabled capstone and full Simulator suite pass).
 
-JR must execute and verify SIM-010 → SIM-011 → SIM-012 → SIM-013 → SIM-014 → SIM-015 → SIM-016 → SIM-017 in order. A later task does not authorize skipping an incomplete dependency.
+The promoted SIM-010 → SIM-017 sequence is complete. JR stops; Planning is not inspected for more work.
 
 ## Architecture Boundary
 

@@ -8,6 +8,15 @@ It reports the current workflow position from the repository's committed `HEAD` 
 
 > Gather committed status. Ignore everything outside the commit. Make no changes.
 
+## Invocation Boundary
+
+THE GATHERING runs only when:
+
+- the user explicitly invokes THE GATHERING; or
+- another directive explicitly delegates to THE GATHERING.
+
+Completion of OPERATION CWAL, BLACK SHEEP WALL, generic repository work, or any other operation does not implicitly invoke THE GATHERING.
+
 ## Authority Boundary
 
 `THE GATHERING` may inspect only the committed state needed for these four views:
@@ -52,6 +61,22 @@ Do not compare ICC against the working tree.
 Do not reconcile committed status with local/uncommitted state.
 
 If ICC records working-tree or overlay information for another workflow, that information is irrelevant to THE GATHERING and must not trigger further inspection.
+
+## Current-State Only Rule
+
+THE GATHERING is not a historical completion audit.
+
+Do not inspect:
+
+- `workflow/archive/`;
+- implementation source;
+- historical task records;
+- commit history beyond identifying current HEAD;
+- prior completion commits.
+
+An exception exists only when one of the four permitted current-status surfaces contains an explicit reference whose contents are strictly necessary to interpret that current status. Even then, read only the referenced minimum and do not reconstruct project history.
+
+If Active Work establishes ZERO ACTIVE, report ZERO ACTIVE. Do not search history to determine what used to be active.
 
 ## ICC Rule
 
@@ -143,7 +168,8 @@ Keep the report concise. This is a current committed-status view, not a reposito
 
 ```text
 THE GATHERING
-= COMMITTED HEAD
+= EXPLICIT INVOCATION
++ COMMITTED HEAD
 + ICC FIRST
 + ACTIVE WORK
 + HANDOFF
@@ -156,8 +182,10 @@ THE GATHERING
 != UNCOMMITTED STATE
 != BLACK SHEEP WALL
 != REPOSITORY AUDIT
+!= HISTORICAL COMPLETION AUDIT
 != IMPLEMENTATION INSPECTION
 != MODIFY
+!= IMPLICIT POST-CWAL ACTION
 ```
 
 If the four allowed committed sources disagree, report the disagreement rather than resolving it by assumption.

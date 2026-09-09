@@ -1,21 +1,25 @@
 # Active Work — Simulator Runtime Integration
 
-Baseline commit: bee6303; working tree: clean.
+Baseline commit: ba52432; working tree: clean.
 Audited Overlay: none.
-Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/, planning/Brainstorm/modbus-simulator-status-display.md
+Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/, MMA2/*, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
 
 ## Current Execution Order
-Current ordered execution sequence: SIM-021A is the one ACTIVE task; SIM-021B..SIM-021E are QUEUED through explicit Previous/Next links.
+Current ordered execution sequence: REP-001 is the one ACTIVE task; REP-002 through REP-007 are QUEUED through explicit Previous/Next links. Records live in `workflow/active_work/`.
 
 1. SIM-018 — **COMPLETED 2026-09-08**. Chose authenticated OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime. The Go Store is canonical;there is no Simulator HTTP/TCP API. Archived.
 2. SIM-019 — **COMPLETED 2026-09-09**. Long-lived Go runtime, Unix RPC, OS.js WebSocket relay,and deployment sidecar verified without a Simulator HTTP/TCP endpoint. Archived.
 3. SIM-020 — **COMPLETED 2026-09-09**. UI canonical loadand real apply transaction verified for structural, timing-only, rejected, Discard,and reload paths. Archived.
 
-4. SIM-021 — **PROMOTED 2026-09-08**. Human-authorized as five ordered active microtasks: SIM-021A define operator status semantics; SIM-021B lock status RPC contract; SIM-021C poll selected-device status; SIM-021D render compact status row; SIM-021E surface status errors. Records now live in `workflow/active_work/`.
-5. SIM-022 — **RETIRED 2026-09-08**（not completed; human clearance; remains un-promoted. Record: `workflow/archive/sim-022-visible-end-to-end-verification.md`.
+4. SIM-021 — **COMPLETED 2026-09-09**. Five ordered microtasks (SIM-021A..SIM-021E( delivered the operator-facing MMA2 + Simulator status semantics, version-1 status RPC contract, selected-device 1s polling, compact status row,and error surfacing. Records archived: `workflow/archive/sim-021a-define-operator-runtime-status.md` through `sim-021e-surface-runtime-status-errors.md`.
+5. SIM-023 — **COMPLETED 2026-09-09**. Three ordered microtasks (SIM-023A..SIM-023C( fixed polling to the applied identity only, paused polling during Save & Apply,and rendered neutral status placeholders for unapplied selections. Records archived: `workflow/archive/sim-023a-poll-only-applied-device-identity.md` through `sim-023c-render-neutral-status-for-unapplied-selection.md`.
+6. SIM-024 — **COMPLETED 2026-09-09**. Added the independently managed `mma2` service + restart actuator to the deployed stack;the supervisor consumes the Simulator's `restart-request.yaml` contract and re-execs MMA2 with the committed effective config. Record archived: `workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md`.
+7. SIM-022 — **RETIRED 2026-09-08** (not completed; human clearance; remains un-promoted(. Record: `workflow/archive/sim-022-visible-end-to-end-verification.md`.
+
+8. REP-001 — **ACTIVE**. Extract the producer-neutral MMA2 config/ownership composition mechanics currently proven in `simulator/mma2_config.go` into a reusable internal package with an explicit producer identity parameter (`simulator` now; Replicator later(;Simulator keeps calling it with no intended behavior change. See Zoom In `simulator-device-config`.
 
 The records below are archived predecessor evidence and do not authorize execution.
 

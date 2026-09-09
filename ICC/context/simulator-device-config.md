@@ -1,9 +1,9 @@
-# Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-022)
+# Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-024)
 
-Baseline commit: bee6303
+Baseline commit: ba52432
 Working tree: clean
-Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
-Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md through workflow/active_work/sim-022-visible-end-to-end-verification.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
+Audited Overlay: none
+Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, MMA2/internal/restartwatch/*, MMA2/cmd/mma2-supervisor/*, workflow/active_work/rep-001-share-mma2-reservation-composer.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md
 Zoom In:(none; leaf node)
 Zoom Out: active-work
 
@@ -131,9 +131,40 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - Only a successful `ApplyRouter.Apply` response advances the persisted/Discard snapshot and displays an applied classification plus completion time. A failure retains the edited form and prior applied snapshot.
 - Browser verification covered structural success, timing-only no-restart, duplicate rejection, Discard, and canonical reload. The local RPC deadline permits the complete MMA2 readiness error to reach the UI.
 
-## Current truth (SIM-021A runtime status semantics)
+## Established truth(SIM-021A runtime status semantics)
 
-- `SchedulerApplier` records whether at least one Raw Ingest send has succeeded per device. A configured/enabled device remains `WAITING` until this evidence exists; mere MMA2 reachability is insufficient for `RUNNING`.
-- Disabled devices report Simulator `STOPPED`. Unarmed/unready or MMA2-unreachable enabled devices report `WAITING`. A current Raw Ingest failure reports Simulator `ERROR` and preserves its diagnostic until a later successful send clears it.
-- MMA2 probe failure always prevents Simulator `RUNNING`. Raw Ingest remains an internal evidence/error source, not a third operator-facing status.
-- Focused semantic tests exist in `simulator/runtime_status_semantics_test.go`; SIM-021A remains ACTIVE until CWAL reruns and records its required verification.
+- `SchedulerApplier.RuntimeStatus` surfaces exactly two operator-facing states: MMA2 (`mma2_status`)and the selected device (`device_status`); Raw Ingest (`raw_ingest_status`) remains an internal evidence/error source(, never a third operator-facing status. FC Last/Next timingand total points remain in the same status object.
+
+- MMA2 state derives from a live TCP probe of the device's configured port: reachable -> `RUNNING`, unreachable -> `STOPPED`; MMA2 probe failure always prevents Simulator `RUNNING`.
+- Simulator state: disabled device -> `STOPPED`; unarmed/unready or MMA2-unreachable enabled device -> `WAITING`; Raw Ingest failure -> `ERROR` (with `raw_ingest_error` diagnostic retained until a later successful send clears it;after at least one accepted Raw Ingest with MMA2 reachable -> `RUNNING`. Enabled devicewith no successful send yet stays `WAITING` even if MMA2 is reachable
+
+
+
+- Focused semantic tests live in `simulator/runtime_status_semantics_test.go` (disabled/unarmed, accepted-ingest-required, failure-diagnostic-retained-and-recovery,and MMA2-listener-loss-blocks-RUNNING(.
+
+
+
+## Established truth(SIM-021B/C/D/E; SIM-023A/B/C; SIM-024(
+
+- SIM-021B:the version-1 `status` RPC(operation `status`, payload `{name}`( returns the SIM-021A MMA2 + Simulator states unchanged throughthe OS.js WebSocket -> allowlisted relay -> Unix socket path;no HTTP route, no new TCP listener, no new message family;client infers no health from `Enabled`/saved config/FC timing/transport alone.
+
+
+- SIM-021C:whilethe Modbus Simulator window is alive,a bounded 1-second loop polls runtime `status` for the currently selected device only;it refreshes immediately on selection changeand after a successful Save & Apply;relay/runtime request failure is surfaced as unavailable status data—never fabricated `RUNNING` fromthe saved device model. Polling stops/stale generations replaced when selection changes orthe window closes;the latest successful status response is stored separately from transient bottom-bar messages.
+
+
+- SIM-021D:one compact status row sits directly belowthe `Device Definition` heading, rendering exactly two labeled state pairs — `MMA2 ● <STATE>`and`Simulator ● <STATE>` — bound only to SIM-021C status data;visible state word + indicator non-color cue;no device selected -> Simulator `—`;status unavailable -> unavailable/waiting presentation;the bottom `.sim-status` bar stays transient operation/error messages only(no Raw Ingest label, FC timestamps, total points, collapsible diagnostics, or device-list chips(.
+
+
+- SIM-021E:the bottom `.sim-status` bar explains runtime-status failures without 1-second spam: Showerror text when Simulator `ERROR`;show one truthful unavailable/error message when the status request fails(local runtime/relay down(;a new bottom-bar message appears only when the effective error condition changes—repeated identical polls don't rewrite it;a later recovery may replace it with a concise recovery message,but steady-state `RUNNING` stays in the compact row.
+
+
+- SIM-023A:status-poll target resolves only to an identity existing in the persisted/applied Simulator document (`appliedPollTargets`/`pollTargetFor` in `poll-target.js`(:new unsaved devices -> no poll target/no `status` request;renamed-but-unapplied names keep pollingthe last persisted identity;ordinary selection changes among persisted devices poll their applied names normally.
+
+
+- SIM-023B:while`state.saving` is true no `status` requests are issued;the last applied runtime status is preserved in flight;after a successful apply one immediate forced status refresh runs forthe applied selected device;a failed apply resumes pollingthe prior applied target(never the failed edited identity(. Poller pause is implemented via `select(null` during save (in `runtime-status-poller.js`(.
+
+
+- SIM-023C:rows without an applied runtime identity(new/renamed-unapplied( render neutral placeholders (`—`) rather than `UNAVAILABLE`;genuine runtime/relay request failures still show `UNAVAILABLE` + diagnostic throughthe existing message path(`status-word.js`(. No new status enum values were added.
+
+
+- SIM-024:the deployed stack now defines an independently managed `mma2` service (`deploy/docker-compose.yml`, host networking, shared `osjs-data` volume(that consumes the effective config at `/data/config/mma2/config.yaml`;`MMA2/Dockerfile.supervised` builds `mma2` + `mma2-supervisor`;the supervisor (`MMA2/cmd/mma2-supervisor/main.go`) starts MMA2, watches `restart-request.yaml` via `MMA2/internal/restartwatch.Tracker`(SHA-256 fingerprint;seed at boot to avoid re-processingthe pending request(,re-execs MMA2 once per new request,and writes the request's `config_sha256` to `restart-ack`(atomic temp+rename(. A structural Save & Apply can therefore commit shared config + request restartand get a ready listener,replacing the previous time-out failure where nothing consumedthe restart request.

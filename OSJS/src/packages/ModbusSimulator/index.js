@@ -147,7 +147,7 @@ const register = (core, args, options, metadata) => {
     onUnavailable: (name, error) => {
       if (name !== appliedPollTarget()) return;
       state.runtimeStatus = null;
-      state.runtimeStatusError = error.message || String(error;
+      state.runtimeStatusError = error.message || String(error);
       runtimeMessages.unavailable(error);
       patchStatusUI();
     }
@@ -179,10 +179,9 @@ const register = (core, args, options, metadata) => {
     pane.appendChild(element('h2', 'sim-editor-title', 'Device Definition'));
     const runtimeRow = element('div', 'sim-runtime-row');
     const status = device && state.runtimeStatus;
-    runtimeRow.append(
-      statusPair('MMA2', statusWord({device, appliedName: appliedPollTarget(), runtimeStatus: status, runtimeStatusError: state.runtimeStatusError, field: 'mma2_status'})),
-      statusPair('Simulator', statusWord({device, appliedName: appliedPollTarget(), runtimeStatus: status, runtimeStatusError: state.runtimeStatusError, field: 'device_status'})))
-    );
+    const mma2 = statusWord({device: device, appliedName: appliedPollTarget(), runtimeStatus: status, runtimeStatusError: state.runtimeStatusError, field: 'mma2_status'});
+    const sim = statusWord({device: device, appliedName: appliedPollTarget(), runtimeStatus: status, runtimeStatusError: state.runtimeStatusError, field: 'device_status'});
+    runtimeRow.append(statusPair('MMA2', mma2), statusPair('Simulator', sim));
     pane.appendChild(runtimeRow);
     if (!device) {
       pane.appendChild(element('div', 'sim-empty', 'Select a device or choose Add.'));
@@ -282,7 +281,7 @@ const register = (core, args, options, metadata) => {
       const applied = clone(normalizeDocument(result.document));
       state.document = applied;
       state.persisted = clone(applied);
-      state.pollTargets = appliedPollTargets(applied.devices;
+      state.pollTargets = appliedPollTargets(applied.devices);
       if (state.selected !== null && state.selected >= applied.devices.length) state.selected = null;
       setMessage(`${result.message} Applied at ${new Date(result.completed_at).toLocaleString()}.`);
       state.runtimeStatus = null;

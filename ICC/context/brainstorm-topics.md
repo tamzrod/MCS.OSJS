@@ -1,7 +1,7 @@
 # Brainstorm Topics
 
-Baseline commit: a216187 + audited overlay (uncommitted delta described in ICC/INDEX.md); working tree: dirty (archive moves, handoff rewrite, new brainstorm topic.
-Audited Overlay: handoff.md; workflow/archive/README.md; sim-018 through sim-022 moved active_work->archive (retired or completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic}.
+Baseline commit: a17191c; working tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human, outside this branch.
+Audited Overlay: handoff.md; five sim-021 planning microtasks promoted into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
 Source dependencies: planning/Brainstorm/mma2-basic-install-test.md, planning/Brainstorm/osjs-modbus-simulator.md, planning/Brainstorm/mcs-three-app-model.md, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: planning-workflow
 Zoom In:(none; leaf node(
@@ -57,4 +57,4 @@ Relevant data already exists: `SchedulerApplier.RuntimeStatus` (MMA2 RUNNING/RES
 
 Open questions: placement;(global MMA2 vs per-device Simulator scoping mix;; refresh cadence (1s polling vs event-push vs on-action(;; steady-state vs transient message bar split;; detail depth (dots vs full FC timing(;; zero-device/runtime-down/restart-wait display states.
 
-Non-authoritative. Once the human picks placement, decompose microtask(s) and promote through the normal workflow. Retired SIM-021 reopens here as brainstorming.
+Non-authoritativebeyond the promoted five. Placement fixed by SIM-021D: one compact row below the Device Definition heading, bound only to SIM-021C status data, RUNNING/WAITING/STOPPED/ERROR + no-device/unavailable states, no color-only cues, bottom .sim-status bar reserved for transient error/messages. SIM-021A..SIM-021E promoted into active work on 2026-09-08.

@@ -1,21 +1,21 @@
 # Active Work — Simulator Runtime Integration
 
-Baseline commit: a216187 + audited overlay (uncommitted delta described in ICC/INDEX.md); working tree: dirty (archive moves, handoff rewrite, new brainstorm topic).
-Audited Overlay: handoff.md; workflow/archive/README.md; sim-018/sim-019/sim-020 moved active_work->archive; sim-021/sim-022 moved active_work->archive (retired, not completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic; ICC nodes refreshed herein.
+Baseline commit: a17191c; working tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human, outside this branch.
+Audited Overlay: handoff.md; five sim-021 planning microtasks promoted into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
 Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
 
 ## Current Execution Order
-None. `workflow/active_work/` is empty as of 2026-09-08 human clearance.
+Current ordered execution sequence (promoted into `workflow/active_work/` as SIM-021A..SIM-021E on 2026-09-08;next up: SIM-021A(; JR executes per Operation CWAL until Active Work drains.
 
 1. SIM-018 — **COMPLETED 2026-09-08**. Chose authenticated OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime. The Go Store is canonical;there is no Simulator HTTP/TCP API. Archived.
 2. SIM-019 — **COMPLETED 2026-09-09**. Long-lived Go runtime, Unix RPC, OS.js WebSocket relay,and deployment sidecar verified without a Simulator HTTP/TCP endpoint. Archived.
 3. SIM-020 — **COMPLETED 2026-09-09**. UI canonical loadand real apply transaction verified for structural, timing-only, rejected, Discard,and reload paths. Archived.
 
-4. SIM-021 — **RETIRED 2026-09-08** (not completed; human clearance. Status-display question moved into brainstorm: placement undecided, minimalist preferred. Record: `workflow/archive/sim-021-restore-truthful-runtime-status.md`.
-5. SIM-022 — **RETIRED 2026-09-08** (not completed; human clearance. End-to-end verification deferred pending the status-display brainstorm. Record: `workflow/archive/sim-022-visible-end-to-end-verification.md`.
+4. SIM-021 — **PROMOTED 2026-09-08**. Human-authorized as five ordered active microtasks: SIM-021A define operator status semantics; SIM-021B lock status RPC contract; SIM-021C poll selected-device status; SIM-021D render compact status row; SIM-021E surface status errors. Records now live in `workflow/active_work/`.
+5. SIM-022 — **RETIRED 2026-09-08**（not completed; human clearance; remains un-promoted. Record: `workflow/archive/sim-022-visible-end-to-end-verification.md`.
 
 The records below are archived predecessor evidence and do not authorize execution.
 

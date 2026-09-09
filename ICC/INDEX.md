@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit:a216187
-Working Tree: dirty
-Audited Uncommitted Overlay: handoff.md; workflow/archive/README.md; sim-018/sim-019/sim-020 moved active_work->archive; sim-021/sim-022 moved active_work->archive (retired, not completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic; ICC nodes refreshed herein.
+Baseline Commit:a17191c
+Working Tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human(
+Audited Uncommitted Overlay: handoff.md; five sim-021 planning microtasks promoted into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
 
-Committed+overlay delta: SIM-018 through SIM-020 complete and archived; SIM-021and SIM-022 retired (not completed( into archive;`workflow/active_work/` is empty;the status-display question is reopened as a human-owned brainstorm (`planning/Brainstorm/modbus-simulator-status-display.md`, placement undecided, minimalist preferred, non-authoritative(.
+Committed+overlay delta: SIM-021 was promoted by human authorizationas five ordered microtasks into active work;SIM-018 through SIM-020 remain complete+archived;SIM-022 remains retired-uncompleted;`workflow/active_work/` now contains the five active sim-021 task files.
 
-Refreshed only the Active Work/planning-status branch at `a216187`+overlay. Unrelated sibling registry rows are preserved.
+Refreshed only the Active Work/planning-status branch at `a17191c` fromthe pushed SIM-021 promotion delta. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

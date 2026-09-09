@@ -1,7 +1,7 @@
 # Planning Workflow
 
-Baseline commit: a216187 + audited overlay (uncommitted delta described in ICC/INDEX.md); working tree: dirty (archive moves, handoff rewrite, new brainstorm topic.
-Audited Overlay: handoff.md; workflow/archive/README.md; sim-018 through sim-022 moved active_work->archive (retired or completed); planning/Brainstorm/modbus-simulator-status-display.md (new brainstorm topic}.
+Baseline commit: a17191c; working tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human, outside this branch.
+Audited Overlay: handoff.md; five sim-021 planning microtasks promoted out of planning into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
 Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
 Zoom In: brainstorm-topics
@@ -31,4 +31,4 @@ Human-owned exploration/framing/alternatives/questions/candidates. Not execution
 - MMA2 basic install+test brainstorm + microtask (MMA2-001/002( — source of the archived MMA2-001/002 active work; MMA2-001 later split in execution into import+build vs runtime smoke-test (active MMA2-002 preserves internal execution order (+completion state( as repository truth(.
 - OS.js Modbus Simulator brainstorm (approved simulator UI, two parameter domains, shared MMA2 config boundary, save/apply routing, runtime status( — source of the SIM-001…SIM-020 archived program. See brainstorm-topics for content summary.
 
-- Modbus Simulator status display brainstorm (new 2026-09-08; HUMAN-OWNED, placement UNDECIDED, minimalist preferred( — display MMA2 status + Simulator status inside the Modbus Simulator app. See brainstorm-topics for content summary. Non-authoritative; no microtask promoted yet..
+- Modbus Simulator status display brainstorm (**PROMOTED 2026-09-08**) — human-authorized SIM-021A..SIM-021E moved into `workflow/active_work/`; SIM-021D fixes placement (one compact row below the Device Definition heading;. See brainstorm-topics for content summary. Non-authoritativebeyond what the promoted five prescribe.

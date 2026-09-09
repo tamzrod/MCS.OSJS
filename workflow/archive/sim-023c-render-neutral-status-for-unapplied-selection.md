@@ -1,6 +1,6 @@
 # SIM-023C — Render Neutral Status for Unapplied Selection
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — neutral status placeholders for rows without an applied runtime identity(new/renamed-unapplied; genuine request failures stay UNAVAILABLE via the existing error path.
 Previous: SIM-023B
 
 ## Primary outcome

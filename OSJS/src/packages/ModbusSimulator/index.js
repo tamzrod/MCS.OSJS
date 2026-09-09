@@ -3,6 +3,7 @@ import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
 const {createStatusPoller, createRuntimeMessageController} = require('./runtime-status-poller');
 const {appliedPollTargets, pollTargetFor} = require('./poll-target');
+const {statusWord} = require('./status-word');
 
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
@@ -64,7 +65,6 @@ const button = (label, action, className = '') => {
   return node;
 };
 
-const operatorState = value => ['RUNNING', 'WAITING', 'STOPPED', 'ERROR'].includes(value) ? value : 'UNAVAILABLE';
 
 const statusPair = (label, value) => {
   const pair = element('span', 'sim-runtime-pair');
@@ -161,10 +161,9 @@ const register = (core, args, options, metadata) => {
     if (!win.$content) return;
     const row = win.$content.querySelector('.sim-runtime-row');
     if (!row) return;
-    const device = selectedDevice();
     const pairs = row.querySelectorAll('.sim-runtime-pair');
-    const mma2 = device ? operatorState(state.runtimeStatus && state.runtimeStatus.mma2_status) : '—';
-    const sim = device ? operatorState(state.runtimeStatus && state.runtimeStatus.device_status) : '—';
+    const mma2 = statusWord({device: selectedDevice(), appliedName: appliedPollTarget(), runtimeStatus: state.runtimeStatus, runtimeStatusError: state.runtimeStatusError, field: 'mma2_status'});
+    const sim = statusWord({device: selectedDevice(), appliedName: appliedPollTarget(), runtimeStatus: state.runtimeStatus, runtimeStatusError: state.runtimeStatusError, field: 'device_status'});
     if (pairs.length > 0) setStatusPair(pairs[0], mma2);
     if (pairs.length > 1) setStatusPair(pairs[1], sim);
     const bar = win.$content.querySelector('.sim-status');
@@ -181,8 +180,8 @@ const register = (core, args, options, metadata) => {
     const runtimeRow = element('div', 'sim-runtime-row');
     const status = device && state.runtimeStatus;
     runtimeRow.append(
-      statusPair('MMA2', device ? operatorState(status && status.mma2_status) : '—'),
-      statusPair('Simulator', device ? operatorState(status && status.device_status) : '—')
+      statusPair('MMA2', statusWord({device, appliedName: appliedPollTarget(), runtimeStatus: status, runtimeStatusError: state.runtimeStatusError, field: 'mma2_status'})),
+      statusPair('Simulator', statusWord({device, appliedName: appliedPollTarget(), runtimeStatus: status, runtimeStatusError: state.runtimeStatusError, field: 'device_status'})))
     );
     pane.appendChild(runtimeRow);
     if (!device) {

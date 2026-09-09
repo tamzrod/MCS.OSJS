@@ -1,6 +1,8 @@
 # SIM-021D — Render the Compact MMA2 + Simulator Status Row
 
-Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
+Status: QUEUED
+Previous: SIM-021C
+Next: SIM-021E
 
 ## Primary outcome
 

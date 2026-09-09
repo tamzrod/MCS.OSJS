@@ -1,0 +1,16 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /build
+RUN apk add --no-cache ca-certificates
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/mma2 ./cmd/mma2 && \
+    CGO_ENABLED=0 GOOS=linux go build -o /out/mma2-supervisor ./cmd/mma2-supervisor
+
+FROM alpine:3.19
+RUN addgroup -S mma && adduser -S mma -G mma
+WORKDIR /app
+COPY --from=builder /out/mma2 /app/mma2
+COPY --from=builder /out/mma2-supervisor /app/mma2-supervisor
+ENTRYPOINT ["/app/mma2-supervisor", "/app/mma2", "/data/config/mma2/config.yaml", "/data/config/mma2/restart-request.yaml", "/data/config/mma2/restart-ack"]

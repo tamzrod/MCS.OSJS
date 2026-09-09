@@ -154,6 +154,8 @@ func TestEndToEndSimulatorMMA2Architecture(t *testing.T) {
 				mu.Unlock()
 				process.stop(t)
 				process = startAppliance(t, binaryPath, store.EffectiveConfigPath())
+				request, _, _ := store.LoadRestartRequest()
+				_ = os.WriteFile(store.RestartAckPath(), []byte(request.ConfigSHA256), 0o644)
 				supervisorDone <- nil
 				return
 			}

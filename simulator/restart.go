@@ -16,6 +16,7 @@ const (
 	// restartRequestFile is the machine-readable restart request artifact stored
 	// beside the shared MMA2 configuration after a successful structural commit。
 	restartRequestFile = "restart-request.yaml"
+	restartAckFile     = "restart-ack"
 
 	// DefaultRestartReadyTimeout bounds SIM-014's readiness wait after a
 	// restart request。
@@ -38,6 +39,10 @@ func (s Store) RestartRequestPath() string {
 	return filepath.Join(s.MMA2ConfigDir(), restartRequestFile)
 }
 
+func (s Store) RestartAckPath() string {
+	return filepath.Join(s.MMA2ConfigDir(), restartAckFile)
+}
+
 // RestartRequestForConfig builds a restart request for the composed shared config,
 // fingerprinting the exact committed content so a consumer can tell whether the
 // request corresponds to the currently committed config。
@@ -56,11 +61,31 @@ func RestartRequestForConfig(now time.Time, cfg EffectiveMMA2Config, ports []uin
 // WriteRestartRequest atomically persists the restart request beside the shared
 // MMA2 config artifacts。
 func (s Store) WriteRestartRequest(req RestartRequest) error {
+	if err := os.Remove(s.RestartAckPath()); err != nil && !os.IsNotExist(err) {
+		return err
+	}
 	b, err := yaml.Marshal(&req)
 	if err != nil {
 		return err
 	}
 	return s.replaceMMA2File(s.RestartRequestPath(), b)
+}
+
+func (s Store) WaitRestartAcknowledged(configSHA256 string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		ack, err := os.ReadFile(s.RestartAckPath())
+		if err == nil && string(ack) == configSHA256 {
+			return nil
+		}
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("read MMA2 restart acknowledgement: %w", err)
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("mma2 restart request was not acknowledged within timeout")
+		}
+		time.Sleep(restartReadyPoll)
+	}
 }
 
 // LoadRestartRequest reads the persisted restart request;a missing file means
@@ -84,6 +109,9 @@ func (s Store) LoadRestartRequest() (RestartRequest, bool, error) {
 // confirmed, leaving no stale request that could mislead a later boot restore。
 func (s Store) ClearRestartRequest() error {
 	if err := os.Remove(s.RestartRequestPath()); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err := os.Remove(s.RestartAckPath()); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil

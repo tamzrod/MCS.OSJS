@@ -3,10 +3,24 @@ package simulator
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
 )
+
+func acknowledgeNextRestart(store Store) {
+	go func() {
+		deadline := time.Now().Add(3 * time.Second)
+		for time.Now().Before(deadline) {
+			if request, found, _ := store.LoadRestartRequest(); found {
+				_ = os.WriteFile(store.RestartAckPath(), []byte(request.ConfigSHA256), 0o644)
+				return
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+	}()
+}
 
 func freePort(t *testing.T) uint16 {
 	t.Helper()
@@ -49,6 +63,7 @@ func TestStructuralApplyRequestsRestartAndClearsAfterReadiness(t *testing.T) {
 	device.MMA2.Port = port
 	applier := newSchedulerApplier(store, Document{}, false)
 	defer applier.Stop()
+	acknowledgeNextRestart(store)
 
 	if err := applier.ApplyStructural(Document{}, Document{Devices: []DeviceDefinition{device}}); err != nil {
 		t.Fatalf("structural apply should succeed against ready listener: %v", err)
@@ -100,6 +115,7 @@ func TestStructuralApplyRestartTimeoutReportsFailureAndLeavesPendingRequest(t *t
 	applier := newSchedulerApplier(store, Document{}, false)
 	applier.restartTimeout = 300 * time.Millisecond
 	defer applier.Stop()
+	acknowledgeNextRestart(store)
 
 	err := applier.ApplyStructural(Document{}, Document{Devices: []DeviceDefinition{device}})
 	if err == nil {

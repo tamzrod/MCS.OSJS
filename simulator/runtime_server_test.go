@@ -168,6 +168,7 @@ func TestLiveRuntimeContractAppliesTimingRejectsConflictAndReportsUnavailable(t 
 	device := testRuntimeDevice("live-runtime")
 	device.MMA2.Port = port
 	device.RandomRuntime.FC3IntervalMS = 60000
+	acknowledgeNextRestart(store)
 	structural := runtimeApplyRequest(t, service, "structural", Document{Devices: []DeviceDefinition{device}})
 	if !structural.OK {
 		t.Fatalf("structural apply failed: %+v", structural.Error)
@@ -194,6 +195,7 @@ func TestLiveRuntimeContractAppliesTimingRejectsConflictAndReportsUnavailable(t 
 
 	unavailable := device
 	unavailable.MMA2.Port = unusedTCPPort(t)
+	acknowledgeNextRestart(store)
 	failure := runtimeApplyRequest(t, service, "unavailable", Document{Devices: []DeviceDefinition{unavailable}})
 	if failure.OK || failure.Error == nil || failure.Error.Code != "MMA2_NOT_READY" {
 		t.Fatalf("unavailable MMA2 was not reported truthfully: %+v", failure)

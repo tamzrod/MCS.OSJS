@@ -49,6 +49,7 @@ func TestStructuralApplyAndStopDoNotControlIndependentMMA2(t *testing.T) {
 	device.Name = "independent-mma2"
 	device.MMA2.Port = uint16(listener.Addr().(*net.TCPAddr).Port)
 	applier := newSchedulerApplier(store, Document{}, false)
+	acknowledgeNextRestart(store)
 	if err := applier.ApplyStructural(Document{}, Document{Devices: []DeviceDefinition{device}}); err != nil {
 		t.Fatal(err)
 	}

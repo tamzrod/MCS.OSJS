@@ -1,6 +1,6 @@
 # SIM-024 — Wire MMA2 Restart Request to the Deployed Runtime
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — independently supervised MMA2 reload verified end to end.
 Previous: none
 Next: none
 
@@ -84,3 +84,11 @@ Record:
 - proof the new configured listener became reachable after Save & Apply;
 - proof Simulator process-ownership boundaries remain intact;
 - exact native verification commands and results.
+
+## Completion evidence
+
+- `deploy/docker-compose.yml` now runs independent `mcs-mma2`; `MMA2/Dockerfile.supervised`, `cmd/mma2-supervisor`, and `internal/restartwatch` own appliance-side process supervision and exact-once request observation.
+- The Simulator writes a config-SHA restart request, removes stale acknowledgement, and waits for the appliance to acknowledge that exact SHA before accepting listener readiness. MMA2 writes the acknowledgement only after consuming the request and launching the replacement process; Simulator clears request and acknowledgement after readiness.
+- A real UI structural apply changed Sim-PLC-1 from port 5020 to 5021. Logs contain exactly one `restart request consumed`, followed by `ingress sim-5021-1 listening`; Save & Apply returned success, TCP 5021 was reachable, and the browser showed both MMA2 and Simulator `RUNNING` from accepted Raw Ingest evidence.
+- The canonical device document persists port 5021 and both restart artifacts are cleared. Static inspection finds process control only in test harnesses under `simulator/`; production Simulator ownership remains unchanged.
+- `cd simulator && go test -count=1 ./...`, `cd MMA2 && go test -count=1 ./...`, `docker compose -f deploy/docker-compose.yml config`, and `docker compose -f deploy/docker-compose.yml build` pass. The MMA2 gate also restored its referenced but missing `test/policy_test.yaml` fixture.

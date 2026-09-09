@@ -98,8 +98,12 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 		return fmt.Errorf("load composed MMA2 config: %w", err)
 	}
 	ports := composedSimulatorPorts(edited)
-	if err := a.store.WriteRestartRequest(RestartRequestForConfig(time.Now(), cfg, ports)); err != nil {
+	restartRequest := RestartRequestForConfig(time.Now(), cfg, ports)
+	if err := a.store.WriteRestartRequest(restartRequest); err != nil {
 		return fmt.Errorf("mma2 restart request failed: %w", err)
+	}
+	if err := a.store.WaitRestartAcknowledged(restartRequest.ConfigSHA256, a.restartTimeout); err != nil {
+		return err
 	}
 	if err := WaitMMA2Ready(ports, a.restartTimeout); err != nil {
 		return err

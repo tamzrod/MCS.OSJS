@@ -48,5 +48,17 @@ services:
     volumes:
       - osjs-data:/data
 
+  mma2:
+    build:
+      context: ../MMA2
+      dockerfile: Dockerfile.supervised
+    image: mcs-mma2:latest
+    container_name: mcs-mma2
+    restart: unless-stopped
+    init: true
+    network_mode: host
+    volumes:
+      - osjs-data:/data
+
 volumes:
   osjs-data:

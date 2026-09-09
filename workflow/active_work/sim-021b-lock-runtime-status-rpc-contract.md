@@ -1,6 +1,6 @@
 # SIM-021B — Lock the Runtime Status RPC Contract
 
-Status: QUEUED
+Status: ACTIVE
 Previous: SIM-021A
 Next: SIM-021C
 

@@ -1,6 +1,6 @@
 # SIM-021A — Define Operator Runtime Status Semantics
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — runtime evidence semantics and transitions verified.
 Previous: none
 Next: SIM-021B
 
@@ -47,6 +47,13 @@ Make `SchedulerApplier.RuntimeStatus` produce truthful evidence for exactly two 
 ## Verification
 
 Run the focused Go tests for `SchedulerApplier.RuntimeStatus`, then the Simulator Go test suite.
+
+## Completion evidence
+
+- `RuntimeStatus` snapshots readiness, successful-ingest evidence, and the retained Raw Ingest error under the applier mutex before deriving state.
+- Focused tests prove disabled `STOPPED`, unarmed and pre-ingest `WAITING`, rejected-ingest `ERROR`, accepted-ingest recovery to `RUNNING`, and MMA2 loss preventing a false `RUNNING` result.
+- The rejected Raw Ingest diagnostic remains present through the error state and clears only after a later accepted batch.
+- `go test -count=1 -run '^TestRuntimeStatus' -v .`, `go test -count=1 ./...`, and `go vet ./...` pass in `simulator/`.
 
 ## Dependencies
 

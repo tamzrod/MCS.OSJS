@@ -174,6 +174,8 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 	device, ok := a.devices[name]
 	scheduler := a.schedulers[name]
 	rawError := a.rawErrors[name]
+	ready := a.ready
+	ingestOK := a.ingestOK[name]
 	a.mu.Unlock()
 	if !ok {
 		return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name)
@@ -185,7 +187,7 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 		status.MMA2 = "RUNNING"
 		_ = conn.Close()
 	}
-	if !a.ready {
+	if !ready {
 		status.RawIngest = "STOPPED"
 		if device.Enabled {
 			status.Device = "WAITING"
@@ -201,7 +203,7 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 		status.Device = "ERROR"
 	case status.MMA2 != "RUNNING":
 		status.Device = "WAITING"
-	case a.ingestOK[name]:
+	case ingestOK:
 		status.RawIngest = "OK"
 		status.Device = "RUNNING"
 	default:

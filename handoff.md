@@ -2,13 +2,13 @@
 
 ## Current
 
-ACTIVE: SIM-021A — Define Operator Runtime Status Semantics
+ACTIVE: SIM-021B — Lock Runtime Status RPC Contract
 
 ## Authorized Sequence
 
 SIM-021A → SIM-021B → SIM-021C → SIM-021D → SIM-021E
 
-SIM-021A is `ACTIVE`. SIM-021B through SIM-021E are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
+SIM-021A is completed and archived. SIM-021B is `ACTIVE`. SIM-021C through SIM-021E are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
 
 ## Continuation Rule
 

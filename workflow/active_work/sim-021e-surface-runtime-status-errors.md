@@ -1,6 +1,8 @@
 # SIM-021E — Surface Runtime Status Errors Without Polling Noise
 
-Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
+Status: QUEUED
+Previous: SIM-021D
+Next: none
 
 ## Primary outcome
 

@@ -1,6 +1,6 @@
 # SIM-021E — Surface Runtime Status Errors Without Polling Noise
 
-Status: QUEUED
+Status: ACTIVE
 Previous: SIM-021D
 Next: none
 

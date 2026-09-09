@@ -2,13 +2,13 @@
 
 ## Current
 
-ACTIVE: SIM-021D — Render Compact Runtime Status Row
+ACTIVE: SIM-021E — Surface Runtime Status Errors
 
 ## Authorized Sequence
 
 SIM-021A → SIM-021B → SIM-021C → SIM-021D → SIM-021E
 
-SIM-021A through SIM-021C are completed and archived. SIM-021D is `ACTIVE`. SIM-021E is `QUEUED` and already human-authorized; it requires no additional approval when advanced through its explicit `Previous` / `Next` link.
+SIM-021A through SIM-021D are completed and archived. SIM-021E is `ACTIVE` and already human-authorized.
 
 ## Continuation Rule
 

@@ -63,6 +63,18 @@ const button = (label, action, className = '') => {
   return node;
 };
 
+const operatorState = value => ['RUNNING', 'WAITING', 'STOPPED', 'ERROR'].includes(value) ? value : 'UNAVAILABLE';
+
+const statusPair = (label, value) => {
+  const pair = element('span', 'sim-runtime-pair');
+  const state = value || '—';
+  pair.dataset.state = state.toLowerCase();
+  const indicator = element('span', 'sim-runtime-indicator', '●');
+  indicator.setAttribute('aria-hidden', 'true');
+  pair.append(element('strong', '', label), indicator, element('span', 'sim-runtime-word', state));
+  return pair;
+};
+
 const field = (label, value, settings, onChange) => {
   const wrapper = element('label', settings.className || 'sim-field');
   wrapper.appendChild(element('span', 'sim-field-label', label));
@@ -114,12 +126,14 @@ const register = (core, args, options, metadata) => {
       if (!selected || selected.name !== name) return;
       state.runtimeStatus = status;
       state.runtimeStatusError = null;
+      render();
     },
     onUnavailable: (name, error) => {
       const selected = selectedDevice();
       if (!selected || selected.name !== name) return;
       state.runtimeStatus = null;
       state.runtimeStatusError = error.message || String(error);
+      render();
     }
   });
   const pollSelectedStatus = (force = false) => {
@@ -130,12 +144,19 @@ const register = (core, args, options, metadata) => {
   const renderEditor = root => {
     const pane = element('section', 'sim-editor-pane');
     const device = selectedDevice();
+    pane.appendChild(element('h2', 'sim-editor-title', 'Device Definition'));
+    const runtimeRow = element('div', 'sim-runtime-row');
+    const status = device && state.runtimeStatus;
+    runtimeRow.append(
+      statusPair('MMA2', device ? operatorState(status && status.mma2_status) : '—'),
+      statusPair('Simulator', device ? operatorState(status && status.device_status) : '—')
+    );
+    pane.appendChild(runtimeRow);
     if (!device) {
       pane.appendChild(element('div', 'sim-empty', 'Select a device or choose Add.'));
       root.appendChild(pane);
       return;
     }
-    pane.appendChild(element('h2', 'sim-editor-title', 'Device Definition'));
     const identity = element('div', 'sim-identity-grid');
     identity.appendChild(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
     const enabled = element('label', 'sim-checkbox');
@@ -230,6 +251,8 @@ const register = (core, args, options, metadata) => {
       state.persisted = clone(applied);
       if (state.selected !== null && state.selected >= applied.devices.length) state.selected = null;
       setMessage(`${result.message} Applied at ${new Date(result.completed_at).toLocaleString()}.`);
+      state.runtimeStatus = null;
+      state.runtimeStatusError = null;
       pollSelectedStatus(true);
     } catch (error) {
       setMessage(`Save & Apply failed: ${error.message || error}`, true);
@@ -279,8 +302,10 @@ const register = (core, args, options, metadata) => {
         save();
         return;
       }
-      render();
+      state.runtimeStatus = null;
+      state.runtimeStatusError = null;
       pollSelectedStatus();
+      render();
     });
     render();
     runtimeCall('load')

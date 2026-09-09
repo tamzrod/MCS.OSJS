@@ -1,6 +1,6 @@
 # SIM-021D — Render the Compact MMA2 + Simulator Status Row
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — compact two-state row verified in the rebuilt window.
 Previous: SIM-021C
 Next: SIM-021E
 
@@ -40,6 +40,13 @@ Render one compact status row in the Device Definition pane showing only MMA2 an
 ## Verification
 
 Run `node --check`, the ModbusSimulator/local-package build, and inspect the rebuilt window at its normal size for layout regression.
+
+## Completion evidence
+
+- The Device Definition pane renders exactly `MMA2 ● <STATE>` and `Simulator ● <STATE>` directly below its heading.
+- Each state uses a visible word plus a small colored indicator; known runtime values are limited to the four SIM-021A states.
+- Selected devices without current data render `UNAVAILABLE`; no selection renders `—`, and selection/apply transitions clear stale status before refresh.
+- JavaScript syntax, the polling test, local-package build, container rebuild, and live 920×620 browser inspection pass with all prior form controls and the bottom message bar intact.
 
 ## Dependencies
 

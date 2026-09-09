@@ -1,6 +1,6 @@
 # SIM-021C — Poll Selected-Device Runtime Status
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — selected-device polling lifecycle verified.
 Previous: SIM-021B
 Next: SIM-021D
 
@@ -36,6 +36,14 @@ Make the Modbus Simulator window request current runtime status for the selected
 ## Verification
 
 Use focused client/static tests where available plus `node --check`/package build; verify request lifecycle with an instrumented or stubbed runtime requester.
+
+## Completion evidence
+
+- A bounded status poller requests the selected device immediately, then schedules the next request at a one-second interval only after the current request settles.
+- Selection changes invalidate old generations, cancel pending timers, and ignore stale success/failure responses; successful Save & Apply forces an immediate refresh.
+- Runtime failures clear the separately stored runtime status and retain unavailable detail without inferring health from configuration.
+- Window destruction stops the poller and rejects/clears outstanding runtime calls.
+- The instrumented poller test, JavaScript syntax checks, and `npm run build:local-packages` pass.
 
 ## Dependencies
 

@@ -1,6 +1,7 @@
 import './index.scss';
 import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
+const {createStatusPoller} = require('./runtime-status-poller');
 
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
@@ -84,7 +85,7 @@ const register = (core, args, options, metadata) => {
     dimension: {width: 920, height: 620},
     position: 'center'
   });
-  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, search: '', message: 'Connecting to Simulator runtime...', error: false, saving: false};
+  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, runtimeStatus: null, runtimeStatusError: null, search: '', message: 'Connecting to Simulator runtime...', error: false, saving: false};
   const pending = new Map();
   let requestSequence = 0;
   const runtimeCall = (operation, payload = {}) => new Promise((resolve, reject) => {
@@ -106,6 +107,25 @@ const register = (core, args, options, metadata) => {
   });
   const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
   const setMessage = (message, error = false) => Object.assign(state, {message, error});
+  const statusPoller = createStatusPoller({
+    requestStatus: name => runtimeCall('status', {name}).then(result => result.status),
+    onStatus: (name, status) => {
+      const selected = selectedDevice();
+      if (!selected || selected.name !== name) return;
+      state.runtimeStatus = status;
+      state.runtimeStatusError = null;
+    },
+    onUnavailable: (name, error) => {
+      const selected = selectedDevice();
+      if (!selected || selected.name !== name) return;
+      state.runtimeStatus = null;
+      state.runtimeStatusError = error.message || String(error);
+    }
+  });
+  const pollSelectedStatus = (force = false) => {
+    const device = selectedDevice();
+    statusPoller.select(device && device.name, force);
+  };
 
   const renderEditor = root => {
     const pane = element('section', 'sim-editor-pane');
@@ -210,6 +230,7 @@ const register = (core, args, options, metadata) => {
       state.persisted = clone(applied);
       if (state.selected !== null && state.selected >= applied.devices.length) state.selected = null;
       setMessage(`${result.message} Applied at ${new Date(result.completed_at).toLocaleString()}.`);
+      pollSelectedStatus(true);
     } catch (error) {
       setMessage(`Save & Apply failed: ${error.message || error}`, true);
     } finally {
@@ -219,6 +240,7 @@ const register = (core, args, options, metadata) => {
   };
 
   win.on('destroy', () => {
+    statusPoller.stop();
     pending.forEach(entry => {
       clearTimeout(entry.timeout);
       entry.reject(new Error('Simulator window closed.'));
@@ -258,6 +280,7 @@ const register = (core, args, options, metadata) => {
         return;
       }
       render();
+      pollSelectedStatus();
     });
     render();
     runtimeCall('load')
@@ -268,6 +291,7 @@ const register = (core, args, options, metadata) => {
         state.selected = persisted.devices.length ? 0 : null;
         setMessage(persisted.devices.length ? 'Canonical Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
         render();
+        pollSelectedStatus();
       })
       .catch(error => {
         setMessage(`Simulator runtime unavailable: ${error.message || error}`, true);

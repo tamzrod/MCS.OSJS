@@ -1,6 +1,6 @@
 # SIM-021D — Render the Compact MMA2 + Simulator Status Row
 
-Status: QUEUED
+Status: ACTIVE
 Previous: SIM-021C
 Next: SIM-021E
 

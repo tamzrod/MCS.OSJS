@@ -2,13 +2,13 @@
 
 ## Current
 
-ACTIVE: SIM-021C — Poll Selected Device Runtime Status
+ACTIVE: SIM-021D — Render Compact Runtime Status Row
 
 ## Authorized Sequence
 
 SIM-021A → SIM-021B → SIM-021C → SIM-021D → SIM-021E
 
-SIM-021A and SIM-021B are completed and archived. SIM-021C is `ACTIVE`. SIM-021D and SIM-021E are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
+SIM-021A through SIM-021C are completed and archived. SIM-021D is `ACTIVE`. SIM-021E is `QUEUED` and already human-authorized; it requires no additional approval when advanced through its explicit `Previous` / `Next` link.
 
 ## Continuation Rule
 

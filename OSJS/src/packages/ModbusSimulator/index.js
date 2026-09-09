@@ -75,6 +75,13 @@ const statusPair = (label, value) => {
   return pair;
 };
 
+const setStatusPair = (pair, value) => {
+  const state = value || '—';
+  pair.dataset.state = state.toLowerCase();
+  const word = pair.querySelector('.sim-runtime-word');
+  if (word) word.textContent = state;
+};
+
 const field = (label, value, settings, onChange) => {
   const wrapper = element('label', settings.className || 'sim-field');
   wrapper.appendChild(element('span', 'sim-field-label', label));
@@ -134,7 +141,7 @@ const register = (core, args, options, metadata) => {
       state.runtimeStatus = status;
       state.runtimeStatusError = null;
       runtimeMessages.status(status);
-      render();
+      patchStatusUI();
     },
     onUnavailable: (name, error) => {
       const selected = selectedDevice();
@@ -142,12 +149,29 @@ const register = (core, args, options, metadata) => {
       state.runtimeStatus = null;
       state.runtimeStatusError = error.message || String(error);
       runtimeMessages.unavailable(error);
-      render();
+      patchStatusUI();
     }
   });
   const pollSelectedStatus = (force = false) => {
     const device = selectedDevice();
     statusPoller.select(device && device.name, force);
+  };
+
+  const patchStatusUI = () => {
+    if (!win.$content) return;
+    const row = win.$content.querySelector('.sim-runtime-row');
+    if (!row) return;
+    const device = selectedDevice();
+    const pairs = row.querySelectorAll('.sim-runtime-pair');
+    const mma2 = device ? operatorState(state.runtimeStatus && state.runtimeStatus.mma2_status) : '—';
+    const sim = device ? operatorState(state.runtimeStatus && state.runtimeStatus.device_status) : '—';
+    if (pairs.length > 0) setStatusPair(pairs[0], mma2);
+    if (pairs.length > 1) setStatusPair(pairs[1], sim);
+    const bar = win.$content.querySelector('.sim-status');
+    if (bar) {
+      bar.textContent = state.message;
+      bar.classList.toggle('sim-status-error', Boolean(state.error));
+    }
   };
 
   const renderEditor = root => {
@@ -262,6 +286,7 @@ const register = (core, args, options, metadata) => {
       setMessage(`${result.message} Applied at ${new Date(result.completed_at).toLocaleString()}.`);
       state.runtimeStatus = null;
       state.runtimeStatusError = null;
+      patchStatusUI();
       pollSelectedStatus(true);
     } catch (error) {
       setMessage(`Save & Apply failed: ${error.message || error}`, true);
@@ -315,6 +340,7 @@ const register = (core, args, options, metadata) => {
       state.runtimeStatusError = null;
       pollSelectedStatus();
       render();
+      patchStatusUI();
     });
     render();
     runtimeCall('load')
@@ -325,6 +351,7 @@ const register = (core, args, options, metadata) => {
         state.selected = persisted.devices.length ? 0 : null;
         setMessage(persisted.devices.length ? 'Canonical Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
         render();
+        patchStatusUI();
         pollSelectedStatus();
       })
       .catch(error => {

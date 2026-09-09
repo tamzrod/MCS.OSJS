@@ -1,6 +1,6 @@
 # SIM-021B — Lock the Runtime Status RPC Contract
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — version-1 status response contract verified.
 Previous: SIM-021A
 Next: SIM-021C
 
@@ -35,6 +35,13 @@ Make the existing version-1 `status` RPC carry the SIM-021A MMA2 + Simulator tru
 ## Verification
 
 Run focused `RuntimeService` status contract tests, then the Simulator Go test suite.
+
+## Completion evidence
+
+- Focused contract tests serialize the version-1 response and prove `mma2_status`, `device_status`, and `raw_ingest_error` carry SIM-021A truth unchanged.
+- Missing names and malformed payloads retain the stable `INVALID_REQUEST` response; an unknown device retains its runtime error text.
+- Existing combined load/apply/status and idempotency coverage still passes unchanged.
+- Focused RuntimeService tests, `go test -count=1 ./...`, and `go vet ./...` pass in `simulator/`.
 
 ## Dependencies
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"path/filepath"
@@ -27,7 +28,62 @@ func (r *runtimeApplyRecorder) Apply(doc Document) (ApplyResult, error) {
 type runtimeStatusFixture struct{}
 
 func (runtimeStatusFixture) RuntimeStatus(name string) (DeviceRuntimeStatus, error) {
-	return DeviceRuntimeStatus{Name: name, Device: "RUNNING", MMA2: "RUNNING", RawIngest: "OK", TotalPoints: 1, FC: map[string]FCRuntimeStatus{}}, nil
+	if name == "missing" {
+		return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name)
+	}
+	return DeviceRuntimeStatus{Name: name, Device: "ERROR", MMA2: "RUNNING", RawIngest: "ERROR", RawError: "raw ingest rejected frame: code 33", TotalPoints: 1, FC: map[string]FCRuntimeStatus{}}, nil
+}
+
+func TestRuntimeServiceStatusContractCarriesOperatorStatesAndDiagnostic(t *testing.T) {
+	service := NewRuntimeService(Store{Root: t.TempDir()}, &runtimeApplyRecorder{}, runtimeStatusFixture{})
+	payload, _ := json.Marshal(map[string]string{"name": "runtime-device"})
+	response := service.Handle(RuntimeRequest{Version: 1, RequestID: "status-contract", Operation: "status", Payload: payload})
+	if !response.OK {
+		t.Fatalf("status failed: %+v", response.Error)
+	}
+
+	wire, err := json.Marshal(response)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Result struct {
+			Status struct {
+				MMA2       string `json:"mma2_status"`
+				Simulator  string `json:"device_status"`
+				Diagnostic string `json:"raw_ingest_error"`
+			} `json:"status"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(wire, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	status := decoded.Result.Status
+	if status.MMA2 != "RUNNING" || status.Simulator != "ERROR" || status.Diagnostic != "raw ingest rejected frame: code 33" {
+		t.Fatalf("status contract changed SIM-021A truth: %+v", status)
+	}
+}
+
+func TestRuntimeServiceStatusRequestErrorsRemainStable(t *testing.T) {
+	service := NewRuntimeService(Store{Root: t.TempDir()}, &runtimeApplyRecorder{}, runtimeStatusFixture{})
+	tests := []struct {
+		name    string
+		payload json.RawMessage
+		code    string
+		message string
+	}{
+		{"missing name", json.RawMessage(`{}`), "INVALID_REQUEST", "status payload requires a device name"},
+		{"invalid payload", json.RawMessage(`{"name":`), "INVALID_REQUEST", "status payload requires a device name"},
+		{"unknown device", json.RawMessage(`{"name":"missing"}`), "INTERNAL", `device "missing" not found`},
+	}
+	for i, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			response := service.Handle(RuntimeRequest{Version: 1, RequestID: fmt.Sprintf("status-error-%d", i), Operation: "status", Payload: test.payload})
+			if response.OK || response.Error == nil || response.Error.Code != test.code || response.Error.Message != test.message {
+				t.Fatalf("response = %+v, want %s: %s", response, test.code, test.message)
+			}
+		})
+	}
 }
 
 func TestRuntimeServiceLoadApplyStatusAndIdempotency(t *testing.T) {

@@ -1,6 +1,6 @@
 # SIM-021C — Poll Selected-Device Runtime Status
 
-Status: QUEUED
+Status: ACTIVE
 Previous: SIM-021B
 Next: SIM-021D
 

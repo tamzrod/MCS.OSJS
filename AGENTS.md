@@ -11,7 +11,7 @@ Resolve these commands before any generic repository workflow:
 - `BLACK SHEEP WALL` → `BLACK_SHEEP_WALL.md`
 - `OPERATION CWAL` → `operation cwal.md`
 - `THE GATHERING` → `the gathering.md`
-- `STAYING ALIVE` → `staying alive.md`
+- `THERE IS NO COW LEVEL` → `there is no cow level.md`
 
 When invoked:
 

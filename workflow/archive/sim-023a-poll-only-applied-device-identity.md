@@ -1,6 +1,7 @@
 # SIM-023A — Poll Only the Applied Device Identity
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — poll target resolved from persisted/applied identity; new/renamed-unapplied rows expose no poll target.
+Previous: none
 Next: SIM-023B
 
 ## Primary outcome

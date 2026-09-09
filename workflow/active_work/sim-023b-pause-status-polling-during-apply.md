@@ -1,6 +1,6 @@
 # SIM-023B — Pause Status Polling During Save & Apply
 
-Status: QUEUED
+Status: ACTIVE
 Previous: SIM-023A
 Next: SIM-023C
 

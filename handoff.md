@@ -2,15 +2,16 @@
 
 ## Current
 
-SIM-023A — Poll Only the Applied Device Identity — ACTIVE.
+SIM-023B — Pause Status Polling During Save & Apply — ACTIVE.
 
 ## Authorized Sequence
 
 SIM-023A → SIM-023B → SIM-023C
 
-- SIM-023A is ACTIVE.
-- SIM-023B and SIM-023C are QUEUED and already human-authorized.
-- On verified SIM-023A completion, advance only its explicit `Next` task.
+- SIM-023A COMPLETED 2026-09-09 (archived) — poll target resolved from persisted/applied identity; new/renamed-unapplied rows expose no poll target.
+- SIM-023B is ACTIVE.
+- SIM-023C is QUEUED and already human-authorized.
+- On verified SIM-023B completion, advance only its explicit `Next` task (SIM-023C).
 
 ## Continuation Rule
 

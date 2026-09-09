@@ -2,6 +2,7 @@ import './index.scss';
 import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
 const {createStatusPoller, createRuntimeMessageController} = require('./runtime-status-poller');
+const {appliedPollTargets, pollTargetFor} = require('./poll-target');
 
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
@@ -104,7 +105,7 @@ const register = (core, args, options, metadata) => {
     dimension: {width: 920, height: 620},
     position: 'center'
   });
-  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, runtimeStatus: null, runtimeStatusError: null, search: '', message: 'Connecting to Simulator runtime...', error: false, saving: false};
+  const state = {document: {devices: []}, persisted: {devices: []}, selected: null, pollTargets: [], runtimeStatus: null, runtimeStatusError: null, search: '', message: 'Connecting to Simulator runtime...', error: false, saving: false};
   const pending = new Map();
   let requestSequence = 0;
   const runtimeCall = (operation, payload = {}) => new Promise((resolve, reject) => {
@@ -125,6 +126,7 @@ const register = (core, args, options, metadata) => {
     else entry.reject(new Error(response.error && response.error.message || 'Simulator runtime request failed.'));
   });
   const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
+  const appliedPollTarget = () => pollTargetFor(state.pollTargets, state.selected);
   let runtimeMessages;
   const setMessage = (message, error = false) => {
     Object.assign(state, {message, error});
@@ -136,25 +138,22 @@ const register = (core, args, options, metadata) => {
   const statusPoller = createStatusPoller({
     requestStatus: name => runtimeCall('status', {name}).then(result => result.status),
     onStatus: (name, status) => {
-      const selected = selectedDevice();
-      if (!selected || selected.name !== name) return;
+      if (name !== appliedPollTarget()) return;
       state.runtimeStatus = status;
       state.runtimeStatusError = null;
       runtimeMessages.status(status);
       patchStatusUI();
     },
     onUnavailable: (name, error) => {
-      const selected = selectedDevice();
-      if (!selected || selected.name !== name) return;
+      if (name !== appliedPollTarget()) return;
       state.runtimeStatus = null;
-      state.runtimeStatusError = error.message || String(error);
+      state.runtimeStatusError = error.message || String(error;
       runtimeMessages.unavailable(error);
       patchStatusUI();
     }
   });
   const pollSelectedStatus = (force = false) => {
-    const device = selectedDevice();
-    statusPoller.select(device && device.name, force);
+    statusPoller.select(appliedPollTarget(), force);
   };
 
   const patchStatusUI = () => {
@@ -282,6 +281,7 @@ const register = (core, args, options, metadata) => {
       const applied = clone(normalizeDocument(result.document));
       state.document = applied;
       state.persisted = clone(applied);
+      state.pollTargets = appliedPollTargets(applied.devices;
       if (state.selected !== null && state.selected >= applied.devices.length) state.selected = null;
       setMessage(`${result.message} Applied at ${new Date(result.completed_at).toLocaleString()}.`);
       state.runtimeStatus = null;
@@ -316,20 +316,24 @@ const register = (core, args, options, metadata) => {
         setMessage('Editing a simulator-owned definition.');
       } else if (action === 'add') {
         state.document.devices.push(blankDevice(state.document.devices.length + 1));
+        state.pollTargets.push(null);
         state.selected = state.document.devices.length - 1;
         setMessage('New device added locally. Save & Apply to persist it.');
       } else if (action === 'duplicate' && selectedDevice()) {
         const copy = clone(selectedDevice());
         copy.name = `${copy.name} (copy)`;
         state.document.devices.push(copy);
+        state.pollTargets.push(null);
         state.selected = state.document.devices.length - 1;
         setMessage('Device duplicated locally. Save & Apply to persist it.');
       } else if (action === 'delete' && selectedDevice()) {
         state.document.devices.splice(state.selected, 1);
+        state.pollTargets.splice(state.selected, 1);
         state.selected = state.document.devices.length ? Math.min(state.selected, state.document.devices.length - 1) : null;
         setMessage('Device deleted locally. Save & Apply to persist it.');
       } else if (action === 'discard') {
         state.document = clone(state.persisted);
+        state.pollTargets = appliedPollTargets(state.persisted.devices);
         state.selected = state.document.devices.length ? Math.min(state.selected || 0, state.document.devices.length - 1) : null;
         setMessage('Unapplied changes discarded.');
       } else if (action === 'save') {
@@ -348,6 +352,7 @@ const register = (core, args, options, metadata) => {
         const persisted = normalizeDocument(result.document);
         state.document = clone(persisted);
         state.persisted = clone(persisted);
+        state.pollTargets = appliedPollTargets(persisted.devices);
         state.selected = persisted.devices.length ? 0 : null;
         setMessage(persisted.devices.length ? 'Canonical Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.');
         render();

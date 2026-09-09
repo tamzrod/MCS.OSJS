@@ -1,6 +1,8 @@
 # SIM-021C — Poll Selected-Device Runtime Status
 
-Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
+Status: QUEUED
+Previous: SIM-021B
+Next: SIM-021D
 
 ## Primary outcome
 

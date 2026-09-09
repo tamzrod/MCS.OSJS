@@ -46,13 +46,21 @@ When an edit or generated source is malformed:
 3. Run the smallest authoritative formatter/compiler/test.
 4. One corrective retry is allowed.
 
-If the second authoring attempt is still malformed: **STOP**.
+If the corrective retry shows the same or similarly patterned malformed authoring, do not keep repairing that generated text. Enter **Fresh Authoring Recovery** before tripping the circuit breaker:
 
-Do not continue implementation, create repair-script chains, perform broad regex cleanup, repeatedly switch authoring transports, or investigate encoding/serialization/shell/editor/tool corruption.
+1. Preserve or restore the last known repository state so the malformed attempt is not used as the new source template.
+2. Drop the malformed generated block from the recovery approach; do not copy, normalize, or progressively repair it.
+3. Reload the authoritative known-good source or repository implementation needed for the task.
+4. Restart the affected edit fresh as the smallest coherent transformation, preferably from known-good source rather than reconstructing from the malformed attempt.
+5. Run the smallest authoritative formatter/compiler/test immediately after the fresh edit.
 
-Tool or transport corruption may be claimed only when a minimal reproducible probe independent of the affected implementation file demonstrates the same mutation. Otherwise treat malformed output as an authoring failure.
+Only one fresh recovery attempt is allowed. If that fresh attempt is still malformed: **STOP**.
 
-After STOP, preserve repository state and report the exact failing file, observed error, attempted corrections, and verification result.
+Do not continue implementation after STOP, create repair-script chains, perform broad regex cleanup, repeatedly switch authoring transports, or investigate encoding/serialization/shell/editor/tool corruption without reproducible evidence.
+
+Tool or transport corruption may be claimed only when a minimal reproducible probe independent of the affected implementation file demonstrates the same mutation. Otherwise report the observed authoring failure without inventing a lower-level cause.
+
+After STOP, preserve repository state and report the exact failing file, observed error, corrective attempt, fresh recovery attempt, and verification result.
 
 ## No Broad Source Repair Rule
 

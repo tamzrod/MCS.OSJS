@@ -2,13 +2,15 @@
 
 ## Current
 
-No current ACTIVE task.
+SIM-023A — Poll Only the Applied Device Identity — ACTIVE.
 
 ## Authorized Sequence
 
-SIM-021A → SIM-021B → SIM-021C → SIM-021D → SIM-021E
+SIM-023A → SIM-023B → SIM-023C
 
-SIM-021A through SIM-021E are completed and archived. The authorized sequence is exhausted.
+- SIM-023A is ACTIVE.
+- SIM-023B and SIM-023C are QUEUED and already human-authorized.
+- On verified SIM-023A completion, advance only its explicit `Next` task.
 
 ## Continuation Rule
 

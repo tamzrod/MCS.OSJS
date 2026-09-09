@@ -36,6 +36,18 @@ READ ICC/INDEX.md FIRST
 → VERIFY
 ```
 
+## Execution Guardrail
+
+When an edit, generated file, or command fails because of malformed output or syntax:
+
+- Inspect the actual written file/output before forming a theory.
+- Retry the same authoring approach at most once.
+- After two failures, stop workaround experimentation and switch to a deterministic edit/patch method.
+- Do not invent transport, parser, shell, or tool-corruption explanations without reproducible evidence.
+- Do not build chains of encoding, marker, escaping, or self-modifying workarounds for a simple edit.
+- After the deterministic edit, run the smallest relevant formatter/compiler/test.
+- If it still fails, stop and report the exact observed failure and repository state; do not continue an open-ended debugging loop.
+
 ## Authority
 
 - Repository files are authoritative.

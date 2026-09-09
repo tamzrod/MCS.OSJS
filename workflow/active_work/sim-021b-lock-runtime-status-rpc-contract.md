@@ -1,6 +1,6 @@
 # SIM-021B — Lock the Runtime Status RPC Contract
 
-Status: PLANNING ONLY — not authorized for implementation until human promotion.
+Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
 
 ## Primary outcome
 

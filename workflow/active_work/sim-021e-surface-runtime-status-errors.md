@@ -1,6 +1,6 @@
 # SIM-021E — Surface Runtime Status Errors Without Polling Noise
 
-Status: PLANNING ONLY — not authorized for implementation until human promotion.
+Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
 
 ## Primary outcome
 

@@ -29,7 +29,7 @@ func TestSchedulerApplierReadyGatePreventsArmingAndFalseHealth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.Device != "ERROR" || status.MMA2 != "STOPPED" || status.RawIngest != "STOPPED" {
+	if status.Device != "WAITING" || status.MMA2 != "STOPPED" || status.RawIngest != "STOPPED" {
 		t.Fatalf("not-ready status must be truthful failure: %+v", status)
 	}
 	if len(status.FC) != 0 {

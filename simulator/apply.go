@@ -35,6 +35,7 @@ type SchedulerApplier struct {
 	schedulers     map[string]*Scheduler
 	devices        map[string]DeviceDefinition
 	rawErrors      map[string]string
+	ingestOK       map[string]bool
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
@@ -42,7 +43,7 @@ func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
 }
 
 func newSchedulerApplier(store Store, initial Document, ready bool) *SchedulerApplier {
-	a := &SchedulerApplier{store: store, ready: ready, restartTimeout: DefaultRestartReadyTimeout, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string)}
+	a := &SchedulerApplier{store: store, ready: ready, restartTimeout: DefaultRestartReadyTimeout, schedulers: make(map[string]*Scheduler), devices: make(map[string]DeviceDefinition), rawErrors: make(map[string]string), ingestOK: make(map[string]bool)}
 	a.replaceSchedulers(initial)
 	return a
 }
@@ -53,6 +54,7 @@ func (a *SchedulerApplier) replaceSchedulers(doc Document) {
 	a.schedulers = make(map[string]*Scheduler)
 	a.devices = make(map[string]DeviceDefinition)
 	a.rawErrors = make(map[string]string)
+	a.ingestOK = make(map[string]bool)
 	a.mu.Unlock()
 	for _, scheduler := range old {
 		scheduler.Stop()
@@ -70,6 +72,7 @@ func (a *SchedulerApplier) replaceSchedulers(doc Document) {
 			a.mu.Lock()
 			if err == nil {
 				delete(a.rawErrors, device.Name)
+				a.ingestOK[device.Name] = true
 			} else {
 				a.rawErrors[device.Name] = err.Error()
 			}
@@ -182,30 +185,35 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 		status.MMA2 = "RUNNING"
 		_ = conn.Close()
 	}
-	if a.ready {
-		if !device.Enabled {
-			return status, nil
-		}
-		if rawError != "" {
-			status.RawIngest = "ERROR"
-			status.Device = "ERROR"
-		} else if status.MMA2 == "RUNNING" {
-			status.RawIngest = "OK"
-			status.Device = "RUNNING"
-		}
-		if scheduler != nil {
-			for fc, timing := range scheduler.Timing() {
-				last := "Never"
-				if !timing.Last.IsZero() {
-					last = timing.Last.Format(time.RFC3339Nano)
-				}
-				status.FC[fmt.Sprintf("fc%d", fc)] = FCRuntimeStatus{Last: last, Next: timing.Next.Format(time.RFC3339Nano)}
-			}
-		}
-	} else {
+	if !a.ready {
 		status.RawIngest = "STOPPED"
 		if device.Enabled {
-			status.Device = "ERROR"
+			status.Device = "WAITING"
+		}
+		return status, nil
+	}
+	if !device.Enabled {
+		return status, nil
+	}
+	switch {
+	case rawError != "":
+		status.RawIngest = "ERROR"
+		status.Device = "ERROR"
+	case status.MMA2 != "RUNNING":
+		status.Device = "WAITING"
+	case a.ingestOK[name]:
+		status.RawIngest = "OK"
+		status.Device = "RUNNING"
+	default:
+		status.Device = "WAITING"
+	}
+	if scheduler != nil {
+		for fc, timing := range scheduler.Timing() {
+			last := "Never"
+			if !timing.Last.IsZero() {
+				last = timing.Last.Format(time.RFC3339Nano)
+			}
+			status.FC[fmt.Sprintf("fc%d", fc)] = FCRuntimeStatus{Last: last, Next: timing.Next.Format(time.RFC3339Nano)}
 		}
 	}
 	return status, nil

@@ -104,7 +104,7 @@ func TestBootRestoreSurfacesUnavailableMMA2WithoutRestart(t *testing.T) {
 	if status.MMA2 != "STOPPED" || status.RawIngest != "STOPPED" {
 		t.Fatalf("unavailable boot must surface truthful state: %+v", status)
 	}
-	if status.Device != "ERROR" {
-		t.Fatalf("enabled but unavailable device must report ERROR: %+v", status)
+	if status.Device != "WAITING" {
+		t.Fatalf("enabled but unavailable device must report WAITING: %+v", status)
 	}
 }

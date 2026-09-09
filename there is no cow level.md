@@ -8,154 +8,79 @@ Use it when the current JR/agent session or sandbox has become unreliable, confu
 
 Its job is not to finish the current task. Its job is to preserve valid work, create a trustworthy continuation point on `main`, and make the current sandbox disposable.
 
-> Rescue what is valid. Record exactly where work stopped. Push to main. Stop.
+> Preserve current truth. Record exactly where work stopped. Push to main. Stop.
+
+## Rescue Override
+
+Invocation immediately stops normal feature-development and debugging behavior.
+
+An unfinished, failing, malformed, or partially verified implementation is valid handoff state. Rescue does not require implementation to be fixed or tests to pass.
+
+Once invoked:
+
+```text
+STOP FEATURE DEVELOPMENT
+→ STOP REPAIR ATTEMPTS
+→ STOP TEST-FIX LOOPS
+→ STOP TOOL DIAGNOSIS
+→ CHECKPOINT CURRENT TRUTH
+```
+
+Do not delay rescue to make the task cleaner, passing, complete, or easier for the next sandbox. Do not rewrite broken tests, chase formatter/compiler/vet/lint/test failures, diagnose JR/OpenHands/editor/tool behavior, retry failed authoring approaches, invent workaround chains, or complete the current microtask first.
+
+Instead, record the exact unfinished or broken state, relevant failure, and next action in `handoff.md`, then checkpoint and push it.
 
 ## Authority
 
-`THERE IS NO COW LEVEL` is explicitly authorized to:
+`THERE IS NO COW LEVEL` may inspect current `HEAD`, working-tree state, Active Work, `handoff.md`, and changed files required to understand the checkpoint. It may update `handoff.md`, commit the intended checkpoint, and push it to `main`.
 
-- inspect the current working tree and current `HEAD`;
-- read the current Active Work authority and `handoff.md`;
-- inspect changed files needed to classify current sandbox work;
-- keep valid in-scope changes;
-- repair only minimal mechanical damage required to make rescued work coherent and verifiable;
-- discard clearly accidental, malformed, temporary, or failed-experiment artifacts created by the broken session;
-- update `handoff.md` with the exact continuation state;
-- commit the rescued repository state;
-- push the rescue commit to `main`.
+It does not gain authority to invent product behavior, widen implementation scope, promote planning, redesign implementation, or finish unrelated work.
 
-It does not gain authority to invent new product behavior, widen implementation scope, promote planning, or complete unrelated work.
+It must not edit `ICC/` directly. If ICC maintenance is genuinely required for the rescue, request only the smallest affected branch through `BLACK SHEEP WALL`.
 
-## Rescue Principle
+## Checkpoint Rule
 
-A rescue is a state-transfer operation, not a development sprint.
+Inspect only enough state to establish what must be preserved. Classify obvious temporary probes, scratch files, or known failed-workaround debris separately so they do not obscure the checkpoint. If intent is uncertain, do not investigate deeply; record the uncertainty in `handoff.md` and choose the option that loses the least recoverable work.
+
+Verification is observational, not corrective. Use existing evidence first. If a minimum verification command is needed and fails:
 
 ```text
-BROKEN SANDBOX
-→ IDENTIFY TRUSTWORTHY STATE
-→ SALVAGE VALID WORK
-→ VERIFY SALVAGED STATE
-→ WRITE CONTINUATION STATE
-→ COMMIT
-→ PUSH MAIN
-→ STOP
-→ OLD SANDBOX MAY BE DESTROYED
+RECORD FAILURE
+→ DO NOT FIX IT
+→ CONTINUE HANDOFF
 ```
 
-When uncertain whether a change is intentional and valid, preserve evidence in `handoff.md` and leave the questionable implementation out of the rescue commit rather than guessing.
-
-## Read Scope
-
-Read only what is required to rescue the current work:
-
-1. `AGENTS.md`
-2. `ICC/INDEX.md` and the smallest relevant ICC context
-3. `handoff.md`
-4. current file under `workflow/active_work/`
-5. current `git status`, staged/unstaged diff, and commits since the last known good state
-6. changed source/test/config files directly involved in the current work
-
-Do not perform a repository-wide audit.
-
-If ICC itself needs maintenance, invoke `BLACK SHEEP WALL` only for the affected semantic branch. THERE IS NO COW LEVEL must not edit `ICC/` directly.
-
-## Rescue Classification
-
-Classify every current sandbox change into one of these buckets:
-
-### KEEP
-
-Change is clearly part of authorized Active Work, coherent, and supported by repository state.
-
-### REPAIR
-
-Change is clearly intended and in scope but has small mechanical damage such as formatting, syntax, incomplete rename, or an obviously interrupted edit. Repair only enough to restore coherent rescued state.
-
-### DROP
-
-Change is clearly accidental or disposable, including:
-
-- temporary probes;
-- generated scratch files;
-- failed workaround artifacts;
-- malformed duplicate files;
-- debugging debris;
-- changes outside authorized scope introduced by the broken session.
-
-### UNCERTAIN
-
-Intent or correctness cannot be established cheaply and safely.
-
-Do not guess. Exclude it from the rescue commit when exclusion is safe, and record it in `handoff.md` as unresolved evidence for the next sandbox.
-
-## Anti-Rabbit-Hole Rule
-
-The global execution guardrail in `AGENTS.md` remains mandatory during rescue.
-
-Additionally:
-
-- do not investigate why JR, OpenHands, the shell, or an editing tool behaved badly unless that diagnosis is required to preserve repository state;
-- do not continue failed workaround chains;
-- do not redesign the current implementation during rescue;
-- do not create speculative replacement code merely to make tests green;
-- do not spend rescue time proving a tool bug.
-
-The goal is a trustworthy checkpoint, not an explanation of the failed sandbox.
-
-## Verification
-
-Verify the smallest meaningful surface for the rescued changes.
-
-Preferred order:
-
-```text
-FORMAT / STATIC CHECK IF APPLICABLE
-→ TARGETED TESTS FOR CHANGED AREA
-→ BROADER TEST ONLY WHEN CHEAP AND REQUIRED TO ESTABLISH SAFETY
-```
-
-Record failures honestly. A rescue may still be committed when unfinished Active Work is intentionally preserved, provided `handoff.md` clearly states what is incomplete or failing and the committed state is not misleading.
-
-Do not label failing or unverified work as complete.
+Do not rerun failing verification merely to obtain a passing rescue state. Never label failing or unverified work as complete.
 
 ## Handoff Update
 
-Before committing, rewrite `handoff.md` so a fresh sandbox can continue without reconstructing the broken session.
-
-It must establish, at minimum:
+Before committing, update `handoff.md` so a fresh sandbox can continue without reconstructing the broken session. Record:
 
 - current Active Work item;
-- what was successfully rescued;
 - exact implementation point reached;
-- verification performed and result;
+- state preserved;
+- known unfinished, malformed, failing, or unverified work;
+- verification already performed and result;
+- exact failing command/error when relevant;
 - unresolved or excluded changes that matter;
 - exact next action for the new sandbox;
-- any command/test needed to reproduce the current state;
-- explicit statement that the previous sandbox was rescued and must not be treated as authoritative beyond the rescue commit.
+- that the previous sandbox was rescued and is not authoritative beyond the rescue commit.
 
 Keep `handoff.md` as continuation state, not a transcript or postmortem.
 
 ## Commit and Push Rule
 
-After classification, minimal repair, verification, and handoff update:
-
 ```text
-REVIEW FINAL DIFF
-→ ENSURE ONLY RESCUED STATE IS INCLUDED
-→ COMMIT ALL INTENDED RESCUE CHANGES
+REVIEW CHECKPOINT DIFF
+→ ENSURE handoff.md TRUTHFULLY DESCRIBES IT
+→ COMMIT INTENDED CHECKPOINT STATE
 → PUSH TO main
 → CONFIRM REMOTE main CONTAINS THE RESCUE COMMIT
 ```
 
-Do not stop at a local commit.
-
-Do not leave intended rescue changes uncommitted after reporting success.
-
-If push to `main` fails, do not claim rescue completion. Report the exact failure and preserve the local commit SHA so the user can recover it.
+Do not require clean tests or completed implementation before committing the rescue checkpoint. Do not stop at a local commit. If push fails, do not claim rescue completion; report the exact failure and preserve the local commit SHA.
 
 ## Sandbox Destruction Boundary
-
-`THERE IS NO COW LEVEL` does not itself destroy an OpenHands/cloud sandbox unless the execution environment explicitly provides a safe sandbox-destruction capability.
 
 After the rescue commit is confirmed on remote `main`, output:
 
@@ -166,38 +91,23 @@ old sandbox: SAFE TO DESTROY
 new sandbox: CONTINUE FROM handoff.md
 ```
 
-Then stop all implementation work in the old sandbox.
+Then stop all implementation work in the old sandbox. `THERE IS NO COW LEVEL` does not itself destroy an external/cloud sandbox unless the environment explicitly provides that capability.
 
-The user may destroy the old sandbox. A fresh sandbox should pull `main`, read `AGENTS.md`, then follow `handoff.md` and the current Active Work authority.
+If rescue cannot safely reach `main`, stop mutating, preserve the best known local state, report status and exact blocker, and do not claim the sandbox is safe to destroy.
 
-## Failure Handling
-
-If rescue cannot safely reach `main`:
-
-```text
-STOP MUTATING
-→ PRESERVE BEST KNOWN LOCAL STATE
-→ REPORT git status
-→ REPORT LOCAL COMMIT SHA IF ONE EXISTS
-→ REPORT EXACT BLOCKER
-→ DO NOT CLAIM SAFE TO DESTROY
-```
-
-Never tell the user to destroy the sandbox until the rescue state is confirmed on remote `main`.
-
-## THERE IS NO COW LEVEL Command
+## Command
 
 ```text
 THERE IS NO COW LEVEL
-→ FREEZE FEATURE DEVELOPMENT
-→ READ AGENTS + CURRENT ICC ROUTE + ACTIVE WORK + HANDOFF
+→ FREEZE FEATURE DEVELOPMENT + DEBUGGING
+→ READ CURRENT ACTIVE WORK + HANDOFF + RELEVANT REPOSITORY STATE
 → INSPECT HEAD + STATUS + CURRENT DIFF
-→ CLASSIFY CHANGES: KEEP / REPAIR / DROP / UNCERTAIN
-→ SALVAGE ONLY AUTHORIZED TRUSTWORTHY WORK
-→ RUN MINIMUM MEANINGFUL VERIFICATION
-→ UPDATE handoff.md WITH EXACT CONTINUATION STATE
-→ REVIEW FINAL DIFF
-→ COMMIT RESCUE STATE
+→ IDENTIFY WHAT MUST BE PRESERVED
+→ DO NOT FIX FAILING IMPLEMENTATION OR TESTS
+→ RECORD UNFINISHED/BROKEN/UNVERIFIED STATE IN handoff.md
+→ RECORD EXACT FAILURE + NEXT ACTION WHEN RELEVANT
+→ REVIEW CHECKPOINT DIFF
+→ COMMIT CHECKPOINT STATE
 → PUSH TO main
 → CONFIRM REMOTE main HAS RESCUE COMMIT
 → REPORT SAFE TO DESTROY + NEW-SANDBOX CONTINUATION
@@ -208,19 +118,17 @@ THERE IS NO COW LEVEL
 
 ```text
 THERE IS NO COW LEVEL
-= SALVAGE
-+ HANDOFF
-+ COMMIT
-+ PUSH MAIN
-+ STOP
+= FREEZE + PRESERVE CURRENT TRUTH + HANDOFF + COMMIT + PUSH MAIN + STOP
 
 THERE IS NO COW LEVEL
 != FINISH FEATURE
-!= REPOSITORY AUDIT
+!= FIX TESTS FIRST
+!= MAKE BUILD PASS FIRST
 != TOOL-FAILURE INVESTIGATION
 != SPECULATIVE REWRITE
 != NEW SCOPE
-!= CLAIM SUCCESS BEFORE REMOTE CONFIRMATION
 ```
+
+An unfinished state is a valid handoff state.
 
 Never guess.

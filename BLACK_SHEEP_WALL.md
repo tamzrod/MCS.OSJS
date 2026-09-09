@@ -254,6 +254,8 @@ Staleness outside the selected branch is irrelevant to the invoking operation.
 
 A delegated refresh must not inventory or repair unrelated ICC branches.
 
+After a delegated refresh, BLACK SHEEP WALL returns control to the invoking directive. It does not continue, complete, promote, or reinterpret the caller's work.
+
 ## ICC State Model
 
 ICC represents:
@@ -306,6 +308,34 @@ BLACK SHEEP WALL is the only operation authorized to modify `ICC/`.
 
 Other operations may read ICC and may request a bounded refresh, but they must not create, edit, patch, regenerate, or commit ICC state themselves.
 
+## ICC Write Integrity
+
+BLACK SHEEP WALL inherits the `AGENTS.md` Execution Guardrail for every ICC write.
+
+An ICC refresh is not complete merely because a patch command returned.
+
+For each affected node:
+
+```text
+PATCH NODE
+→ RE-READ WRITTEN NODE
+→ VERIFY REQUIRED FACTS AGAINST THE INSPECTED SOURCE DELTA
+→ VERIFY ROUTING / SOURCE DEPENDENCIES IF CHANGED
+→ ONLY THEN ADVANCE BASELINE / OVERLAY STATE
+```
+
+If an ICC write is malformed, incomplete, or cannot be reliably verified:
+
+```text
+DO NOT ADVANCE BASELINE
+→ DO NOT MARK THE NODE CURRENT
+→ DO NOT PROPAGATE THE UNCERTAIN RESULT TO PARENTS
+→ FOLLOW AGENTS.md AUTHORING FAILURE LIMIT
+→ STOP AND REPORT IF THE LIMIT IS REACHED
+```
+
+Baseline and overlay metadata describe verified ICC state. They must never be advanced ahead of a successfully written and re-read context node.
+
 ## Boundary Rules
 
 BLACK SHEEP WALL cannot:
@@ -336,7 +366,8 @@ Verify only what the delta could have affected:
 3. propagation occurred only where summarized truth changed;
 4. structural changes are reflected in the index only when required;
 5. unrelated branches were untouched;
-6. baseline/overlay state represents the audited repository state.
+6. baseline/overlay state represents the audited repository state;
+7. every written affected node was re-read after the write before its state was marked current.
 
 ## BLACK SHEEP WALL Command
 
@@ -352,10 +383,12 @@ BLACK SHEEP WALL
 → CURRENT? RETURN MINIMUM VALID CONTEXT
 → STALE/MISSING? INSPECT CHANGED SOURCE ONLY
 → PATCH DEEPEST AFFECTED NODE
+→ RE-READ + VERIFY WRITTEN NODE
 → PROPAGATE ONLY ACTUAL SEMANTIC IMPACT
 → UPDATE INDEX ONLY IF ROUTING/STRUCTURE CHANGED
+→ ADVANCE BASELINE / OVERLAY ONLY AFTER VERIFIED WRITES
 → VERIFY AFFECTED CONTEXT
-→ RETURN
+→ RETURN TO CALLER OR STOP
 ```
 
 ## Design Invariants
@@ -373,3 +406,4 @@ BLACK SHEEP WALL
 11. Respect the invoking operation's semantic ceiling.
 12. Stop gathering as soon as sufficient context exists.
 13. ICC must remain cheaper to navigate than reading the repository directly.
+14. Baseline/overlay state may advance only after affected ICC writes are re-read and verified.

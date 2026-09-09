@@ -10,6 +10,12 @@ Its job is not to finish the current task. Its job is to preserve valid work, cr
 
 > Preserve current truth. Record exactly where work stopped. Push to main. Stop.
 
+## Invocation Boundary
+
+Reaching the `AGENTS.md` authoring/debugging stop condition may justify recommending THERE IS NO COW LEVEL, but it does not invoke this directive automatically.
+
+Rescue begins only when the user invokes this command.
+
 ## Rescue Override
 
 Invocation immediately stops normal feature-development and debugging behavior.
@@ -52,6 +58,20 @@ RECORD FAILURE
 
 Do not rerun failing verification merely to obtain a passing rescue state. Never label failing or unverified work as complete.
 
+## Invalid Prior Completion
+
+If current `HEAD` contains a prior completion or advancement commit but later repository-native verification proves that completion invalid:
+
+- do not silently reopen, re-promote, re-archive, or rewrite workflow history;
+- record the contradiction explicitly in `handoff.md`;
+- record the pushed commit SHA;
+- record the exact failing native verification command and failure;
+- record the current Active Work state exactly as it exists;
+- state that the prior completion claim is not validated by the failing gate;
+- identify the smallest workflow-repair action required in the next sandbox.
+
+Rescue preserves truth. It does not invent workflow authority to repair an already-invalid transition.
+
 ## Handoff Update
 
 Before committing, update `handoff.md` so a fresh sandbox can continue without reconstructing the broken session. Record:
@@ -70,13 +90,21 @@ Keep `handoff.md` as continuation state, not a transcript or postmortem.
 
 ## Commit and Push Rule
 
+Before the rescue commit:
+
 ```text
-REVIEW CHECKPOINT DIFF
-→ ENSURE handoff.md TRUTHFULLY DESCRIBES IT
+INSPECT WORKING TREE
+→ INSPECT UNTRACKED FILES
+→ REVIEW CHECKPOINT DIFF
+→ STAGE THE INTENDED CHECKPOINT EXPLICITLY
+→ VERIFY STAGED PATHS INCLUDE NEW / RENAMED / DELETED FILES THAT MUST BE PRESERVED
+→ ENSURE handoff.md TRUTHFULLY DESCRIBES THE STAGED CHECKPOINT
 → COMMIT INTENDED CHECKPOINT STATE
 → PUSH TO main
 → CONFIRM REMOTE main CONTAINS THE RESCUE COMMIT
 ```
+
+Do not rely on `git commit -am` to preserve newly created files.
 
 Do not require clean tests or completed implementation before committing the rescue checkpoint. Do not stop at a local commit. If push fails, do not claim rescue completion; report the exact failure and preserve the local commit SHA.
 
@@ -101,12 +129,13 @@ If rescue cannot safely reach `main`, stop mutating, preserve the best known loc
 THERE IS NO COW LEVEL
 → FREEZE FEATURE DEVELOPMENT + DEBUGGING
 → READ CURRENT ACTIVE WORK + HANDOFF + RELEVANT REPOSITORY STATE
-→ INSPECT HEAD + STATUS + CURRENT DIFF
+→ INSPECT HEAD + STATUS + CURRENT DIFF + UNTRACKED FILES
 → IDENTIFY WHAT MUST BE PRESERVED
 → DO NOT FIX FAILING IMPLEMENTATION OR TESTS
 → RECORD UNFINISHED/BROKEN/UNVERIFIED STATE IN handoff.md
+→ RECORD INVALID PRIOR COMPLETION IF A LATER NATIVE GATE DISPROVED IT
 → RECORD EXACT FAILURE + NEXT ACTION WHEN RELEVANT
-→ REVIEW CHECKPOINT DIFF
+→ STAGE + REVIEW THE INTENDED CHECKPOINT
 → COMMIT CHECKPOINT STATE
 → PUSH TO main
 → CONFIRM REMOTE main HAS RESCUE COMMIT
@@ -118,7 +147,7 @@ THERE IS NO COW LEVEL
 
 ```text
 THERE IS NO COW LEVEL
-= FREEZE + PRESERVE CURRENT TRUTH + HANDOFF + COMMIT + PUSH MAIN + STOP
+= EXPLICIT INVOCATION + FREEZE + PRESERVE CURRENT TRUTH + HANDOFF + COMMIT + PUSH MAIN + STOP
 
 THERE IS NO COW LEVEL
 != FINISH FEATURE
@@ -126,6 +155,8 @@ THERE IS NO COW LEVEL
 != MAKE BUILD PASS FIRST
 != TOOL-FAILURE INVESTIGATION
 != SPECULATIVE REWRITE
+!= SILENT WORKFLOW REPAIR
+!= IMPLICIT AUTO-RESCUE
 != NEW SCOPE
 ```
 

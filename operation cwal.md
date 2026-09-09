@@ -13,48 +13,51 @@ OPERATION CWAL
 → READ AGENTS.md
 → READ BLACK_SHEEP_WALL.md
 → READ ICC/INDEX.md FIRST
-→ READ handoff.md
-→ LOCATE CURRENT ACTIVE MICROTASK
+→ READ workflow/active_work/README.md
+→ LOCATE THE ONE TASK WITH Status: ACTIVE
+→ VERIFY handoff.md AGREES
 → SELECT ITS SEMANTIC BRANCH
 → USE ICC AS READ-ONLY CONTEXT
 → IF REQUIRED ICC CONTEXT IS STALE/MISSING: INVOKE BLACK SHEEP WALL FOR THAT BRANCH
-→ FOLLOW WORKFLOW
-→ IMPLEMENT
+→ IMPLEMENT ONLY ACTIVE
 → TEST
 → VERIFY ACCEPTANCE CRITERIA
-→ UPDATE EVIDENCE / ACTIVE STATE
+→ ARCHIVE COMPLETED ACTIVE TASK
+→ ADVANCE ONLY ITS EXPLICIT Next FROM QUEUED TO ACTIVE
 → UPDATE handoff.md
 → COMMIT
 → PUSH TO main
 → VERIFY origin/main CONTAINS THE COMPLETION COMMIT
-→ IF ANOTHER ALREADY-AUTHORIZED ACTIVE MICROTASK EXISTS: CONTINUE AUTOMATICALLY
+→ CONTINUE IF EXACTLY ONE ACTIVE TASK EXISTS
 → OTHERWISE STOP
 → NEVER GUESS
 ```
 
-## 1. Locate Authority First
+## 1. Select Current Work Deterministically
 
-Read `handoff.md` and locate the current Active Work microtask.
+`workflow/active_work/` is the authority for current-task selection.
 
-For execution state, the authoritative source is:
+Apply exactly this rule:
 
 ```text
-workflow/active_work/
+EXACTLY ONE Status: ACTIVE = execute it
+ZERO Status: ACTIVE        = stop; no executable current task
+TWO OR MORE ACTIVE         = stop; invalid Active Work state
 ```
 
-`handoff.md` is the persisted execution handoff and must agree with Active Work.
+Never infer current work from filename order, task number, dependency sorting, `handoff.md` prose, Planning, or repository history.
 
-Do not read Planning or future work to choose execution targets.
+`Status: QUEUED` means already human-authorized and waiting its explicit turn. It does not require another human approval when its predecessor completes.
 
-If authority cannot be located or conflicts cannot be resolved from repository rules, stop and report the conflict.
+After locating the one ACTIVE task, read `handoff.md` only to verify continuation state. If handoff disagrees with Active Work, stop and report the conflict. Active Work remains the execution authority; CWAL must not silently repair or reinterpret the disagreement.
 
-Human authorization happens when work is promoted into Active Work. Once multiple microtasks are already authorized there, CWAL does not require another human approval between them.
+Do not inspect Planning or future work to choose execution targets.
 
 ## 2. ICC Is Read-Only to CWAL
 
 CWAL may read ICC as compressed repository context, but it must never modify ICC itself.
 
-After locating the active microtask, select only the semantic branch required by that task. That branch becomes the navigation ceiling.
+After locating the ACTIVE microtask, select only the semantic branch required by that task. That branch becomes the navigation ceiling.
 
 ```text
 ACTIVE MICROTASK
@@ -96,95 +99,63 @@ ACTIVE MICROTASK
 → EXECUTE
 ```
 
-Not allowed:
+CWAL may cross into another semantic branch only when the ACTIVE microtask explicitly requires that boundary for its stated outcome or verification.
 
-```text
-ACTIVE MICROTASK
-→ ICC INDEX
-→ CHECK EVERY STALE CONTEXT
-→ REPAIR GOVERNANCE
-→ REPAIR LICENSING
-→ REPAIR NETWORKING
-→ REPAIR PLANNING
-→ RETURN TO TASK
-```
+Do not scan unrelated ICC branches or repair unrelated repository state.
 
-CWAL may cross into another semantic branch only when the active microtask itself explicitly requires that boundary for its stated outcome or verification.
+## 5. Execute Only ACTIVE
 
-## 5. Execute Only Current Authorized Work
+Investigate, implement, test, and document only what the one ACTIVE microtask authorizes.
 
-Investigate, implement, test, and document only what the current active microtask authorizes.
-
-Do not promote work, invent work, expand scope, or silently resolve architectural questions.
-
-When Active Work contains ordered microtasks, do not preload implementation detail for later microtasks unless that detail is an explicit dependency of the current one.
+Do not execute QUEUED tasks early. Do not promote work from Planning, invent work, expand scope, or silently resolve architectural questions.
 
 Repository source files are opened only when synchronized ICC context inside the selected branch is insufficient for implementation or when changed source inside that branch requires direct inspection.
 
-## 6. Microtask Completion Boundary
+## 6. Deterministic Completion and Advancement
 
-A microtask is not complete merely because the code works locally.
+A microtask is complete only after implementation, tests, acceptance verification, required evidence, workflow-state update, commit, push, and `origin/main` verification.
 
-A microtask is complete only when all of the following have happened:
+After the ACTIVE task passes its acceptance criteria:
 
 ```text
-IMPLEMENTATION COMPLETE
-→ TEST COMPLETE
-→ ACCEPTANCE CRITERIA VERIFIED
-→ REQUIRED EVIDENCE RECORDED
-→ ACTIVE WORK STATE UPDATED AS REQUIRED
-→ handoff.md UPDATED
-→ COMPLETION STATE COMMITTED
-→ COMMIT PUSHED TO main
-→ origin/main VERIFIED TO CONTAIN THAT COMMIT
+READ ACTIVE TASK'S Next
+→ ARCHIVE COMPLETED ACTIVE TASK
+→ Next: none ? NO SUCCESSOR
+→ Next: <ID> ? VERIFY THAT EXACT FILE IS QUEUED
+→ VERIFY SUCCESSOR'S Previous MATCHES COMPLETED TASK
+→ CHANGE ONLY THAT SUCCESSOR TO ACTIVE
+→ UPDATE handoff.md TO MATCH
+→ COMMIT COMPLETION + ADVANCEMENT STATE
+→ PUSH main
+→ VERIFY origin/main
 ```
+
+CWAL must not search for an eligible successor, sort QUEUED tasks, or solve a dependency graph.
+
+If `Next` names a missing task, a non-QUEUED task, or a task whose `Previous` does not name the completed task, stop and report invalid Active Work state.
+
+If `Next: none`, archive the completed task, update handoff to no current task, commit/push/verify, then stop.
 
 The push to `main` is the checkpoint boundary between microtasks.
 
-Never begin the next microtask before the completed microtask and its handoff state are successfully pushed to `main` and verified there.
-
 ## 7. Continuous Active-Work Loop
 
-After the push is verified, inspect only the already-authorized Active Work state to determine whether another microtask is next.
+After the completion/advancement push is verified:
 
 ```text
-MICROTASK COMPLETE
-        ↓
-UPDATE handoff.md
-        ↓
-COMMIT
-        ↓
-PUSH main
-        ↓
-VERIFY origin/main
-        ↓
-NEXT ALREADY-AUTHORIZED ACTIVE MICROTASK?
+COUNT Status: ACTIVE
         │
-        ├── YES
-        │    ↓
-        │  SELECT ITS SEMANTIC BRANCH
-        │    ↓
-        │  READ ICC AS READ-ONLY CONTEXT
-        │    ↓
-        │  IF STALE/MISSING: DELEGATE THAT BRANCH TO BLACK SHEEP WALL
-        │    ↓
-        │  IMPLEMENT → TEST → VERIFY
-        │    ↓
-        │  UPDATE handoff → COMMIT → PUSH → VERIFY
-        │    ↓
-        │  LOOP
-        │
-        └── NO
-             ↓
-            STOP
+        ├── 1 → execute that ACTIVE task
+        ├── 0 → stop
+        └── 2+ → stop: invalid Active Work state
 ```
 
-Do not stop between already-authorized Active Work microtasks merely to request human authorization again.
+Do not request new human authorization for a task that was already `QUEUED` and became `ACTIVE` through the explicit predecessor/Next transition.
 
-Do not inspect Planning to find additional work when Active Work becomes empty.
+Do not inspect Planning when Active Work drains.
 
 ## 8. Never Guess
 
-If required authority, selected-branch context, dependencies, runtime evidence, push verification, or repository state is missing, stop and report the missing authority or dependency rather than inferring it.
+If required authority, task-state consistency, predecessor/successor linkage, selected-branch context, dependencies, runtime evidence, push verification, or repository state is missing, stop and report it rather than inferring it.
 
-If a push fails, `origin/main` cannot be verified, or the completion state is not safely persisted, do not advance to the next microtask.
+If a push fails, `origin/main` cannot be verified, or completion state is not safely persisted, do not advance execution.

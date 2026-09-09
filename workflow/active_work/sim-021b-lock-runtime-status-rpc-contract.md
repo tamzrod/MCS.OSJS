@@ -1,6 +1,8 @@
 # SIM-021B — Lock the Runtime Status RPC Contract
 
-Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
+Status: QUEUED
+Previous: SIM-021A
+Next: SIM-021C
 
 ## Primary outcome
 

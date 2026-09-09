@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const {createStatusPoller} = require('./runtime-status-poller');
+const {createStatusPoller, createRuntimeMessageController} = require('./runtime-status-poller');
 
 const deferred = () => {
   let resolve;
@@ -62,6 +62,20 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.strictEqual(timers.size, 0, 'stop must cancel the refresh loop');
   poller.refresh();
   assert.strictEqual(calls.length, 3, 'stopped poller must not issue requests');
+
+  const messages = [];
+  const controller = createRuntimeMessageController({publish: (message, error) => messages.push({message, error})});
+  const ingestError = {device_status: 'ERROR', raw_ingest_error: 'Raw Ingest rejected frame'};
+  controller.status(ingestError);
+  controller.status(ingestError);
+  assert.deepStrictEqual(messages, [{message: 'Simulator error: Raw Ingest rejected frame', error: true}], 'identical polling errors must be deduplicated');
+  controller.unavailable(new Error('relay offline'));
+  controller.unavailable(new Error('relay offline'));
+  assert.strictEqual(messages.length, 2, 'identical unavailable results must be deduplicated');
+  controller.status({device_status: 'RUNNING'});
+  controller.status({device_status: 'RUNNING'});
+  assert.deepStrictEqual(messages[2], {message: 'Simulator runtime status recovered.', error: false});
+  assert.strictEqual(messages.length, 3, 'steady running must not add bottom-bar messages');
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

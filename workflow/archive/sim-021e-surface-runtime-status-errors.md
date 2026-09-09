@@ -1,6 +1,6 @@
 # SIM-021E — Surface Runtime Status Errors Without Polling Noise
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — runtime diagnostics, deduplication, and recovery verified.
 Previous: SIM-021D
 Next: none
 
@@ -34,6 +34,14 @@ Use the existing bottom `.sim-status` message area to explain runtime-status fai
 ## Verification
 
 Use a stubbed/erroring status response to verify message deduplication and recovery, then run `node --check` and the ModbusSimulator/local-package build.
+
+## Completion evidence
+
+- Simulator `ERROR` publishes the returned Raw Ingest diagnostic in the existing bottom bar; relay/runtime request failure publishes a truthful unavailable message and clears the compact row's stale data.
+- A runtime-message controller keys effective conditions so identical one-second poll results do not rewrite the message.
+- Recovery publishes one concise message only when a runtime error was visible; steady `RUNNING` remains represented solely by the compact row.
+- Save & Apply, Discard, selection, and validation continue to publish through the existing transient message path.
+- Stubbed deduplication/recovery tests, JavaScript syntax checks, local-package/full container builds, and final live browser inspection pass.
 
 ## Dependencies
 

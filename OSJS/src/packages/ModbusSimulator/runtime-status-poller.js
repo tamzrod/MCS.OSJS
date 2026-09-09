@@ -48,4 +48,41 @@ const createStatusPoller = ({requestStatus, onStatus, onUnavailable, interval = 
   };
 };
 
-module.exports = {createStatusPoller};
+const createRuntimeMessageController = ({publish}) => {
+  let condition = null;
+  let visible = false;
+
+  const update = (next, message) => {
+    if (next === condition) return;
+    const recovering = condition !== null && next === null;
+    condition = next;
+    if (next !== null) {
+      publish(message, true);
+      visible = true;
+    } else if (recovering && visible) {
+      publish('Simulator runtime status recovered.', false);
+      visible = false;
+    }
+  };
+
+  return {
+    operationMessage: () => {
+      condition = null;
+      visible = false;
+    },
+    status: status => {
+      if (status && status.device_status === 'ERROR') {
+        const detail = status.raw_ingest_error || 'No diagnostic detail was returned.';
+        update(`simulator:${detail}`, `Simulator error: ${detail}`);
+      } else {
+        update(null, '');
+      }
+    },
+    unavailable: error => {
+      const detail = error && (error.message || String(error)) || 'Unknown runtime error.';
+      update(`unavailable:${detail}`, `Simulator status unavailable: ${detail}`);
+    }
+  };
+};
+
+module.exports = {createStatusPoller, createRuntimeMessageController};

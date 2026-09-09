@@ -2,13 +2,13 @@
 
 ## Current
 
-ACTIVE: SIM-021E — Surface Runtime Status Errors
+No current ACTIVE task.
 
 ## Authorized Sequence
 
 SIM-021A → SIM-021B → SIM-021C → SIM-021D → SIM-021E
 
-SIM-021A through SIM-021D are completed and archived. SIM-021E is `ACTIVE` and already human-authorized.
+SIM-021A through SIM-021E are completed and archived. The authorized sequence is exhausted.
 
 ## Continuation Rule
 

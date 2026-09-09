@@ -1,7 +1,7 @@
 import './index.scss';
 import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
-const {createStatusPoller} = require('./runtime-status-poller');
+const {createStatusPoller, createRuntimeMessageController} = require('./runtime-status-poller');
 
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
@@ -118,7 +118,14 @@ const register = (core, args, options, metadata) => {
     else entry.reject(new Error(response.error && response.error.message || 'Simulator runtime request failed.'));
   });
   const selectedDevice = () => state.selected === null ? null : state.document.devices[state.selected];
-  const setMessage = (message, error = false) => Object.assign(state, {message, error});
+  let runtimeMessages;
+  const setMessage = (message, error = false) => {
+    Object.assign(state, {message, error});
+    if (runtimeMessages) runtimeMessages.operationMessage();
+  };
+  runtimeMessages = createRuntimeMessageController({
+    publish: (message, error) => Object.assign(state, {message, error})
+  });
   const statusPoller = createStatusPoller({
     requestStatus: name => runtimeCall('status', {name}).then(result => result.status),
     onStatus: (name, status) => {
@@ -126,6 +133,7 @@ const register = (core, args, options, metadata) => {
       if (!selected || selected.name !== name) return;
       state.runtimeStatus = status;
       state.runtimeStatusError = null;
+      runtimeMessages.status(status);
       render();
     },
     onUnavailable: (name, error) => {
@@ -133,6 +141,7 @@ const register = (core, args, options, metadata) => {
       if (!selected || selected.name !== name) return;
       state.runtimeStatus = null;
       state.runtimeStatusError = error.message || String(error);
+      runtimeMessages.unavailable(error);
       render();
     }
   });

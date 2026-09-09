@@ -4,6 +4,8 @@
 
 Operation CWAL is the mandatory execution-discipline mode for MCS.OSJS. It prevents context drift and unauthorized work while allowing already-authorized Active Work to proceed continuously.
 
+**ICC ownership rule:** Operation CWAL never creates, edits, refreshes, patches, regenerates, or commits ICC state. `BLACK_SHEEP_WALL.md` is the only operation authorized to update `ICC/`.
+
 When the user says **Operation CWAL**, immediately follow:
 
 ```text
@@ -14,8 +16,8 @@ OPERATION CWAL
 → READ handoff.md
 → LOCATE CURRENT ACTIVE MICROTASK
 → SELECT ITS SEMANTIC BRANCH
-→ SET THAT BRANCH AS THE NAVIGATION CEILING
-→ BLACK SHEEP WALL: VALIDATE / SURGICALLY REFRESH THAT BRANCH ONLY IF NEEDED
+→ USE ICC AS READ-ONLY CONTEXT
+→ IF REQUIRED ICC CONTEXT IS STALE/MISSING: INVOKE BLACK SHEEP WALL FOR THAT BRANCH
 → FOLLOW WORKFLOW
 → IMPLEMENT
 → TEST
@@ -25,7 +27,6 @@ OPERATION CWAL
 → COMMIT
 → PUSH TO main
 → VERIFY origin/main CONTAINS THE COMPLETION COMMIT
-→ BLACK SHEEP WALL: SURGICALLY ABSORB ONLY THE JUST-PUSHED DELTA INTO ICC
 → IF ANOTHER ALREADY-AUTHORIZED ACTIVE MICROTASK EXISTS: CONTINUE AUTOMATICALLY
 → OTHERWISE STOP
 → NEVER GUESS
@@ -49,66 +50,40 @@ If authority cannot be located or conflicts cannot be resolved from repository r
 
 Human authorization happens when work is promoted into Active Work. Once multiple microtasks are already authorized there, CWAL does not require another human approval between them.
 
-## 2. ICC-First Does Not Mean ICC-Wide
+## 2. ICC Is Read-Only to CWAL
 
-CWAL uses ICC as compressed repository context. It must not validate, refresh, or browse the whole ICC registry.
+CWAL may read ICC as compressed repository context, but it must never modify ICC itself.
 
 After locating the active microtask, select only the semantic branch required by that task. That branch becomes the navigation ceiling.
 
 ```text
 ACTIVE MICROTASK
 → SELECT ITS ICC BRANCH
-→ USE CURRENT CONTEXT
+→ READ CURRENT CONTEXT
 → NEED MORE DETAIL? ZOOM IN INSIDE THAT BRANCH
-→ STALE/MISSING? DELEGATE BLACK SHEEP WALL INSIDE THAT BRANCH ONLY
+→ STALE/MISSING? INVOKE BLACK SHEEP WALL FOR THAT BRANCH
+→ RESUME CWAL USING THE RESULT
 ```
 
-If current HEAD differs from the ICC baseline, inspect the delta only far enough to determine whether dependencies of the selected branch changed.
-
-If HEAD is unchanged, inspect only changed uncommitted dependencies inside the selected branch.
+CWAL must not implement BLACK SHEEP WALL's delta, refresh, patch, baseline, overlay, or regeneration algorithm itself.
 
 A stale ICC context outside the selected branch is irrelevant to the current microtask.
 
-## 3. BLACK SHEEP WALL Injection
+## 3. BLACK SHEEP WALL Delegation
 
-BLACK SHEEP WALL is injected into CWAL at two controlled points.
+BLACK SHEEP WALL is the sole writer and maintainer of ICC.
 
-### 3.1 Before Each Microtask
-
-Before implementation, validate the selected semantic branch.
+CWAL may invoke BLACK SHEEP WALL only when the selected task requires ICC context that is stale or missing. The selected semantic branch is the delegation boundary.
 
 ```text
-SELECT ACTIVE MICROTASK BRANCH
-→ CHECK ICC STATE FOR THAT BRANCH
-→ CURRENT? USE IT
-→ STALE/MISSING? INSPECT ONLY CHANGED DEPENDENCIES IN THAT BRANCH
-→ PATCH ONLY THE AFFECTED ICC NODE(S)
-→ EXECUTE
+CWAL NEEDS CONTEXT
+→ ICC CURRENT? USE READ-ONLY
+→ ICC STALE/MISSING? DELEGATE SELECTED BRANCH TO BLACK SHEEP WALL
+→ BLACK SHEEP WALL OWNS ANY ICC CHANGE
+→ RETURN TO CWAL
 ```
 
-This delegated refresh must never perform a full repository audit.
-
-### 3.2 After Each Successful Push to main
-
-After the completed microtask has been pushed and `origin/main` verified, surgically update ICC from exactly that pushed delta.
-
-```text
-PREVIOUS ICC BASELINE
-        ↓
-NEW VERIFIED main
-        ↓
-DIFF ONLY THAT RANGE
-        ↓
-INSPECT ONLY CHANGED / NEW / DELETED / RENAMED PATHS
-        ↓
-UPDATE DEEPEST AFFECTED ICC NODE(S)
-        ↓
-PROPAGATE UPWARD ONLY IF PARENT SUMMARY TRUTH CHANGED
-        ↓
-UPDATE ICC BASELINE / STATE
-```
-
-The post-push BLACK SHEEP WALL step must not reopen unchanged files, unaffected ICC nodes, unrelated siblings, or the repository as a whole.
+CWAL does not perform a post-task or post-push ICC update. A successful implementation push is a complete CWAL checkpoint without any ICC mutation afterward.
 
 ## 4. Semantic Navigation Boundary
 
@@ -162,7 +137,6 @@ IMPLEMENTATION COMPLETE
 → COMPLETION STATE COMMITTED
 → COMMIT PUSHED TO main
 → origin/main VERIFIED TO CONTAIN THAT COMMIT
-→ ICC SURGICALLY UPDATED FROM THAT PUSHED DELTA
 ```
 
 The push to `main` is the checkpoint boundary between microtasks.
@@ -171,7 +145,7 @@ Never begin the next microtask before the completed microtask and its handoff st
 
 ## 7. Continuous Active-Work Loop
 
-After the post-push ICC update, inspect only the already-authorized Active Work state to determine whether another microtask is next.
+After the push is verified, inspect only the already-authorized Active Work state to determine whether another microtask is next.
 
 ```text
 MICROTASK COMPLETE
@@ -184,19 +158,19 @@ PUSH main
         ↓
 VERIFY origin/main
         ↓
-SURGICAL BLACK SHEEP WALL ICC UPDATE
-        ↓
 NEXT ALREADY-AUTHORIZED ACTIVE MICROTASK?
         │
         ├── YES
         │    ↓
         │  SELECT ITS SEMANTIC BRANCH
         │    ↓
-        │  PRE-TASK BLACK SHEEP WALL BRANCH VALIDATION
+        │  READ ICC AS READ-ONLY CONTEXT
+        │    ↓
+        │  IF STALE/MISSING: DELEGATE THAT BRANCH TO BLACK SHEEP WALL
         │    ↓
         │  IMPLEMENT → TEST → VERIFY
         │    ↓
-        │  UPDATE handoff → COMMIT → PUSH → VERIFY → ICC PATCH
+        │  UPDATE handoff → COMMIT → PUSH → VERIFY
         │    ↓
         │  LOOP
         │

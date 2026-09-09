@@ -63,6 +63,47 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   poller.refresh();
   assert.strictEqual(calls.length, 3, 'stopped poller must not issue requests');
 
+  const paused = [];
+  const pausedPending = [];
+  const pausedStatuses = [];
+  const pausedFailures = [];
+  const pausedTimers = new Map();
+  let pausedTimerSequence = 0;
+  const pausePoller = createStatusPoller({
+    requestStatus: name => {
+      paused.push(name);
+      const next = deferred();
+      pausedPending.push(next);
+      return next.promise;
+    },
+    onStatus: (name, status) => pausedStatuses.push({name, status}),
+    onUnavailable: (name, error) => pausedFailures.push({name, error: error.message}),
+    setTimer: (callback, delay) => {
+      const id = ++pausedTimerSequence;
+      pausedTimers.set(id, {callback, delay});
+      return id;
+    },
+    clearTimer: id => pausedTimers.delete(id)
+  });
+
+  pausePoller.select('applied-device');
+  assert.deepStrictEqual(paused, ['applied-device'], 'apply start must snapshot the polled identity');
+  pausePoller.select(null);   // Save & Apply pause
+  const pausedRequest = paused.length;
+  assert.strictEqual(pausedTimers.size, 0, 'pause must cancel the pending cadence');
+  pausedPending[0].resolve({device_status: 'RUNNING'});
+  await flush();
+  assert.deepStrictEqual(pausedStatuses, [], 'in-flight response racingther apply transition must be dropped');
+  assert.deepStrictEqual(pausedFailures, [], 'apply transition must not fabricate an unavailable result');
+  assert.strictEqual(paused.length, pausedRequest, 'no status request may start while applying');
+  pausePoller.select('applied-device', true);
+  assert.strictEqual(paused.length, pausedRequest + 1, 'successful apply resume must force one immediate refresh');
+  pausedPending[pausedPending.length - 1].resolve({device_status: 'WAITING'});
+  await flush();
+  assert.deepStrictEqual(pausedStatuses, [{name: 'applied-device', status: {device_status: 'WAITING'}}], 'resumed poll must reflect the applied device');
+  assert.strictEqual(pausedTimers.size, 1, 'pause with resume must restore the refresh cadence');
+  pausePoller.stop();
+
   const messages = [];
   const controller = createRuntimeMessageController({publish: (message, error) => messages.push({message, error})});
   const ingestError = {device_status: 'ERROR', raw_ingest_error: 'Raw Ingest rejected frame'};

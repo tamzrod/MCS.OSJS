@@ -1,6 +1,6 @@
 # SIM-023B — Pause Status Polling During Save & Apply
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-09 — polling paused via select(null,) during Save & Apply; in-flight responses dropped; forced refresh resumes after the apply settles.
 Previous: SIM-023A
 Next: SIM-023C
 

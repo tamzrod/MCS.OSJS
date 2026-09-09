@@ -1,6 +1,6 @@
 # SIM-023C — Render Neutral Status for Unapplied Selection
 
-Status: QUEUED
+Status: ACTIVE
 Previous: SIM-023B
 
 ## Primary outcome

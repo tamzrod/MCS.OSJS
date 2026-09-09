@@ -153,6 +153,7 @@ const register = (core, args, options, metadata) => {
     }
   });
   const pollSelectedStatus = (force = false) => {
+    if (state.saving) return;
     statusPoller.select(appliedPollTarget(), force);
   };
 
@@ -273,6 +274,7 @@ const register = (core, args, options, metadata) => {
     const error = state.document.devices.map(validateDevice).find(Boolean);
     if (error) { setMessage(error, true); render(); return; }
     state.saving = true;
+    statusPoller.select(null);  // pause polling: drops in-flight responses (generation bump) and stops new requests while the apply transaction runs.
     setMessage('Saving simulator definitions...');
     render();
     const edited = clone(normalizeDocument(state.document));
@@ -287,12 +289,12 @@ const register = (core, args, options, metadata) => {
       state.runtimeStatus = null;
       state.runtimeStatusError = null;
       patchStatusUI();
-      pollSelectedStatus(true);
     } catch (error) {
       setMessage(`Save & Apply failed: ${error.message || error}`, true);
     } finally {
       state.saving = false;
       render();
+      pollSelectedStatus(true);
     }
   };
 

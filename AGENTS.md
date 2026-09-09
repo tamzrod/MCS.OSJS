@@ -37,17 +37,34 @@ READ ICC/INDEX.md FIRST
 → VERIFY
 ```
 
+## Authoring Failure Circuit Breaker
+
+When an edit or generated source is malformed:
+
+1. Read the actual affected file and exact formatter/compiler error.
+2. Fix only the smallest affected source region.
+3. Run the smallest authoritative formatter/compiler/test.
+4. One corrective retry is allowed.
+
+If the second authoring attempt is still malformed: **STOP**.
+
+Do not continue implementation, create repair-script chains, perform broad regex cleanup, repeatedly switch authoring transports, or investigate encoding/serialization/shell/editor/tool corruption.
+
+Tool or transport corruption may be claimed only when a minimal reproducible probe independent of the affected implementation file demonstrates the same mutation. Otherwise treat malformed output as an authoring failure.
+
+After STOP, preserve repository state and report the exact failing file, observed error, attempted corrections, and verification result.
+
+## No Broad Source Repair Rule
+
+Never repair malformed authored source with broad substitutions such as punctuation collapsing, Unicode stripping, global regex normalization, or repository-wide cleanup unless the authorized task explicitly requires that transformation and every changed occurrence is independently verified.
+
+Fix exact malformed statements instead.
+
 ## Execution Guardrail
 
-When an edit, generated file, or command fails because of malformed output or syntax:
-
-- Inspect the actual written file/output before forming a theory.
-- Retry the same authoring approach at most once.
-- After two failures, stop workaround experimentation and switch to a deterministic edit/patch method.
-- Do not invent transport, parser, shell, or tool-corruption explanations without reproducible evidence.
-- Do not build chains of encoding, marker, escaping, or self-modifying workarounds for a simple edit.
-- After the deterministic edit, run the smallest relevant formatter/compiler/test.
-- If it still fails, stop and report the exact observed failure and repository state; do not continue an open-ended debugging loop.
+- Inspect actual written file/output before forming a theory.
+- Never invent transport, parser, shell, editor, encoding, or tool-corruption explanations without reproducible independent evidence.
+- Do not build chains of encoding, marker, escaping, base64, heredoc, repair-script, or self-modifying workarounds for a simple edit.
 - Verification claims must name the actual command/check observed and its result. Never upgrade a substitute check into an authoritative gate by inference.
 
 ## Verification Truth Rule

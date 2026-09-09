@@ -48,6 +48,38 @@ When an edit, generated file, or command fails because of malformed output or sy
 - Do not build chains of encoding, marker, escaping, or self-modifying workarounds for a simple edit.
 - After the deterministic edit, run the smallest relevant formatter/compiler/test.
 - If it still fails, stop and report the exact observed failure and repository state; do not continue an open-ended debugging loop.
+- Verification claims must name the actual command/check observed and its result. Never upgrade a substitute check into an authoritative gate by inference.
+
+## Verification Truth Rule
+
+A verification result proves only what that exact check establishes.
+
+- Repository-native or task-defined verification outranks generic substitute checks.
+- Never call `node --check`, lint, unit tests, raw-byte inspection, a standalone parser, or another approximation equivalent to a package/build/runtime gate unless repository authority explicitly defines it that way.
+- A higher-fidelity failed gate invalidates any earlier claim that the affected surface was verified.
+- If required verification cannot run in the current environment, report it as unavailable. Do not convert `cannot verify` into `verified enough`.
+
+## Completion Integrity Rule
+
+No directive may mark implementation complete, archive it, advance a successor, or describe it as verified unless that directive's required completion gate has actually passed.
+
+A checkpoint may preserve incomplete or failing work only through a directive that explicitly permits incomplete checkpoints.
+
+## Directive Composition Rule
+
+A StarCraft directive ends at its own RETURN / STOP boundary.
+
+Do not invoke another StarCraft directive merely because the first directive finished. Cross-directive invocation is allowed only when:
+
+- the user explicitly invokes the other directive; or
+- the active directive explicitly delegates to it.
+
+Current delegation:
+
+- `OPERATION CWAL` → `BLACK SHEEP WALL` only for bounded stale/missing ICC context.
+- `THERE IS NO COW LEVEL` → `BLACK SHEEP WALL` only when rescue genuinely requires ICC maintenance.
+- `THE GATHERING` → none.
+- `BLACK SHEEP WALL` → return to caller.
 
 ## Authority
 

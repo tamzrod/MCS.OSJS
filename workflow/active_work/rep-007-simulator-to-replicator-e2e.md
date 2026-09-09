@@ -1,6 +1,8 @@
 # REP-007 — Simulator-to-Replicator End-to-End Verification
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: QUEUED
+Previous: REP-006
+Next: none
 
 ## Primary Outcome
 

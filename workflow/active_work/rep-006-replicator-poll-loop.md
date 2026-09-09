@@ -1,6 +1,8 @@
 # REP-006 — Replicator Poll Loop
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: QUEUED
+Previous: REP-005
+Next: REP-007
 
 ## Primary Outcome
 

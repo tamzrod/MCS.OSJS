@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit:bee6303
+Baseline Commit: 9cca31c
 Working Tree: clean
 Audited Uncommitted Overlay: none.
 
-Committed delta: SIM-021A now has its truthful runtime-state implementation and focused semantic tests in repository source; it remains the one ACTIVE task pending CWAL verification and archival. SIM-021B through SIM-021E remain QUEUED.
+Committed delta: REP-001 through REP-007 were added as decomposed Replicator planning microtasks and remain unpromoted at this baseline.
 
-Refreshed only the Active Work/simulator-status branch at `bee6303`. Unrelated sibling registry rows are preserved.
+Refreshed only the planning-workflow branch at `9cca31c`. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |
@@ -31,7 +31,7 @@ Refreshed only the Active Work/simulator-status branch at `bee6303`. Unrelated s
 | `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
 | `context/donor-licensing.md` | L0-project | — | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
 | `context/network-exposure.md` | L0-project | — | `docs/NETWORK_EXPOSURE.md`, `deploy/docker-compose.yml`, `OSJS/Dockerfile`, `OSJS/src/server/config.js` |
-| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/Brainstorm/modbus-simulator-status-display.md` |
+| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/Brainstorm/modbus-simulator-status-display.md`, `planning/microtask/rep-001-share-mma2-reservation-composer.md` through `planning/microtask/rep-007-simulator-to-replicator-e2e.md` |
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md`, `planning/Brainstorm/modbus-simulator-status-display.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
 | `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `workflow/archive/*`, `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `OSJS/src/packages/ModbusSimulator/*` |

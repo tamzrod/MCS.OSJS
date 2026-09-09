@@ -1,6 +1,8 @@
 # REP-005 — Single-Range Replication Cycle
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: QUEUED
+Previous: REP-004
+Next: REP-006
 
 ## Primary Outcome
 

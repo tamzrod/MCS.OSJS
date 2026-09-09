@@ -1,8 +1,8 @@
 # Planning Workflow
 
-Baseline commit: a17191c; working tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human, outside this branch.
-Audited Overlay: handoff.md; five sim-021 planning microtasks promoted out of planning into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
-Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md, planning/Brainstorm/modbus-simulator-status-display.md
+Baseline commit: 9cca31c; working tree: clean.
+Audited Overlay: none.
+Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md, planning/Brainstorm/modbus-simulator-status-display.md, planning/microtask/rep-001-share-mma2-reservation-composer.md through planning/microtask/rep-007-simulator-to-replicator-e2e.md
 Parent: L0-project
 Zoom In: brainstorm-topics
 Zoom Out: L0-project
@@ -32,3 +32,4 @@ Human-owned exploration/framing/alternatives/questions/candidates. Not execution
 - OS.js Modbus Simulator brainstorm (approved simulator UI, two parameter domains, shared MMA2 config boundary, save/apply routing, runtime status( — source of the SIM-001…SIM-020 archived program. See brainstorm-topics for content summary.
 
 - Modbus Simulator status display brainstorm (**PROMOTED 2026-09-08**) — human-authorized SIM-021A..SIM-021E moved into `workflow/active_work/`; SIM-021D fixes placement (one compact row below the Device Definition heading;. See brainstorm-topics for content summary. Non-authoritativebeyond what the promoted five prescribe.
+- Replicator milestone is decomposed into seven PLANNING microtasks: shared MMA2 composer, shared Raw Ingest client, Replicator config, Modbus source reader, one replication cycle, poll loop, and Simulator-to-Replicator end-to-end proof. They remain non-executable until human promotion.

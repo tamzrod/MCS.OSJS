@@ -1,6 +1,8 @@
 # REP-004 — Modbus Source Reader
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: QUEUED
+Previous: REP-003
+Next: REP-005
 
 ## Primary Outcome
 

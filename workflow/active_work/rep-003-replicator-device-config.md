@@ -1,6 +1,8 @@
 # REP-003 — Replicator Device Configuration
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: QUEUED
+Previous: REP-002
+Next: REP-004
 
 ## Primary Outcome
 

@@ -1,6 +1,8 @@
 # REP-002 — Share MMA2 Raw-Ingest Client
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: QUEUED
+Previous: REP-001
+Next: REP-003
 
 ## Primary Outcome
 

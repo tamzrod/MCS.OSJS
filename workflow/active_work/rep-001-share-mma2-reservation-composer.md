@@ -1,6 +1,8 @@
 # REP-001 — Share MMA2 Reservation Composer
 
-Status: PLANNING — not authorized for implementation until human promotion.
+Status: ACTIVE
+Previous: none
+Next: REP-002
 
 ## Primary Outcome
 

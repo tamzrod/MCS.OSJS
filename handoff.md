@@ -2,17 +2,15 @@
 
 ## Current
 
-No current ACTIVE task.
-
-SIM-024 completed: the deployed stack independently supervises MMA2, acknowledges each exact restart request, reloads the committed config once, and returns the selected Simulator to `RUNNING` after accepted Raw Ingest.
+ACTIVE: REP-001 — Share MMA2 Reservation Composer
 
 ## Authorized Sequence
 
-SIM-024
+REP-001 → REP-002 → REP-003 → REP-004 → REP-005 → REP-006 → REP-007
 
 ## Continuation
 
-The authorized SIM-024 sequence is completed and archived.
+REP-001 is `ACTIVE`. REP-002 through REP-007 are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
 
 ## Continuation Rule
 

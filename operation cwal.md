@@ -20,11 +20,14 @@ OPERATION CWAL
 → USE ICC AS READ-ONLY CONTEXT
 → IF REQUIRED ICC CONTEXT IS STALE/MISSING: INVOKE BLACK SHEEP WALL FOR THAT BRANCH
 → IMPLEMENT ONLY ACTIVE
-→ TEST
+→ RUN TASK-SPECIFIC TESTS
+→ RUN REPOSITORY-NATIVE VERIFICATION FOR CHANGED EXECUTABLE SURFACES
 → VERIFY ACCEPTANCE CRITERIA
+→ VERIFY INTENDED CHANGESET
 → ARCHIVE COMPLETED ACTIVE TASK
 → ADVANCE ONLY ITS EXPLICIT Next FROM QUEUED TO ACTIVE
 → UPDATE handoff.md
+→ STAGE + REVIEW INTENDED CHANGESET
 → COMMIT
 → PUSH TO main
 → VERIFY origin/main CONTAINS THE COMPLETION COMMIT
@@ -111,11 +114,76 @@ Do not execute QUEUED tasks early. Do not promote work from Planning, invent wor
 
 Repository source files are opened only when synchronized ICC context inside the selected branch is insufficient for implementation or when changed source inside that branch requires direct inspection.
 
-## 6. Deterministic Completion and Advancement
+## 6. Pre-Completion Exit Gate
 
-A microtask is complete only after implementation, tests, acceptance verification, required evidence, workflow-state update, commit, push, and `origin/main` verification.
+Implementation, focused tests, and completion verification are separate gates.
 
-After the ACTIVE task passes its acceptance criteria:
+Before an ACTIVE task may become COMPLETED:
+
+```text
+ACTIVE IMPLEMENTATION
+→ RUN TASK-SPECIFIC TESTS
+→ RUN REPOSITORY-NATIVE VERIFICATION FOR EACH CHANGED EXECUTABLE SURFACE
+→ VERIFY ACCEPTANCE CRITERIA
+→ VERIFY INTENDED CHANGESET
+→ ONLY THEN ARCHIVE / ADVANCE
+```
+
+Repository-native verification means the smallest existing repository command that actually parses, compiles, bundles, builds, or otherwise validates the changed production surface in the way that repository normally consumes it.
+
+Examples of weaker checks that do not replace a native build gate:
+
+- `node --check`;
+- standalone parser invocation;
+- isolated helper/unit tests;
+- grep or raw-byte inspection;
+- lint alone.
+
+They may supplement the native gate but may not replace it.
+
+If the required native gate cannot run:
+
+```text
+KEEP TASK ACTIVE
+→ DO NOT ARCHIVE
+→ DO NOT ADVANCE Next
+→ DO NOT CLAIM COMPLETION
+→ REPORT BLOCKED: REQUIRED VERIFICATION UNAVAILABLE
+→ STOP
+```
+
+If the required native gate fails:
+
+```text
+KEEP TASK ACTIVE
+→ FOLLOW AGENTS.md EXECUTION GUARDRAIL
+→ DO NOT ARCHIVE
+→ DO NOT ADVANCE Next
+→ DO NOT PUSH A COMPLETION CLAIM
+```
+
+A higher-fidelity failed gate invalidates any earlier weaker verification claim for that affected surface.
+
+## 7. Commit Integrity Gate
+
+Before a completion commit:
+
+```text
+INSPECT WORKING TREE
+→ STAGE THE INTENDED TASK CHANGESET EXPLICITLY
+→ VERIFY STAGED PATHS INCLUDE NEW / RENAMED / DELETED FILES
+→ REVIEW STAGED DIFF
+→ CONFIRM NO REQUIRED TASK FILE IS UNTRACKED OR OMITTED
+→ COMMIT
+```
+
+Do not rely on `git commit -am` as staging authority when a task may create files.
+
+## 8. Deterministic Completion and Advancement
+
+A microtask is complete only after implementation, task-specific tests, repository-native verification, acceptance verification, required evidence, workflow-state update, commit, push, and `origin/main` verification.
+
+After the ACTIVE task passes its complete exit gate:
 
 ```text
 READ ACTIVE TASK'S Next
@@ -125,6 +193,7 @@ READ ACTIVE TASK'S Next
 → VERIFY SUCCESSOR'S Previous MATCHES COMPLETED TASK
 → CHANGE ONLY THAT SUCCESSOR TO ACTIVE
 → UPDATE handoff.md TO MATCH
+→ PASS COMMIT INTEGRITY GATE
 → COMMIT COMPLETION + ADVANCEMENT STATE
 → PUSH main
 → VERIFY origin/main
@@ -138,7 +207,7 @@ If `Next: none`, archive the completed task, update handoff to no current task, 
 
 The push to `main` is the checkpoint boundary between microtasks.
 
-## 7. Continuous Active-Work Loop
+## 9. Continuous Active-Work Loop
 
 After the completion/advancement push is verified:
 
@@ -150,12 +219,18 @@ COUNT Status: ACTIVE
         └── 2+ → stop: invalid Active Work state
 ```
 
+A successor may be activated only after the predecessor's complete exit gate, workflow-state commit, push, and `origin/main` verification all pass.
+
+If a higher-fidelity verification later proves that a pushed completion commit is invalid, CWAL must stop immediately. It must not execute the successor. Report the contradictory repository/workflow state and await recovery direction.
+
 Do not request new human authorization for a task that was already `QUEUED` and became `ACTIVE` through the explicit predecessor/Next transition.
 
 Do not inspect Planning when Active Work drains.
 
-## 8. Never Guess
+CWAL does not implicitly invoke THE GATHERING or any other StarCraft directive when its Active Work loop ends.
 
-If required authority, task-state consistency, predecessor/successor linkage, selected-branch context, dependencies, runtime evidence, push verification, or repository state is missing, stop and report it rather than inferring it.
+## 10. Never Guess
 
-If a push fails, `origin/main` cannot be verified, or completion state is not safely persisted, do not advance execution.
+If required authority, task-state consistency, predecessor/successor linkage, selected-branch context, dependencies, repository-native verification, runtime evidence, push verification, or repository state is missing, stop and report it rather than inferring it.
+
+If a push fails, `origin/main` cannot be verified, required verification is unavailable, or completion state is not safely persisted, do not advance execution.

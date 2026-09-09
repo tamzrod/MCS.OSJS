@@ -1,6 +1,8 @@
 # SIM-021A — Define Operator Runtime Status Semantics
 
-Status: PROMOTED — 2026-09-08 by human; ordered SIM-021A → SIM-021E.
+Status: ACTIVE
+Previous: none
+Next: SIM-021B
 
 ## Primary outcome
 

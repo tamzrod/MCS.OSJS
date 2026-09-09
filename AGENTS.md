@@ -46,21 +46,30 @@ When an edit or generated source is malformed:
 3. Run the smallest authoritative formatter/compiler/test.
 4. One corrective retry is allowed.
 
-If the corrective retry shows the same or similarly patterned malformed authoring, do not keep repairing that generated text. Enter **Fresh Authoring Recovery** before tripping the circuit breaker:
+### Fresh Authoring Recovery — mandatory trigger
 
-1. Preserve or restore the last known repository state so the malformed attempt is not used as the new source template.
-2. Drop the malformed generated block from the recovery approach; do not copy, normalize, or progressively repair it.
-3. Reload the authoritative known-good source or repository implementation needed for the task.
-4. Restart the affected edit fresh as the smallest coherent transformation, preferably from known-good source rather than reconstructing from the malformed attempt.
-5. Run the smallest authoritative formatter/compiler/test immediately after the fresh edit.
+If the corrective retry produces the same or similarly patterned malformed authoring, **STOP ALL AUTHORING IMMEDIATELY and enter Fresh Authoring Recovery**.
 
-Only one fresh recovery attempt is allowed. If that fresh attempt is still malformed: **STOP**.
+At that point, do not make another repair, `str_replace`, generator script, shell workaround, editor workaround, transport switch, punctuation cleanup, or alternate reconstruction attempt. Those are not recovery; they are continuation of the failed authoring loop.
 
-Do not continue implementation after STOP, create repair-script chains, perform broad regex cleanup, repeatedly switch authoring transports, or investigate encoding/serialization/shell/editor/tool corruption without reproducible evidence.
+Fresh Authoring Recovery must begin by:
+
+1. Preserve or restore the last known repository state so no malformed attempt becomes the new source template.
+2. Delete or abandon temporary malformed/generated artifacts from the failed approach.
+3. Stop referencing the malformed generated block as implementation input.
+4. Reload the authoritative known-good repository source needed for the task.
+5. Restart only the affected edit from that known-good source as the smallest coherent transformation.
+6. Run the smallest authoritative formatter/compiler/test immediately after that fresh edit.
+
+The fresh attempt must be genuinely fresh: it may reuse authoritative known-good source and task requirements, but it must not progressively repair, transform, script around, or regenerate from the malformed attempt.
+
+Only one Fresh Authoring Recovery attempt is allowed. **If any similarly patterned malformed authoring appears during that fresh attempt, STOP immediately. Do not correct it. The circuit breaker has tripped.**
+
+After the circuit breaker trips, do not continue implementation, create repair-script chains, perform broad regex cleanup, switch authoring transports, or investigate encoding/serialization/shell/editor/tool corruption without reproducible evidence.
 
 Tool or transport corruption may be claimed only when a minimal reproducible probe independent of the affected implementation file demonstrates the same mutation. Otherwise report the observed authoring failure without inventing a lower-level cause.
 
-After STOP, preserve repository state and report the exact failing file, observed error, corrective attempt, fresh recovery attempt, and verification result.
+After STOP, preserve repository state and report the exact failing file, observed error, corrective attempt, Fresh Authoring Recovery attempt, and verification result.
 
 ## No Broad Source Repair Rule
 

@@ -1,14 +1,14 @@
 # Active Work — Simulator Runtime Integration
 
-Baseline commit: a17191c; working tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human, outside this branch.
-Audited Overlay: handoff.md; five sim-021 planning microtasks promoted into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
+Baseline commit: bee6303; working tree: clean.
+Audited Overlay: none.
 Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
 Zoom In: simulator-device-config
 Zoom Out: L0-project
 
 ## Current Execution Order
-Current ordered execution sequence (promoted into `workflow/active_work/` as SIM-021A..SIM-021E on 2026-09-08;next up: SIM-021A(; JR executes per Operation CWAL until Active Work drains.
+Current ordered execution sequence: SIM-021A is the one ACTIVE task; SIM-021B..SIM-021E are QUEUED through explicit Previous/Next links.
 
 1. SIM-018 — **COMPLETED 2026-09-08**. Chose authenticated OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime. The Go Store is canonical;there is no Simulator HTTP/TCP API. Archived.
 2. SIM-019 — **COMPLETED 2026-09-09**. Long-lived Go runtime, Unix RPC, OS.js WebSocket relay,and deployment sidecar verified without a Simulator HTTP/TCP endpoint. Archived.

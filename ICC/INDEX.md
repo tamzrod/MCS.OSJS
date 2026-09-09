@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit:a17191c
-Working Tree: dirty (planning/microtask/mma2-basic-install-test.md and planning/microtask/osjs-base-webapp-init.md deleted uncommitted by human(
-Audited Uncommitted Overlay: handoff.md; five sim-021 planning microtasks promoted into workflow/active_work as SIM-021A..SIM-021E (ordered; ICC nodes refreshed herein.
+Baseline Commit:bee6303
+Working Tree: clean
+Audited Uncommitted Overlay: none.
 
-Committed+overlay delta: SIM-021 was promoted by human authorizationas five ordered microtasks into active work;SIM-018 through SIM-020 remain complete+archived;SIM-022 remains retired-uncompleted;`workflow/active_work/` now contains the five active sim-021 task files.
+Committed delta: SIM-021A now has its truthful runtime-state implementation and focused semantic tests in repository source; it remains the one ACTIVE task pending CWAL verification and archival. SIM-021B through SIM-021E remain QUEUED.
 
-Refreshed only the Active Work/planning-status branch at `a17191c` fromthe pushed SIM-021 promotion delta. Unrelated sibling registry rows are preserved.
+Refreshed only the Active Work/simulator-status branch at `bee6303`. Unrelated sibling registry rows are preserved.
 
 | Context | Parent | Zoom In | Source Dependencies |
 | --- | --- | --- | --- |

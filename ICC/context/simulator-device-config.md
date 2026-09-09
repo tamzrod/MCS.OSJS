@@ -1,6 +1,6 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-022)
 
-Baseline commit: de439fc
+Baseline commit: bee6303
 Working tree: clean
 Audited Overlay:(none(; files once audited as overlay (`simulator/device.go`,`simulator/store.go`,`simulator/store_document_test.go`( are now committed in HEADand the SIM-010 boundary files (`simulator/bridge.go`,`simulator/bridge_test.go`,`simulator/cmd/simbridge/main.go`,`OSJS/src/server/providers/simulator-bridge.js`( were deleted at `0b356da`,;none remain in the working tree.
 Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, workflow/active_work/sim-018-decide-local-ui-runtime-boundary.md through workflow/active_work/sim-022-visible-end-to-end-verification.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-017-end-to-end-simulator-mma2-verification.md
@@ -130,3 +130,10 @@ Validation (from MMA2 validate.go + brainstorm): port > 0; unit_id <= 255; unuse
 - The OS.js window no longer uses per-user settings as Simulator config. It loads the canonical Go Store through runtime `load` and submits the complete normalized document through runtime `apply`.
 - Only a successful `ApplyRouter.Apply` response advances the persisted/Discard snapshot and displays an applied classification plus completion time. A failure retains the edited form and prior applied snapshot.
 - Browser verification covered structural success, timing-only no-restart, duplicate rejection, Discard, and canonical reload. The local RPC deadline permits the complete MMA2 readiness error to reach the UI.
+
+## Current truth (SIM-021A runtime status semantics)
+
+- `SchedulerApplier` records whether at least one Raw Ingest send has succeeded per device. A configured/enabled device remains `WAITING` until this evidence exists; mere MMA2 reachability is insufficient for `RUNNING`.
+- Disabled devices report Simulator `STOPPED`. Unarmed/unready or MMA2-unreachable enabled devices report `WAITING`. A current Raw Ingest failure reports Simulator `ERROR` and preserves its diagnostic until a later successful send clears it.
+- MMA2 probe failure always prevents Simulator `RUNNING`. Raw Ingest remains an internal evidence/error source, not a third operator-facing status.
+- Focused semantic tests exist in `simulator/runtime_status_semantics_test.go`; SIM-021A remains ACTIVE until CWAL reruns and records its required verification.

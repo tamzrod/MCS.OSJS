@@ -75,3 +75,10 @@ Previous sandbox was rescued mid-REP-001 due to persistent authoring/tool-layer 
 
 - `gen_composer.py` — corrupted authoring scratch; delete it in the new sandbox。
 - Deleted working-tree `mma2composer/composer.go` — intended fresh authoring starts from known-good sources listed above, not from this deletion。.
+## CHECKPOINT (2026-09-09 second sandbox) — REP-001 still ACTIVE
+
+Committed + pushed this sandbox: `mma2composer/composer.go` verified-good fresh authoring (0 non-ASCII bytes; `gofmt` empty; `go vet` clean; compiled as committed). It replaces the malformed draft described below (which does not exist on disk) and is NOT to be rebuilt.
+
+`mma2composer/composer_test.go` does NOT exist: two fresh authoring attempts hit the same punctuation-corruption class (U+FEFF/U+FFFD/U+3001, 63 then 81 non-ASCII bytes). Both deleted uncontaminated. Per AGENTS.md circuit breaker tripped after one corrective retry + one fresh recovery attempt; authoring stopped. Simulator refactor NOT started. Simulator suite was green this session (`go test -count=1 ./...` -> ok 1.408s).
+
+Next recovery action: author ONLY `mma2composer/composer_test.go` fresh (producer identity, Collision foreign rejection, first-come-first-save persistence, Commit restore-on-failure();then refactor Simulator onto the shared composer per REP-001;then run full simulator suite;then complete REP-001 per CWAL (archive, advance REP-002, update handoff, commit, push, verify origin/main(.

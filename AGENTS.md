@@ -39,20 +39,30 @@ READ ICC/INDEX.md FIRST
 
 ## Authoring Failure Circuit Breaker
 
-When an edit or generated source is malformed:
+A normal syntax or compile error is not, by itself, authoring corruption and must not trip this circuit breaker.
 
-1. Read the actual affected file and exact formatter/compiler error.
-2. Fix only the smallest affected source region.
-3. Run the smallest authoritative formatter/compiler/test.
-4. One corrective retry is allowed.
+For an ordinary localized syntax error:
+
+1. Read the exact formatter/compiler error and the smallest affected source range.
+2. Make one exact local correction.
+3. Run the smallest authoritative formatter/compiler/test again.
+4. If the error moves or changes normally, continue ordinary debugging within task scope.
+
+Do not manually recount large delimiter nests, speculate about corruption, or repeatedly reason over punctuation when the authoritative parser/compiler can identify the failing location. Use the toolchain result as authority.
+
+### Patterned authoring corruption
+
+Treat the situation as patterned authoring corruption only when a corrective write itself produces new, unexplained malformed tokens of the same unusual family, especially across freshly authored text or a separate temporary artifact. Examples include recurring delimiter substitution, duplicated punctuation, mangled operators, or unrelated syntax mutation that was not part of the intended local edit.
+
+A repeated parse error caused by the same still-unfixed source mistake does not qualify. A single brace mismatch does not qualify. A compiler pointing at cascading lines from one earlier syntax error does not qualify.
 
 ### Fresh Authoring Recovery — mandatory trigger
 
-If the corrective retry produces the same or similarly patterned malformed authoring, **STOP ALL AUTHORING IMMEDIATELY and enter Fresh Authoring Recovery**.
+When patterned authoring corruption is actually observed after one exact corrective attempt, **STOP ALL AUTHORING OF THAT APPROACH IMMEDIATELY and enter Fresh Authoring Recovery**.
 
-At that point, do not make another repair, `str_replace`, generator script, shell workaround, editor workaround, transport switch, punctuation cleanup, or alternate reconstruction attempt. Those are not recovery; they are continuation of the failed authoring loop.
+At that point, do not make another `str_replace`, generator script, shell/editor workaround, transport switch, punctuation cleanup, manual delimiter reconstruction, or repair chain against the malformed artifact.
 
-Fresh Authoring Recovery must begin by:
+Fresh Authoring Recovery must:
 
 1. Preserve or restore the last known repository state so no malformed attempt becomes the new source template.
 2. Delete or abandon temporary malformed/generated artifacts from the failed approach.
@@ -61,15 +71,15 @@ Fresh Authoring Recovery must begin by:
 5. Restart only the affected edit from that known-good source as the smallest coherent transformation.
 6. Run the smallest authoritative formatter/compiler/test immediately after that fresh edit.
 
-The fresh attempt must be genuinely fresh: it may reuse authoritative known-good source and task requirements, but it must not progressively repair, transform, script around, or regenerate from the malformed attempt.
+The fresh attempt may reuse authoritative known-good source and task requirements, but it must not progressively repair or regenerate from the malformed attempt.
 
-Only one Fresh Authoring Recovery attempt is allowed. **If any similarly patterned malformed authoring appears during that fresh attempt, STOP immediately. Do not correct it. The circuit breaker has tripped.**
+If the fresh attempt parses/formats normally, recovery succeeded and implementation may continue.
 
-After the circuit breaker trips, do not continue implementation, create repair-script chains, perform broad regex cleanup, switch authoring transports, or investigate encoding/serialization/shell/editor/tool corruption without reproducible evidence.
+If the same unusual authoring corruption appears again during the fresh attempt, **STOP immediately. Do not correct it. The circuit breaker has tripped.**
 
-Tool or transport corruption may be claimed only when a minimal reproducible probe independent of the affected implementation file demonstrates the same mutation. Otherwise report the observed authoring failure without inventing a lower-level cause.
+After the circuit breaker trips, preserve repository state and report the exact failing file, observed mutation pattern, corrective attempt, Fresh Authoring Recovery attempt, and verification result.
 
-After STOP, preserve repository state and report the exact failing file, observed error, corrective attempt, Fresh Authoring Recovery attempt, and verification result.
+Tool or transport corruption may be claimed only when a minimal reproducible probe independent of the affected implementation file demonstrates the same mutation. Otherwise report only the observed authoring corruption without inventing a lower-level cause.
 
 ## No Broad Source Repair Rule
 

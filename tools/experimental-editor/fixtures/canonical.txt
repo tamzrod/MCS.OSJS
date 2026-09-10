@@ -1,0 +1,5 @@
+The Replicator reads values from an external Modbus source.
+The destination defines listener port, unit ID, area, start address, and count.
+FC1 and FC2 use bit values; FC3 and FC4 use register values.
+Configuration must be validated before persistence.
+A failed validation must not modify the existing configuration.

@@ -1,6 +1,6 @@
 # Active Work — Simulator Runtime Integration
 
-Baseline commit: 366b23e; working tree: clean.
+Baseline commit: 4a137eb; working tree: clean.
 Audited Overlay: none.
 Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, mma2composer/*, OSJS/src/packages/ModbusSimulator/, MMA2/*, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
@@ -8,7 +8,7 @@ Zoom In: simulator-device-config, replicator
 Zoom Out: L0-project
 
 ## Current Execution Order
-Current ordered execution sequence: REP-001 is the one ACTIVE task; REP-002 through REP-007 are QUEUED through explicit Previous/Next links. Records live in `workflow/active_work/`.
+Current ordered execution sequence: REP-002 is the one ACTIVE task; REP-003 through REP-007 are QUEUED through explicit Previous/Next links. REP-001 is completed and archived.
 
 1. SIM-018 — **COMPLETED 2026-09-08**. Chose authenticated OS.js session WebSocket -> allowlisted OS.js relay -> Unix-domain socket -> independently supervised Go runtime. The Go Store is canonical;there is no Simulator HTTP/TCP API. Archived.
 2. SIM-019 — **COMPLETED 2026-09-09**. Long-lived Go runtime, Unix RPC, OS.js WebSocket relay,and deployment sidecar verified without a Simulator HTTP/TCP endpoint. Archived.
@@ -19,7 +19,8 @@ Current ordered execution sequence: REP-001 is the one ACTIVE task; REP-002 thro
 6. SIM-024 — **COMPLETED 2026-09-09**. Added the independently managed `mma2` service + restart actuator to the deployed stack;the supervisor consumes the Simulator's `restart-request.yaml` contract and re-execs MMA2 with the committed effective config. Record archived: `workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md`.
 7. SIM-022 — **RETIRED 2026-09-08** (not completed; human clearance; remains un-promoted(. Record: `workflow/archive/sim-022-visible-end-to-end-verification.md`.
 
-8. REP-001 — **ACTIVE**. A verified-good producer-neutral `mma2composer` implementation is checkpointed. Focused shared-package tests and migration of Simulator away from its private duplicate remain unfinished. See Zoom In `replicator` and `simulator-device-config`.
+8. REP-001 — **COMPLETED 2026-09-10**. `mma2composer` now owns producer-neutral composition and Simulator delegates to it with preserved behavior. Archived.
+9. REP-002 — **ACTIVE**. Extract the producer-neutral MMA2 Raw Ingest v1 encoder/client and migrate Simulator without changing packet or response behavior. See Zoom In `replicator` and `simulator-device-config`.
 
 The records below are archived predecessor evidence and do not authorize execution.
 

@@ -1,6 +1,6 @@
 # REP-003 — Replicator Device Configuration
 
-Status: QUEUED
+Status: ACTIVE
 Previous: REP-002
 Next: REP-004
 

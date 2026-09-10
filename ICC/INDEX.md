@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 366b23e
+Baseline Commit: 4a137eb
 Working Tree: clean
 Audited Uncommitted Overlay: none.
 
-Committed delta: REP-001 remains ACTIVE with a verified-good shared `mma2composer` implementation checkpoint; focused shared-package tests and the Simulator migration remain unfinished. REP-002 through REP-007 remain QUEUED.
+Committed delta: REP-001 completed and was archived after the shared composer and Simulator migration passed their native gates. REP-002 is ACTIVE; REP-003 through REP-007 remain QUEUED.
 
-Refreshed only the Active Work/Replicator branch at `366b23e`. Unrelated sibling registry rows are preserved.
+Refreshed only the Active Work/Replicator branch at `4a137eb`. Unrelated sibling registry rows are preserved.
 
 | `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
 | `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |

@@ -1,6 +1,6 @@
 # REP-002 — Share MMA2 Raw-Ingest Client
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-10 — shared Raw Ingest client and Simulator migration verified.
 Previous: REP-001
 Next: REP-003
 
@@ -40,3 +40,11 @@ Move or adapt the existing raw-ingest tests to the shared package and run the af
 ## Sizing
 
 Implementation surface 1; environment uncertainty 0; behavioral surface 1; verification surface 1; decision/recovery surface 0. Total: 3 — good JR task.
+
+## Completion Evidence
+
+- `mma2raw` is a Simulator-independent Go module exposing Raw Ingest areas, configured ranges, a generic client, and the v1 encoder/send/ack implementation.
+- Exact packet fixtures cover FC1 coils, FC2 discrete inputs, FC3 holding registers, and FC4 input registers, including LSB-first bits, big-endian registers, and header fields.
+- Simulator now maps its device parameters and scheduler values onto `mma2raw.Client`; its private encoder and TCP send implementation were removed.
+- `GOCACHE=/tmp/mcs-osjs-rep002-go-cache go test -count=1 ./...` and `go vet ./...` passed in `mma2raw/`.
+- The same full test and vet gates passed in `simulator/`; the suite reported `ok github.com/tamzrod/MCS.OSJS/simulator 1.417s`.

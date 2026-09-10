@@ -88,48 +88,6 @@ func assertRawFrame(t *testing.T, pkt []byte, unitID, addr, count uint16, area b
 		t.Fatalf("count %d != %d", got, count)
 	}
 }
-func TestEncodeRawPacketBitsLSBFirst(t *testing.T) {
-	v := Values{
-		FC:    FC1,
-		Coils: []bool{true, false, true, true, false, false, false, false, true},
-	}
-	pkt, err := encodeRawPacket(1, 0, 9, 1, v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantPayload := []byte{0x0D, 0x01}
-	if len(pkt) != rawHeaderLen+len(wantPayload) {
-		t.Fatalf("len %d", len(pkt))
-	}
-	assertRawFrame(t, pkt, 1, 0, 9, 1, len(wantPayload))
-	for i := range wantPayload {
-		if pkt[rawHeaderLen+i] != wantPayload[i] {
-			t.Fatalf("payload byte %d: got %02x want %02x", i, pkt[rawHeaderLen+i], wantPayload[i])
-		}
-	}
-}
-
-func TestEncodeRawPacketRegsBigEndian(t *testing.T) {
-	v := Values{
-		FC:   FC3,
-		Regs: []uint16{0x1234, 0x00AB, 0xFFFF},
-	}
-	pkt, err := encodeRawPacket(1, 2, 3, 3, v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantPayload := []byte{0x12, 0x34, 0x00, 0xAB, 0xFF, 0xFF}
-	if len(pkt) != rawHeaderLen+len(wantPayload) {
-		t.Fatalf("len %d", len(pkt))
-	}
-	assertRawFrame(t, pkt, 1, 2, 3, 3, len(wantPayload))
-	for i := range wantPayload {
-		if pkt[rawHeaderLen+i] != wantPayload[i] {
-			t.Fatalf("payload byte %d: got %02x want %02x", i, pkt[rawHeaderLen+i], wantPayload[i])
-		}
-	}
-}
-
 func TestRawIngestClientSendOK(t *testing.T) {
 	cl := newRawFixture(t, rawRespOK)
 	v := Values{FC: FC3, Regs: []uint16{0x5432}}

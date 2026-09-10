@@ -2,7 +2,7 @@
 
 ## Current
 
-ACTIVE: REP-002 — Share MMA2 Raw-Ingest Client
+ACTIVE: REP-003 — Replicator Device Config
 
 ## Authorized Sequence
 
@@ -10,7 +10,11 @@ REP-001 → REP-002 → REP-003 → REP-004 → REP-005 → REP-006 → REP-007
 
 ## Continuation
 
-REP-001 completed and was archived. REP-002 is `ACTIVE`. REP-003 through REP-007 are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
+REP-001 and REP-002 completed and were archived. REP-003 is `ACTIVE`. REP-004 through REP-007 are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
+
+## REP-002 Completion (2026-09-10)
+
+The producer-neutral `mma2raw` module now owns Raw Ingest v1 packet encoding and TCP send/ack behavior. Simulator delegates to it through a small type-mapping adapter; exact FC1-FC4 fixtures, shared tests/vet, and the full Simulator tests/vet passed. REP-003 was advanced through REP-002's explicit `Next` link.
 
 ## REP-001 Completion (2026-09-10)
 

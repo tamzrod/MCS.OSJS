@@ -1,6 +1,6 @@
 # REP-002 — Share MMA2 Raw-Ingest Client
 
-Status: QUEUED
+Status: ACTIVE
 Previous: REP-001
 Next: REP-003
 

@@ -2,7 +2,7 @@
 
 ## Current
 
-ACTIVE: REP-001 — Share MMA2 Reservation Composer
+ACTIVE: REP-002 — Share MMA2 Raw-Ingest Client
 
 ## Authorized Sequence
 
@@ -10,7 +10,11 @@ REP-001 → REP-002 → REP-003 → REP-004 → REP-005 → REP-006 → REP-007
 
 ## Continuation
 
-REP-001 is `ACTIVE`. REP-002 through REP-007 are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
+REP-001 completed and was archived. REP-002 is `ACTIVE`. REP-003 through REP-007 are `QUEUED` and already human-authorized; they require no additional approval when advanced through their explicit `Previous` / `Next` links.
+
+## REP-001 Completion (2026-09-10)
+
+The producer-neutral `mma2composer` module now owns effective-config and ownership composition. Simulator delegates to it with producer identity `simulator`; focused shared tests, the full Simulator suite, and both modules' `go vet` gates passed. REP-002 was advanced through REP-001's explicit `Next` link.
 
 ## Continuation Rule
 

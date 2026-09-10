@@ -1,10 +1,10 @@
 # Active Work — Simulator Runtime Integration
 
-Baseline commit: ba52432; working tree: clean.
+Baseline commit: 366b23e; working tree: clean.
 Audited Overlay: none.
-Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, OSJS/src/packages/ModbusSimulator/, MMA2/*, planning/Brainstorm/modbus-simulator-status-display.md
+Source dependencies: handoff.md, workflow/active_work/*, workflow/archive/*, docs/SIMULATOR_RUNTIME_INTEGRATION.md, simulator/*, mma2composer/*, OSJS/src/packages/ModbusSimulator/, MMA2/*, planning/Brainstorm/modbus-simulator-status-display.md
 Parent: L0-project
-Zoom In: simulator-device-config
+Zoom In: simulator-device-config, replicator
 Zoom Out: L0-project
 
 ## Current Execution Order
@@ -19,7 +19,7 @@ Current ordered execution sequence: REP-001 is the one ACTIVE task; REP-002 thro
 6. SIM-024 — **COMPLETED 2026-09-09**. Added the independently managed `mma2` service + restart actuator to the deployed stack;the supervisor consumes the Simulator's `restart-request.yaml` contract and re-execs MMA2 with the committed effective config. Record archived: `workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md`.
 7. SIM-022 — **RETIRED 2026-09-08** (not completed; human clearance; remains un-promoted(. Record: `workflow/archive/sim-022-visible-end-to-end-verification.md`.
 
-8. REP-001 — **ACTIVE**. Extract the producer-neutral MMA2 config/ownership composition mechanics currently proven in `simulator/mma2_config.go` into a reusable internal package with an explicit producer identity parameter (`simulator` now; Replicator later(;Simulator keeps calling it with no intended behavior change. See Zoom In `simulator-device-config`.
+8. REP-001 — **ACTIVE**. A verified-good producer-neutral `mma2composer` implementation is checkpointed. Focused shared-package tests and migration of Simulator away from its private duplicate remain unfinished. See Zoom In `replicator` and `simulator-device-config`.
 
 The records below are archived predecessor evidence and do not authorize execution.
 

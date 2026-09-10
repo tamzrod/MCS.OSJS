@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: ba52432
+Baseline Commit: 366b23e
 Working Tree: clean
 Audited Uncommitted Overlay: none.
 
-Committed delta: REP-001 through REP-007 were promoted from planning into `workflow/active_work/`; REP-001 is ACTIVE, REP-002 through REP-007 QUEUED. SIM-021A..E, SIM-023A..C, and SIM-024 completed+archived since the prior baseline.
+Committed delta: REP-001 remains ACTIVE with a verified-good shared `mma2composer` implementation checkpoint; focused shared-package tests and the Simulator migration remain unfinished. REP-002 through REP-007 remain QUEUED.
 
-Refreshed only the Active Work/Replicator branch at `ba52432`. Unrelated sibling registry rows are preserved.
+Refreshed only the Active Work/Replicator branch at `366b23e`. Unrelated sibling registry rows are preserved.
 
 | `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
 | `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
@@ -32,8 +32,9 @@ Refreshed only the Active Work/Replicator branch at `ba52432`. Unrelated sibling
 | `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/Brainstorm/modbus-simulator-status-display.md`, `planning/microtask/rep-001-share-mma2-reservation-composer.md` through `planning/microtask/rep-007-simulator-to-replicator-e2e.md` |
 | `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md`, `planning/Brainstorm/modbus-simulator-status-display.md` |
 | `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | simulator-device-config | `handoff.md`, `workflow/active_work/*`, `workflow/archive/*`, `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/*`, `planning/Brainstorm/modbus-simulator-status-display.md` |
+| `context/active-work.md` | L0-project | simulator-device-config, replicator | `handoff.md`, `workflow/active_work/*`, `workflow/archive/*`, `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `mma2composer/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/*`, `planning/Brainstorm/modbus-simulator-status-display.md` |
 | `context/simulator-device-config.md` | active-work | — | `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/internal/config/validate.go`, `MMA2/internal/restartwatch/*`, `MMA2/cmd/mma2-supervisor/*`, `workflow/active_work/rep-001-share-mma2-reservation-composer.md`, `workflow/archive/sim-001-simulator-device-config.md` through `workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md` |
+| `context/replicator.md` | active-work | — | `handoff.md`, `workflow/active_work/rep-*.md`, `mma2composer/*`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `MMA2/pkg/configvalidate/*` |
 
 ## Access Rule
 

@@ -274,10 +274,10 @@ func (c *Composer) DropProducerReservations(cfg EffectiveConfig, owners Ownershi
 // DropOneReservation removes one reservation owned by this composer's
 // producer,preserving everything else untouched;callers verify ownership via
 // Collision first..
-func (c *Composer) DropOneReservation(cfg EffectiveConfig, owners OwnershipDoc, port, unitID uint16) (EffectiveConfig, OwnershipDoc) {
+func (c *Composer) DropOneReservation(cfg EffectiveConfig, owners OwnershipDoc, requestedPort, unitID uint16) (EffectiveConfig, OwnershipDoc) {
 	keptOwn := owners.Reservations[:0]
 	for _, r := range owners.Reservations {
-		if r.Owner == c.Producer && r.Port == port && r.UnitID == unitID {
+		if r.Owner == c.Producer && r.Port == requestedPort && r.UnitID == unitID {
 			continue
 		}
 		keptOwn = append(keptOwn, r)
@@ -285,14 +285,14 @@ func (c *Composer) DropOneReservation(cfg EffectiveConfig, owners OwnershipDoc, 
 
 	keptListeners := make([]Listener, 0, len(cfg.Listeners))
 	for _, l := range cfg.Listeners {
-		port := ListenPort(l.Listen)
-		if port == 0 {
+		listenerPort := ListenPort(l.Listen)
+		if listenerPort == 0 {
 			keptListeners = append(keptListeners, l)
 			continue
 		}
 		mems := make([]Memory, 0, len(l.Memory))
 		for _, m := range l.Memory {
-			if m.UnitID == unitID && port == port {
+			if m.UnitID == unitID && listenerPort == requestedPort {
 				continue
 			}
 			mems = append(mems, m)

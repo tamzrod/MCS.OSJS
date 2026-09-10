@@ -1,6 +1,6 @@
 # REP-001 — Share MMA2 Reservation Composer
 
-Status: ACTIVE
+Status: COMPLETED 2026-09-10 — shared composer and Simulator migration verified.
 Previous: none
 Next: REP-002
 
@@ -42,3 +42,11 @@ Run the existing Simulator MMA2 compose/ownership tests plus focused tests for p
 ## Sizing
 
 Implementation surface 1; environment uncertainty 0; behavioral surface 1; verification surface 1; decision/recovery surface 0. Total: 3 — good JR task.
+
+## Completion Evidence
+
+- `mma2composer` owns the producer-neutral effective-config, ownership, collision, atomic write, validation, and rollback implementation with explicit producer identity.
+- Simulator now delegates composition to `mma2composer.New(s.Root, "simulator")`; its prior private implementation was removed while compatibility aliases and Store path helpers preserve existing callers and tests.
+- Focused shared-package tests cover producer identity, foreign-owner rejection, first-come-first-save persistence, requested-port deletion, and byte-for-byte config restoration when the owners replace fails.
+- `GOCACHE=/tmp/mcs-osjs-rep001-go-cache go test -count=1 ./...` and `go vet ./...` passed in `mma2composer/`.
+- The same full test and vet gates passed in `simulator/`; the test suite reported `ok github.com/tamzrod/MCS.OSJS/simulator 1.400s`.

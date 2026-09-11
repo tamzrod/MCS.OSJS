@@ -61,9 +61,9 @@ func (s Store) ComposeDocumentDestinations(doc Document) (Document, mma2composer
 	return resolved, cfg, nil
 }
 
-func unionArea(current *mma2composer.Area, start, count uint16) *mma2composer.Area {
+func unionArea(current *mma2composer.Area, start, count uint16) (*mma2composer.Area, error) {
 	if current == nil {
-		return &mma2composer.Area{Start: start, Count: count}
+		return &mma2composer.Area{Start: start, Count: count}, nil
 	}
 	lo := uint32(current.Start)
 	hi := lo + uint32(current.Count)
@@ -75,7 +75,11 @@ func unionArea(current *mma2composer.Area, start, count uint16) *mma2composer.Ar
 	if blockHi > hi {
 		hi = blockHi
 	}
-	return &mma2composer.Area{Start: uint16(lo), Count: uint16(hi - lo)}
+	span := hi - lo
+	if span == 0 || span > 0xffff {
+		return nil, fmt.Errorf("combined destination area span %d cannot be represented by MMA2", span)
+	}
+	return &mma2composer.Area{Start: uint16(lo), Count: uint16(span)}, nil
 }
 
 func destinationMemoryForBlocks(unitID uint16, blocks []PullBlock) (mma2composer.Memory, error) {
@@ -84,13 +88,17 @@ func destinationMemoryForBlocks(unitID uint16, blocks []PullBlock) (mma2composer
 	}
 	memory := mma2composer.Memory{UnitID: unitID}
 	for _, block := range blocks {
+		var err error
 		switch block.Function {
 		case 3:
-			memory.HoldingRegs = unionArea(memory.HoldingRegs, block.Start, block.Count)
+			memory.HoldingRegs, err = unionArea(memory.HoldingRegs, block.Start, block.Count)
 		case 4:
-			memory.InputRegs = unionArea(memory.InputRegs, block.Start, block.Count)
+			memory.InputRegs, err = unionArea(memory.InputRegs, block.Start, block.Count)
 		default:
 			return mma2composer.Memory{}, fmt.Errorf("unsupported pull block function %d", block.Function)
+		}
+		if err != nil {
+			return mma2composer.Memory{}, err
 		}
 	}
 	return memory, nil

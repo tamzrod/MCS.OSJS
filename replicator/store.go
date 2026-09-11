@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
@@ -14,19 +15,26 @@ const (
 	envDataDirKey = "OSJS_DATA_DIR"
 )
 
-// Store persists the Replicator-owned configuration under OSJS_DATA_DIR.
+// Store persists the Replicator-owned configuration under the shared data root.
 type Store struct {
 	Root string
 }
 
-// ConfigRootFromEnv returns the established shared data root. No fallback host
-// path is invented when OSJS_DATA_DIR is unset.
+// ConfigRootFromEnv returns the shared data root. OSJS_DATA_DIR remains the
+// authoritative deployed-stack path. The standalone Windows package has one
+// installer-owned equivalent under ProgramData, so Windows services can boot
+// without NSSM-specific environment injection.
 func ConfigRootFromEnv() (string, error) {
 	root := os.Getenv(envDataDirKey)
-	if root == "" {
-		return "", fmt.Errorf("%s is unset; refusing to invent a host configuration path", envDataDirKey)
+	if root != "" {
+		return root, nil
 	}
-	return root, nil
+	if runtime.GOOS == "windows" {
+		if programData := os.Getenv("ProgramData"); programData != "" {
+			return filepath.Join(programData, "MCS Modbus Toolkit", "runtime"), nil
+		}
+	}
+	return "", fmt.Errorf("%s is unset; refusing to invent a host configuration path", envDataDirKey)
 }
 
 func (s Store) ReplicatorDir() string {

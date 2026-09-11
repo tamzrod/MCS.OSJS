@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	restartRequestFile = "restart-request.yaml"
-	restartAckFile     = "restart-ack"
-	restartPoll        = 25 * time.Millisecond
+	restartRequestFile  = "restart-request.yaml"
+	restartAckFile      = "restart-ack"
+	restartPoll         = 25 * time.Millisecond
 	DefaultApplyTimeout = 20 * time.Second
 )
 

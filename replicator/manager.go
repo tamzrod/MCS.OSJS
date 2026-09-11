@@ -130,15 +130,21 @@ func (m *RuntimeManager) Boot() error {
 	return m.replaceRuntimes(resolved)
 }
 
-// Apply validates, resolves ownership-aware automatic destinations, refreshes
-// the Replicator-owned shared-config slice, requests an MMA2 restart only when
-// the served destination structure actually changed, then persists and starts
-// poll loops from the committed document.
+// Apply is the Save & Apply transaction boundary:
+//  1. resolve and re-check the latest shared ownership state;
+//  2. claim only free/self-owned destinations while preserving foreign entries;
+//  3. write the resulting Replicator slice into shared MMA2 settings;
+//  4. request MMA2 restart and wait for matching acknowledgement/readiness;
+//  5. only then persist the Replicator document and restart its poll loops.
 func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	resolved, err := m.store.ResolveDocumentDestinations(edited)
 	if err != nil {
 		return Document{}, false, err
 	}
+	if err := m.store.CheckDocumentOwnership(resolved); err != nil {
+		return Document{}, false, err
+	}
+
 	previous, err := m.store.LoadDocument()
 	if err != nil {
 		return Document{}, false, err
@@ -152,12 +158,17 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	m.stopAll()
 	resolved, effective, err := m.store.ComposeDocumentDestinations(resolved)
 	if err != nil {
+		// A final compose-time ownership race must still fail without pretending
+		// the apply succeeded. Restore the previously running document when safe.
+		_ = m.replaceRuntimes(previousResolved)
 		return Document{}, structural, err
 	}
-	if structural {
-		if err := m.store.requestMMA2Restart(effective, documentDestinationPorts(resolved), m.timeout); err != nil {
-			return Document{}, true, err
-		}
+
+	// Save & Apply always activates the shared MMA2 settings through the proven
+	// restart-request/ack path. Source-only edits therefore still get one clean
+	// lifecycle boundary instead of relying on stale process state.
+	if err := m.store.requestMMA2Restart(effective, documentDestinationPorts(resolved), m.timeout); err != nil {
+		return Document{}, structural, err
 	}
 	if err := m.store.SaveDocument(resolved); err != nil {
 		return Document{}, structural, err
@@ -264,7 +275,8 @@ func structureKeys(doc Document) []string {
 		if !device.Enabled {
 			continue
 		}
-		keys = append(keys, fmt.Sprintf("%d/%d/fc%d/%d/%d", device.Destination.Port, device.Destination.UnitID, device.Function, device.Start, device.Count))
+		block := device.PullBlock
+		keys = append(keys, fmt.Sprintf("%d/%d/fc%d/%d/%d", device.Destination.Port, device.Destination.UnitID, block.Function, block.Start, block.Count))
 	}
 	sort.Strings(keys)
 	return keys

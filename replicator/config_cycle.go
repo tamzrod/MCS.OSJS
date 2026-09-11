@@ -12,19 +12,19 @@ func runConfigCycle(cfg Config) (CycleResult, error) {
 	if err := validateCycleMapping(cfg); err != nil {
 		return CycleResult{}, err
 	}
-	values, err := ReadSourceRange(cfg.Source)
+	payload, err := ReadSourceRange(cfg.Source)
 	if err != nil {
 		return CycleResult{}, err
 	}
-	if len(values.Values) != int(cfg.Destination.Count) {
-		return CycleResult{}, fmt.Errorf("source returned %d registers; destination expects %d", len(values.Values), cfg.Destination.Count)
+	if sourcePayloadCount(payload) != int(cfg.Destination.Count) {
+		return CycleResult{}, fmt.Errorf("source returned %d values; destination expects %d", sourcePayloadCount(payload), cfg.Destination.Count)
 	}
-	if err := sendDestination(cfg.Destination, values.Values); err != nil {
+	if err := sendDestination(cfg.Destination, payload); err != nil {
 		return CycleResult{}, err
 	}
 	return CycleResult{
-		Function:         values.Function,
-		SourceStart:      values.Start,
+		Function:         payload.Function,
+		SourceStart:      payload.Start,
 		DestinationArea:  strings.ToLower(strings.TrimSpace(cfg.Destination.Area)),
 		DestinationStart: cfg.Destination.Start,
 		Count:            cfg.Destination.Count,

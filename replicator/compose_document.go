@@ -101,6 +101,16 @@ func destinationMemoryForBlocks(unitID uint16, blocks []PullBlock) (mma2composer
 			return mma2composer.Memory{}, err
 		}
 	}
+
+	// Replicator memory must be externally readable as normal Modbus memory.
+	// Raw Ingest writes the mirrored values, while this policy allows third-party
+	// Modbus clients to read the served FC3/FC4 ranges (and keeps the same policy
+	// shape as the proven single-block destination path).
+	memory.Policy = &mma2composer.Policy{Rules: []mma2composer.PolicyRule{{
+		ID:       "replicator-fc-access",
+		SourceIP: []string{"0.0.0.0/0", "::/0", "127.0.0.1", "::1"},
+		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16},
+	}}}
 	return memory, nil
 }
 

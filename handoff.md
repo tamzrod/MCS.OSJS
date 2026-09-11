@@ -206,4 +206,47 @@ JR must stop after the report push. Do not fix failures. Do not archive REP-005.
 
 ## JR TEST REPORT
 
-Verdict: PENDING
+Verdict: PASS
+Tested commit: 7eda5d964c795a0f2576e163ab5a599f7359fee7
+
+Git status before test:
+(empty)
+
+Formatting check:
+Command: gofmt -l .
+Exit/result: exit code 0
+Output:
+(no output — no files listed)
+
+Successful replication cycle:
+Command: go test -count=1 -run '^TestRunOnceCopiesConfiguredRegisters$' .
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.006s
+Output:
+ok      github.com/tamzrod/MCS.OSJS/replicator  0.006s
+
+Foreign-owner collision:
+Command: go test -count=1 -run '^TestRunOnceRejectsForeignOwnedDestination$' .
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.006s
+Output:
+ok      github.com/tamzrod/MCS.OSJS/replicator  0.006s
+
+Cross-area rejection:
+Command: go test -count=1 -run '^TestValidateCycleMappingRejectsCrossArea$' .
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.004s
+Output:
+ok      github.com/tamzrod/MCS.OSJS/replicator  0.004s
+
+Full Replicator tests:
+Command: go test -count=1 ./...
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.011s
+Output:
+ok      github.com/tamzrod/MCS.OSJS/replicator  0.011s
+
+Go vet:
+Command: go vet ./...
+Exit/result: exit code 0
+Output:
+(no output — no diagnostics)
+
+Unexpected behavior:
+None. Note: Go 1.27.1 toolchain was used from user-local ~/.local/go (no global install; sandbox-local test tooling per Operation CWAL; manually pinned by the previous JR sync step.

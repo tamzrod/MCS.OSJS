@@ -10,13 +10,13 @@ import (
 
 // DeviceRuntimeStatus is the compact truthful state consumed by the OS.js UI.
 type DeviceRuntimeStatus struct {
-	Name       string `json:"name"`
-	Enabled    bool   `json:"enabled"`
-	Running    bool   `json:"running"`
-	Cycles     uint64 `json:"cycles"`
-	Source     string `json:"source_status"`
-	LastPoll   string `json:"last_poll,omitempty"`
-	LastError  string `json:"last_error,omitempty"`
+	Name      string `json:"name"`
+	Enabled   bool   `json:"enabled"`
+	Running   bool   `json:"running"`
+	Cycles    uint64 `json:"cycles"`
+	Source    string `json:"source_status"`
+	LastPoll  string `json:"last_poll,omitempty"`
+	LastError string `json:"last_error,omitempty"`
 }
 
 type managedRuntime struct {
@@ -92,7 +92,7 @@ func (r *managedRuntime) snapshot() RuntimeState {
 }
 
 // RuntimeManager owns all UI-configured Replicator poll loops. Shared MMA2
-// structure is composed once per structural apply, never once per poll cycle.
+// structure is composed at apply/boot boundaries, never once per poll cycle.
 type RuntimeManager struct {
 	store   Store
 	timeout time.Duration
@@ -130,9 +130,10 @@ func (m *RuntimeManager) Boot() error {
 	return m.replaceRuntimes(resolved)
 }
 
-// Apply validates, resolves ownership-aware automatic destinations, applies any
-// MMA2 structural change through the established restart request contract, then
-// persists and restarts the Replicator poll loops from the committed document.
+// Apply validates, resolves ownership-aware automatic destinations, refreshes
+// the Replicator-owned shared-config slice, requests an MMA2 restart only when
+// the served destination structure actually changed, then persists and starts
+// poll loops from the committed document.
 func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	resolved, err := m.store.ResolveDocumentDestinations(edited)
 	if err != nil {
@@ -149,17 +150,12 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	structural := !sameMMA2Structure(previousResolved, resolved)
 
 	m.stopAll()
+	resolved, effective, err := m.store.ComposeDocumentDestinations(resolved)
+	if err != nil {
+		return Document{}, structural, err
+	}
 	if structural {
-		var cfgErr error
-		resolved, _, cfgErr = m.store.ComposeDocumentDestinations(resolved)
-		if cfgErr != nil {
-			return Document{}, true, cfgErr
-		}
-		composerCfg, loadErr := m.store.loadEffectiveConfig()
-		if loadErr != nil {
-			return Document{}, true, loadErr
-		}
-		if err := m.store.requestMMA2Restart(composerCfg, documentDestinationPorts(resolved), m.timeout); err != nil {
+		if err := m.store.requestMMA2Restart(effective, documentDestinationPorts(resolved), m.timeout); err != nil {
 			return Document{}, true, err
 		}
 	}

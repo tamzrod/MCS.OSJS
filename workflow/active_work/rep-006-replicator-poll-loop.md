@@ -1,6 +1,6 @@
 # REP-006 — Replicator Poll Loop
 
-Status: QUEUED
+Status: ACTIVE
 Previous: REP-005
 Next: REP-007
 
@@ -13,7 +13,7 @@ Run the proven single-range replication cycle repeatedly at the configured polli
 - Add a bounded runtime loop around REP-005 using the persisted polling interval.
 - Start only after configuration is valid and the Replicator-owned MMA2 destination is ready.
 - Execute one replication cycle per tick without overlapping cycles.
-- Preserve the last truthful error when a cycle fails and continue only according to the simplest deterministic runtime policy chosen in implementation.
+- Preserve truthful error state when a cycle fails and continue on the next deterministic tick.
 - Support clean stop/cancel without leaving another cycle running.
 
 ## Non-Scope

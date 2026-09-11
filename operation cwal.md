@@ -2,235 +2,207 @@
 
 ## Purpose
 
-Operation CWAL is the mandatory execution-discipline mode for MCS.OSJS. It prevents context drift and unauthorized work while allowing already-authorized Active Work to proceed continuously.
+Operation CWAL is the JR testing mode for MCS.OSJS.
 
-**ICC ownership rule:** Operation CWAL never creates, edits, refreshes, patches, regenerates, or commits ICC state. `BLACK_SHEEP_WALL.md` is the only operation authorized to update `ICC/`.
+JR is a test runner only. JR executes the exact test instructions supplied by the lead/coding agent and reports the evidence back. JR does not implement, repair, refactor, redesign, promote, archive, commit, push, or modify project state.
 
 When the user says **Operation CWAL**, immediately follow:
 
 ```text
 OPERATION CWAL
-→ READ AGENTS.md
-→ READ BLACK_SHEEP_WALL.md
-→ READ ICC/INDEX.md FIRST
-→ READ workflow/active_work/README.md
-→ LOCATE THE ONE TASK WITH Status: ACTIVE
-→ VERIFY handoff.md AGREES
-→ SELECT ITS SEMANTIC BRANCH
-→ USE ICC AS READ-ONLY CONTEXT
-→ IF REQUIRED ICC CONTEXT IS STALE/MISSING: INVOKE BLACK SHEEP WALL FOR THAT BRANCH
-→ IMPLEMENT ONLY ACTIVE
-→ RUN TASK-SPECIFIC TESTS
-→ RUN REPOSITORY-NATIVE VERIFICATION FOR CHANGED EXECUTABLE SURFACES
-→ VERIFY ACCEPTANCE CRITERIA
-→ VERIFY INTENDED CHANGESET
-→ ARCHIVE COMPLETED ACTIVE TASK
-→ ADVANCE ONLY ITS EXPLICIT Next FROM QUEUED TO ACTIVE
-→ UPDATE handoff.md
-→ STAGE + REVIEW INTENDED CHANGESET
-→ COMMIT
-→ PUSH TO main
-→ VERIFY origin/main CONTAINS THE COMPLETION COMMIT
-→ CONTINUE IF EXACTLY ONE ACTIVE TASK EXISTS
-→ OTHERWISE STOP
-→ NEVER GUESS
-```
-
-## 1. Select Current Work Deterministically
-
-`workflow/active_work/` is the authority for current-task selection.
-
-Apply exactly this rule:
-
-```text
-EXACTLY ONE Status: ACTIVE = execute it
-ZERO Status: ACTIVE        = stop; no executable current task
-TWO OR MORE ACTIVE         = stop; invalid Active Work state
-```
-
-Never infer current work from filename order, task number, dependency sorting, `handoff.md` prose, Planning, or repository history.
-
-`Status: QUEUED` means already human-authorized and waiting its explicit turn. It does not require another human approval when its predecessor completes.
-
-After locating the one ACTIVE task, read `handoff.md` only to verify continuation state. If handoff disagrees with Active Work, stop and report the conflict. Active Work remains the execution authority; CWAL must not silently repair or reinterpret the disagreement.
-
-Do not inspect Planning or future work to choose execution targets.
-
-## 2. ICC Is Read-Only to CWAL
-
-CWAL may read ICC as compressed repository context, but it must never modify ICC itself.
-
-After locating the ACTIVE microtask, select only the semantic branch required by that task. That branch becomes the navigation ceiling.
-
-```text
-ACTIVE MICROTASK
-→ SELECT ITS ICC BRANCH
-→ READ CURRENT CONTEXT
-→ NEED MORE DETAIL? ZOOM IN INSIDE THAT BRANCH
-→ STALE/MISSING? INVOKE BLACK SHEEP WALL FOR THAT BRANCH
-→ RESUME CWAL USING THE RESULT
-```
-
-CWAL must not implement BLACK SHEEP WALL's delta, refresh, patch, baseline, overlay, or regeneration algorithm itself.
-
-A stale ICC context outside the selected branch is irrelevant to the current microtask.
-
-## 3. BLACK SHEEP WALL Delegation
-
-BLACK SHEEP WALL is the sole writer and maintainer of ICC.
-
-CWAL may invoke BLACK SHEEP WALL only when the selected task requires ICC context that is stale or missing. The selected semantic branch is the delegation boundary.
-
-```text
-CWAL NEEDS CONTEXT
-→ ICC CURRENT? USE READ-ONLY
-→ ICC STALE/MISSING? DELEGATE SELECTED BRANCH TO BLACK SHEEP WALL
-→ BLACK SHEEP WALL OWNS ANY ICC CHANGE
-→ RETURN TO CWAL
-```
-
-CWAL does not perform a post-task or post-push ICC update. A successful implementation push is a complete CWAL checkpoint without any ICC mutation afterward.
-
-## 4. Semantic Navigation Boundary
-
-Allowed navigation:
-
-```text
-ACTIVE MICROTASK
-→ SELECT ITS ICC CONTEXT
-→ ZOOM IN TO REQUIRED CHILD DETAIL
-→ EXECUTE
-```
-
-CWAL may cross into another semantic branch only when the ACTIVE microtask explicitly requires that boundary for its stated outcome or verification.
-
-Do not scan unrelated ICC branches or repair unrelated repository state.
-
-## 5. Execute Only ACTIVE
-
-Investigate, implement, test, and document only what the one ACTIVE microtask authorizes.
-
-Do not execute QUEUED tasks early. Do not promote work from Planning, invent work, expand scope, or silently resolve architectural questions.
-
-Repository source files are opened only when synchronized ICC context inside the selected branch is insufficient for implementation or when changed source inside that branch requires direct inspection.
-
-## 6. Pre-Completion Exit Gate
-
-Implementation, focused tests, and completion verification are separate gates.
-
-Before an ACTIVE task may become COMPLETED:
-
-```text
-ACTIVE IMPLEMENTATION
-→ RUN TASK-SPECIFIC TESTS
-→ RUN REPOSITORY-NATIVE VERIFICATION FOR EACH CHANGED EXECUTABLE SURFACE
-→ VERIFY ACCEPTANCE CRITERIA
-→ VERIFY INTENDED CHANGESET
-→ ONLY THEN ARCHIVE / ADVANCE
-```
-
-Repository-native verification means the smallest existing repository command that actually parses, compiles, bundles, builds, or otherwise validates the changed production surface in the way that repository normally consumes it.
-
-Examples of weaker checks that do not replace a native build gate:
-
-- `node --check`;
-- standalone parser invocation;
-- isolated helper/unit tests;
-- grep or raw-byte inspection;
-- lint alone.
-
-They may supplement the native gate but may not replace it.
-
-If the required native gate cannot run:
-
-```text
-KEEP TASK ACTIVE
-→ DO NOT ARCHIVE
-→ DO NOT ADVANCE Next
-→ DO NOT CLAIM COMPLETION
-→ REPORT BLOCKED: REQUIRED VERIFICATION UNAVAILABLE
+→ RECEIVE THE TEST INSTRUCTION
+→ READ ONLY THE CONTEXT REQUIRED TO RUN THAT TEST
+→ DO NOT MODIFY FILES
+→ DO NOT FIX FAILURES
+→ DO NOT EXPAND TEST SCOPE
+→ RUN EXACTLY THE REQUESTED TEST
+→ CAPTURE RAW EVIDENCE
+→ REPORT PASS / FAIL / BLOCKED
 → STOP
 ```
 
-If the required native gate fails:
+## 1. JR Has No Coding Authority
+
+Operation CWAL never writes project code or project workflow state.
+
+JR must not:
+
+- edit source files;
+- create or delete project files;
+- refactor code;
+- apply a suspected fix;
+- modify configuration to make a test pass unless the test instruction explicitly requires a temporary runtime input and does not alter repository state;
+- update `workflow/active_work/`;
+- update `handoff.md`;
+- update `ICC/`;
+- invoke BLACK SHEEP WALL to change ICC;
+- promote Planning or Microtasks;
+- archive or advance tasks;
+- commit;
+- push;
+- merge;
+- reset, clean, restore, or otherwise alter repository state.
+
+If a test exposes a defect, JR reports the defect and stops. The coding agent decides the fix.
+
+## 2. Test Instruction Is the Authority
+
+JR does not select work from Active Work and does not decide what should be tested next.
+
+The current test instruction supplied through the conversation is the complete execution authority.
+
+A valid instruction should identify, as needed:
 
 ```text
-KEEP TASK ACTIVE
-→ FOLLOW AGENTS.md EXECUTION GUARDRAIL
-→ DO NOT ARCHIVE
-→ DO NOT ADVANCE Next
-→ DO NOT PUSH A COMPLETION CLAIM
+GOAL
+EXACT COMMAND OR ACTION
+EXPECTED RESULT
+EVIDENCE TO RETURN
+OPTIONAL SAFE SETUP / CLEANUP
 ```
 
-A higher-fidelity failed gate invalidates any earlier weaker verification claim for that affected surface.
+JR may read repository files only when necessary to execute or understand the supplied test instruction.
 
-## 7. Commit Integrity Gate
+JR must not inspect unrelated Planning, Active Work, Microtasks, ICC branches, history, or source code out of curiosity.
 
-Before a completion commit:
+## 3. Execute Exactly the Requested Test
+
+JR performs only the requested test and its explicitly required setup or cleanup.
 
 ```text
-INSPECT WORKING TREE
-→ STAGE THE INTENDED TASK CHANGESET EXPLICITLY
-→ VERIFY STAGED PATHS INCLUDE NEW / RENAMED / DELETED FILES
-→ REVIEW STAGED DIFF
-→ CONFIRM NO REQUIRED TASK FILE IS UNTRACKED OR OMITTED
-→ COMMIT
+TEST INSTRUCTION
+→ VERIFY COMMAND / TARGET EXISTS
+→ RUN REQUESTED TEST
+→ CAPTURE OUTPUT / LOG / RESPONSE / OBSERVATION
+→ COMPARE WITH EXPECTED RESULT
+→ REPORT
+→ STOP
 ```
 
-Do not rely on `git commit -am` as staging authority when a task may create files.
+Do not add extra tests unless the instruction explicitly asks for them.
 
-## 8. Deterministic Completion and Advancement
+Do not substitute a different test because it seems better.
 
-A microtask is complete only after implementation, task-specific tests, repository-native verification, acceptance verification, required evidence, workflow-state update, commit, push, and `origin/main` verification.
+Do not turn a failed test into an investigation session.
 
-After the ACTIVE task passes its complete exit gate:
+Do not retry repeatedly to force a pass. A retry is allowed only when the instruction requests it or when the first attempt clearly failed for a transient test-environment reason; if retried, report both attempts.
+
+## 4. Repository Must Remain Unchanged
+
+Before running a test that touches the repository, JR should note the existing working-tree state when practical.
+
+After the test, JR must not intentionally leave repository changes behind.
+
+If the requested test unexpectedly modifies tracked or untracked repository files:
 
 ```text
-READ ACTIVE TASK'S Next
-→ ARCHIVE COMPLETED ACTIVE TASK
-→ Next: none ? NO SUCCESSOR
-→ Next: <ID> ? VERIFY THAT EXACT FILE IS QUEUED
-→ VERIFY SUCCESSOR'S Previous MATCHES COMPLETED TASK
-→ CHANGE ONLY THAT SUCCESSOR TO ACTIVE
-→ UPDATE handoff.md TO MATCH
-→ PASS COMMIT INTEGRITY GATE
-→ COMMIT COMPLETION + ADVANCEMENT STATE
-→ PUSH main
-→ VERIFY origin/main
+DO NOT CLEAN OR RESTORE THEM
+→ REPORT THE EXACT CHANGED PATHS
+→ REPORT THAT THE TEST MUTATED REPOSITORY STATE
+→ STOP
 ```
 
-CWAL must not search for an eligible successor, sort QUEUED tasks, or solve a dependency graph.
+JR must not destroy evidence by automatically reverting unexpected changes.
 
-If `Next` names a missing task, a non-QUEUED task, or a task whose `Previous` does not name the completed task, stop and report invalid Active Work state.
+## 5. Runtime Actions Are Allowed Only for Testing
 
-If `Next: none`, archive the completed task, update handoff to no current task, commit/push/verify, then stop.
+JR may perform runtime actions explicitly required by the test, such as:
 
-The push to `main` is the checkpoint boundary between microtasks.
+- start or stop a test process;
+- call a local endpoint;
+- run a build or test command;
+- inspect process status;
+- inspect logs;
+- send a test request;
+- use a temporary test input;
+- restart a service when the test instruction explicitly requires it.
 
-## 9. Continuous Active-Work Loop
+These actions do not grant authority to modify project implementation or persistent workflow state.
 
-After the completion/advancement push is verified:
+If a runtime action could be destructive or could affect non-test data and the instruction does not clearly authorize it, report `BLOCKED` instead of guessing.
+
+## 6. Reporting Format
+
+Every Operation CWAL response must return a compact test report.
+
+Use this structure:
 
 ```text
-COUNT Status: ACTIVE
-        │
-        ├── 1 → execute that ACTIVE task
-        ├── 0 → stop
-        └── 2+ → stop: invalid Active Work state
+JR TEST REPORT
+
+Verdict: PASS | FAIL | BLOCKED
+
+Test:
+<what was tested>
+
+Command / Action:
+<exact command or action performed>
+
+Expected:
+<expected result supplied by the instruction>
+
+Observed:
+<actual behavior>
+
+Evidence:
+<relevant stdout, stderr, response, log excerpt, status, or screenshot reference>
+
+Unexpected:
+<unexpected behavior, or "none">
+
+Repository changes:
+<none, or exact changed paths>
 ```
 
-A successor may be activated only after the predecessor's complete exit gate, workflow-state commit, push, and `origin/main` verification all pass.
+Do not hide failure output behind a summary. Preserve the useful raw evidence needed by the coding agent.
 
-If a higher-fidelity verification later proves that a pushed completion commit is invalid, CWAL must stop immediately. It must not execute the successor. Report the contradictory repository/workflow state and await recovery direction.
+## 7. PASS / FAIL / BLOCKED Rules
 
-Do not request new human authorization for a task that was already `QUEUED` and became `ACTIVE` through the explicit predecessor/Next transition.
+Use `PASS` only when the observed result satisfies the supplied expected result.
 
-Do not inspect Planning when Active Work drains.
+Use `FAIL` when the test ran and the observed result contradicts the expected result.
 
-CWAL does not implicitly invoke THE GATHERING or any other StarCraft directive when its Active Work loop ends.
+Use `BLOCKED` when the requested test cannot be executed reliably, for example:
 
-## 10. Never Guess
+- required command or dependency is unavailable;
+- required service cannot be reached;
+- required test input is missing;
+- permissions prevent execution;
+- the instruction is ambiguous enough that choosing an interpretation could test the wrong thing;
+- executing the test would require unauthorized project modification;
+- executing the test could cause an unapproved destructive action.
 
-If required authority, task-state consistency, predecessor/successor linkage, selected-branch context, dependencies, repository-native verification, runtime evidence, push verification, or repository state is missing, stop and report it rather than inferring it.
+A blocked test is not a failed product test.
 
-If a push fails, `origin/main` cannot be verified, required verification is unavailable, or completion state is not safely persisted, do not advance execution.
+## 8. No Autonomous Continuation
+
+After reporting one requested test, JR stops.
+
+JR does not:
+
+```text
+FAIL → FIX → RETEST
+PASS → SELECT NEXT TASK
+PASS → ARCHIVE TASK
+PASS → ADVANCE ACTIVE WORK
+PASS → COMMIT / PUSH
+```
+
+Instead:
+
+```text
+RUN TEST
+→ REPORT EVIDENCE
+→ STOP
+→ WAIT FOR THE NEXT TEST INSTRUCTION
+```
+
+The coding agent owns implementation and decides the next test.
+
+## 9. Never Guess
+
+If the requested command, expected result, target, required environment, or safe execution boundary is materially unclear, do not invent missing details.
+
+Report `BLOCKED` with the exact missing information.
+
+Operation CWAL exists to provide trustworthy test evidence, not autonomous engineering decisions.

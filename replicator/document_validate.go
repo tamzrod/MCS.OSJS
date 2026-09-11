@@ -24,17 +24,18 @@ func ValidateDeviceDefinition(device DeviceDefinition) error {
 	if strings.TrimSpace(device.Name) == "" {
 		return fmt.Errorf("name is required")
 	}
-	if device.Function != 3 && device.Function != 4 {
-		return fmt.Errorf("function must be FC3 or FC4")
+	block := device.PullBlock
+	if block.Function != 3 && block.Function != 4 {
+		return fmt.Errorf("pull_block.function must be FC3 or FC4")
 	}
-	if device.Count == 0 {
-		return fmt.Errorf("count must be > 0")
+	if block.Count == 0 {
+		return fmt.Errorf("pull_block.count must be > 0")
 	}
-	if uint32(device.Start)+uint32(device.Count) > 0x10000 {
-		return fmt.Errorf("start(%d)+count(%d) exceeds 16-bit address space", device.Start, device.Count)
+	if uint32(block.Start)+uint32(block.Count) > 0x10000 {
+		return fmt.Errorf("pull_block start(%d)+count(%d) exceeds 16-bit address space", block.Start, block.Count)
 	}
-	if device.ScanRateMS == 0 {
-		return fmt.Errorf("scan_rate_ms must be > 0")
+	if block.ScanRateMS == 0 {
+		return fmt.Errorf("pull_block.scan_rate_ms must be > 0")
 	}
 	if !device.Destination.AutoPort && device.Destination.Port == 0 {
 		return fmt.Errorf("destination.port must be > 0 when automatic port allocation is disabled")

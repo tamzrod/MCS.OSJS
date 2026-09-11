@@ -37,80 +37,35 @@ READ ICC/INDEX.md FIRST
 → VERIFY
 ```
 
-## Controlled Editing Path
+## Editing
 
-For substantive source/config/document edits, especially multiline replacements or generated blocks, use `tools/experimental-editor/editor.py` as the preferred repository write path. Read and follow `tools/experimental-editor/README.md` before first use in a run.
+Use the normal repository editing tools appropriate to the task. Keep edits as small and direct as practical.
 
-Normal shell/git operations, file reads, directory creation, deletion, and trivial exact edits do not need to be routed through it. Do not switch among heredocs, `str_replace`, generator scripts, ad-hoc Python rewrites, or alternate editors as a recovery strategy after malformed authoring appears.
+If an authored edit is malformed:
 
-A successful `SAFEEDIT_OK` proves only that the editor wrote exactly the bytes it received. It does not prove those authored bytes were semantically correct.
+1. Reload or restore the last known-good affected source.
+2. Retry the smallest affected edit once.
+3. Run the repository-native verification for that edit.
+4. If the retry is also malformed, **STOP and report the failure.**
 
-## Authoring Failure Circuit Breaker
+Do not diagnose the cause during the task. Do not test transports, encodings, shells, editors, or byte paths. Do not build repair scripts or switch editing mechanisms to rescue malformed generated text. Do not repeatedly repair malformed output.
 
-A normal localized syntax or compile error is not authoring corruption. Use the authoritative formatter/compiler location, make one exact local correction, and rerun the smallest authoritative gate. Do not manually recount large delimiter nests when the parser/compiler can identify the failure.
-
-Treat unusual malformed authoring as patterned corruption when the same unusual family appears again after one exact local correction or in a fresh authored attempt. Examples include duplicated punctuation, joined/split words, delimiter substitution, mangled operators, foreign punctuation, or unrelated syntax mutation.
-
-**Pre-execution malformed authoring counts.** If such mutations are already visible in text supplied to an editor, shell, API, or other tool before execution, they count as authored corruption.
-
-Single syntax mistakes, one brace mismatch, the same still-unfixed error, and cascading parser errors do not qualify.
-
-### Mandatory state machine
-
-Use this sequence exactly:
-
-```text
-FIRST unusual malformed authored payload
-→ ONE exact local correction only
-
-SAME unusual family appears again
-→ ENTER FRESH AUTHORING RECOVERY IMMEDIATELY
-
-FRESH AUTHORING RECOVERY
-→ preserve/restore last known-good affected file
-→ abandon malformed temporary/generated artifacts
-→ stop referencing malformed authored text
-→ reload authoritative known-good source
-→ perform ONE smallest coherent fresh edit through the controlled editing path
-→ run the smallest authoritative formatter/compiler/test
-
-IF fresh attempt is normal
-→ continue task
-
-IF same unusual family appears during fresh attempt
-→ HARD STOP
-```
-
-Once Fresh Authoring Recovery is triggered, **do not run authoring sanity probes, transport probes, byte probes, encoding investigations, shell/editor comparisons, or alternate-tool experiments before recovery.** Recovery is the next action.
-
-A clean transport, shell, or editor probe **never authorizes continued authoring after patterned authoring corruption has already been established**. Such a probe can only say that the tested layer preserved the bytes it received; it cannot reclassify malformed authored input as an ordinary typo.
-
-During or after Fresh Authoring Recovery, do not use `sed`, `perl`, ad-hoc Python rewrites, generator scripts, heredoc reconstruction, `str_replace`, token-by-token punctuation repair, broad substitutions, or editor switching to rescue the malformed artifact.
-
-If the fresh attempt shows the same unusual corruption family, **STOP immediately. Do not correct it. Do not probe it. Do not try another transport. Do not switch editors. Preserve repository state and report the exact failing file, observed mutation pattern, first corrective attempt, fresh recovery attempt, and verification result.**
-
-Tool or transport corruption may be claimed only when an independent minimal reproducible probe demonstrates mutation in that layer, and only when such diagnosis is actually needed. Do not delay or bypass the authoring circuit breaker to perform that diagnosis.
-
-## No Broad Source Repair Rule
-
-Never repair malformed authored source with punctuation collapsing, Unicode stripping, global regex normalization, repository-wide cleanup, or similar broad substitutions unless the authorized task explicitly requires that exact transformation and every changed occurrence is independently verified.
+A normal formatter/compiler error is not automatically malformed authoring. Follow the authoritative error location, make one local correction, and rerun the smallest required gate.
 
 ## Execution Guardrail
 
-- Inspect actual written output before forming a theory.
+- Inspect the actual result of an edit before continuing.
 - Verification claims must name the actual command/check observed and its result.
-- Do not build encoding, escaping, base64, heredoc, transport-switch, repair-script, or self-modifying workaround chains for a simple edit.
-- Do not infer transport, parser, shell, editor, encoding, or tool corruption without reproducible evidence specific to that layer.
-- Once the authoring circuit breaker reaches Fresh Authoring Recovery, diagnostic curiosity does not override the state machine.
+- Do not build workaround chains for a simple edit.
+- If required verification cannot run, report it as unavailable rather than verified.
 
 ## Verification Truth Rule
 
 A verification result proves only what that exact check establishes.
 
 - Repository-native or task-defined verification outranks generic substitutes.
-- Never call `node --check`, lint, unit tests, raw-byte inspection, a standalone parser, or another approximation equivalent to a package/build/runtime gate unless repository authority explicitly defines it that way.
+- Never call a generic syntax check, lint, unit test, raw-byte inspection, or standalone parser equivalent to a package/build/runtime gate unless repository authority explicitly defines it that way.
 - A higher-fidelity failed gate invalidates any earlier claim that the affected surface was verified.
-- If required verification cannot run, report it as unavailable rather than verified.
 
 ## Completion Integrity Rule
 

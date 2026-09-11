@@ -138,4 +138,21 @@ Do not substitute direct socket/API apply calls for required rendered UI checks.
 
 ## JR TEST REPORT
 
-Verdict: PENDING
+Verdict: FAIL
+
+Gate: 1. Sync and backend gate — `gofmt -l .` expected to print nothing, printed `reader_test.go`.
+
+Evidence:
+- `git pull --ff-only origin main` → "Already up to date." (HEAD `cd508302ab9bf5f0e5aa6deda1f0f6654df7061b`)
+- `git status --short` → empty (clean tree before testing.)
+- `gofmt -l .` (Go 1.25.0, matching `go.mod`) → prints `reader_test.go`. Expected "prints nothing" — contradicted.
+
+Defect: `replicator/reader_test.go` is not gofmt-clean underthe project's declared Go 1.25.0. `gofmt -d reader_test.go` shows a single struct-literal alignment change (in `TestReadSourceRange...`'s `Source:` field line.). No other files flagged.
+
+
+
+Environment note: no Go toolchain was present in sandbox; installed Go 1.25.0 sandbox-locally at `~/.local/go125/go` tomatch `go.mod` (no repository mutation.). Also confirmed Go 1.27.1 flags the same file, so this is not a toolchain-version artifact.
+
+
+
+Per JR stop-at-defect rule: remaining packet sections (go test/vet, deploy, UI, e2e, status, guards) were not executed. Coding agent should fix formatting in `replicator/reader_test.go` (run `gofmt -w`) and re-invoke JR for the full packet.

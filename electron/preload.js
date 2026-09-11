@@ -6,5 +6,6 @@ contextBridge.exposeInMainWorld('mcsDesktop', {
   startAll: () => ipcRenderer.invoke('runtime:start-all'),
   stopAll: () => ipcRenderer.invoke('runtime:stop-all'),
   onRuntimeStatus: callback => ipcRenderer.on('runtime:status', (_event, value) => callback(value)),
+  onRuntimeActivity: callback => ipcRenderer.on('runtime:activity', (_event, value) => callback(value)),
   onRuntimeLog: callback => ipcRenderer.on('runtime:log', (_event, value) => callback(value))
 });

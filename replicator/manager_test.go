@@ -22,8 +22,6 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 	defer destinationListener.Close()
 	_, destinationPort := splitTestAddress(t, destinationListener.Addr().String())
 
-	// Reserve a source port and release it so the runtime gets a deterministic
-	// connection-refused cycle after apply, proving truthful ERROR status.
 	sourceListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -38,34 +36,38 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 	composer := mma2composer.New(root, ProducerReplicator)
 	requestPath := filepath.Join(composer.ConfigDir(), restartRequestFile)
 	ackPath := filepath.Join(composer.ConfigDir(), restartAckFile)
-	ackDone := make(chan error, 1)
-	go func() {
-		deadline := time.Now().Add(1500 * time.Millisecond)
-		for time.Now().Before(deadline) {
-			body, readErr := os.ReadFile(requestPath)
-			if readErr == nil {
-				var req struct {
-					ConfigSHA256 string `yaml:"config_sha256"`
-				}
-				if unmarshalErr := yaml.Unmarshal(body, &req); unmarshalErr != nil {
-					ackDone <- unmarshalErr
+	ackNext := func() <-chan error {
+		ch := make(chan error, 1)
+		go func() {
+			deadline := time.Now().Add(1500 * time.Millisecond)
+			for time.Now().Before(deadline) {
+				body, readErr := os.ReadFile(requestPath)
+				if readErr == nil {
+					var req struct {
+						ConfigSHA256 string `yaml:"config_sha256"`
+					}
+					if unmarshalErr := yaml.Unmarshal(body, &req); unmarshalErr != nil {
+						ch <- unmarshalErr
+						return
+					}
+					ch <- os.WriteFile(ackPath, []byte(req.ConfigSHA256), 0o644)
 					return
 				}
-				ackDone <- os.WriteFile(ackPath, []byte(req.ConfigSHA256), 0o644)
-				return
+				if !os.IsNotExist(readErr) {
+					ch <- readErr
+					return
+				}
+				time.Sleep(10 * time.Millisecond)
 			}
-			if !os.IsNotExist(readErr) {
-				ackDone <- readErr
-				return
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
-		ackDone <- os.ErrDeadlineExceeded
-	}()
+			ch <- os.ErrDeadlineExceeded
+		}()
+		return ch
+	}
 
 	device := validDeviceDefinition("PLC-runtime")
 	device.Endpoint = net.JoinHostPort(sourceHost, portString(sourcePort))
 	device.Destination = DestinationSelection{Port: destinationPort, UnitID: 9}
+	ackDone := ackNext()
 	doc, structural, err := manager.Apply(Document{Devices: []DeviceDefinition{device}})
 	if err != nil {
 		t.Fatalf("Apply: %v", err)
@@ -101,10 +103,11 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	// Scan-rate-only edit is non-structural: it restarts the Replicator poll loop
-	// but must not request an MMA2 restart.
+	// Save & Apply always restarts MMA2, even when only the pull-block scan rate
+	// changes and the served destination structure is otherwise identical.
 	edited := doc
-	edited.Devices[0].ScanRateMS = 500
+	edited.Devices[0].PullBlock.ScanRateMS = 500
+	ackDone = ackNext()
 	_, structural, err = manager.Apply(edited)
 	if err != nil {
 		t.Fatalf("non-structural Apply: %v", err)
@@ -112,7 +115,10 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 	if structural {
 		t.Fatal("scan-rate-only edit must not be structural")
 	}
+	if ackErr := <-ackDone; ackErr != nil {
+		t.Fatalf("second restart acknowledgement helper: %v", ackErr)
+	}
 	if _, err := os.Stat(requestPath); !os.IsNotExist(err) {
-		t.Fatalf("non-structural apply wrote restart request, stat err=%v", err)
+		t.Fatalf("restart request should be cleared after second apply, stat err=%v", err)
 	}
 }

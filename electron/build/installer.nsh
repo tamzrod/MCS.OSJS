@@ -2,10 +2,9 @@
 !include "LogicLib.nsh"
 
 !macro MCS_REMOVE_SERVICE service
-  IfFileExists "$INSTDIR\resources\bin\nssm.exe" 0 +5
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" stop "${service}"'
+  nsExec::ExecToLog 'sc.exe stop "${service}"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" remove "${service}" confirm'
+  nsExec::ExecToLog 'sc.exe delete "${service}"'
   Pop $0
 !macroend
 
@@ -80,47 +79,33 @@ FunctionEnd
 !macroend
 
 !macro MCS_NSSM service executable
+  ; Use NSSM only to create a missing service. All persistent service parameters
+  ; are written directly afterward so upgrades never depend on NSSM's CLI parser.
   nsExec::ExecToStack 'sc.exe query "${service}"'
   Pop $0
   Pop $1
 
   ${If} $0 == 0
-    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" stop "${service}"'
+    nsExec::ExecToLog 'sc.exe stop "${service}"'
     Pop $0
-    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" Application "$INSTDIR\resources\bin\${executable}"'
-    Pop $0
-    !insertmacro MCS_REQUIRE_SUCCESS "Updating ${service} executable"
   ${Else}
     nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" install "${service}" "$INSTDIR\resources\bin\${executable}"'
     Pop $0
     !insertmacro MCS_REQUIRE_SUCCESS "Installing ${service} service"
   ${EndIf}
 
-  ; All packaged runtimes are zero-argument service entry points. Older toolkit
-  ; installers may have left AppParameters behind. Do not ask NSSM to reset this
-  ; value: some NSSM builds crash while parsing the stale quoted value. Remove the
-  ; registry value directly instead.
+  ; NSSM reads these values from the service Parameters key at each start.
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "Application" "$INSTDIR\resources\bin\${executable}"
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppDirectory" "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppParameters"
+  DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppEnvironment"
+  DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppEnvironmentExtra"
+  WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppRestartDelay" 3000
+  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters\AppExit" "" "Restart"
 
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"'
+  nsExec::ExecToLog 'sc.exe config "${service}" start= auto'
   Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} AppDirectory"
-
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppEnvironmentExtra "OSJS_DATA_DIR=$LOCALAPPDATA\MCS Modbus Toolkit\runtime" "MCS_DATA_ROOT=$LOCALAPPDATA\MCS Modbus Toolkit\runtime"'
-  Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} environment"
-
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" Start SERVICE_AUTO_START'
-  Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} startup"
-
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppExit Default Restart'
-  Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} restart policy"
-
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppRestartDelay 3000'
-  Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} restart delay"
+  !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} automatic startup"
 !macroend
 
 !macro customInstall
@@ -152,12 +137,11 @@ mma2_config_ready:
   ${If} $MCSInstallSimulatorState == ${BST_CHECKED}
     !insertmacro MCS_NSSM "MCS-Simulator" "modbus-simulator-runtime.exe"
     ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "MCS-Simulator" DependOnService "MCS-MMA2"'
+      nsExec::ExecToLog 'sc.exe config "MCS-Simulator" depend= "MCS-MMA2"'
       Pop $0
       !insertmacro MCS_REQUIRE_SUCCESS "Configuring MCS-Simulator dependency"
     ${Else}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "MCS-Simulator" DependOnService'
-      Pop $0
+      DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\MCS-Simulator" "DependOnService"
     ${EndIf}
   ${Else}
     !insertmacro MCS_REMOVE_SERVICE "MCS-Simulator"
@@ -166,12 +150,11 @@ mma2_config_ready:
   ${If} $MCSInstallReplicatorState == ${BST_CHECKED}
     !insertmacro MCS_NSSM "MCS-Replicator" "modbus-replicator-runtime.exe"
     ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "MCS-Replicator" DependOnService "MCS-MMA2"'
+      nsExec::ExecToLog 'sc.exe config "MCS-Replicator" depend= "MCS-MMA2"'
       Pop $0
       !insertmacro MCS_REQUIRE_SUCCESS "Configuring MCS-Replicator dependency"
     ${Else}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "MCS-Replicator" DependOnService'
-      Pop $0
+      DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\MCS-Replicator" "DependOnService"
     ${EndIf}
   ${Else}
     !insertmacro MCS_REMOVE_SERVICE "MCS-Replicator"
@@ -179,15 +162,15 @@ mma2_config_ready:
 
   ${If} $MCSStartServicesState == ${BST_CHECKED}
     ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" start "MCS-MMA2"'
+      nsExec::ExecToLog 'sc.exe start "MCS-MMA2"'
       Pop $0
     ${EndIf}
     ${If} $MCSInstallSimulatorState == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" start "MCS-Simulator"'
+      nsExec::ExecToLog 'sc.exe start "MCS-Simulator"'
       Pop $0
     ${EndIf}
     ${If} $MCSInstallReplicatorState == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" start "MCS-Replicator"'
+      nsExec::ExecToLog 'sc.exe start "MCS-Replicator"'
       Pop $0
     ${EndIf}
   ${EndIf}

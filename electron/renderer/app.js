@@ -35,4 +35,21 @@ Promise.all([
   setStatuses(status);
   document.getElementById('bin-path').textContent = paths.bin;
   document.getElementById('data-path').textContent = paths.data;
+  document.getElementById('runtime-mode').textContent = paths.mode === 'windows-service'
+    ? 'Windows services (NSSM)'
+    : 'Electron child processes';
+
+  if (paths.mode === 'windows-service') {
+    const startButton = document.getElementById('start-all');
+    const stopButton = document.getElementById('stop-all');
+    startButton.disabled = true;
+    stopButton.disabled = true;
+    startButton.title = 'Installed backend runtimes are managed by Windows Services.';
+    stopButton.title = 'Closing Electron does not stop installed Windows services.';
+    appendLog({
+      process: 'electron',
+      level: 'info',
+      text: 'Backend runtimes are managed by NSSM Windows services. Use Windows Services for manual start/stop operations.'
+    });
+  }
 }).catch(error => appendLog({process: 'electron', level: 'error', text: error.message || String(error)}));

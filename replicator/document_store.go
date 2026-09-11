@@ -17,6 +17,7 @@ type persistedDevice struct {
 	Enabled     bool                 `yaml:"enabled"`
 	Endpoint    string               `yaml:"endpoint"`
 	UnitID      uint16               `yaml:"unit_id"`
+	PullBlocks  []PullBlock          `yaml:"pull_blocks"`
 	PullBlock   *PullBlock           `yaml:"pull_block"`
 	Function    uint8                `yaml:"function"`
 	Start       uint16               `yaml:"start"`
@@ -29,9 +30,8 @@ func (s Store) DocumentPath() string {
 	return filepath.Join(s.ReplicatorDir(), DocumentFile)
 }
 
-// LoadDocument returns an empty document when the UI configuration has not yet
-// been created. Existing pre-pull-block documents are migrated in memory and
-// become canonical the next time SaveDocument succeeds.
+// LoadDocument migrates both legacy flat ranges and the prior single
+// pull_block shape into the canonical ordered pull_blocks collection.
 func (s Store) LoadDocument() (Document, error) {
 	path := s.DocumentPath()
 	b, err := os.ReadFile(path)
@@ -47,31 +47,51 @@ func (s Store) LoadDocument() (Document, error) {
 	}
 	doc := Document{Devices: make([]DeviceDefinition, 0, len(stored.Devices))}
 	for _, item := range stored.Devices {
-		block := PullBlock{Function: item.Function, Start: item.Start, Count: item.Count, ScanRateMS: item.ScanRateMS}
-		if item.PullBlock != nil {
-			block = *item.PullBlock
+		blocks := append([]PullBlock(nil), item.PullBlocks...)
+		if len(blocks) == 0 && item.PullBlock != nil {
+			blocks = []PullBlock{*item.PullBlock}
 		}
-		doc.Devices = append(doc.Devices, DeviceDefinition{
+		if len(blocks) == 0 && (item.Function != 0 || item.Count != 0 || item.ScanRateMS != 0) {
+			blocks = []PullBlock{{Function: item.Function, Start: item.Start, Count: item.Count, ScanRateMS: item.ScanRateMS}}
+		}
+		device := DeviceDefinition{
 			Name:        item.Name,
 			Enabled:     item.Enabled,
 			Endpoint:    item.Endpoint,
 			UnitID:      item.UnitID,
-			PullBlock:   block,
+			PullBlocks:  blocks,
 			Destination: item.Destination,
-		})
+		}
+		if len(blocks) > 0 {
+			device.PullBlock = blocks[0]
+		}
+		doc.Devices = append(doc.Devices, device)
 	}
 	return doc, nil
 }
 
+func canonicalDocument(doc Document) Document {
+	out := cloneDocument(doc)
+	for i := range out.Devices {
+		device := &out.Devices[i]
+		if len(device.PullBlocks) == 0 {
+			device.PullBlocks = append([]PullBlock(nil), device.blocks()...)
+		}
+		device.PullBlock = PullBlock{}
+	}
+	return out
+}
+
 // SaveDocument validates and atomically persists the operator-facing document.
 func (s Store) SaveDocument(doc Document) error {
-	if err := ValidateDocument(doc); err != nil {
+	canonical := canonicalDocument(doc)
+	if err := ValidateDocument(canonical); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(s.ReplicatorDir(), 0o755); err != nil {
 		return err
 	}
-	b, err := yaml.Marshal(&doc)
+	b, err := yaml.Marshal(&canonical)
 	if err != nil {
 		return err
 	}

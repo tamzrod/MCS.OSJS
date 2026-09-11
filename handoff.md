@@ -2,56 +2,55 @@
 
 ## Current
 
-ACTIVE: REP-006 — Replicator Poll Loop
-State: IMPLEMENTED — AWAITING JR TEST
+ACTIVE: REP-007 — Simulator-to-Replicator End-to-End Verification
+State: READY FOR JR E2E TEST
 
-REP-005 is complete and archived. REP-006 remains ACTIVE until JR returns verification evidence and the coding agent reviews it.
+REP-006 is complete and archived. REP-007 is the final task in the currently authorized Replicator sequence (`Next: none`).
 
-## REP-005 Completion
+## REP-006 Completion
 
-JR verification PASS was accepted for REP-005:
+JR verification PASS was accepted for REP-006:
 
-- tested commit: `7eda5d964c795a0f2576e163ab5a599f7359fee7`;
+- tested commit: `bffee36e5660e15875dbe912be0e8d56d0c93d0c`;
 - clean working tree before test;
 - `gofmt -l .` produced no output;
-- successful exact-value 1:1 replication-cycle test passed;
-- foreign-owner collision protection passed;
-- cross-area rejection passed;
+- repeated serial execution / no-overlap test passed;
+- error-state / continuation-policy test passed;
+- clean cancellation test passed;
 - full `go test -count=1 ./...` passed;
 - `go vet ./...` passed with no diagnostics;
 - Go 1.27.1 was used from user-local `~/.local/go` only (no global install; sandbox-local test tooling per Operation CWAL; manually pinned by the previous JR sync step).
 
 The prior JR report's missing closing parenthesis was corrected here automatically. It was prose-only and did not affect the PASS evidence.
 
-## REP-006 Implementation Summary
+## REP-007 Verification Harness
 
-REP-006 implementation is now on `main` under `replicator/`.
+REP-007 is verification-only. No new Replicator product behavior is introduced.
 
-Implemented:
+Added test infrastructure:
 
-- `Runtime` poll-loop wrapper around the proven REP-005 single-cycle behavior;
-- persisted configuration validation before runtime start;
-- destination ownership/composition readiness check before the runtime is marked running;
-- immediate first cycle followed by one cycle per configured `poll_interval_ms` tick;
-- strictly serial cycle execution, so slow cycles cannot overlap;
-- deterministic runtime policy: record a failed cycle truthfully, then continue on the next normal tick with no retry/backoff burst;
-- race-safe `Snapshot()` runtime state with running flag, cycle count, last success/error, and last cycle timestamps;
-- successful cycles clear stale error state;
-- context cancellation stops the loop cleanly after any currently executing serial cycle returns;
-- no advanced backoff, multiple workers/devices/ranges, UI, or metrics/history storage.
+- `replicator/e2e_test.go`;
+- Replicator test dependency on the existing Simulator module.
 
-Files added for REP-006:
+The E2E test uses:
 
-- `replicator/runtime.go`
-- `replicator/runtime_test.go`
+- the actual `simulator.Store` and `ComposeDocument()` path to create the source reservation under owner `simulator`;
+- a distinct Replicator-owned destination reservation;
+- the real MMA2 binary built from `MMA2/cmd/mma2`;
+- the same shared Raw Ingest v1 path used by Simulator runtime values to seed/change the Simulator-owned source registers;
+- the REP-006 Replicator poll loop;
+- normal Modbus FC3 reads from the Replicator destination;
+- explicit ownership checks before and after replication.
+
+The test verifies initial source values copy unchanged, a later source value change propagates within the poll window, and Simulator/Replicator ownership remain distinct.
 
 Workflow state:
 
-- REP-005 archived under `workflow/archive/rep-005-single-range-replication-cycle.md`;
-- REP-006 promoted from `QUEUED` to `ACTIVE`;
-- REP-007 remains next and must not be advanced by JR.
+- REP-006 archived under `workflow/archive/rep-006-replicator-poll-loop.md`;
+- REP-007 promoted from `QUEUED` to `ACTIVE`;
+- REP-007 has `Next: none` and JR must not invent further work.
 
-## JR TEST TASK — REP-006
+## JR TEST TASK — REP-007
 
 JR role: TEST AND REPORT ONLY.
 
@@ -89,37 +88,25 @@ Expected: no output.
 
 If files are listed, record FAIL. Do not run `gofmt -w`.
 
-### 3. Repeated serial execution / no overlap
+### 3. Simulator → Replicator end-to-end verification
 
 ```bash
-go test -count=1 -run '^TestRuntimeRepeatsWithoutOverlap$' .
+go test -count=1 -run '^TestSimulatorToReplicatorE2E$' .
 ```
 
 Expected: exit code 0 and PASS.
 
-This verifies a cycle slower than the configured interval still runs serially with maximum concurrency of one, repeats multiple times, and leaves truthful success/stopped state.
+This focused test must prove all of the following in one workflow:
 
-### 4. Error state and continuation policy
+- Simulator creates/owns the source MMA2 reservation;
+- Replicator creates/owns a distinct destination reservation;
+- initial FC3 source register values are copied unchanged to the Replicator destination;
+- destination is read through normal Modbus FC3;
+- source values are changed again through Simulator's Raw Ingest transport path;
+- the Replicator poll loop propagates the changed values within the polling window;
+- both ownership entries remain present and distinct after the copy.
 
-```bash
-go test -count=1 -run '^TestRuntimeRecordsCycleErrorAndContinues$' .
-```
-
-Expected: exit code 0 and PASS.
-
-This verifies failed cycles are recorded as failures with the exact last error and the runtime continues only on subsequent normal ticks.
-
-### 5. Clean cancellation
-
-```bash
-go test -count=1 -run '^TestRuntimeCancelStopsCleanly$' .
-```
-
-Expected: exit code 0 and PASS.
-
-This verifies cancellation returns cleanly and the final runtime state is not falsely left RUNNING.
-
-### 6. Full Replicator regression
+### 4. Full Replicator regression
 
 ```bash
 go test -count=1 ./...
@@ -127,7 +114,7 @@ go test -count=1 ./...
 
 Expected: exit code 0 and package PASS.
 
-### 7. Native Go verification
+### 5. Native Go verification
 
 ```bash
 go vet ./...
@@ -135,7 +122,7 @@ go vet ./...
 
 Expected: exit code 0 with no diagnostics.
 
-### 8. JR report
+### 6. JR report
 
 Replace everything below `## JR TEST REPORT` with the actual result. Preserve every other section exactly.
 
@@ -154,20 +141,8 @@ Exit/result: <result>
 Output:
 <exact output>
 
-Serial poll loop:
-Command: go test -count=1 -run '^TestRuntimeRepeatsWithoutOverlap$' .
-Exit/result: <result>
-Output:
-<exact output>
-
-Error state / continuation:
-Command: go test -count=1 -run '^TestRuntimeRecordsCycleErrorAndContinues$' .
-Exit/result: <result>
-Output:
-<exact output>
-
-Clean cancellation:
-Command: go test -count=1 -run '^TestRuntimeCancelStopsCleanly$' .
+Simulator-to-Replicator E2E:
+Command: go test -count=1 -run '^TestSimulatorToReplicatorE2E$' .
 Exit/result: <result>
 Output:
 <exact output>
@@ -194,55 +169,12 @@ After writing the report, JR may commit and push **handoff.md only**:
 cd ..
 git add handoff.md
 git diff --cached -- handoff.md
-git commit -m "JR report REP-006 verification"
+git commit -m "JR report REP-007 verification"
 git push origin main
 ```
 
-JR must stop after the report push. Do not fix failures. Do not archive REP-006. Do not advance REP-007.
+JR must stop after the report push. Do not fix failures. Do not archive REP-007. Do not invent or advance any next task because REP-007 has `Next: none`.
 
 ## JR TEST REPORT
 
-Verdict: PASS
-Tested commit: bffee36e5660e15875dbe912be0e8d56d0c93d0c
-
-Git status before test:
-(empty)
-
-Formatting check:
-Command: gofmt -l .
-Exit/result: exit code 0
-Output:
-(no output — no files listed)
-
-Serial poll loop:
-Command: go test -count=1 -run '^TestRuntimeRepeatsWithoutOverlap$' .
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.096s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.096s
-
-Error state / continuation:
-Command: go test -count=1 -run '^TestRuntimeRecordsCycleErrorAndContinues$' .
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.040s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.040s
-
-Clean cancellation:
-Command: go test -count=1 -run '^TestRuntimeCancelStopsCleanly$' .
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.006s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.006s
-
-Full Replicator tests:
-Command: go test -count=1 ./...
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.181s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.181s
-
-Go vet:
-Command: go vet ./...
-Exit/result: exit code 0
-Output:
-(no output — no diagnostics)
-
-Unexpected behavior:
-None. Note: Go 1.27.1 toolchain was used from user-local ~/.local/go (no global install; sandbox-local test tooling per Operation CWAL; manually pinned by the previous JR sync step.
+Verdict: PENDING

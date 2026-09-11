@@ -117,10 +117,7 @@ func HandleRuntimeRequest(manager *RuntimeManager, request RuntimeRequest) Runti
 		if err != nil {
 			return fail("APPLY_FAILED", err)
 		}
-		message := "Replicator settings applied without an MMA2 structural restart."
-		if structural {
-			message = "Replicator destination structure applied through the MMA2 restart path."
-		}
+		message := "Replicator settings saved to shared MMA2 configuration and activated through the MMA2 restart path."
 		response.OK = true
 		response.Result = ApplyResponse{Document: doc, Structural: structural, Message: message, CompletedAt: time.Now().UTC().Format(time.RFC3339Nano)}
 	default:

@@ -6,8 +6,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"mma2/internal/accessevents"
 	"mma2/internal/authority"
@@ -28,95 +30,49 @@ func main() {
 
 	ext := strings.ToLower(filepath.Ext(cfgPath))
 	if ext != ".yaml" && ext != ".yml" {
-		log.Fatalf("config path must end in .yaml or .yml, got: %s", cfgPath)
+		log.Fatalf("config file must be .yaml or .yml: %s", cfgPath)
 	}
-
-	log.Printf("mma2 v%s starting", version.Version)
-	log.Printf("config path: %s", cfgPath)
 
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		log.Fatalf("config load failed: %v", err)
 	}
-
 	if err := config.Validate(cfg); err != nil {
 		log.Fatalf("config validation failed: %v", err)
 	}
 
-	log.Println("config loaded and validated successfully")
+	log.Printf("[mma2 %s] config loaded and validated successfully", version.Version)
 
-	store, err := config.BuildMemoryStore(cfg)
+	store, err := config.BuildStore(cfg)
 	if err != nil {
-		log.Fatalf("memory build failed: %v", err)
+		log.Fatalf("build store: %v", err)
 	}
 
-	auth := authority.New()
-
-	policies, err := config.BuildAuthorityPolicies(cfg)
+	auth, err := authority.New(cfg)
 	if err != nil {
-		log.Fatalf("policy build failed: %v", err)
+		log.Fatalf("authority init failed: %v", err)
 	}
-
-	for mid, p := range policies {
-		auth.SetMemoryPolicy(mid, p)
-	}
-
 	log.Println("authority policies loaded")
 
-	// --------------------
-	// Notify
-	// --------------------
-
-	var notifier *notify.Engine
-
-	registry, err := config.BuildNotifyRegistry(cfg)
+	notifier, err := notify.New(cfg, store)
 	if err != nil {
-		log.Fatalf("notify registry build failed: %v", err)
+		log.Fatalf("notify init failed: %v", err)
 	}
+	defer notifier.Close()
+	log.Println("notify engine enabled")
 
-	if registry != nil {
-
-		var adapter notify.Adapter
-
-		// Influx adapter (optional)
-		if cfg.Notify != nil && cfg.Notify.Influx != nil {
-
-			influxCfg := cfg.Notify.Influx
-
-			adapter = notify.NewInfluxAdapter(
-				influxCfg.URL,
-				influxCfg.Org,
-				influxCfg.Bucket,
-				influxCfg.Token,
-				influxCfg.Measurement,
-			)
-
-			log.Println("notify engine enabled (influx adapter)")
-		} else {
-			adapter = notify.NewStdoutAdapter()
-			log.Println("notify engine enabled (stdout adapter)")
-		}
-
-		notifier = notify.NewEngine(registry, adapter, 256)
-
-	} else {
-		log.Println("notify engine disabled (no rules)")
+	ae, err := accessevents.New(cfg)
+	if err != nil {
+		log.Fatalf("access events init failed: %v", err)
 	}
-
-	// --------------------
-	// Access Events
-	// --------------------
-
-	var ae *accessevents.Engine
+	if ae != nil {
+		defer ae.Close()
+	}
 
 	if cfg.AccessEvents != nil && cfg.AccessEvents.Enabled {
-		ae = accessevents.New(cfg.AccessEvents)
-
 		mux := http.NewServeMux()
-		mux.Handle(cfg.AccessEvents.Output.Path, accessevents.NewHandler(ae))
+		mux.HandleFunc("/events", ae.HandleEvents)
 
-		// Bind the listener before starting the goroutine so that bind errors
-		// cause a clean startup failure rather than a silent background crash.
 		ln, err := net.Listen("tcp", cfg.AccessEvents.Output.Listen)
 		if err != nil {
 			log.Fatalf("access events: failed to bind %s: %v", cfg.AccessEvents.Output.Listen, err)
@@ -159,5 +115,13 @@ func main() {
 
 	log.Println("mma2 ingress started")
 
-	select {}
+	// An empty valid configuration has no ingress goroutine. A bare `select {}`
+	// makes the Go runtime treat that state as a deadlock and abort the process.
+	// Block on real process signals instead so MMA2 can stay alive while idle and
+	// still terminate cleanly when the supervisor requests a restart/shutdown.
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+	signal.Stop(stop)
+	log.Println("mma2 shutdown requested")
 }

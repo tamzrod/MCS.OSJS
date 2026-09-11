@@ -9,6 +9,34 @@ import (
 	"time"
 )
 
+func TestReadConfiguredSourceUsesPersistedConfig(t *testing.T) {
+	addr, stop := startTestModbusServer(t, 3, 30, []uint16{11, 22})
+	defer stop()
+
+	host, port := splitTestAddress(t, addr)
+	store := Store{Root: t.TempDir()}
+	cfg := Config{
+		Source: SourceConfig{
+			Host: host, Port: port, UnitID: 7, Function: 3, Start: 30, Count: 2, PollIntervalMS: 100,
+		},
+		Destination: DestinationConfig{
+			ListenerPort: 1502, UnitID: 9, Area: "fc3", Start: 100, Count: 2,
+		},
+	}
+	if err := store.Save(cfg); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	got, err := store.ReadConfiguredSource()
+	if err != nil {
+		t.Fatalf("ReadConfiguredSource: %v", err)
+	}
+	want := RegisterValues{Function: 3, Start: 30, Values: []uint16{11, 22}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v want %#v", got, want)
+	}
+}
+
 func TestReadSourceRangeFC3(t *testing.T) {
 	addr, stop := startTestModbusServer(t, 3, 12, []uint16{100, 200, 300})
 	defer stop()

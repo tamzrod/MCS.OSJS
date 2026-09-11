@@ -9,8 +9,7 @@ import (
 )
 
 // ComposeDocumentDestinations replaces only Replicator-owned MMA2 reservations
-// with the enabled destinations from doc. Foreign reservations are preserved
-// verbatim and first-come ownership is checked before any shared artifact write.
+// with the enabled destinations from doc. Foreign reservations are preserved.
 func (s Store) ComposeDocumentDestinations(doc Document) (Document, mma2composer.EffectiveConfig, error) {
 	resolved, err := s.ResolveDocumentDestinations(doc)
 	if err != nil {
@@ -43,19 +42,15 @@ func (s Store) ComposeDocumentDestinations(doc Document) (Document, mma2composer
 			device.Destination.Status = "AVAILABLE"
 			continue
 		}
-		runtimeCfg, err := device.runtimeConfig()
+		memory, err := destinationMemoryForBlocks(device.Destination.UnitID, device.blocks())
 		if err != nil {
 			return Document{}, mma2composer.EffectiveConfig{}, fmt.Errorf("device %q: %w", device.Name, err)
 		}
-		memory, err := destinationMemory(runtimeCfg.Destination)
-		if err != nil {
-			return Document{}, mma2composer.EffectiveConfig{}, fmt.Errorf("device %q: %w", device.Name, err)
-		}
-		id := fmt.Sprintf("replicator-%d-%d", runtimeCfg.Destination.ListenerPort, runtimeCfg.Destination.UnitID)
-		listen := net.JoinHostPort("0.0.0.0", strconv.Itoa(int(runtimeCfg.Destination.ListenerPort)))
+		id := fmt.Sprintf("replicator-%d-%d", device.Destination.Port, device.Destination.UnitID)
+		listen := net.JoinHostPort("0.0.0.0", strconv.Itoa(int(device.Destination.Port)))
 		cfg = mma2composer.AddMemory(cfg, id, listen, memory)
 		owners.Reservations = append(owners.Reservations, mma2composer.OwnershipEntry{
-			Port: runtimeCfg.Destination.ListenerPort, UnitID: runtimeCfg.Destination.UnitID, Owner: ProducerReplicator,
+			Port: device.Destination.Port, UnitID: device.Destination.UnitID, Owner: ProducerReplicator,
 		})
 		device.Destination.Owner = ProducerReplicator
 		device.Destination.Status = "OWNED"
@@ -64,6 +59,41 @@ func (s Store) ComposeDocumentDestinations(doc Document) (Document, mma2composer
 		return Document{}, mma2composer.EffectiveConfig{}, err
 	}
 	return resolved, cfg, nil
+}
+
+func unionArea(current *mma2composer.Area, start, count uint16) *mma2composer.Area {
+	if current == nil {
+		return &mma2composer.Area{Start: start, Count: count}
+	}
+	lo := uint32(current.Start)
+	hi := lo + uint32(current.Count)
+	blockLo := uint32(start)
+	blockHi := blockLo + uint32(count)
+	if blockLo < lo {
+		lo = blockLo
+	}
+	if blockHi > hi {
+		hi = blockHi
+	}
+	return &mma2composer.Area{Start: uint16(lo), Count: uint16(hi - lo)}
+}
+
+func destinationMemoryForBlocks(unitID uint16, blocks []PullBlock) (mma2composer.Memory, error) {
+	if len(blocks) == 0 {
+		return mma2composer.Memory{}, fmt.Errorf("at least one pull block is required")
+	}
+	memory := mma2composer.Memory{UnitID: unitID}
+	for _, block := range blocks {
+		switch block.Function {
+		case 3:
+			memory.HoldingRegs = unionArea(memory.HoldingRegs, block.Start, block.Count)
+		case 4:
+			memory.InputRegs = unionArea(memory.InputRegs, block.Start, block.Count)
+		default:
+			return mma2composer.Memory{}, fmt.Errorf("unsupported pull block function %d", block.Function)
+		}
+	}
+	return memory, nil
 }
 
 func documentDestinationPorts(doc Document) []uint16 {

@@ -130,7 +130,7 @@ JR must stop after the report push. Do not fix failures. Do not advance REP-004.
 ## JR TEST REPORT
 
 Verdict: PASS
-Tested commit: dcb9f8b75634d547bbe025004535cad0c992ba1
+Tested commit: c11ae364652e1f2b2e65b9d74397545050b25edb
 
 Git status before test:
 (empty)
@@ -143,10 +143,9 @@ Output:
 
 Focused tests:
 Command: go test -count=1 ./...
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.004s
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.006s
 Output:
-go: downloading gopkg.in/yaml.v3 v3.0.1
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.004s
+ok      github.com/tamzrod/MCS.OSJS/replicator  0.006s
 
 Go vet:
 Command: go vet ./...
@@ -155,4 +154,4 @@ Output:
 (no output — no diagnostics)
 
 Unexpected behavior:
-None. Note: Go 1.27.1 toolchain was installed user-locally at ~/.local/go (per user instruction,and no global install, between the previous BLOCKED report and this run.
+None. Note: Go 1.27.1 toolchain was used from user-local ~/.local/go (no global install; previously prepared in the sandbox per Operation CWAL guidelines.

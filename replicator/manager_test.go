@@ -66,6 +66,11 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 
 	device := validDeviceDefinition("PLC-runtime")
 	device.Endpoint = net.JoinHostPort(sourceHost, portString(sourcePort))
+	device.PullBlocks = []PullBlock{
+		{Function: 3, Start: 10, Count: 4, ScanRateMS: 40},
+		{Function: 4, Start: 100, Count: 2, ScanRateMS: 180},
+	}
+	device.PullBlock = device.PullBlocks[0]
 	device.Destination = DestinationSelection{Port: destinationPort, UnitID: 9}
 	ackDone := ackNext()
 	doc, structural, err := manager.Apply(Document{Devices: []DeviceDefinition{device}})
@@ -78,7 +83,7 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 	if ackErr := <-ackDone; ackErr != nil {
 		t.Fatalf("restart acknowledgement helper: %v", ackErr)
 	}
-	if len(doc.Devices) != 1 || doc.Devices[0].Destination.Status != "OWNED" || doc.Devices[0].Destination.Owner != ProducerReplicator {
+	if len(doc.Devices) != 1 || len(doc.Devices[0].PullBlocks) != 2 || doc.Devices[0].Destination.Status != "OWNED" || doc.Devices[0].Destination.Owner != ProducerReplicator {
 		t.Fatalf("resolved document = %#v", doc)
 	}
 	if _, err := os.Stat(requestPath); !os.IsNotExist(err) {
@@ -91,22 +96,25 @@ func TestRuntimeManagerApplyLifecycleAndStatus(t *testing.T) {
 		if statusErr != nil {
 			t.Fatal(statusErr)
 		}
-		if status.Cycles > 0 {
+		if len(status.Blocks) == 2 && status.Blocks[0].Cycles >= 4 && status.Blocks[1].Cycles >= 1 {
 			if !status.Running || status.Source != "ERROR" || status.LastError == "" || status.LastPoll == "" {
 				t.Fatalf("status = %#v, want running ERROR with last error/poll", status)
+			}
+			if status.Blocks[0].Cycles <= status.Blocks[1].Cycles {
+				t.Fatalf("independent cadence not visible: fast=%d slow=%d", status.Blocks[0].Cycles, status.Blocks[1].Cycles)
 			}
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("runtime did not complete a cycle before timeout: %#v", status)
+			t.Fatalf("runtimes did not complete independent cycles before timeout: %#v", status)
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 
-	// Save & Apply always restarts MMA2, even when only the pull-block scan rate
-	// changes and the served destination structure is otherwise identical.
-	edited := doc
-	edited.Devices[0].PullBlock.ScanRateMS = 500
+	// Save & Apply always restarts MMA2 even when only one block scan rate changes.
+	edited := cloneDocument(doc)
+	edited.Devices[0].PullBlocks[0].ScanRateMS = 90
+	edited.Devices[0].PullBlock = edited.Devices[0].PullBlocks[0]
 	ackDone = ackNext()
 	_, structural, err = manager.Apply(edited)
 	if err != nil {

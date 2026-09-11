@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCS Modbus Toolkit</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div>
+        <strong>MCS Modbus Toolkit</strong>
+        <span class="subtitle">Standalone Simulator + Replicator</span>
+      </div>
+      <div class="runtime-strip">
+        <span>MMA2 <b id="status-mma2">—</b></span>
+        <span>Simulator <b id="status-simulator">—</b></span>
+        <span>Replicator <b id="status-replicator">—</b></span>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Application tabs">
+      <button class="tab active" data-tab="simulator">Simulator</button>
+      <button class="tab" data-tab="replicator">Replicator</button>
+      <button class="tab" data-tab="diagnostics">Diagnostics</button>
+    </nav>
+
+    <main class="content">
+      <section class="panel active" id="panel-simulator">
+        <h2>Modbus Simulator</h2>
+        <p class="note">This standalone shell is ready to host the Simulator UI without the OS.js desktop.</p>
+        <div class="work-area">
+          <div class="placeholder-title">Simulator standalone renderer</div>
+          <div class="placeholder-copy">The next integration step is wiring the existing Simulator device editor directly to the desktop runtime bridge.</div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-replicator">
+        <h2>Modbus Replicator</h2>
+        <p class="note">This standalone shell is ready to host the Replicator UI without the OS.js desktop.</p>
+        <div class="work-area">
+          <div class="placeholder-title">Replicator standalone renderer</div>
+          <div class="placeholder-copy">The existing Device / Pull Blocks UI can be moved here while keeping the same Go backend behavior.</div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-diagnostics">
+        <div class="diagnostic-actions">
+          <button id="start-all">Start runtimes</button>
+          <button id="stop-all">Stop runtimes</button>
+        </div>
+        <div class="paths">
+          <div><strong>Binary folder:</strong> <span id="bin-path">—</span></div>
+          <div><strong>Data folder:</strong> <span id="data-path">—</span></div>
+        </div>
+        <pre id="log"></pre>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

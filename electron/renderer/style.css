@@ -1,0 +1,25 @@
+html, body { margin: 0; width: 100%; height: 100%; background: #c0c0c0; color: #111; font: 13px Tahoma, "Segoe UI", sans-serif; }
+* { box-sizing: border-box; }
+button { font: inherit; }
+.app-shell { display: grid; grid-template-rows: auto auto 1fr; width: 100%; height: 100%; min-height: 0; background: #c0c0c0; }
+.titlebar { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 10px 12px; border-bottom: 1px solid #808080; background: #d4d4d4; }
+.subtitle { margin-left: 10px; color: #555; font-size: 11px; }
+.runtime-strip { display: flex; gap: 14px; font-size: 11px; }
+.status-ok { color: #126b19; }
+.status-stop { color: #8b0000; }
+.tabs { display: flex; align-items: flex-end; gap: 2px; padding: 8px 10px 0; background: #bdbdbd; border-bottom: 2px solid #eee; }
+.tab { position: relative; min-width: 130px; padding: 7px 16px; border: 2px outset #eee; border-bottom: 2px solid #808080; border-radius: 7px 7px 0 0; background: #b9b9b9; cursor: pointer; }
+.tab::before { content: ''; position: absolute; top: -5px; left: 10px; width: 44px; height: 5px; border: 1px solid #888; border-bottom: 0; background: inherit; }
+.tab.active { z-index: 2; margin-bottom: -2px; padding-top: 9px; background: #d4d4d4; border-bottom-color: #d4d4d4; }
+.content { min-height: 0; overflow: hidden; padding: 10px; background: #d4d4d4; }
+.panel { display: none; height: 100%; min-height: 0; }
+.panel.active { display: flex; flex-direction: column; }
+.panel h2 { margin: 0 0 8px; font-size: 18px; }
+.note { margin: 0 0 10px; color: #555; }
+.work-area { flex: 1; display: grid; place-content: center; gap: 8px; min-height: 0; padding: 24px; text-align: center; border: 2px inset #ddd; background: #fff; }
+.placeholder-title { font-weight: 700; font-size: 16px; }
+.placeholder-copy { max-width: 620px; color: #666; }
+.diagnostic-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.diagnostic-actions button { padding: 6px 10px; border: 2px outset #eee; background: #c0c0c0; cursor: pointer; }
+.paths { display: grid; gap: 5px; margin-bottom: 10px; padding: 8px; border: 1px solid #999; background: #eee; word-break: break-all; }
+#log { flex: 1; min-height: 0; margin: 0; padding: 10px; overflow: auto; color: #e8e8e8; background: #111; border: 2px inset #555; font: 12px Consolas, monospace; white-space: pre-wrap; }

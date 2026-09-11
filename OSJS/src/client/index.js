@@ -41,6 +41,8 @@ import NamelessTaskbarServiceProvider from './providers/nameless-taskbar.js';
 // per user) plus the Windows-style Auto Arrange desktop context-menu entry.
 import NamelessDesktopIconsServiceProvider from './providers/nameless-desktop-icons.js';
 import NamelessIconFallbackServiceProvider from './providers/nameless-icon-fallback.js';
+// MCS application shortcuts deliberately pinned to the workstation desktop.
+import NamelessAppShortcutsServiceProvider from './providers/nameless-app-shortcuts.js';
 
 // UIX-001: browser-tab icon —the donated shell factory/building plus
 // heartbeat SVG replaces the browser's default (generic globe).
@@ -89,6 +91,7 @@ const init = () => {
   osjs.register(NamelessAutoStartServiceProvider);
   osjs.register(NamelessTaskbarServiceProvider);
   osjs.register(NamelessDesktopIconsServiceProvider);
+  osjs.register(NamelessAppShortcutsServiceProvider);
   osjs.register(NamelessIconFallbackServiceProvider);
 
   // UIX-001: point the browser tab at the shell favicon (renders the donated

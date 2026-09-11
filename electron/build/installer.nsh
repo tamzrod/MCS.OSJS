@@ -1,6 +1,15 @@
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
 
+!macro MCS_REMOVE_SERVICE service
+  IfFileExists "$INSTDIR\resources\bin\nssm.exe" 0 +5
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" stop \"${service}\"'
+  Pop $0
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" remove \"${service}\" confirm'
+  Pop $0
+!macroend
+
+!ifndef BUILD_UNINSTALLER
 Var MCSServicePage
 Var MCSInstallMMA2
 Var MCSInstallSimulator
@@ -82,14 +91,6 @@ FunctionEnd
   Pop $0
 !macroend
 
-!macro MCS_REMOVE_SERVICE service
-  IfFileExists "$INSTDIR\resources\bin\nssm.exe" 0 +5
-  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" stop \"${service}\"'
-  Pop $0
-  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" remove \"${service}\" confirm'
-  Pop $0
-!macroend
-
 !macro customInstall
   CreateDirectory "$COMMONAPPDATA\MCS Modbus Toolkit\runtime"
 
@@ -144,6 +145,7 @@ FunctionEnd
     ${EndIf}
   ${EndIf}
 !macroend
+!endif
 
 !macro customUnWelcomePage
   !insertmacro MUI_UNPAGE_WELCOME

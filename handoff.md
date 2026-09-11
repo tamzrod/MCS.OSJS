@@ -346,4 +346,71 @@ JR must stop after the report push. Do not fix failures, edit source, archive ta
 
 ## JR TEST REPORT
 
-Verdict: PENDING
+Verdict: FAIL
+Tested commit: 584fcbaa8762f948b066dd4d3c00aadd30a1cc96
+
+Repository state:
+(pull fast-forward 13e87ec..584fcba succeeded; git status --short before test: empty; HEAD 584fcbaa8762f948b066dd4d3c00aadd30a1cc96)
+
+Replicator formatting + focused tests:
+Command: gofmt -l .
+Exit/result: exit code 0 (no output)
+Command: go test -count=1 -run '^(TestDocumentSaveLoadRoundTrip|TestSuggestDestinationSkipsOccupiedReservations|TestResolveManualForeignCollisionReportsOwner|TestComposeDocumentPreservesForeignAndAllReplicatorReservations|TestDeviceRuntimeConfigMapsOneToOneRange|TestRuntimeManagerApplyLifecycleAndStatus)$' .
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.049s
+Output: go: downloading gopkg.in/yaml.v3 v3.0.1; ok github.com/tamzrod/MCS.OSJS/replicator  0.049s
+
+Simulator-to-Replicator E2E:
+Command: go test -count=1 -run '^TestSimulatorToReplicatorE2E$' .
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  13.417s
+
+Full Replicator tests + vet:
+Command: go test -count=1 ./...
+Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  12.958s; ? github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime [no test files]
+Command: go vet ./...
+Exit/result: exit code 0 (no output, no diagnostics)
+
+OS.js build:
+(No package-lock.json is committed;ware npm ci was unavoidable. Installed deps sandbox-locally with npm install --no-package-lock (956 packages, exit 0,no tracked mutation; Node v16.20.2 user-local per repo engines <17).
+Command: npm run build:local-packages
+Exit/result: exit code 0 — built 4 local packages exactly once: ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme
+Command: npm run package:discover
+Exit/result: exit code 0 — discovered 6 package(s): 4 local incl. modbus-replicator as ModbusReplicator [symlink, local],and 2 npm
+Command: npm run build
+Exit/result: exit code 0 — webpack build completed
+Post-build git status: empty; dist/ and packages.json are git-ignored normal build output.
+
+Docker deployment:
+Command: docker compose config
+Exit/result: exit code 0 (config valid)
+Command: docker compose build osjs-shell modbus-simulator-runtime modbus-replicator-runtime mma2
+Exit/result: exit code 0 — all four images built: mcs-osjs-shell:latest, mcs-modbus-simulator-runtime:latest, mcs-modbus-replicator-runtime:latest, mcs-mma2:latest
+Command: docker compose up -d; docker compose ps
+Result: mcs-osjs-shell Up (healthy) port 18209; modbus-simulator-runtime Up; modbus-replicator-runtime Up; **mma2 Restarting (1) 18s — NOT running**
+Command: docker compose logs --no-color --tail=120 modbus-replicator-runtime mma2
+Replicator runtime: "Replicator runtime listening on /data/run/modbus-replicator.sock" (starts fine)
+mma2: "[mma2 v2.0.2] config loaded and validated successfully; authority policies loaded; notify engine enabled; mma2 ingress started; fatal error: all goroutines are asleep - deadlock!", goroutine 1 [select (no cases)] main.main() /build/cmd/mma2/main.go:162 +0x109c; exited unexpectedly: exit status 2; supervisor restart loop repeats.)
+
+Launcher/UI shell:
+osjs-shell loads both package servers: "Loading /src/packages/ModbusSimulator/server.js", "Loading /src/packages/ModbusReplicator/server.js"; server listening http://0.0.0.0:18209; /healthz => {"status":"ok","shell":"neutral"}
+Desktop: "Modbus Replicator" launcher iconvisible (generic application-x-executable.svg icon); Start menu > Development > "Modbus Replicator" and "Modbus Simulator" both present; launching Modbus Replicator from Start opens the window with left device list (Search devices... input, Add, Duplicate, Delete) and right Device Definition editor.
+Editor fields observed: Name, Enabled, Endpoint, Unit ID, FC (FC3/FC4 select), Start, Count, Scan Rate (ms); Destination: Port, Auto Port, Unit ID, Auto Unit ID, Owner, Status; footer Replicator/Source/Last Poll/Last Error area; Save & Apply/ Discard buttons.
+Persisted pre-existing devices on volume: Replicator "Rep-PLC-1" 127.0.0.1:5020 FC3 Enabled (Owner replicator, Status AVAILABLE); Simulator "Sim-PLC-1" Port 5020 - Unit 1.
+Desktop-icon double-click launch via browser automation was inconclusive (single-click does not launch in automation; Start-menu launch verified instead)
+
+Auto allocation + persistence:
+(Blocked by MMA2 deadlock. Sim-PLC-1 source exists on volume; Replicator Rep-PLC-1 editor present with Owner replicator Static AVAILABLE. Save & Apply could not complete ownership allocation end-to-end because the MMA2 ownership/raw-ingest backend is serviceless (mma2 crash-loop). No clean persisted-state close/reopen, Discard, or Duplicate flow could be completed.)
+
+Ownership collision:
+(Blocked by MMA2 deadlock. owners.yaml in mcs-modbus-replicator-runtime at /data/config/mma2/owners.yaml reads: reservations: [] — no ownership entries materialized; UI Owner/Status fields rendered but no backend reservation could be created or inspected end-to-end.)
+
+Runtime status/error recovery:
+(Blocked by MMA2 deadlock. Replicator runtime service itself started fine (listening on /data/run/modbus-replicator.sock); Source OK/ERROR transitions and Last Poll update could not be verified end-to-end because MMA2 backend is deadlocked.)
+
+Delete/release ownership:
+(Blocked by MMA2 deadlock. No ownership entries existed to release; final owners.yaml: reservations: [] — Simulator (5020,1) reservation never materialized because MMA2 cannot run.)
+
+Final git status:
+(empty — no unexpected tracked changes from testing)
+
+Unexpected behavior:
+mma2 container crash-loops with a fatal Go deadlock: "fatal error: all goroutines are asleep - deadlock!" at main.main() main.go:162 (empty config: listeners: []/owners: [] on fresh volume). This blocks Docker gate (all four running expected) and all downstream interactive MMA2-backed verifications (steps 8-12). Simulator/Replicator runtimes and osjs-shell work. Also: npm ci cannot run (no committed package-lock.json; condemned by packet rule against manifest alteration; used sandbox-local npm install --no-package-lock instead; all build gates passed.)

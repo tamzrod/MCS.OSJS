@@ -14,11 +14,11 @@ const ProducerReplicator = "replicator"
 
 // CycleResult describes one completed 1:1 replication invocation.
 type CycleResult struct {
-	Function        uint8
-	SourceStart     uint16
-	DestinationArea string
+	Function         uint8
+	SourceStart      uint16
+	DestinationArea  string
 	DestinationStart uint16
-	Count           uint16
+	Count            uint16
 }
 
 // RunOnce loads the persisted Replicator configuration, reserves the configured
@@ -50,7 +50,7 @@ func (s Store) RunOnce() (CycleResult, error) {
 	return CycleResult{
 		Function:         values.Function,
 		SourceStart:      values.Start,
-		DestinationArea: strings.ToLower(strings.TrimSpace(cfg.Destination.Area)),
+		DestinationArea:  strings.ToLower(strings.TrimSpace(cfg.Destination.Area)),
 		DestinationStart: cfg.Destination.Start,
 		Count:            cfg.Destination.Count,
 	}, nil

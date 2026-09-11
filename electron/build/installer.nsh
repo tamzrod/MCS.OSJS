@@ -23,28 +23,31 @@ Function MCSServicePageCreate
     Abort
   ${EndIf}
 
-  !insertmacro MUI_HEADER_TEXT "Service Configuration" "Choose which MCS backend runtimes Windows will run as services."
+  ${NSD_CreateLabel} 0 0 100% 14u "Service Configuration"
+  Pop $0
+  CreateFont $1 "$(^Font)" "10" "700"
+  SendMessage $0 ${WM_SETFONT} $1 1
 
-  ${NSD_CreateLabel} 0 0 100% 24u "Electron remains a normal desktop application. Selected backend runtimes are registered as automatic Windows services through NSSM."
+  ${NSD_CreateLabel} 0 18u 100% 22u "Choose which MCS backend runtimes Windows will run as services. Electron remains a normal desktop application."
   Pop $0
 
-  ${NSD_CreateCheckbox} 0 34u 100% 12u "MMA2 - shared Modbus memory appliance"
+  ${NSD_CreateCheckbox} 0 48u 100% 12u "MMA2 - shared Modbus memory appliance"
   Pop $MCSInstallMMA2
   ${NSD_Check} $MCSInstallMMA2
 
-  ${NSD_CreateCheckbox} 0 54u 100% 12u "Simulator runtime"
+  ${NSD_CreateCheckbox} 0 68u 100% 12u "Simulator runtime"
   Pop $MCSInstallSimulator
   ${NSD_Check} $MCSInstallSimulator
 
-  ${NSD_CreateCheckbox} 0 74u 100% 12u "Replicator runtime"
+  ${NSD_CreateCheckbox} 0 88u 100% 12u "Replicator runtime"
   Pop $MCSInstallReplicator
   ${NSD_Check} $MCSInstallReplicator
 
-  ${NSD_CreateCheckbox} 0 102u 100% 12u "Start selected services after installation"
+  ${NSD_CreateCheckbox} 0 116u 100% 12u "Start selected services after installation"
   Pop $MCSStartServices
   ${NSD_Check} $MCSStartServices
 
-  ${NSD_CreateLabel} 0 128u 100% 30u "Service names: MCS-MMA2, MCS-Simulator, MCS-Replicator. Startup type: Automatic."
+  ${NSD_CreateLabel} 0 142u 100% 30u "Service names: MCS-MMA2, MCS-Simulator, MCS-Replicator. Startup type: Automatic."
   Pop $0
 
   nsDialogs::Show
@@ -58,29 +61,29 @@ Function MCSServicePageLeave
 FunctionEnd
 
 !macro MCS_NSSM service executable
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" stop "${service}"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" stop \"${service}\"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" remove "${service}" confirm'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" remove \"${service}\" confirm'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" install "${service}" "$INSTDIR\resources\bin\${executable}"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" install \"${service}\" \"$INSTDIR\resources\bin\${executable}\"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppDirectory "$COMMONAPPDATA\MCS Modbus Toolkit\runtime"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppDirectory \"$COMMONAPPDATA\MCS Modbus Toolkit\runtime\"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppEnvironmentExtra "MCS_DATA_ROOT=$COMMONAPPDATA\MCS Modbus Toolkit\runtime"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppEnvironmentExtra \"MCS_DATA_ROOT=$COMMONAPPDATA\MCS Modbus Toolkit\runtime\"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" Start SERVICE_AUTO_START'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" Start SERVICE_AUTO_START'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppExit Default Restart'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppExit Default Restart'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppRestartDelay 3000'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppRestartDelay 3000'
   Pop $0
 !macroend
 
 !macro MCS_REMOVE_SERVICE service
   IfFileExists "$INSTDIR\resources\bin\nssm.exe" 0 +5
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" stop "${service}"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" stop \"${service}\"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" remove "${service}" confirm'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" remove \"${service}\" confirm'
   Pop $0
 !macroend
 
@@ -100,10 +103,10 @@ FunctionEnd
   ${If} $MCSInstallSimulatorState == ${BST_CHECKED}
     !insertmacro MCS_NSSM "MCS-Simulator" "modbus-simulator-runtime.exe"
     ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "MCS-Simulator" DependOnService "MCS-MMA2"'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"MCS-Simulator\" DependOnService \"MCS-MMA2\"'
       Pop $0
     ${Else}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "MCS-Simulator" DependOnService'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" reset \"MCS-Simulator\" DependOnService'
       Pop $0
     ${EndIf}
   ${Else}
@@ -113,10 +116,10 @@ FunctionEnd
   ${If} $MCSInstallReplicatorState == ${BST_CHECKED}
     !insertmacro MCS_NSSM "MCS-Replicator" "modbus-replicator-runtime.exe"
     ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "MCS-Replicator" DependOnService "MCS-MMA2"'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"MCS-Replicator\" DependOnService \"MCS-MMA2\"'
       Pop $0
     ${Else}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "MCS-Replicator" DependOnService'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" reset \"MCS-Replicator\" DependOnService'
       Pop $0
     ${EndIf}
   ${Else}
@@ -125,15 +128,15 @@ FunctionEnd
 
   ${If} $MCSStartServicesState == ${BST_CHECKED}
     ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" start "MCS-MMA2"'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" start \"MCS-MMA2\"'
       Pop $0
     ${EndIf}
     ${If} $MCSInstallSimulatorState == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" start "MCS-Simulator"'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" start \"MCS-Simulator\"'
       Pop $0
     ${EndIf}
     ${If} $MCSInstallReplicatorState == ${BST_CHECKED}
-      nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" start "MCS-Replicator"'
+      nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" start \"MCS-Replicator\"'
       Pop $0
     ${EndIf}
   ${EndIf}

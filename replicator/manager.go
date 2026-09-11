@@ -8,15 +8,27 @@ import (
 	"time"
 )
 
-// DeviceRuntimeStatus is the compact truthful state consumed by the OS.js UI.
-type DeviceRuntimeStatus struct {
-	Name      string `json:"name"`
-	Enabled   bool   `json:"enabled"`
+// BlockRuntimeStatus is the truthful runtime state for one Pull Block/poller.
+type BlockRuntimeStatus struct {
+	Index     int    `json:"index"`
 	Running   bool   `json:"running"`
 	Cycles    uint64 `json:"cycles"`
 	Source    string `json:"source_status"`
 	LastPoll  string `json:"last_poll,omitempty"`
 	LastError string `json:"last_error,omitempty"`
+}
+
+// DeviceRuntimeStatus preserves the previous aggregate fields while exposing
+// the ordered per-block states required by the Pull Blocks editor.
+type DeviceRuntimeStatus struct {
+	Name      string               `json:"name"`
+	Enabled   bool                 `json:"enabled"`
+	Running   bool                 `json:"running"`
+	Cycles    uint64               `json:"cycles"`
+	Source    string               `json:"source_status"`
+	LastPoll  string               `json:"last_poll,omitempty"`
+	LastError string               `json:"last_error,omitempty"`
+	Blocks    []BlockRuntimeStatus `json:"blocks"`
 }
 
 type managedRuntime struct {
@@ -91,24 +103,21 @@ func (r *managedRuntime) snapshot() RuntimeState {
 	return r.state
 }
 
-// RuntimeManager owns all UI-configured Replicator poll loops. Shared MMA2
-// structure is composed at apply/boot boundaries, never once per poll cycle.
+// RuntimeManager owns all UI-configured Replicator poll loops. Each enabled
+// Pull Block gets one managedRuntime while destination ownership remains device-level.
 type RuntimeManager struct {
 	store   Store
 	timeout time.Duration
 
 	mu       sync.RWMutex
 	document Document
-	runtimes map[string]*managedRuntime
+	runtimes map[string][]*managedRuntime
 }
 
 func NewRuntimeManager(store Store) *RuntimeManager {
-	return &RuntimeManager{store: store, timeout: DefaultApplyTimeout, runtimes: make(map[string]*managedRuntime)}
+	return &RuntimeManager{store: store, timeout: DefaultApplyTimeout, runtimes: make(map[string][]*managedRuntime)}
 }
 
-// Boot restores the persisted document. It never requests an MMA2 restart on
-// ordinary process boot; the independently managed MMA2 appliance is expected
-// to auto-start from the already-persisted shared config.
 func (m *RuntimeManager) Boot() error {
 	doc, err := m.store.LoadDocument()
 	if err != nil {
@@ -130,12 +139,6 @@ func (m *RuntimeManager) Boot() error {
 	return m.replaceRuntimes(resolved)
 }
 
-// Apply is the Save & Apply transaction boundary:
-//  1. resolve and re-check the latest shared ownership state;
-//  2. claim only free/self-owned destinations while preserving foreign entries;
-//  3. write the resulting Replicator slice into shared MMA2 settings;
-//  4. request MMA2 restart and wait for matching acknowledgement/readiness;
-//  5. only then persist the Replicator document and restart its poll loops.
 func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	resolved, err := m.store.ResolveDocumentDestinations(edited)
 	if err != nil {
@@ -158,15 +161,9 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	m.stopAll()
 	resolved, effective, err := m.store.ComposeDocumentDestinations(resolved)
 	if err != nil {
-		// A final compose-time ownership race must still fail without pretending
-		// the apply succeeded. Restore the previously running document when safe.
 		_ = m.replaceRuntimes(previousResolved)
 		return Document{}, structural, err
 	}
-
-	// Save & Apply always activates the shared MMA2 settings through the proven
-	// restart-request/ack path. Source-only edits therefore still get one clean
-	// lifecycle boundary instead of relying on stale process state.
 	if err := m.store.requestMMA2Restart(effective, documentDestinationPorts(resolved), m.timeout); err != nil {
 		return Document{}, structural, err
 	}
@@ -185,28 +182,10 @@ func (m *RuntimeManager) Document() Document {
 	return cloneDocument(m.document)
 }
 
-func (m *RuntimeManager) Status(name string) (DeviceRuntimeStatus, error) {
-	m.mu.RLock()
-	doc := cloneDocument(m.document)
-	runtime := m.runtimes[name]
-	m.mu.RUnlock()
-	var device *DeviceDefinition
-	for i := range doc.Devices {
-		if doc.Devices[i].Name == name {
-			device = &doc.Devices[i]
-			break
-		}
-	}
-	if device == nil {
-		return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name)
-	}
-	status := DeviceRuntimeStatus{Name: name, Enabled: device.Enabled, Source: "WAITING"}
-	if !device.Enabled {
-		status.Source = "DISABLED"
-		return status, nil
-	}
+func blockStatus(index int, runtime *managedRuntime) BlockRuntimeStatus {
+	status := BlockRuntimeStatus{Index: index, Source: "WAITING"}
 	if runtime == nil {
-		return status, nil
+		return status
 	}
 	snapshot := runtime.snapshot()
 	status.Running = snapshot.Running
@@ -223,7 +202,81 @@ func (m *RuntimeManager) Status(name string) (DeviceRuntimeStatus, error) {
 	default:
 		status.Source = "ERROR"
 	}
+	return status
+}
+
+func (m *RuntimeManager) Status(name string) (DeviceRuntimeStatus, error) {
+	m.mu.RLock()
+	doc := cloneDocument(m.document)
+	runtimes := append([]*managedRuntime(nil), m.runtimes[name]...)
+	m.mu.RUnlock()
+	var device *DeviceDefinition
+	for i := range doc.Devices {
+		if doc.Devices[i].Name == name {
+			device = &doc.Devices[i]
+			break
+		}
+	}
+	if device == nil {
+		return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name)
+	}
+	blocks := device.blocks()
+	status := DeviceRuntimeStatus{Name: name, Enabled: device.Enabled, Source: "WAITING", Blocks: make([]BlockRuntimeStatus, len(blocks))}
+	if !device.Enabled {
+		status.Source = "DISABLED"
+		for i := range status.Blocks {
+			status.Blocks[i] = BlockRuntimeStatus{Index: i, Source: "DISABLED"}
+		}
+		return status, nil
+	}
+	for i := range blocks {
+		var runtime *managedRuntime
+		if i < len(runtimes) {
+			runtime = runtimes[i]
+		}
+		bs := blockStatus(i, runtime)
+		status.Blocks[i] = bs
+		status.Cycles += bs.Cycles
+		status.Running = status.Running || bs.Running
+		if bs.LastPoll > status.LastPoll {
+			status.LastPoll = bs.LastPoll
+		}
+		if status.LastError == "" && bs.LastError != "" {
+			status.LastError = bs.LastError
+		}
+	}
+	switch {
+	case len(status.Blocks) == 0:
+		status.Source = "WAITING"
+	case anyBlockSource(status.Blocks, "ERROR"):
+		status.Source = "ERROR"
+	case allBlockSource(status.Blocks, "OK"):
+		status.Source = "OK"
+	default:
+		status.Source = "WAITING"
+	}
 	return status, nil
+}
+
+func anyBlockSource(blocks []BlockRuntimeStatus, value string) bool {
+	for _, block := range blocks {
+		if block.Source == value {
+			return true
+		}
+	}
+	return false
+}
+
+func allBlockSource(blocks []BlockRuntimeStatus, value string) bool {
+	if len(blocks) == 0 {
+		return false
+	}
+	for _, block := range blocks {
+		if block.Source != value {
+			return false
+		}
+	}
+	return true
 }
 
 func (m *RuntimeManager) Stop() {
@@ -231,26 +284,33 @@ func (m *RuntimeManager) Stop() {
 }
 
 func (m *RuntimeManager) replaceRuntimes(doc Document) error {
-	newRuntimes := make(map[string]*managedRuntime)
+	newRuntimes := make(map[string][]*managedRuntime)
 	for _, device := range doc.Devices {
 		if !device.Enabled {
 			continue
 		}
-		cfg, err := device.runtimeConfig()
-		if err != nil {
-			return fmt.Errorf("device %q: %w", device.Name, err)
+		blocks := device.blocks()
+		deviceRuntimes := make([]*managedRuntime, 0, len(blocks))
+		for i, block := range blocks {
+			cfg, err := device.runtimeConfigForBlock(block)
+			if err != nil {
+				return fmt.Errorf("device %q pull block %d: %w", device.Name, i, err)
+			}
+			if err := validateCycleMapping(cfg); err != nil {
+				return fmt.Errorf("device %q pull block %d: %w", device.Name, i, err)
+			}
+			deviceRuntimes = append(deviceRuntimes, newManagedRuntime(cfg))
 		}
-		if err := validateCycleMapping(cfg); err != nil {
-			return fmt.Errorf("device %q: %w", device.Name, err)
-		}
-		newRuntimes[device.Name] = newManagedRuntime(cfg)
+		newRuntimes[device.Name] = deviceRuntimes
 	}
 	m.mu.Lock()
 	m.document = cloneDocument(doc)
 	m.runtimes = newRuntimes
 	m.mu.Unlock()
-	for _, runtime := range newRuntimes {
-		runtime.start()
+	for _, group := range newRuntimes {
+		for _, runtime := range group {
+			runtime.start()
+		}
 	}
 	return nil
 }
@@ -258,10 +318,12 @@ func (m *RuntimeManager) replaceRuntimes(doc Document) error {
 func (m *RuntimeManager) stopAll() {
 	m.mu.Lock()
 	old := m.runtimes
-	m.runtimes = make(map[string]*managedRuntime)
+	m.runtimes = make(map[string][]*managedRuntime)
 	m.mu.Unlock()
-	for _, runtime := range old {
-		runtime.stop()
+	for _, group := range old {
+		for _, runtime := range group {
+			runtime.stop()
+		}
 	}
 }
 
@@ -270,13 +332,14 @@ func sameMMA2Structure(a, b Document) bool {
 }
 
 func structureKeys(doc Document) []string {
-	keys := make([]string, 0, len(doc.Devices))
+	keys := make([]string, 0)
 	for _, device := range doc.Devices {
 		if !device.Enabled {
 			continue
 		}
-		block := device.PullBlock
-		keys = append(keys, fmt.Sprintf("%d/%d/fc%d/%d/%d", device.Destination.Port, device.Destination.UnitID, block.Function, block.Start, block.Count))
+		for _, block := range device.blocks() {
+			keys = append(keys, fmt.Sprintf("%d/%d/fc%d/%d/%d", device.Destination.Port, device.Destination.UnitID, block.Function, block.Start, block.Count))
+		}
 	}
 	sort.Strings(keys)
 	return keys
@@ -297,5 +360,8 @@ func equalStrings(a, b []string) bool {
 func cloneDocument(doc Document) Document {
 	out := Document{Devices: make([]DeviceDefinition, len(doc.Devices))}
 	copy(out.Devices, doc.Devices)
+	for i := range out.Devices {
+		out.Devices[i].PullBlocks = append([]PullBlock(nil), doc.Devices[i].PullBlocks...)
+	}
 	return out
 }

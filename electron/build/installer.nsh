@@ -79,9 +79,9 @@ FunctionEnd
   Pop $0
   nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" install \"${service}\" \"$INSTDIR\resources\bin\${executable}\"'
   Pop $0
-  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppDirectory \"$COMMONAPPDATA\MCS Modbus Toolkit\runtime\"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppDirectory \"$COMMONPROGRAMDATA\MCS Modbus Toolkit\runtime\"'
   Pop $0
-  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppEnvironmentExtra \"MCS_DATA_ROOT=$COMMONAPPDATA\MCS Modbus Toolkit\runtime\"'
+  nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" AppEnvironmentExtra \"MCS_DATA_ROOT=$COMMONPROGRAMDATA\MCS Modbus Toolkit\runtime\"'
   Pop $0
   nsExec::ExecToLog '\"$INSTDIR\resources\bin\nssm.exe\" set \"${service}\" Start SERVICE_AUTO_START'
   Pop $0
@@ -92,7 +92,7 @@ FunctionEnd
 !macroend
 
 !macro customInstall
-  CreateDirectory "$COMMONAPPDATA\MCS Modbus Toolkit\runtime"
+  CreateDirectory "$COMMONPROGRAMDATA\MCS Modbus Toolkit\runtime"
 
   IfFileExists "$INSTDIR\resources\bin\nssm.exe" +3 0
   MessageBox MB_ICONSTOP|MB_OK "NSSM was not packaged. Place nssm.exe in electron\bin and rebuild the installer."

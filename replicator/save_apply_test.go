@@ -13,7 +13,7 @@ func TestSaveApplyRejectsForeignReservationBeforeMutation(t *testing.T) {
 	root := t.TempDir()
 	store := Store{Root: root}
 	previousDevice := validDeviceDefinition("PLC-1")
-	previousDevice.Destination = DestinationSelection{Port: 5021, UnitID: 1}
+	previousDevice.Destination = DestinationSelection{Port: 5021, UnitID: 2}
 	previous := Document{Devices: []DeviceDefinition{previousDevice}}
 	if err := store.SaveDocument(previous); err != nil {
 		t.Fatal(err)
@@ -22,21 +22,23 @@ func TestSaveApplyRejectsForeignReservationBeforeMutation(t *testing.T) {
 	composer := mma2composer.New(root, "simulator")
 	owners := mma2composer.OwnershipDoc{Reservations: []mma2composer.OwnershipEntry{
 		{Port: 5020, UnitID: 1, Owner: "simulator"},
-		{Port: 5021, UnitID: 1, Owner: ProducerReplicator},
+		{Port: 5021, UnitID: 2, Owner: ProducerReplicator},
 	}}
 	if err := composer.SaveOwners(owners); err != nil {
 		t.Fatal(err)
 	}
 
+	// Human-regression case: the port differs, but Unit ID 1 is already owned
+	// by Simulator. Save & Apply must reject before any mutation or restart.
 	editedDevice := previousDevice
-	editedDevice.Destination = DestinationSelection{Port: 5020, UnitID: 1}
+	editedDevice.Destination = DestinationSelection{Port: 5022, UnitID: 1}
 	manager := NewRuntimeManager(store)
 	_, _, err := manager.Apply(Document{Devices: []DeviceDefinition{editedDevice}})
 	if !errors.Is(err, mma2composer.ErrReservationOwnedByOther) {
 		t.Fatalf("Apply error = %v, want ownership conflict", err)
 	}
-	if !strings.Contains(err.Error(), "simulator") || !strings.Contains(err.Error(), "5020") {
-		t.Fatalf("Apply error = %v, want owner and reservation", err)
+	if !strings.Contains(err.Error(), "simulator") || !strings.Contains(err.Error(), "Unit ID 1") {
+		t.Fatalf("Apply error = %v, want owner and Unit ID conflict", err)
 	}
 
 	persisted, loadErr := store.LoadDocument()

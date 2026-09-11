@@ -23,8 +23,8 @@ func ValidateDocument(doc Document) error {
 
 func validatePullBlock(block PullBlock, index int) error {
 	prefix := fmt.Sprintf("pull_blocks[%d]", index)
-	if block.Function != 3 && block.Function != 4 {
-		return fmt.Errorf("%s.function must be FC3 or FC4", prefix)
+	if block.Function < 1 || block.Function > 4 {
+		return fmt.Errorf("%s.function must be FC1, FC2, FC3, or FC4", prefix)
 	}
 	if block.Count == 0 {
 		return fmt.Errorf("%s.count must be > 0", prefix)
@@ -38,9 +38,9 @@ func validatePullBlock(block PullBlock, index int) error {
 	return nil
 }
 
-// MMA2 currently exposes one contiguous memory window per FC area inside one
+// MMA2 exposes one contiguous memory window per FC area inside one
 // (port, unit_id) memory. Multiple Pull Blocks of the same FC may overlap or
-// touch, but a gap would create destination registers that no block actually
+// touch, but a gap would create destination addresses that no block actually
 // polls. Reject that shape instead of silently exposing an unpolled envelope.
 func validateRepresentablePullBlocks(blocks []PullBlock) error {
 	byFunction := map[uint8][]PullBlock{}

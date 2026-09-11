@@ -6,11 +6,36 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
+	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"mma2/internal/memorycore"
 	"mma2/internal/notify"
 )
+
+var lastActivityMarkerNS int64
+
+func markActivity() {
+	now := time.Now()
+	last := atomic.LoadInt64(&lastActivityMarkerNS)
+	if last != 0 && now.UnixNano()-last < int64(100*time.Millisecond) {
+		return
+	}
+	if !atomic.CompareAndSwapInt64(&lastActivityMarkerNS, last, now.UnixNano()) {
+		return
+	}
+
+	root := os.Getenv("MCS_DATA_ROOT")
+	if root == "" {
+		return
+	}
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return
+	}
+	_ = os.WriteFile(filepath.Join(root, "mma2.activity"), []byte(now.Format(time.RFC3339Nano)), 0o644)
+}
 
 // HandleConn handles a single Raw Ingest TCP connection.
 // It writes exactly 1 byte per packet:
@@ -79,6 +104,8 @@ func HandleConn(conn net.Conn, store *memorycore.Store, notifier *notify.Engine)
 			_, _ = conn.Write([]byte{RespInternalError})
 			return
 		}
+
+		markActivity()
 
 		// Successful write → optional notify
 		if notifier != nil {

@@ -254,4 +254,59 @@ JR must stop after the report push. Do not fix failures, archive tasks, change A
 
 ## JR TEST REPORT
 
-Verdict: PENDING
+Verdict: FAIL
+Tested commit: 0ce9cbca3e702b0e2ba0e58b992290a18547ab2d
+
+Repository state:
+(pull fast-forward 439d779..0ce9cbc succeeded; git status --short before test: empty)
+
+MMA2 correction gate:
+Command: gofmt -l cmd/mma2/main.go
+Exit/result: exit code 0 (no output)
+Command: go test -count=1 ./...
+Exit/result: exit code 1 — FAIL; cmd/mma2 main package build failed
+Output:
+# mma2/cmd/mma2
+cmd/mma2/main.go:46:23: undefined: config.BuildStore
+cmd/mma2/main.go:51:15: assignment mismatch: 2 variables but authority.New returns 1 value
+cmd/mma2/main.go:51:29: too many arguments in call to authority.New
+        have (*config.Config)
+        want ()
+cmd/mma2/main.go:57:26: undefined: notify.New
+cmd/mma2/main.go:64:13: assignment mismatch: 2 variables but accessevents.New returns 1 value
+cmd/mma2/main.go:64:30: cannot use cfg (variable of type *config.Config) as *accessevents.AccessEventsConfig value in argument to accessevents.New
+FAIL    mma2/cmd/mma2 [build failed]
+(ok: mma2/internal/config  0.011s; mma2/internal/restartwatch  0.006s; mma2/internal/transport/modbus  0.005s; others [no test files])
+Command: go vet ./...
+Exit/result: exit code 1 — vet: cmd/mma2/main.go:46:23: undefined: config.BuildStore
+
+MMA2 deployment retest:
+Command: docker compose build mma2
+Exit/result: exit code 1 — failed to solve: RUN CGO_ENABLED=0 GOOS=linux go build -o /out/mma2 ./cmd/mma2: same compile errors (config.BuildStore undefined; authority.New mismatch; notify.New undefined; accessevents.New arg mismatch)
+Command: docker compose up -d mma2; docker compose ps
+Result: mcs-mma2 Restarting (1) 57s — image rebuild failed, old image keeps crash-loops; mcs-osjs-shell Up (healthy;; mcs-modbus-simulator-runtime Up;; mcs-modbus-replicator-runtime Up
+Compose logs (old image) continue to show the same ingress-start-then-exit pattern; the fix could not be built into an image.
+
+Simulator source:
+(BLOCKED — MMA2 image could not be rebuilt and the running mma2 container remains crash-looping, so neither source reservation nor raw-ingest backend is available.)
+
+Auto allocation + persistence:
+(BLOCKED — MMA2 backend unavailable; no ownership/reservation path functional.)
+
+Ownership collision:
+(BLOCKED — MMA2 backend unavailable; owners.yaml could not be exercised. Existing file at /data/config/mma2/owners.yaml remains reservations: [].)
+
+Runtime status/error recovery:
+(BLOCKED — MMA2 backend unavailable; no replicated reads/writes possible.)
+
+Delete/release ownership:
+(BLOCKED — MMA2 backend unavailable; no reservations materialized.)
+
+Desktop launcher:
+(Not re-tested — MMA2 hard-fails gates 2-3; prior run already verified desktop icon presence, Start-menu launch, editor layout as INCONCLUSIVE for automated double-click.)
+
+Final git status:
+(empty — no unexpected tracked changes; only handoff.md modified by this report.)
+
+Unexpected behavior:
+The rectified MMA2/cmd/mma2/main.go does not compile against current internal packages: references config.BuildStore (undefined;, authority.New (wanting no args;, notify.New (undefined;, and accessevents.New (wanting *accessevents.AccessEventsConfig, whereas current package APIs differ). Gofmt is clean pero both go build/vet and the Docker rebuild fail identically. Fix is incomplete: main.go was changed but underlying internal APIs were not, or the referenced helpers do not exist in this tree.

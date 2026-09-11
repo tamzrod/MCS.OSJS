@@ -129,4 +129,29 @@ JR must stop after the report push. Do not fix failures. Do not advance REP-004.
 
 ## JR TEST REPORT
 
-Verdict: PENDING
+Verdict: BLOCKED
+Tested commit: 2c3a5f626932543b063ab948a642e818480b205a
+
+Git status before test:
+(empty)
+
+Formatting check:
+Command: gofmt -l .
+Exit/result: exit code 127 — bash: gofmt: command not found
+Output:
+bash: gofmt: command not found
+
+Focused tests:
+Command: go test -count=1 ./...
+Exit/result: not run — Go toolchain unavailable (go/gofmt not found on PATH or installed anywhere on system)
+Output:
+(not run)
+
+Go vet:
+Command: go vet ./...
+Exit/result: not run — Go toolchain unavailable (go/gofmt not found on PATH or installed anywhere on system)
+Output:
+(not run)
+
+Unexpected behavior:
+Go toolchain is missing on this system. Diagnostics: `which go gofmt` returned nothing; `go version` failed with "bash: go: command not found"; searches of /usr, /opt, /home, /snap, /usr/lib found no Go executable. Steps 3 and 4 (focused tests and go vet) could not be executed and are therefore not evidence of product failure; this is a missing-dependency block.

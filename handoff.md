@@ -6,54 +6,50 @@ ACTIVE SEQUENCE:
 - REP-BLOCK-002 — Independent Pull Block Pollers
 - REP-BLOCK-003 — Device / Pull Blocks Folder Tabs
 
-State: RECTIFIED — READY FOR JR RETEST
+State: IMPLEMENTED — READY FOR JR/HUMAN RETEST
 
 REP-BLOCK-001 and REP-OWN-001 remain archived. Shared MMA2 ownership remains exact `(port, unit_id)` pair ownership.
 
-## Rectifications after first JR pass
-
-The first JR pass verified the rendered UI, independent block cadence, persistence, and pair ownership, but failed the source-format gate because `document_test.go` was not gofmt-aligned. That formatting defect is corrected.
-
-Two implementation defects found during review were also corrected:
-
-1. Failed Save & Apply before successful MMA2 activation now restores the previously persisted Replicator pollers instead of leaving the device stopped.
-2. Multiple Pull Blocks of the same FC may overlap or touch, but may not contain a gap. MMA2 exposes one contiguous area per FC for one `(port, unit_id)` memory; rejecting a disjoint same-FC shape prevents silently exposing destination registers that no Pull Block polls.
-
-Examples:
-
-```text
-Allowed:
-FC3 0..9
-FC3 10..19
-
-Rejected:
-FC3 0..9
-FC3 100..109
-```
-
-Different FC areas remain independent, for example FC3 `0..15` plus FC4 `100..103` is valid.
-
-## Implemented behavior
+## Current implementation
 
 ### REP-BLOCK-002
 - One Replicator device carries an ordered `pull_blocks` collection.
-- Legacy flat source fields and prior single `pull_block` migrate into one collection entry.
-- Each enabled Pull Block has its own runtime poll loop/ticker and scan rate.
-- Endpoint, Source Unit ID, Enabled, Name, and destination reservation remain device-level.
-- Per-block runtime status exposes index, running, cycles, source status, last poll, and last error.
-- Same-FC Pull Blocks must form an overlap/contiguous destination area; gapped same-FC blocks are rejected before apply.
-- Shared destination ownership remains one exact `(port, unit_id)` reservation per device.
-- A failed pre-activation apply restores the previously persisted pollers.
+- Each Pull Block has independent FC / Start / Count / Scan Rate and its own poll loop/status.
+- Pull Blocks now support all Modbus read areas:
+  - FC1 Coils
+  - FC2 Discrete Inputs
+  - FC3 Holding Registers
+  - FC4 Input Registers
+- FC1/FC2 source bits are decoded from Modbus bit-packed responses and written through MMA2 Raw Ingest as bit values.
+- FC3/FC4 continue to replicate uint16 register values.
+- Destination MMA2 memory composes coils/discrete_inputs/holding_registers/input_registers from the configured blocks.
+- The destination memory keeps the external Modbus access policy, so third-party clients can read the served FC1-FC4 memory.
+- Same-FC Pull Blocks must overlap or touch; gapped same-FC blocks are rejected instead of exposing unpolled memory gaps.
+- Failed pre-activation Save & Apply restores the previously persisted pollers.
+- Human test already confirmed the Replicator destination is externally serving changing FC3 register values after the access-policy fix.
+
+### Operational Status semantics
+- `Owner: replicator` is ownership metadata only.
+- `OWNED` is not an operational success status.
+- Device `Status = OK` is driven by successful runtime replication cycles: destination memory is active, the source read succeeds, and Raw Ingest write succeeds.
+- A failed source read or destination write reports non-OK/error runtime state.
 
 ### REP-BLOCK-003
-- Existing left device tree/list remains unchanged as the device selector.
-- Right-side configuration has exactly two classic folder-style tabs: `Device` and `Pull Blocks`.
-- Blocks are cards/rows inside `Pull Blocks`; blocks are not tabs.
-- Add Block / Duplicate Block / Delete Block modify only the Pull Block collection.
-- Save & Apply / Discard remain device-level actions.
-- Per-block runtime status is rendered in the Pull Blocks tab.
+- Left device tree/list remains unchanged.
+- Right-side selected-device editor keeps exactly two folder tabs: `Device` and `Pull Blocks`.
+- `Pull Blocks` is now a compact spreadsheet/table rather than large cards.
+- One block = one row with columns:
+  - `#`
+  - `FC`
+  - `Start`
+  - `Count`
+  - `Scan Rate (ms)`
+  - `Status`
+  - `Last Poll`
+- FC selector contains FC1, FC2, FC3, and FC4.
+- Add / Duplicate / Delete Block operate on the selected table row.
 
-## JR TEST TASK — REP-BLOCK-002 + REP-BLOCK-003 RETEST
+## JR TEST TASK — REP-BLOCK-002 + REP-BLOCK-003
 
 JR role: TEST AND REPORT ONLY. Do not fix source, modify Active Work/planning/ICC, or expand scope. Do not destroy Docker volumes.
 
@@ -80,13 +76,14 @@ Expected:
 - vet exits 0.
 
 Focus evidence must include:
-- legacy single-block migration;
-- ordered multi-block persistence;
-- independent per-block cadence/status;
-- `TestValidateRejectsDisjointSameFCPullBlocks` PASS;
-- `TestValidateAllowsContiguousSameFCPullBlocks` PASS;
-- `TestApplyRestartFailureRestoresPreviousPollers` PASS;
-- exact pair ownership regressions still PASS.
+- legacy migration and ordered multi-block persistence;
+- independent block cadence/status;
+- exact pair ownership regressions;
+- failed-restart runtime restoration;
+- same-FC contiguous/gap guard;
+- `TestReadSourceRangeFC1AndFC2` PASS;
+- `TestDestinationMemorySupportsFC1AndFC2` PASS;
+- `TestValidateDeviceAllowsAllReadFunctions` PASS.
 
 ### 2. Deploy current build
 
@@ -99,69 +96,43 @@ docker compose ps
 
 Expected: all services running and osjs-shell healthy.
 
-### 3. Rendered layout check
+### 3. Rendered UI layout
 
 Open Modbus Replicator.
 
 Required:
-- left device tree/list/search/Add/Duplicate/Delete remains unchanged;
-- right side has exactly two top-level folder tabs: `Device` and `Pull Blocks`;
-- no per-block tab strip exists;
-- block entries appear as cards/rows inside `Pull Blocks`.
+- left device tree/list remains unchanged;
+- right side has exactly `Device` and `Pull Blocks` folder tabs;
+- Pull Blocks renders as a compact spreadsheet/table, not block cards;
+- table FC selector exposes FC1, FC2, FC3, FC4;
+- several block rows fit vertically without card-sized wasted space.
 
-### 4. Valid multi-block Save & Apply
+### 4. FC1-FC4 end-to-end replication
 
-Use one Replicator device with a representable block set, for example:
+Using the Simulator as source, create representative blocks for FC1-FC4 within configured Simulator ranges and Save & Apply.
 
-```text
-Block 1: FC3 Start 0   Count 8  Scan 100 ms
-Block 2: FC4 Start 100 Count 4  Scan 500 ms
-```
+Required for each FC:
+1. source poll succeeds;
+2. Replicator writes the unchanged value/bit set into MMA2 destination memory;
+3. a real external Modbus client reads the Replicator destination using the corresponding FC;
+4. returned values match the source after replication.
 
-Click rendered **Save & Apply**.
+For FC1/FC2 verify boolean bit patterns, including a count that is not a multiple of 8 so bit packing/unpacking is exercised.
 
-Required:
-- apply succeeds through MMA2 restart/readiness;
-- `devices.yaml` persists both blocks in order;
-- one destination `(port, unit_id)` reservation exists;
-- per-block status is independently visible;
-- faster scan accumulates cycles faster when observable.
-
-### 5. Same-FC representability guard
-
-In the rendered Pull Blocks tab, configure two FC3 blocks with a gap, for example:
-
-```text
-FC3 Start 0   Count 10
-FC3 Start 100 Count 10
-```
-
-Click rendered **Save & Apply**.
+### 5. Operational Status
 
 Required:
-- apply is rejected;
-- visible error states that same-FC blocks must overlap or be contiguous;
-- no new Replicator document is persisted;
-- previously valid runtime remains active.
+- Device tab shows `Owner: replicator` separately from operational Status;
+- healthy end-to-end replication shows `Status: OK`, not `OWNED`;
+- source failure or destination-write failure must not show `OK`;
+- Pull Blocks table shows per-row runtime Status and Last Poll.
 
-Then change the second block to:
+### 6. Same-FC guard and ownership regression
 
-```text
-FC3 Start 10 Count 10
-```
-
-Required: Save & Apply succeeds.
-
-### 6. Failed restart recovery
-
-Using a controlled test path from the backend regression, verify a missing/failed MMA2 restart acknowledgement causes Apply to fail while the previously persisted poller set is restored and running again. This backend behavior is covered by `TestApplyRestartFailureRestoresPreviousPollers`; do not deliberately break the live UI environment just to reproduce it manually.
-
-### 7. Ownership regression
-
-With Simulator owning `(5020,1)` confirm using rendered Save & Apply:
-- Replicator `(5022,1)` succeeds when free;
-- Replicator `(5020,2)` succeeds when free;
-- Replicator `(5020,1)` rejects as exact-pair conflict.
+Verify a gapped same-FC pair is rejected, contiguous same-FC pair succeeds, and exact `(port, unit_id)` ownership behavior remains unchanged:
+- `(5022,1)` allowed if free;
+- `(5020,2)` allowed if free;
+- `(5020,1)` rejected when Simulator owns that exact pair.
 
 Do not substitute direct socket/API apply calls for required rendered UI checks.
 

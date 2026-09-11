@@ -2,60 +2,56 @@
 
 ## Current
 
-ACTIVE: REP-005 — Single-Range Replication Cycle
+ACTIVE: REP-006 — Replicator Poll Loop
 State: IMPLEMENTED — AWAITING JR TEST
 
-REP-004 is complete and archived. REP-005 remains ACTIVE until JR returns verification evidence and the coding agent reviews it.
+REP-005 is complete and archived. REP-006 remains ACTIVE until JR returns verification evidence and the coding agent reviews it.
 
-## REP-004 Completion
+## REP-005 Completion
 
-JR verification PASS was accepted for REP-004:
+JR verification PASS was accepted for REP-005:
 
-- tested commit: `49417dffd3a07cedc2500d8ecbf318aa65ba36a9`;
+- tested commit: `7eda5d964c795a0f2576e163ab5a599f7359fee7`;
 - clean working tree before test;
 - `gofmt -l .` produced no output;
-- persisted-config source-reader integration passed;
-- FC3 / FC4 protocol tests passed;
-- error-path tests passed;
+- successful exact-value 1:1 replication-cycle test passed;
+- foreign-owner collision protection passed;
+- cross-area rejection passed;
 - full `go test -count=1 ./...` passed;
 - `go vet ./...` passed with no diagnostics;
 - Go 1.27.1 was used from user-local `~/.local/go` only (no global install; sandbox-local test tooling per Operation CWAL; manually pinned by the previous JR sync step).
 
-The missing closing parenthesis in the prior JR prose note is corrected above. Going forward, the coding agent will correct harmless JR report punctuation during the next handoff update instead of sending JR back for prose-only fixes.
+The prior JR report's missing closing parenthesis was corrected here automatically. It was prose-only and did not affect the PASS evidence.
 
-## REP-005 Implementation Summary
+## REP-006 Implementation Summary
 
-REP-005 implementation is now on `main` under `replicator/`.
+REP-006 implementation is now on `main` under `replicator/`.
 
 Implemented:
 
-- `Store.RunOnce()` for one complete read → write replication invocation;
-- persisted REP-003 config loading and validation before the cycle;
-- REP-004 Modbus source read reuse;
-- source/destination count equality enforcement for 1:1 mapping;
-- no cross-area mapping: FC3 source writes FC3 destination and FC4 source writes FC4 destination;
-- shared `mma2composer` use with producer identity `replicator`;
-- destination reservation ownership collision protection before composition;
-- preservation of foreign reservations while replacing Replicator-owned reservation state;
-- destination MMA2 memory composition for the configured register area/start/count;
-- shared `mma2raw` client use for unchanged register writes;
-- explicit cycle result returned only after successful raw-ingest acknowledgement;
-- source-read, ownership, validation, mapping, and raw-ingest errors return without falsely reporting completion;
-- no scheduler, recurring polling, scaling, endian conversion, multiple ranges/devices, or UI.
+- `Runtime` poll-loop wrapper around the proven REP-005 single-cycle behavior;
+- persisted configuration validation before runtime start;
+- destination ownership/composition readiness check before the runtime is marked running;
+- immediate first cycle followed by one cycle per configured `poll_interval_ms` tick;
+- strictly serial cycle execution, so slow cycles cannot overlap;
+- deterministic runtime policy: record a failed cycle truthfully, then continue on the next normal tick with no retry/backoff burst;
+- race-safe `Snapshot()` runtime state with running flag, cycle count, last success/error, and last cycle timestamps;
+- successful cycles clear stale error state;
+- context cancellation stops the loop cleanly after any currently executing serial cycle returns;
+- no advanced backoff, multiple workers/devices/ranges, UI, or metrics/history storage.
 
-Files added/changed for REP-005:
+Files added for REP-006:
 
-- `replicator/go.mod`
-- `replicator/cycle.go`
-- `replicator/cycle_test.go`
+- `replicator/runtime.go`
+- `replicator/runtime_test.go`
 
 Workflow state:
 
-- REP-004 archived under `workflow/archive/rep-004-modbus-source-reader.md`;
-- REP-005 promoted from `QUEUED` to `ACTIVE`;
-- REP-006 remains next and must not be advanced by JR.
+- REP-005 archived under `workflow/archive/rep-005-single-range-replication-cycle.md`;
+- REP-006 promoted from `QUEUED` to `ACTIVE`;
+- REP-007 remains next and must not be advanced by JR.
 
-## JR TEST TASK — REP-005
+## JR TEST TASK — REP-006
 
 JR role: TEST AND REPORT ONLY.
 
@@ -93,35 +89,35 @@ Expected: no output.
 
 If files are listed, record FAIL. Do not run `gofmt -w`.
 
-### 3. Successful 1:1 replication-cycle test
+### 3. Repeated serial execution / no overlap
 
 ```bash
-go test -count=1 -run '^TestRunOnceCopiesConfiguredRegisters$' .
+go test -count=1 -run '^TestRuntimeRepeatsWithoutOverlap$' .
 ```
 
 Expected: exit code 0 and PASS.
 
-This test must prove one invocation reads controlled FC3 source values, composes a Replicator-owned MMA2 destination reservation, sends Raw Ingest v1 to the configured destination start/count, and preserves the exact register values unchanged.
+This verifies a cycle slower than the configured interval still runs serially with maximum concurrency of one, repeats multiple times, and leaves truthful success/stopped state.
 
-### 4. Foreign-owner collision protection
+### 4. Error state and continuation policy
 
 ```bash
-go test -count=1 -run '^TestRunOnceRejectsForeignOwnedDestination$' .
+go test -count=1 -run '^TestRuntimeRecordsCycleErrorAndContinues$' .
 ```
 
 Expected: exit code 0 and PASS.
 
-This verifies an existing foreign-owned `(port, unit_id)` reservation is rejected and remains unchanged.
+This verifies failed cycles are recorded as failures with the exact last error and the runtime continues only on subsequent normal ticks.
 
-### 5. No cross-area mapping
+### 5. Clean cancellation
 
 ```bash
-go test -count=1 -run '^TestValidateCycleMappingRejectsCrossArea$' .
+go test -count=1 -run '^TestRuntimeCancelStopsCleanly$' .
 ```
 
 Expected: exit code 0 and PASS.
 
-This verifies the first milestone does not silently transform FC3 ↔ FC4 mappings.
+This verifies cancellation returns cleanly and the final runtime state is not falsely left RUNNING.
 
 ### 6. Full Replicator regression
 
@@ -158,20 +154,20 @@ Exit/result: <result>
 Output:
 <exact output>
 
-Successful replication cycle:
-Command: go test -count=1 -run '^TestRunOnceCopiesConfiguredRegisters$' .
+Serial poll loop:
+Command: go test -count=1 -run '^TestRuntimeRepeatsWithoutOverlap$' .
 Exit/result: <result>
 Output:
 <exact output>
 
-Foreign-owner collision:
-Command: go test -count=1 -run '^TestRunOnceRejectsForeignOwnedDestination$' .
+Error state / continuation:
+Command: go test -count=1 -run '^TestRuntimeRecordsCycleErrorAndContinues$' .
 Exit/result: <result>
 Output:
 <exact output>
 
-Cross-area rejection:
-Command: go test -count=1 -run '^TestValidateCycleMappingRejectsCrossArea$' .
+Clean cancellation:
+Command: go test -count=1 -run '^TestRuntimeCancelStopsCleanly$' .
 Exit/result: <result>
 Output:
 <exact output>
@@ -198,55 +194,12 @@ After writing the report, JR may commit and push **handoff.md only**:
 cd ..
 git add handoff.md
 git diff --cached -- handoff.md
-git commit -m "JR report REP-005 verification"
+git commit -m "JR report REP-006 verification"
 git push origin main
 ```
 
-JR must stop after the report push. Do not fix failures. Do not archive REP-005. Do not advance REP-006.
+JR must stop after the report push. Do not fix failures. Do not archive REP-006. Do not advance REP-007.
 
 ## JR TEST REPORT
 
-Verdict: PASS
-Tested commit: 7eda5d964c795a0f2576e163ab5a599f7359fee7
-
-Git status before test:
-(empty)
-
-Formatting check:
-Command: gofmt -l .
-Exit/result: exit code 0
-Output:
-(no output — no files listed)
-
-Successful replication cycle:
-Command: go test -count=1 -run '^TestRunOnceCopiesConfiguredRegisters$' .
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.006s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.006s
-
-Foreign-owner collision:
-Command: go test -count=1 -run '^TestRunOnceRejectsForeignOwnedDestination$' .
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.006s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.006s
-
-Cross-area rejection:
-Command: go test -count=1 -run '^TestValidateCycleMappingRejectsCrossArea$' .
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.004s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.004s
-
-Full Replicator tests:
-Command: go test -count=1 ./...
-Exit/result: exit code 0 — ok github.com/tamzrod/MCS.OSJS/replicator  0.011s
-Output:
-ok      github.com/tamzrod/MCS.OSJS/replicator  0.011s
-
-Go vet:
-Command: go vet ./...
-Exit/result: exit code 0
-Output:
-(no output — no diagnostics)
-
-Unexpected behavior:
-None. Note: Go 1.27.1 toolchain was used from user-local ~/.local/go (no global install; sandbox-local test tooling per Operation CWAL; manually pinned by the previous JR sync step.
+Verdict: PENDING

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,14 +14,16 @@ import (
 
 func validDeviceDefinition(name string) DeviceDefinition {
 	return DeviceDefinition{
-		Name:       name,
-		Enabled:    true,
-		Endpoint:   "127.0.0.1:5020",
-		UnitID:     1,
-		Function:   3,
-		Start:      10,
-		Count:      4,
-		ScanRateMS: 250,
+		Name:     name,
+		Enabled:  true,
+		Endpoint: "127.0.0.1:5020",
+		UnitID:   1,
+		PullBlock: PullBlock{
+			Function:   3,
+			Start:      10,
+			Count:      4,
+			ScanRateMS: 250,
+		},
 		Destination: DestinationSelection{
 			Port:       DefaultDestinationPort,
 			UnitID:     DefaultDestinationUnit,
@@ -42,6 +45,42 @@ func TestDocumentSaveLoadRoundTrip(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, doc) {
 		t.Fatalf("round trip mismatch:\n got: %#v\nwant: %#v", got, doc)
+	}
+}
+
+func TestLoadDocumentMigratesLegacyRangeIntoPullBlock(t *testing.T) {
+	store := Store{Root: t.TempDir()}
+	if err := os.MkdirAll(store.ReplicatorDir(), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	legacy := []byte(`devices:
+  - name: PLC-old
+    enabled: true
+    endpoint: 127.0.0.1:5020
+    unit_id: 7
+    function: 4
+    start: 123
+    count: 9
+    scan_rate_ms: 750
+    destination:
+      port: 5021
+      unit_id: 2
+      auto_port: false
+      auto_unit_id: false
+`)
+	if err := os.WriteFile(store.DocumentPath(), legacy, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	doc, err := store.LoadDocument()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Devices) != 1 {
+		t.Fatalf("devices = %d", len(doc.Devices))
+	}
+	block := doc.Devices[0].PullBlock
+	if block.Function != 4 || block.Start != 123 || block.Count != 9 || block.ScanRateMS != 750 {
+		t.Fatalf("migrated pull block = %#v", block)
 	}
 }
 
@@ -79,8 +118,29 @@ func TestResolveManualForeignCollisionReportsOwner(t *testing.T) {
 	if !errors.Is(err, mma2composer.ErrReservationOwnedByOther) {
 		t.Fatalf("error = %v, want ownership collision", err)
 	}
-	if !strings.Contains(err.Error(), "simulator") {
-		t.Fatalf("error = %v, want actual foreign owner", err)
+	if !strings.Contains(err.Error(), "simulator") || !strings.Contains(err.Error(), "5020") {
+		t.Fatalf("error = %v, want actual foreign owner and reservation", err)
+	}
+}
+
+func TestSaveTimeOwnershipGuardRejectsLatestForeignOwner(t *testing.T) {
+	store := Store{Root: t.TempDir()}
+	composer := mma2composer.New(store.Root, "simulator")
+	owners := mma2composer.OwnershipDoc{Reservations: []mma2composer.OwnershipEntry{{Port: 5020, UnitID: 1, Owner: "simulator"}}}
+	if err := composer.SaveOwners(owners); err != nil {
+		t.Fatal(err)
+	}
+	device := validDeviceDefinition("PLC-1")
+	device.Destination = DestinationSelection{Port: 5020, UnitID: 1}
+	if err := store.CheckDocumentOwnership(Document{Devices: []DeviceDefinition{device}}); !errors.Is(err, mma2composer.ErrReservationOwnedByOther) {
+		t.Fatalf("CheckDocumentOwnership error = %v", err)
+	}
+	after, err := composer.LoadOwners()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(after, owners) {
+		t.Fatalf("foreign owners mutated: got %#v want %#v", after, owners)
 	}
 }
 
@@ -105,7 +165,7 @@ func TestComposeDocumentPreservesForeignAndAllReplicatorReservations(t *testing.
 	second := validDeviceDefinition("PLC-2")
 	second.Endpoint = "127.0.0.1:5022"
 	second.UnitID = 2
-	second.Function = 4
+	second.PullBlock.Function = 4
 	second.Destination = DestinationSelection{Port: 5021, UnitID: 2}
 
 	resolved, _, err := store.ComposeDocumentDestinations(Document{Devices: []DeviceDefinition{first, second}})
@@ -133,8 +193,6 @@ func TestComposeDocumentPreservesForeignAndAllReplicatorReservations(t *testing.
 		t.Fatalf("Replicator ownership incomplete: %#v", owners.Reservations)
 	}
 
-	// Rebuild with PLC-2 only. The removed Replicator reservation must disappear
-	// while the Simulator reservation remains untouched.
 	if _, _, err := store.ComposeDocumentDestinations(Document{Devices: []DeviceDefinition{second}}); err != nil {
 		t.Fatalf("recompose: %v", err)
 	}
@@ -153,14 +211,11 @@ func TestComposeDocumentPreservesForeignAndAllReplicatorReservations(t *testing.
 	t.Fatalf("Simulator reservation was removed: %#v", after.Reservations)
 }
 
-func TestDeviceRuntimeConfigMapsOneToOneRange(t *testing.T) {
+func TestDeviceRuntimeConfigMapsPullBlockOneToOne(t *testing.T) {
 	device := validDeviceDefinition("PLC-1")
 	device.Endpoint = "10.20.30.40:1502"
 	device.UnitID = 7
-	device.Function = 4
-	device.Start = 123
-	device.Count = 9
-	device.ScanRateMS = 750
+	device.PullBlock = PullBlock{Function: 4, Start: 123, Count: 9, ScanRateMS: 750}
 	device.Destination = DestinationSelection{Port: 2502, UnitID: 8}
 	cfg, err := device.runtimeConfig()
 	if err != nil {

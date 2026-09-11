@@ -239,7 +239,7 @@ func TestComposeDocumentPreservesForeignAndAllReplicatorReservations(t *testing.
 	foreignMemory := mma2composer.Memory{
 		UnitID:      1,
 		HoldingRegs: &mma2composer.Area{Start: 0, Count: 2},
-		Policy: &mma2composer.Policy{Rules: []mma2composer.PolicyRule{{ID: "foreign", SourceIP: []string{"0.0.0.0/0"}, AllowFC: []uint8{3}}}},
+		Policy:      &mma2composer.Policy{Rules: []mma2composer.PolicyRule{{ID: "foreign", SourceIP: []string{"0.0.0.0/0"}, AllowFC: []uint8{3}}}},
 	}
 	foreignCfg := mma2composer.AddMemory(mma2composer.EffectiveConfig{}, "simulator-5020-1", net.JoinHostPort("0.0.0.0", "5020"), foreignMemory)
 	foreignOwners := mma2composer.OwnershipDoc{Reservations: []mma2composer.OwnershipEntry{{Port: 5020, UnitID: 1, Owner: "simulator"}}}
@@ -302,13 +302,13 @@ func TestComposeDocumentPreservesForeignAndAllReplicatorReservations(t *testing.
 func TestDestinationMemorySpansAllBlocksByArea(t *testing.T) {
 	memory, err := destinationMemoryForBlocks(7, []PullBlock{
 		{Function: 3, Start: 10, Count: 4, ScanRateMS: 100},
-		{Function: 3, Start: 20, Count: 5, ScanRateMS: 200},
+		{Function: 3, Start: 14, Count: 5, ScanRateMS: 200},
 		{Function: 4, Start: 100, Count: 2, ScanRateMS: 300},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if memory.UnitID != 7 || memory.HoldingRegs == nil || memory.HoldingRegs.Start != 10 || memory.HoldingRegs.Count != 15 {
+	if memory.UnitID != 7 || memory.HoldingRegs == nil || memory.HoldingRegs.Start != 10 || memory.HoldingRegs.Count != 9 {
 		t.Fatalf("holding area = %#v", memory.HoldingRegs)
 	}
 	if memory.InputRegs == nil || memory.InputRegs.Start != 100 || memory.InputRegs.Count != 2 {

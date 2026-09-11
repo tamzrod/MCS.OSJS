@@ -2,6 +2,7 @@ package replicator
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -37,6 +38,40 @@ func validatePullBlock(block PullBlock, index int) error {
 	return nil
 }
 
+// MMA2 currently exposes one contiguous memory window per FC area inside one
+// (port, unit_id) memory. Multiple Pull Blocks of the same FC may overlap or
+// touch, but a gap would create destination registers that no block actually
+// polls. Reject that shape instead of silently exposing an unpolled envelope.
+func validateRepresentablePullBlocks(blocks []PullBlock) error {
+	byFunction := map[uint8][]PullBlock{}
+	for _, block := range blocks {
+		byFunction[block.Function] = append(byFunction[block.Function], block)
+	}
+	for function, group := range byFunction {
+		if len(group) < 2 {
+			continue
+		}
+		sort.Slice(group, func(i, j int) bool {
+			if group[i].Start == group[j].Start {
+				return group[i].Count < group[j].Count
+			}
+			return group[i].Start < group[j].Start
+		})
+		end := uint32(group[0].Start) + uint32(group[0].Count)
+		for i := 1; i < len(group); i++ {
+			start := uint32(group[i].Start)
+			if start > end {
+				return fmt.Errorf("pull blocks for FC%d must overlap or be contiguous; gap between %d and %d cannot be represented exactly by MMA2", function, end, start)
+			}
+			blockEnd := start + uint32(group[i].Count)
+			if blockEnd > end {
+				end = blockEnd
+			}
+		}
+	}
+	return nil
+}
+
 func ValidateDeviceDefinition(device DeviceDefinition) error {
 	if strings.TrimSpace(device.Name) == "" {
 		return fmt.Errorf("name is required")
@@ -49,6 +84,9 @@ func ValidateDeviceDefinition(device DeviceDefinition) error {
 		if err := validatePullBlock(block, i); err != nil {
 			return err
 		}
+	}
+	if err := validateRepresentablePullBlocks(blocks); err != nil {
+		return err
 	}
 	if !device.Destination.AutoPort && device.Destination.Port == 0 {
 		return fmt.Errorf("destination.port must be > 0 when automatic port allocation is disabled")

@@ -20,30 +20,40 @@ func ValidateDocument(doc Document) error {
 	return nil
 }
 
+func validatePullBlock(block PullBlock, index int) error {
+	prefix := fmt.Sprintf("pull_blocks[%d]", index)
+	if block.Function != 3 && block.Function != 4 {
+		return fmt.Errorf("%s.function must be FC3 or FC4", prefix)
+	}
+	if block.Count == 0 {
+		return fmt.Errorf("%s.count must be > 0", prefix)
+	}
+	if uint32(block.Start)+uint32(block.Count) > 0x10000 {
+		return fmt.Errorf("%s start(%d)+count(%d) exceeds 16-bit address space", prefix, block.Start, block.Count)
+	}
+	if block.ScanRateMS == 0 {
+		return fmt.Errorf("%s.scan_rate_ms must be > 0", prefix)
+	}
+	return nil
+}
+
 func ValidateDeviceDefinition(device DeviceDefinition) error {
 	if strings.TrimSpace(device.Name) == "" {
 		return fmt.Errorf("name is required")
 	}
-	block := device.PullBlock
-	if block.Function != 3 && block.Function != 4 {
-		return fmt.Errorf("pull_block.function must be FC3 or FC4")
+	blocks := device.blocks()
+	if len(blocks) == 0 {
+		return fmt.Errorf("at least one pull block is required")
 	}
-	if block.Count == 0 {
-		return fmt.Errorf("pull_block.count must be > 0")
-	}
-	if uint32(block.Start)+uint32(block.Count) > 0x10000 {
-		return fmt.Errorf("pull_block start(%d)+count(%d) exceeds 16-bit address space", block.Start, block.Count)
-	}
-	if block.ScanRateMS == 0 {
-		return fmt.Errorf("pull_block.scan_rate_ms must be > 0")
+	for i, block := range blocks {
+		if err := validatePullBlock(block, i); err != nil {
+			return err
+		}
 	}
 	if !device.Destination.AutoPort && device.Destination.Port == 0 {
 		return fmt.Errorf("destination.port must be > 0 when automatic port allocation is disabled")
 	}
 
-	// Endpoint parsing and all runtime mapping invariants are centralized by the
-	// existing Config validator. Automatic destination fields receive temporary
-	// valid placeholders until ResolveDocumentDestinations assigns real values.
 	probe := device
 	if probe.Destination.AutoPort && probe.Destination.Port == 0 {
 		probe.Destination.Port = DefaultDestinationPort
@@ -51,9 +61,14 @@ func ValidateDeviceDefinition(device DeviceDefinition) error {
 	if probe.Destination.AutoUnitID && probe.Destination.UnitID > 0xFF {
 		probe.Destination.UnitID = DefaultDestinationUnit
 	}
-	cfg, err := probe.runtimeConfig()
-	if err != nil {
-		return err
+	for i, block := range blocks {
+		cfg, err := probe.runtimeConfigForBlock(block)
+		if err != nil {
+			return err
+		}
+		if err := ValidateConfig(cfg); err != nil {
+			return fmt.Errorf("pull_blocks[%d]: %w", i, err)
+		}
 	}
-	return ValidateConfig(cfg)
+	return nil
 }

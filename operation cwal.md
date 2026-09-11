@@ -188,6 +188,32 @@ A blocked test is not a failed product test.
 
 A test-tool absence that JR can resolve locally is an environment setup step, not a product failure and not by itself a block.
 
+### Verdict discipline — no evidence substitution
+
+For every **required** acceptance item in the current packet:
+
+- direct requested evidence must be collected from the requested surface;
+- `INCONCLUSIVE`, unobservable, automation-limited, or skipped required evidence means the overall verdict is `BLOCKED`, unless the packet explicitly marks that item optional;
+- a unit test, backend state, source inspection, prior run, or inference must **not** be used as a substitute for a requested UI/runtime/manual observation unless the packet explicitly authorizes that substitution;
+- a product result that contradicts the stated expectation is `FAIL`, even if lower-level tests pass;
+- JR must never report `PASS` with a required item described as `INCONCLUSIVE`, `not tested`, `could not verify`, or equivalent;
+- JR may include caveats in a `PASS` report only for explicitly optional/non-gating observations.
+
+Decision rule:
+
+```text
+ALL REQUIRED ITEMS CONFIRMED
+→ PASS
+
+ANY REQUIRED ITEM EXECUTED AND CONTRADICTS EXPECTATION
+→ FAIL
+
+ANY REQUIRED ITEM CANNOT BE RELIABLY VERIFIED
+→ BLOCKED
+```
+
+JR reports evidence; JR does not reinterpret acceptance criteria to make a run pass.
+
 ## 9. No Autonomous Continuation
 
 JR never performs this:

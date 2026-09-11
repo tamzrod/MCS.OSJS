@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -122,9 +123,18 @@ func resolveRuntimePaths() (binary, configPath, requestPath, ackPath string) {
 	}
 
 	root := os.Getenv("OSJS_DATA_DIR")
+	if root == "" && runtime.GOOS == "windows" {
+		if programData := os.Getenv("ProgramData"); programData != "" {
+			root = filepath.Join(programData, "MCS Modbus Toolkit", "runtime")
+		}
+	}
 	if root == "" {
 		log.Fatal("OSJS_DATA_DIR is required when mma2-supervisor runs without command-line arguments")
 	}
+
+	// Keep child/runtime instrumentation aligned with the resolved shared root.
+	_ = os.Setenv("OSJS_DATA_DIR", root)
+	_ = os.Setenv("MCS_DATA_ROOT", root)
 
 	supervisorPath, err := os.Executable()
 	if err != nil {

@@ -82,6 +82,12 @@ func (s Store) ResolveDocumentDestinations(doc Document) (Document, error) {
 	resolved := doc
 	for i := range resolved.Devices {
 		destination := &resolved.Devices[i].Destination
+		if !destination.AutoPort && !destination.AutoUnitID {
+			manualKey := reservationKey{port: destination.Port, unitID: destination.UnitID}
+			if owner := foreignOwner[manualKey]; owner != "" {
+				return Document{}, fmt.Errorf("device %q: %w: (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, destination.Port, destination.UnitID, owner)
+			}
+		}
 		port, unit, resolveErr := firstAvailable(
 			occupied,
 			destination.Port,

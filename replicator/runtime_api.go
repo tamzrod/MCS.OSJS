@@ -30,10 +30,10 @@ type RuntimeResponse struct {
 }
 
 type ApplyResponse struct {
-	Document   Document `json:"document"`
-	Structural bool     `json:"structural"`
-	Message    string   `json:"message"`
-	CompletedAt string  `json:"completed_at"`
+	Document    Document `json:"document"`
+	Structural  bool     `json:"structural"`
+	Message     string   `json:"message"`
+	CompletedAt string   `json:"completed_at"`
 }
 
 type LoadResponse struct {

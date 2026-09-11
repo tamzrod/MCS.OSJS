@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
@@ -21,18 +22,24 @@ const (
 // and OSJS/src/server/config.js). It never writes into MMA2/ or OSJS package
 // source trees.
 type Store struct {
-	Root string // OSJS_DATA_DIR value
+	Root string // OSJS_DATA_DIR value or standalone Windows data root
 }
 
-// ConfigRootFromEnv returns the verified host-mounted data root.
-// OSJS_DATA_DIR is the only established mount; this function does not invent
-// a fallback host path when the variable is unset.
+// ConfigRootFromEnv returns the shared data root. OSJS_DATA_DIR remains the
+// authoritative deployed-stack path. The standalone Windows package has one
+// installer-owned equivalent under ProgramData, so Windows services can boot
+// without requiring NSSM-specific environment injection.
 func ConfigRootFromEnv() (string, error) {
 	root := os.Getenv(envDataDirKey)
-	if root == "" {
-		return "", fmt.Errorf("%s is unset; refusing to invent a host configuration path", envDataDirKey)
+	if root != "" {
+		return root, nil
 	}
-	return root, nil
+	if runtime.GOOS == "windows" {
+		if programData := os.Getenv("ProgramData"); programData != "" {
+			return filepath.Join(programData, "MCS Modbus Toolkit", "runtime"), nil
+		}
+	}
+	return "", fmt.Errorf("%s is unset; refusing to invent a host configuration path", envDataDirKey)
 }
 
 func (s Store) SimulatorDir() string {

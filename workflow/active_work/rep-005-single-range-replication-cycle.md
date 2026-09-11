@@ -1,6 +1,6 @@
 # REP-005 — Single-Range Replication Cycle
 
-Status: QUEUED
+Status: ACTIVE
 Previous: REP-004
 Next: REP-006
 

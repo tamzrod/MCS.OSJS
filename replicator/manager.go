@@ -159,15 +159,23 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	structural := !sameMMA2Structure(previousResolved, resolved)
 
 	m.stopAll()
+	restorePrevious := func(applyErr error) (Document, bool, error) {
+		if restoreErr := m.replaceRuntimes(previousResolved); restoreErr != nil {
+			return Document{}, structural, fmt.Errorf("%w; restore previous Replicator runtimes: %v", applyErr, restoreErr)
+		}
+		return Document{}, structural, applyErr
+	}
+
 	resolved, effective, err := m.store.ComposeDocumentDestinations(resolved)
 	if err != nil {
-		_ = m.replaceRuntimes(previousResolved)
-		return Document{}, structural, err
+		return restorePrevious(err)
 	}
 	if err := m.store.requestMMA2Restart(effective, documentDestinationPorts(resolved), m.timeout); err != nil {
-		return Document{}, structural, err
+		return restorePrevious(err)
 	}
 	if err := m.store.SaveDocument(resolved); err != nil {
+		// MMA2 has already accepted the new structure at this point. Do not start
+		// old pollers against a potentially different destination map; fail closed.
 		return Document{}, structural, err
 	}
 	if err := m.replaceRuntimes(resolved); err != nil {

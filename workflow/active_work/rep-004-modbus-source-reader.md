@@ -1,6 +1,6 @@
 # REP-004 — Modbus Source Reader
 
-Status: QUEUED
+Status: ACTIVE
 Previous: REP-003
 Next: REP-005
 

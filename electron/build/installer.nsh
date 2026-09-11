@@ -93,7 +93,7 @@ FunctionEnd
   Pop $0
   !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} AppDirectory"
 
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppEnvironmentExtra "MCS_DATA_ROOT=$LOCALAPPDATA\MCS Modbus Toolkit\runtime"'
+  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppEnvironmentExtra "OSJS_DATA_DIR=$LOCALAPPDATA\MCS Modbus Toolkit\runtime" "MCS_DATA_ROOT=$LOCALAPPDATA\MCS Modbus Toolkit\runtime"'
   Pop $0
   !insertmacro MCS_REQUIRE_SUCCESS "Configuring ${service} environment"
 
@@ -113,13 +113,28 @@ FunctionEnd
 !macro customInstall
   SetShellVarContext all
   CreateDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"
+  CreateDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config"
+  CreateDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2"
+
+  IfFileExists "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\config.yaml" mma2_config_ready 0
+  FileOpen $1 "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\config.yaml" w
+  FileWrite $1 "{}$\r$\n"
+  FileClose $1
+mma2_config_ready:
 
   IfFileExists "$INSTDIR\resources\bin\nssm.exe" +3 0
   MessageBox MB_ICONSTOP|MB_OK "NSSM was not packaged. Place nssm.exe in electron\bin and rebuild the installer."
   Abort
 
   ${If} $MCSInstallMMA2State == ${BST_CHECKED}
-    !insertmacro MCS_NSSM "MCS-MMA2" "mma2.exe"
+    IfFileExists "$INSTDIR\resources\bin\mma2-supervisor.exe" +3 0
+    MessageBox MB_ICONSTOP|MB_OK "mma2-supervisor.exe was not packaged. Rebuild the installer."
+    Abort
+
+    !insertmacro MCS_NSSM "MCS-MMA2" "mma2-supervisor.exe"
+    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "MCS-MMA2" AppParameters "$\"$INSTDIR\resources\bin\mma2.exe$\" $\"$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\config.yaml$\" $\"$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\restart-request.yaml$\" $\"$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\restart-ack$\""'
+    Pop $0
+    !insertmacro MCS_REQUIRE_SUCCESS "Configuring MCS-MMA2 supervisor arguments"
   ${Else}
     !insertmacro MCS_REMOVE_SERVICE "MCS-MMA2"
   ${EndIf}

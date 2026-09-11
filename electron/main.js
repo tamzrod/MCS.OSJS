@@ -1,37 +1,60 @@
 const {app, BrowserWindow, ipcMain} = require('electron');
-const {spawn} = require('child_process');
+const {spawn, execFile} = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 let mainWindow = null;
+let statusTimer = null;
 const children = new Map();
+
+const windowsServiceMode = () => app.isPackaged && process.platform === 'win32';
 
 const binRoot = () => app.isPackaged
   ? path.join(process.resourcesPath, 'bin')
   : path.join(__dirname, 'bin');
 
-const dataRoot = () => path.join(app.getPath('userData'), 'runtime');
+const dataRoot = () => windowsServiceMode()
+  ? path.join(process.env.ProgramData || 'C:\\ProgramData', 'MCS Modbus Toolkit', 'runtime')
+  : path.join(app.getPath('userData'), 'runtime');
 
 const executableName = name => process.platform === 'win32' ? `${name}.exe` : name;
 
 const processSpecs = [
-  {key: 'mma2', file: executableName('mma2')},
-  {key: 'simulator', file: executableName('modbus-simulator-runtime')},
-  {key: 'replicator', file: executableName('modbus-replicator-runtime')}
+  {key: 'mma2', file: executableName('mma2'), service: 'MCS-MMA2'},
+  {key: 'simulator', file: executableName('modbus-simulator-runtime'), service: 'MCS-Simulator'},
+  {key: 'replicator', file: executableName('modbus-replicator-runtime'), service: 'MCS-Replicator'}
 ];
 
-const status = key => {
+const childStatus = key => {
   const child = children.get(key);
   return child && !child.killed ? 'RUNNING' : 'STOPPED';
 };
 
-const sendStatus = () => {
+const queryWindowsService = service => new Promise(resolve => {
+  execFile('sc.exe', ['query', service], {windowsHide: true}, (error, stdout = '') => {
+    if (error) {
+      resolve('NOT INSTALLED');
+      return;
+    }
+    resolve(/STATE\s*:\s*\d+\s+RUNNING/i.test(stdout) ? 'RUNNING' : 'STOPPED');
+  });
+});
+
+const getStatus = async () => {
+  if (windowsServiceMode()) {
+    const values = await Promise.all(processSpecs.map(async spec => [spec.key, await queryWindowsService(spec.service)]));
+    return Object.fromEntries(values);
+  }
+  return Object.fromEntries(processSpecs.map(spec => [spec.key, childStatus(spec.key)]));
+};
+
+const sendStatus = async () => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send('runtime:status', Object.fromEntries(processSpecs.map(spec => [spec.key, status(spec.key)])));
+  mainWindow.webContents.send('runtime:status', await getStatus());
 };
 
 const startProcess = spec => {
-  if (children.has(spec.key)) return;
+  if (windowsServiceMode() || children.has(spec.key)) return;
   const file = path.join(binRoot(), spec.file);
   if (!fs.existsSync(file)) return;
 
@@ -68,20 +91,26 @@ const startProcess = spec => {
         text: `${spec.key} exited with code ${code}`
       });
     }
-    sendStatus();
+    void sendStatus();
   });
-  sendStatus();
+  void sendStatus();
 };
 
-const startAll = () => processSpecs.forEach(startProcess);
+const startAll = () => {
+  if (windowsServiceMode()) return false;
+  processSpecs.forEach(startProcess);
+  return true;
+};
 
 const stopAll = () => {
+  if (windowsServiceMode()) return false;
   for (const [key, child] of children.entries()) {
     try {
       child.kill();
     } catch (_) {}
     children.delete(key);
   }
+  return true;
 };
 
 const createWindow = () => {
@@ -103,20 +132,36 @@ const createWindow = () => {
   mainWindow.on('closed', () => { mainWindow = null; });
 };
 
-ipcMain.handle('runtime:get-status', () => Object.fromEntries(processSpecs.map(spec => [spec.key, status(spec.key)])));
-ipcMain.handle('runtime:get-paths', () => ({bin: binRoot(), data: dataRoot()}));
-ipcMain.handle('runtime:start-all', () => { startAll(); return true; });
-ipcMain.handle('runtime:stop-all', () => { stopAll(); sendStatus(); return true; });
+ipcMain.handle('runtime:get-status', getStatus);
+ipcMain.handle('runtime:get-paths', () => ({
+  bin: binRoot(),
+  data: dataRoot(),
+  mode: windowsServiceMode() ? 'windows-service' : 'child-process'
+}));
+ipcMain.handle('runtime:start-all', () => startAll());
+ipcMain.handle('runtime:stop-all', () => {
+  const changed = stopAll();
+  void sendStatus();
+  return changed;
+});
 
 app.whenReady().then(() => {
   createWindow();
-  startAll();
+  if (windowsServiceMode()) {
+    statusTimer = setInterval(() => void sendStatus(), 2000);
+    void sendStatus();
+  } else {
+    startAll();
+  }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on('before-quit', stopAll);
+app.on('before-quit', () => {
+  if (statusTimer) clearInterval(statusTimer);
+  if (!windowsServiceMode()) stopAll();
+});
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });

@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	DocumentFile            = "devices.yaml"
-	DefaultDestinationPort  = uint16(5021)
-	DefaultDestinationUnit  = uint16(1)
+	DocumentFile           = "devices.yaml"
+	DefaultDestinationPort = uint16(5021)
+	DefaultDestinationUnit = uint16(1)
 )
 
 // Document is the human-facing Replicator configuration used by the OS.js UI.
@@ -22,15 +22,15 @@ type Document struct {
 // DeviceDefinition keeps the operator-facing fields compact while preserving
 // the resolved destination reservation chosen by the ownership allocator.
 type DeviceDefinition struct {
-	Name        string                `yaml:"name" json:"name"`
-	Enabled     bool                  `yaml:"enabled" json:"enabled"`
-	Endpoint    string                `yaml:"endpoint" json:"endpoint"`
-	UnitID      uint16                `yaml:"unit_id" json:"unit_id"`
-	Function    uint8                 `yaml:"function" json:"function"`
-	Start       uint16                `yaml:"start" json:"start"`
-	Count       uint16                `yaml:"count" json:"count"`
-	ScanRateMS  uint32                `yaml:"scan_rate_ms" json:"scan_rate_ms"`
-	Destination DestinationSelection  `yaml:"destination" json:"destination"`
+	Name        string               `yaml:"name" json:"name"`
+	Enabled     bool                 `yaml:"enabled" json:"enabled"`
+	Endpoint    string               `yaml:"endpoint" json:"endpoint"`
+	UnitID      uint16               `yaml:"unit_id" json:"unit_id"`
+	Function    uint8                `yaml:"function" json:"function"`
+	Start       uint16               `yaml:"start" json:"start"`
+	Count       uint16               `yaml:"count" json:"count"`
+	ScanRateMS  uint32               `yaml:"scan_rate_ms" json:"scan_rate_ms"`
+	Destination DestinationSelection `yaml:"destination" json:"destination"`
 }
 
 // DestinationSelection stores both the resolved reservation and whether the

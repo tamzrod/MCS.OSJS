@@ -1,19 +1,22 @@
 # MCS Modbus Toolkit — Electron desktop package
 
-This folder is a standalone Electron deployment target. It intentionally does **not** load the OS.js desktop. The application opens one normal desktop window with Simulator / Replicator tabs and can bundle the native MCS runtimes beside the Electron app.
+This folder is a standalone Electron deployment target. It intentionally does **not** load the OS.js desktop. The application opens one normal desktop window with Simulator / Replicator tabs and bundles the native MCS runtimes beside the Electron app.
 
-## Current scope
+## Windows package layout
 
-The Electron shell, Windows installer config, runtime process manager, runtime status/log panel, and two application tabs are present. The shell expects the native Windows binaries under `electron/bin/`:
+Before building the installer, place these files under `electron/bin/`:
 
 ```text
 electron/bin/
+├── nssm.exe
 ├── mma2.exe
 ├── modbus-simulator-runtime.exe
 └── modbus-replicator-runtime.exe
 ```
 
-Missing binaries do not prevent the Electron UI itself from starting; the Diagnostics tab will show the runtimes as stopped. The existing OS.js Simulator and Replicator renderers are not yet copied into this standalone renderer. This separation is deliberate so the Windows packaging path can be compiled/tested before replacing the placeholders with the live editors.
+`nssm.exe` is required for the installer build to be useful. The NSIS installer checks for it during installation and stops with a clear error if it was not packaged.
+
+The existing OS.js Simulator and Replicator renderers are not yet copied into the standalone renderer. The current Electron shell exists so the Windows packaging/service path can be compiled and verified independently.
 
 ## Build on Windows
 
@@ -25,7 +28,7 @@ npm install
 npm start
 ```
 
-That launches the unpackaged desktop window.
+Unpackaged development mode launches the three runtime binaries as Electron child processes when they are present.
 
 To create an unpacked Windows application directory:
 
@@ -33,7 +36,7 @@ To create an unpacked Windows application directory:
 npm run pack:win
 ```
 
-To create the installer:
+To create the assisted Windows installer:
 
 ```text
 npm run dist:win
@@ -45,29 +48,64 @@ Output is written to:
 electron/dist/
 ```
 
-The NSIS installer name is:
+Installer artifact:
 
 ```text
 MCS-Modbus-Toolkit-0.1.0-Setup.exe
 ```
 
-## Windows runtime binaries
+## Installer wizard
 
-The Go runtimes still need Windows builds before the packaged app can run the real Simulator/Replicator stack. Build the project runtimes for Windows and copy/rename the resulting executables into `electron/bin/` using the names above before `npm run dist:win`.
+The generated installer is a per-machine/elevated NSIS wizard. It includes an embedded **Service Configuration** page with these options selected by default:
 
-Electron sets `MCS_DATA_ROOT` to its per-user application data directory and starts MMA2, Simulator runtime, and Replicator runtime as hidden child processes. Closing the Electron app stops those child processes.
+```text
+[x] MMA2 - shared Modbus memory appliance
+[x] Simulator runtime
+[x] Replicator runtime
+[x] Start selected services after installation
+```
+
+Selected runtimes are registered through NSSM as automatic Windows services:
+
+```text
+MCS-MMA2
+MCS-Simulator
+MCS-Replicator
+```
+
+Simulator and Replicator are configured to depend on `MCS-MMA2` when MMA2 is selected.
+
+Service working data is placed under:
+
+```text
+C:\ProgramData\MCS Modbus Toolkit\runtime
+```
+
+The installed Electron application does **not** spawn duplicate backend processes. It reads service state from Windows and closing Electron does not stop the services.
+
+## Uninstall
+
+Windows Installed Apps receives the normal MCS Modbus Toolkit uninstaller from NSIS. Uninstall performs service cleanup first:
+
+```text
+stop/remove MCS-Replicator
+stop/remove MCS-Simulator
+stop/remove MCS-MMA2
+```
+
+The application files and shortcuts are then removed by the normal NSIS uninstall flow. Runtime data under `C:\ProgramData\MCS Modbus Toolkit\runtime` is intentionally not deleted by this first implementation so configuration/data is not destroyed accidentally.
 
 ## Architecture
 
 ```text
-MCS Modbus Toolkit.exe
-└── one Electron window
+Windows
+├── MCS-MMA2 service          -> mma2.exe
+├── MCS-Simulator service     -> modbus-simulator-runtime.exe
+├── MCS-Replicator service    -> modbus-replicator-runtime.exe
+└── MCS Modbus Toolkit.exe    -> normal Electron UI
     ├── Simulator tab
     ├── Replicator tab
     └── Diagnostics tab
-         ├── mma2.exe
-         ├── modbus-simulator-runtime.exe
-         └── modbus-replicator-runtime.exe
 ```
 
 No OS.js wallpaper, taskbar, desktop icons, application menu, or desktop workspace is part of this deployment.

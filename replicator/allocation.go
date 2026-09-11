@@ -20,96 +20,77 @@ type DestinationSuggestion struct {
 	Status string `json:"status"`
 }
 
-// SuggestDestination returns the first destination whose port and Unit ID are
-// both unused in the shared MMA2 ownership document.
+// SuggestDestination returns the first unreserved (port, unit_id) pair,
+// starting at the Replicator default destination port.
 func (s Store) SuggestDestination() (DestinationSuggestion, error) {
 	owners, err := mma2composer.New(s.Root, ProducerReplicator).LoadOwners()
 	if err != nil {
 		return DestinationSuggestion{}, err
 	}
-	occupiedPairs := make(map[reservationKey]bool, len(owners.Reservations))
-	occupiedPorts := make(map[uint16]bool, len(owners.Reservations))
-	occupiedUnits := make(map[uint16]bool, len(owners.Reservations))
+	occupied := make(map[reservationKey]bool, len(owners.Reservations))
 	for _, entry := range owners.Reservations {
-		occupiedPairs[reservationKey{port: entry.Port, unitID: entry.UnitID}] = true
-		occupiedPorts[entry.Port] = true
-		occupiedUnits[entry.UnitID] = true
+		occupied[reservationKey{port: entry.Port, unitID: entry.UnitID}] = true
 	}
-	port, unit, err := firstAvailable(occupiedPairs, occupiedPorts, occupiedUnits, DefaultDestinationPort, 0, true, true)
+	port, unit, err := firstAvailable(occupied, DefaultDestinationPort, 0, true, true)
 	if err != nil {
 		return DestinationSuggestion{}, err
 	}
 	return DestinationSuggestion{Port: port, UnitID: unit, Owner: ProducerReplicator, Status: "AVAILABLE"}, nil
 }
 
-// InspectDestination reports current shared ownership. A destination is IN USE
-// when either its port or its Unit ID belongs to another producer.
+// InspectDestination reports ownership of the exact (port, unit_id) pair.
 func (s Store) InspectDestination(port, unitID uint16) (DestinationSuggestion, error) {
 	owners, err := mma2composer.New(s.Root, ProducerReplicator).LoadOwners()
 	if err != nil {
 		return DestinationSuggestion{}, err
 	}
 	for _, entry := range owners.Reservations {
-		if entry.Port == port && entry.Owner != ProducerReplicator {
-			return DestinationSuggestion{Port: port, UnitID: unitID, Owner: entry.Owner, Status: "IN USE"}, nil
-		}
-	}
-	for _, entry := range owners.Reservations {
-		if entry.UnitID == unitID && entry.Owner != ProducerReplicator {
-			return DestinationSuggestion{Port: port, UnitID: unitID, Owner: entry.Owner, Status: "IN USE"}, nil
-		}
-	}
-	for _, entry := range owners.Reservations {
 		if entry.Port == port && entry.UnitID == unitID {
-			return DestinationSuggestion{Port: port, UnitID: unitID, Owner: entry.Owner, Status: "OWNED"}, nil
+			status := "OWNED"
+			if entry.Owner != ProducerReplicator {
+				status = "IN USE"
+			}
+			return DestinationSuggestion{Port: port, UnitID: unitID, Owner: entry.Owner, Status: status}, nil
 		}
 	}
 	return DestinationSuggestion{Port: port, UnitID: unitID, Owner: ProducerReplicator, Status: "AVAILABLE"}, nil
 }
 
-// CheckDocumentOwnership is the authoritative Save & Apply guard. Port and
-// Unit ID are independently exclusive against foreign producers.
+// CheckDocumentOwnership is the authoritative Save & Apply guard. Ownership is
+// scoped to the exact (port, unit_id) pair: the same Unit ID on another port is
+// valid, and another Unit ID on the same port is also valid.
 func (s Store) CheckDocumentOwnership(doc Document) error {
 	owners, err := mma2composer.New(s.Root, ProducerReplicator).LoadOwners()
 	if err != nil {
 		return err
 	}
-	foreignPortOwner := make(map[uint16]string)
-	foreignUnitOwner := make(map[uint16]string)
+	foreign := make(map[reservationKey]string)
 	for _, entry := range owners.Reservations {
 		if entry.Owner == ProducerReplicator {
 			continue
 		}
-		foreignPortOwner[entry.Port] = entry.Owner
-		foreignUnitOwner[entry.UnitID] = entry.Owner
+		foreign[reservationKey{port: entry.Port, unitID: entry.UnitID}] = entry.Owner
 	}
-	seenPorts := make(map[uint16]string)
-	seenUnits := make(map[uint16]string)
+	seen := make(map[reservationKey]string)
 	for _, device := range doc.Devices {
 		if !device.Enabled {
 			continue
 		}
-		if owner := foreignPortOwner[device.Destination.Port]; owner != "" {
-			return fmt.Errorf("device %q: %w: destination port %d owned by %q", device.Name, mma2composer.ErrReservationOwnedByOther, device.Destination.Port, owner)
+		key := reservationKey{port: device.Destination.Port, unitID: device.Destination.UnitID}
+		if owner := foreign[key]; owner != "" {
+			return fmt.Errorf("device %q: %w: destination (%d,%d) owned by %q", device.Name, mma2composer.ErrReservationOwnedByOther, key.port, key.unitID, owner)
 		}
-		if owner := foreignUnitOwner[device.Destination.UnitID]; owner != "" {
-			return fmt.Errorf("device %q: %w: destination Unit ID %d owned by %q", device.Name, mma2composer.ErrReservationOwnedByOther, device.Destination.UnitID, owner)
+		if other := seen[key]; other != "" {
+			return fmt.Errorf("device %q: destination (%d,%d) already assigned to Replicator device %q", device.Name, key.port, key.unitID, other)
 		}
-		if other := seenPorts[device.Destination.Port]; other != "" {
-			return fmt.Errorf("device %q: destination port %d already assigned to Replicator device %q", device.Name, device.Destination.Port, other)
-		}
-		if other := seenUnits[device.Destination.UnitID]; other != "" {
-			return fmt.Errorf("device %q: destination Unit ID %d already assigned to Replicator device %q", device.Name, device.Destination.UnitID, other)
-		}
-		seenPorts[device.Destination.Port] = device.Name
-		seenUnits[device.Destination.UnitID] = device.Name
+		seen[key] = device.Name
 	}
 	return nil
 }
 
 // ResolveDocumentDestinations applies automatic choices while treating foreign
-// port and Unit ID ownership as immutable. Existing Replicator reservations are
-// rebuildable by this same producer and are reserved again from the edited doc.
+// (port, unit_id) reservations as immutable. Existing Replicator reservations
+// are rebuildable by the same producer and become candidates again.
 func (s Store) ResolveDocumentDestinations(doc Document) (Document, error) {
 	if err := ValidateDocument(doc); err != nil {
 		return Document{}, err
@@ -118,39 +99,28 @@ func (s Store) ResolveDocumentDestinations(doc Document) (Document, error) {
 	if err != nil {
 		return Document{}, err
 	}
-	occupiedPairs := make(map[reservationKey]bool)
-	occupiedPorts := make(map[uint16]bool)
-	occupiedUnits := make(map[uint16]bool)
-	foreignPortOwner := make(map[uint16]string)
-	foreignUnitOwner := make(map[uint16]string)
+	occupied := make(map[reservationKey]bool)
+	foreignOwner := make(map[reservationKey]string)
 	for _, entry := range owners.Reservations {
 		if entry.Owner == ProducerReplicator {
 			continue
 		}
-		occupiedPairs[reservationKey{port: entry.Port, unitID: entry.UnitID}] = true
-		occupiedPorts[entry.Port] = true
-		occupiedUnits[entry.UnitID] = true
-		foreignPortOwner[entry.Port] = entry.Owner
-		foreignUnitOwner[entry.UnitID] = entry.Owner
+		key := reservationKey{port: entry.Port, unitID: entry.UnitID}
+		occupied[key] = true
+		foreignOwner[key] = entry.Owner
 	}
 
 	resolved := doc
 	for i := range resolved.Devices {
 		destination := &resolved.Devices[i].Destination
-		if !destination.AutoPort {
-			if owner := foreignPortOwner[destination.Port]; owner != "" {
-				return Document{}, fmt.Errorf("device %q: %w: destination port %d owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, destination.Port, owner)
-			}
-		}
-		if !destination.AutoUnitID {
-			if owner := foreignUnitOwner[destination.UnitID]; owner != "" {
-				return Document{}, fmt.Errorf("device %q: %w: destination Unit ID %d owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, destination.UnitID, owner)
+		if !destination.AutoPort && !destination.AutoUnitID {
+			manualKey := reservationKey{port: destination.Port, unitID: destination.UnitID}
+			if owner := foreignOwner[manualKey]; owner != "" {
+				return Document{}, fmt.Errorf("device %q: %w: destination (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, destination.Port, destination.UnitID, owner)
 			}
 		}
 		port, unit, resolveErr := firstAvailable(
-			occupiedPairs,
-			occupiedPorts,
-			occupiedUnits,
+			occupied,
 			destination.Port,
 			destination.UnitID,
 			destination.AutoPort,
@@ -159,18 +129,23 @@ func (s Store) ResolveDocumentDestinations(doc Document) (Document, error) {
 		if resolveErr != nil {
 			return Document{}, fmt.Errorf("device %q: %w", resolved.Devices[i].Name, resolveErr)
 		}
+		key := reservationKey{port: port, unitID: unit}
+		if owner := foreignOwner[key]; owner != "" {
+			return Document{}, fmt.Errorf("device %q: %w: destination (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, port, unit, owner)
+		}
+		if occupied[key] {
+			return Document{}, fmt.Errorf("device %q: destination (%d,%d) is already assigned in this Replicator document", resolved.Devices[i].Name, port, unit)
+		}
 		destination.Port = port
 		destination.UnitID = unit
 		destination.Owner = ProducerReplicator
 		destination.Status = "AVAILABLE"
-		occupiedPairs[reservationKey{port: port, unitID: unit}] = true
-		occupiedPorts[port] = true
-		occupiedUnits[unit] = true
+		occupied[key] = true
 	}
 	return resolved, nil
 }
 
-func firstAvailable(occupiedPairs map[reservationKey]bool, occupiedPorts map[uint16]bool, occupiedUnits map[uint16]bool, requestedPort, requestedUnit uint16, autoPort, autoUnit bool) (uint16, uint16, error) {
+func firstAvailable(occupied map[reservationKey]bool, requestedPort, requestedUnit uint16, autoPort, autoUnit bool) (uint16, uint16, error) {
 	if !autoPort && requestedPort == 0 {
 		return 0, 0, fmt.Errorf("manual destination port must be > 0")
 	}
@@ -179,15 +154,9 @@ func firstAvailable(occupiedPairs map[reservationKey]bool, occupiedPorts map[uin
 		startPort = DefaultDestinationPort
 	}
 
-	if !autoPort && occupiedPorts[startPort] {
-		return 0, 0, fmt.Errorf("destination port %d is already reserved", startPort)
-	}
-	if !autoUnit && occupiedUnits[requestedUnit] {
-		return 0, 0, fmt.Errorf("destination Unit ID %d is already reserved", requestedUnit)
-	}
 	if !autoPort && !autoUnit {
 		key := reservationKey{port: startPort, unitID: requestedUnit}
-		if occupiedPairs[key] {
+		if occupied[key] {
 			return 0, 0, fmt.Errorf("destination (%d,%d) is already reserved", startPort, requestedUnit)
 		}
 		return startPort, requestedUnit, nil
@@ -195,20 +164,17 @@ func firstAvailable(occupiedPairs map[reservationKey]bool, occupiedPorts map[uin
 
 	if !autoPort && autoUnit {
 		for unit := uint16(1); unit <= 255; unit++ {
-			if !occupiedUnits[unit] && !occupiedPairs[reservationKey{port: startPort, unitID: unit}] {
+			if !occupied[reservationKey{port: startPort, unitID: unit}] {
 				return startPort, unit, nil
 			}
 		}
-		return 0, 0, fmt.Errorf("no free Unit ID remains for port %d", startPort)
+		return 0, 0, fmt.Errorf("no free Unit ID remains on port %d", startPort)
 	}
 
 	if autoPort && !autoUnit {
 		for port := uint32(startPort); port <= 65535; port++ {
 			p := uint16(port)
-			if occupiedPorts[p] {
-				continue
-			}
-			if !occupiedPairs[reservationKey{port: p, unitID: requestedUnit}] {
+			if !occupied[reservationKey{port: p, unitID: requestedUnit}] {
 				return p, requestedUnit, nil
 			}
 		}
@@ -217,14 +183,8 @@ func firstAvailable(occupiedPairs map[reservationKey]bool, occupiedPorts map[uin
 
 	for port := uint32(startPort); port <= 65535; port++ {
 		p := uint16(port)
-		if occupiedPorts[p] {
-			continue
-		}
 		for unit := uint16(1); unit <= 255; unit++ {
-			if occupiedUnits[unit] {
-				continue
-			}
-			if !occupiedPairs[reservationKey{port: p, unitID: unit}] {
+			if !occupied[reservationKey{port: p, unitID: unit}] {
 				return p, unit, nil
 			}
 		}

@@ -1,6 +1,7 @@
 const tabs = [...document.querySelectorAll('.tab')];
 const panels = [...document.querySelectorAll('.panel')];
 const log = document.getElementById('log');
+const pulseTimers = new Map();
 
 const setStatuses = value => {
   ['mma2', 'simulator', 'replicator'].forEach(key => {
@@ -9,6 +10,20 @@ const setStatuses = value => {
     node.textContent = status;
     node.className = status === 'RUNNING' ? 'status-ok' : 'status-stop';
   });
+};
+
+const pulseActivity = ({process}) => {
+  if (process !== 'mma2' && process !== 'simulator') return;
+  const node = document.getElementById(`status-${process}`);
+  if (!node || !node.classList.contains('status-ok')) return;
+
+  node.classList.add('status-activity');
+  const previous = pulseTimers.get(process);
+  if (previous) clearTimeout(previous);
+  pulseTimers.set(process, setTimeout(() => {
+    node.classList.remove('status-activity');
+    pulseTimers.delete(process);
+  }, 110));
 };
 
 const appendLog = entry => {
@@ -26,6 +41,7 @@ document.getElementById('start-all').addEventListener('click', () => window.mcsD
 document.getElementById('stop-all').addEventListener('click', () => window.mcsDesktop.stopAll());
 
 window.mcsDesktop.onRuntimeStatus(setStatuses);
+window.mcsDesktop.onRuntimeActivity(pulseActivity);
 window.mcsDesktop.onRuntimeLog(appendLog);
 
 Promise.all([

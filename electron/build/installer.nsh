@@ -80,14 +80,30 @@ FunctionEnd
 !macroend
 
 !macro MCS_NSSM service executable
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" stop "${service}"'
+  ; Upgrade/reinstall safely: never remove a selected existing service just to
+  ; recreate it under the same name. Windows can keep a removed service marked
+  ; for deletion until all SCM handles close, causing immediate reinstall to fail.
+  nsExec::ExecToStack 'sc.exe query "${service}"'
   Pop $0
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" remove "${service}" confirm'
-  Pop $0
+  Pop $1
 
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" install "${service}" "$INSTDIR\resources\bin\${executable}"'
+  ${If} $0 == 0
+    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" stop "${service}"'
+    Pop $0
+    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" Application "$INSTDIR\resources\bin\${executable}"'
+    Pop $0
+    !insertmacro MCS_REQUIRE_SUCCESS "Updating ${service} executable"
+  ${Else}
+    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" install "${service}" "$INSTDIR\resources\bin\${executable}"'
+    Pop $0
+    !insertmacro MCS_REQUIRE_SUCCESS "Installing ${service} service"
+  ${EndIf}
+
+  ; Clear stale arguments from older service definitions. MMA2 overrides this
+  ; immediately after the common service configuration is applied.
+  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "${service}" AppParameters'
   Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Installing ${service} service"
+  !insertmacro MCS_REQUIRE_SUCCESS "Resetting ${service} arguments"
 
   nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"'
   Pop $0

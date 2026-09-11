@@ -208,7 +208,15 @@ const register = (core, args, options, metadata) => {
     pane.appendChild(element('h2', 'rep-editor-title', 'Device Definition'));
     const device = selectedDevice();
     if (!device) {
-      pane.appendChild(element('div', 'rep-empty', 'Select a device or choose Add.'));
+      const pendingDelete = state.persisted.devices.length > 0 && state.document.devices.length === 0;
+      pane.appendChild(element('div', 'rep-empty', pendingDelete
+        ? 'All devices are marked for deletion. Save & Apply to release Replicator-owned destinations, or Discard to restore them.'
+        : 'Select a device or choose Add.'));
+      const actions = element('div', 'rep-editor-actions');
+      const saveButton = button(state.saving ? 'Saving...' : 'Save & Apply', 'save', 'rep-primary');
+      saveButton.disabled = state.saving || !pendingDelete;
+      actions.append(saveButton, button('Discard', 'discard'));
+      pane.appendChild(actions);
       root.appendChild(pane);
       return;
     }
@@ -260,6 +268,7 @@ const register = (core, args, options, metadata) => {
         Object.assign(device.destination, {owner: 'replicator', status: 'AVAILABLE'});
       }
       render();
+      inspectDestination();
     }));
     destGrid.appendChild(unitField);
     destGrid.appendChild(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => {
@@ -271,6 +280,7 @@ const register = (core, args, options, metadata) => {
         Object.assign(device.destination, {owner: 'replicator', status: 'AVAILABLE'});
       }
       render();
+      inspectDestination();
     }));
     const ownership = element('div', 'rep-ownership');
     ownership.append(
@@ -281,6 +291,13 @@ const register = (core, args, options, metadata) => {
     );
     destGrid.appendChild(ownership);
     pane.appendChild(destGrid);
+    if (String(device.destination.status).toUpperCase() === 'IN USE') {
+      pane.appendChild(element(
+        'div',
+        'rep-validation',
+        `Destination ${device.destination.port}/${device.destination.unit_id} is owned by ${device.destination.owner || 'another producer'} and cannot be claimed by Replicator.`
+      ));
+    }
 
     const runtime = element('div', 'rep-runtime-row');
     runtime.append(

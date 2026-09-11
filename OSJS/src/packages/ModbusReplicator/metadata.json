@@ -1,0 +1,17 @@
+{
+  "type": "application",
+  "name": "ModbusReplicator",
+  "category": "development",
+  "icon": "icon.png",
+  "title": {
+    "en_EN": "Modbus Replicator"
+  },
+  "description": {
+    "en_EN": "Configure Modbus source devices and Replicator-owned MMA2 destinations."
+  },
+  "server": "server.js",
+  "files": [
+    "main.js",
+    "main.css"
+  ]
+}

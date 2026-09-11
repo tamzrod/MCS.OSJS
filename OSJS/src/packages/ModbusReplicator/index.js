@@ -4,7 +4,25 @@ import {name as applicationName} from './metadata.json';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
-const normalizeDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
+const normalizeDevice = value => {
+  const device = clone(value || {});
+  if (!device.pull_block) {
+    device.pull_block = {
+      function: Number(device.function || 3),
+      start: Number(device.start || 0),
+      count: Number(device.count || 16),
+      scan_rate_ms: Number(device.scan_rate_ms || 1000)
+    };
+  }
+  delete device.function;
+  delete device.start;
+  delete device.count;
+  delete device.scan_rate_ms;
+  return device;
+};
+const normalizeDocument = value => ({
+  devices: Array.isArray(value && value.devices) ? value.devices.map(normalizeDevice) : []
+});
 
 const element = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -50,10 +68,12 @@ const blankDevice = (sequence, suggestion) => ({
   enabled: true,
   endpoint: '127.0.0.1:5020',
   unit_id: 1,
-  function: 3,
-  start: 0,
-  count: 16,
-  scan_rate_ms: 1000,
+  pull_block: {
+    function: 3,
+    start: 0,
+    count: 16,
+    scan_rate_ms: 1000
+  },
   destination: {
     port: suggestion && suggestion.port || 5021,
     unit_id: suggestion && suggestion.unit_id || 1,
@@ -65,13 +85,14 @@ const blankDevice = (sequence, suggestion) => ({
 });
 
 const validateDevice = device => {
+  const block = device.pull_block || {};
   if (!device.name || !device.name.trim()) return 'Name is required.';
   if (!device.endpoint || !device.endpoint.includes(':')) return 'Endpoint must be host:port.';
   if (device.unit_id < 0 || device.unit_id > 255) return 'Source Unit ID must be between 0 and 255.';
-  if (![3, 4].includes(Number(device.function))) return 'Function must be FC3 or FC4.';
-  if (device.start < 0 || device.start > 65535) return 'Start must be between 0 and 65535.';
-  if (device.count < 1 || device.start + device.count > 65536) return 'Count must be positive and remain inside the 16-bit address space.';
-  if (device.scan_rate_ms < 1) return 'Scan Rate must be greater than zero.';
+  if (![3, 4].includes(Number(block.function))) return 'Pull Block Function must be FC3 or FC4.';
+  if (block.start < 0 || block.start > 65535) return 'Pull Block Start must be between 0 and 65535.';
+  if (block.count < 1 || block.start + block.count > 65536) return 'Pull Block Count must be positive and remain inside the 16-bit address space.';
+  if (block.scan_rate_ms < 1) return 'Pull Block Scan Rate must be greater than zero.';
   if (!device.destination.auto_port && (device.destination.port < 1 || device.destination.port > 65535)) return 'Destination Port must be between 1 and 65535.';
   if (device.destination.unit_id < 0 || device.destination.unit_id > 255) return 'Destination Unit ID must be between 0 and 255.';
   return null;
@@ -230,6 +251,11 @@ const register = (core, args, options, metadata) => {
     const sourceGrid = element('div', 'rep-grid rep-source-grid');
     sourceGrid.appendChild(field('Endpoint', device.endpoint, {type: 'text', placeholder: '192.168.1.20:502'}, value => { device.endpoint = value; }));
     sourceGrid.appendChild(field('Unit ID', device.unit_id, {min: 0, max: 255}, value => { device.unit_id = numberValue(value); }));
+    pane.appendChild(sourceGrid);
+
+    pane.appendChild(element('h3', 'rep-section-title', 'Pull Block'));
+    const block = device.pull_block;
+    const blockGrid = element('div', 'rep-grid rep-source-grid');
     const fc = element('label', 'rep-field');
     fc.appendChild(element('span', 'rep-field-label', 'FC'));
     const select = document.createElement('select');
@@ -237,16 +263,16 @@ const register = (core, args, options, metadata) => {
       const option = document.createElement('option');
       option.value = String(value);
       option.textContent = `FC${value}`;
-      option.selected = Number(device.function) === value;
+      option.selected = Number(block.function) === value;
       select.appendChild(option);
     });
-    select.addEventListener('change', event => { device.function = Number(event.target.value); });
+    select.addEventListener('change', event => { block.function = Number(event.target.value); });
     fc.appendChild(select);
-    sourceGrid.appendChild(fc);
-    sourceGrid.appendChild(field('Start', device.start, {min: 0, max: 65535}, value => { device.start = numberValue(value); }));
-    sourceGrid.appendChild(field('Count', device.count, {min: 1, max: 65535}, value => { device.count = numberValue(value); }));
-    sourceGrid.appendChild(field('Scan Rate (ms)', device.scan_rate_ms, {min: 1, step: 1}, value => { device.scan_rate_ms = numberValue(value); }));
-    pane.appendChild(sourceGrid);
+    blockGrid.appendChild(fc);
+    blockGrid.appendChild(field('Start', block.start, {min: 0, max: 65535}, value => { block.start = numberValue(value); }));
+    blockGrid.appendChild(field('Count', block.count, {min: 1, max: 65535}, value => { block.count = numberValue(value); }));
+    blockGrid.appendChild(field('Scan Rate (ms)', block.scan_rate_ms, {min: 1, step: 1}, value => { block.scan_rate_ms = numberValue(value); }));
+    pane.appendChild(blockGrid);
 
     pane.appendChild(element('h3', 'rep-section-title', 'Destination'));
     const destGrid = element('div', 'rep-destination-grid');
@@ -351,7 +377,7 @@ const register = (core, args, options, metadata) => {
       row.classList.add('rep-device-row');
       row.append(
         element('strong', '', device.name || 'Unnamed device'),
-        element('span', '', `${device.endpoint} • FC${device.function} • ${device.enabled ? 'Enabled' : 'Disabled'}`)
+        element('span', '', `${device.endpoint} • FC${device.pull_block.function} • ${device.enabled ? 'Enabled' : 'Disabled'}`)
       );
       list.appendChild(row);
     });
@@ -372,7 +398,7 @@ const register = (core, args, options, metadata) => {
       return;
     }
     state.saving = true;
-    setMessage('Saving and applying Replicator configuration...');
+    setMessage('Checking MMA2 ownership, saving shared settings, and restarting MMA2...');
     render();
     try {
       const result = await runtimeCall('apply', {document: clone(normalizeDocument(state.document))});

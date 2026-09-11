@@ -18,9 +18,22 @@ type RegisterValues struct {
 	Values   []uint16
 }
 
-// ReadSourceRange performs one deterministic Modbus TCP read using the
-// persisted source configuration. REP-004 intentionally supports register
-// reads only (FC3 holding registers and FC4 input registers).
+// ReadConfiguredSource loads the persisted REP-003 configuration and performs
+// one source read. It does not write destination MMA2 memory.
+func (s Store) ReadConfiguredSource() (RegisterValues, error) {
+	cfg, err := s.Load()
+	if err != nil {
+		return RegisterValues{}, fmt.Errorf("load replicator config: %w", err)
+	}
+	if err := ValidateConfig(cfg); err != nil {
+		return RegisterValues{}, fmt.Errorf("validate replicator config: %w", err)
+	}
+	return ReadSourceRange(cfg.Source)
+}
+
+// ReadSourceRange performs one deterministic Modbus TCP read using one source
+// definition. REP-004 intentionally supports register reads only (FC3 holding
+// registers and FC4 input registers).
 func ReadSourceRange(source SourceConfig) (RegisterValues, error) {
 	return readSourceRange(source, defaultModbusTimeout)
 }
@@ -56,8 +69,8 @@ func readSourceRange(source SourceConfig, timeout time.Duration) (RegisterValues
 	const transactionID uint16 = 1
 	request := make([]byte, 12)
 	binary.BigEndian.PutUint16(request[0:2], transactionID)
-	binary.BigEndian.PutUint16(request[2:4], 0) // Modbus protocol ID
-	binary.BigEndian.PutUint16(request[4:6], 6) // unit + PDU bytes
+	binary.BigEndian.PutUint16(request[2:4], 0)
+	binary.BigEndian.PutUint16(request[4:6], 6)
 	request[6] = byte(source.UnitID)
 	request[7] = source.Function
 	binary.BigEndian.PutUint16(request[8:10], source.Start)
@@ -85,7 +98,7 @@ func readSourceRange(source SourceConfig, timeout time.Duration) (RegisterValues
 	if length < 3 {
 		return RegisterValues{}, fmt.Errorf("invalid Modbus response length %d", length)
 	}
-	pdu := make([]byte, int(length)-1) // MBAP length includes unit id
+	pdu := make([]byte, int(length)-1)
 	if _, err := io.ReadFull(conn, pdu); err != nil {
 		return RegisterValues{}, fmt.Errorf("read Modbus PDU: %w", err)
 	}

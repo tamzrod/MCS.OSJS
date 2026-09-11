@@ -12,9 +12,11 @@ Allow one Replicator device to contain multiple explicit Pull Blocks, with each 
 - Preserve deterministic block ordering and persistence.
 - Migrate the current single `pull_block` document into a one-element block collection on load.
 - Expose per-block runtime state required by the later tabbed UI task: block identity/index, running state, last poll, source status, and last error.
+- The allocated destination memory must remain a normal externally readable Modbus memory. Third-party Modbus clients must be able to read the Replicator destination through the configured listener using the corresponding FC3/FC4 range.
 - Device operational `Status` is end-to-end health, not MMA2 ownership. `OWNED` is ownership/configuration information only and is not an acceptable operational success status.
-- Device `Status = OK` only after all three conditions are true: (1) destination MMA2 memory is allocated/ready, (2) configured Pull Block poller(s) are successfully reading the source Modbus, and (3) the values read from the source are successfully written into the allocated MMA2 memory.
+- Device `Status = OK` only after all three conditions are true: (1) destination MMA2 memory is allocated/ready and externally serveable over Modbus, (2) configured Pull Block poller(s) are successfully reading the source Modbus, and (3) the values read from the source are successfully written into the allocated MMA2 memory.
 - A successful source read without a successful destination write must not report `OK`.
+- Allocated/owned destination memory that cannot serve external Modbus reads must not report `OK`.
 - Allocated/owned destination memory without successful source polling must not report `OK`.
 - Keep `Owner: replicator` as separate ownership information; it must not be used as the device operational status.
 
@@ -31,12 +33,13 @@ Allow one Replicator device to contain multiple explicit Pull Blocks, with each 
 3. FC/start/count used by a poll cycle come from that specific block only.
 4. Legacy/current single-pull-block documents load as exactly one block without losing configuration.
 5. Runtime status can report each block independently.
-6. `Owner: replicator` remains ownership metadata and is not presented as operational success.
-7. Device `Status` reports `OK` only when destination memory is allocated/ready, source polling succeeds, and the polled values are successfully written to MMA2 memory.
-8. If any required end-to-end stage fails — memory unavailable, source read failure, or destination write failure — device `Status` must not report `OK` and runtime diagnostics must expose the failing stage/error.
+6. The Replicator destination listener serves the mirrored FC3/FC4 values to an external Modbus client at the configured `(port, unit_id)`.
+7. `Owner: replicator` remains ownership metadata and is not presented as operational success.
+8. Device `Status` reports `OK` only when destination memory is allocated/ready and serveable, source polling succeeds, and the polled values are successfully written to MMA2 memory.
+9. If any required end-to-end stage fails — memory unavailable/not serveable, source read failure, or destination write failure — device `Status` must not report `OK` and runtime diagnostics must expose the failing stage/error.
 
 ## Verification
-Focused Go tests using one device with at least two blocks at different scan rates, proving independent cycle counts/status plus single-block migration and persistence round-trip. Add end-to-end status tests proving `OK` only after a successful source-read-to-MMA2-write cycle, plus negative cases for unavailable memory, failed source read, and failed destination write. Rendered UI verification must confirm `Owner: replicator` remains separate while the displayed device `Status` follows the end-to-end semantics rather than showing `OWNED` as success.
+Focused Go tests using one device with at least two blocks at different scan rates, proving independent cycle counts/status plus single-block migration and persistence round-trip. Verify the composed Replicator MMA2 memory includes an access policy allowing external FC3/FC4 reads. Human/JR end-to-end verification must use a real Modbus client against the Replicator destination `(port, unit_id)` and confirm the values match the source after replication. Add end-to-end status tests proving `OK` only after a successful source-read-to-MMA2-write-and-serve cycle, plus negative cases for unavailable/unserveable memory, failed source read, and failed destination write. Rendered UI verification must confirm `Owner: replicator` remains separate while the displayed device `Status` follows the end-to-end semantics rather than showing `OWNED` as success.
 
 ## Dependencies
 REP-BLOCK-001 must be complete/accepted first because this task extends its explicit Pull Block model.

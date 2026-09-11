@@ -3,7 +3,11 @@ package simulator
 import (
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"strconv"
+	"sync/atomic"
+	"time"
 
 	"github.com/tamzrod/MCS.OSJS/mma2raw"
 )
@@ -13,6 +17,8 @@ const (
 	rawHeaderLen = mma2raw.HeaderLen
 	rawVersion   = mma2raw.Version
 )
+
+var lastSimulatorActivityNS int64
 
 type RawIngestClient struct {
 	client *mma2raw.Client
@@ -38,7 +44,31 @@ func (c *RawIngestClient) Send(v Values) error {
 		return err
 	}
 	c.client.Addr = c.addr
-	return c.client.Send(area, mma2raw.Values{Bits: v.Coils, Registers: v.Regs})
+	if err := c.client.Send(area, mma2raw.Values{Bits: v.Coils, Registers: v.Regs}); err != nil {
+		return err
+	}
+	markSimulatorActivity()
+	return nil
+}
+
+func markSimulatorActivity() {
+	now := time.Now()
+	last := atomic.LoadInt64(&lastSimulatorActivityNS)
+	if last != 0 && now.UnixNano()-last < int64(100*time.Millisecond) {
+		return
+	}
+	if !atomic.CompareAndSwapInt64(&lastSimulatorActivityNS, last, now.UnixNano()) {
+		return
+	}
+
+	root := os.Getenv("MCS_DATA_ROOT")
+	if root == "" {
+		return
+	}
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return
+	}
+	_ = os.WriteFile(filepath.Join(root, "simulator.activity"), []byte(now.Format(time.RFC3339Nano)), 0o644)
 }
 
 func sharedRawArea(fc FCKind) (mma2raw.Area, error) {

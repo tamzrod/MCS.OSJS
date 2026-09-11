@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -55,15 +56,12 @@ func (e *engine) stop() error {
 }
 
 func main() {
-	if len(os.Args) != 5 {
-		log.Fatal("usage: mma2-supervisor <mma2-binary> <config.yaml> <restart-request.yaml> <restart-ack>")
-	}
+	binary, configPath, requestPath, ackPath := resolveRuntimePaths()
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	e := &engine{binary: os.Args[1], config: os.Args[2]}
-	requestPath := os.Args[3]
-	ackPath := os.Args[4]
+	e := &engine{binary: binary, config: configPath}
 	initialRequest, err := os.ReadFile(requestPath)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Fatalf("read initial restart request: %v", err)
@@ -113,6 +111,31 @@ func main() {
 			}
 		}
 	}
+}
+
+func resolveRuntimePaths() (binary, configPath, requestPath, ackPath string) {
+	if len(os.Args) == 5 {
+		return os.Args[1], os.Args[2], os.Args[3], os.Args[4]
+	}
+	if len(os.Args) != 1 {
+		log.Fatal("usage: mma2-supervisor <mma2-binary> <config.yaml> <restart-request.yaml> <restart-ack>")
+	}
+
+	root := os.Getenv("OSJS_DATA_DIR")
+	if root == "" {
+		log.Fatal("OSJS_DATA_DIR is required when mma2-supervisor runs without command-line arguments")
+	}
+
+	supervisorPath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("resolve supervisor executable: %v", err)
+	}
+	binDir := filepath.Dir(supervisorPath)
+	mma2Dir := filepath.Join(root, "config", "mma2")
+	return filepath.Join(binDir, "mma2.exe"),
+		filepath.Join(mma2Dir, "config.yaml"),
+		filepath.Join(mma2Dir, "restart-request.yaml"),
+		filepath.Join(mma2Dir, "restart-ack")
 }
 
 func acknowledge(request []byte, path string) error {

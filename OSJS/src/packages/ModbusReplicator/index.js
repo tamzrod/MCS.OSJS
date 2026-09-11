@@ -4,22 +4,30 @@ import {name as applicationName} from './metadata.json';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
+const blankBlock = () => ({function: 3, start: 0, count: 16, scan_rate_ms: 1000});
+
 const normalizeDevice = value => {
   const device = clone(value || {});
-  if (!device.pull_block) {
-    device.pull_block = {
-      function: Number(device.function || 3),
-      start: Number(device.start || 0),
-      count: Number(device.count || 16),
-      scan_rate_ms: Number(device.scan_rate_ms || 1000)
-    };
+  if (!Array.isArray(device.pull_blocks) || !device.pull_blocks.length) {
+    if (device.pull_block) {
+      device.pull_blocks = [clone(device.pull_block)];
+    } else {
+      device.pull_blocks = [{
+        function: Number(device.function || 3),
+        start: Number(device.start || 0),
+        count: Number(device.count || 16),
+        scan_rate_ms: Number(device.scan_rate_ms || 1000)
+      }];
+    }
   }
+  delete device.pull_block;
   delete device.function;
   delete device.start;
   delete device.count;
   delete device.scan_rate_ms;
   return device;
 };
+
 const normalizeDocument = value => ({
   devices: Array.isArray(value && value.devices) ? value.devices.map(normalizeDevice) : []
 });
@@ -68,12 +76,7 @@ const blankDevice = (sequence, suggestion) => ({
   enabled: true,
   endpoint: '127.0.0.1:5020',
   unit_id: 1,
-  pull_block: {
-    function: 3,
-    start: 0,
-    count: 16,
-    scan_rate_ms: 1000
-  },
+  pull_blocks: [blankBlock()],
   destination: {
     port: suggestion && suggestion.port || 5021,
     unit_id: suggestion && suggestion.unit_id || 1,
@@ -85,14 +88,18 @@ const blankDevice = (sequence, suggestion) => ({
 });
 
 const validateDevice = device => {
-  const block = device.pull_block || {};
   if (!device.name || !device.name.trim()) return 'Name is required.';
   if (!device.endpoint || !device.endpoint.includes(':')) return 'Endpoint must be host:port.';
   if (device.unit_id < 0 || device.unit_id > 255) return 'Source Unit ID must be between 0 and 255.';
-  if (![3, 4].includes(Number(block.function))) return 'Pull Block Function must be FC3 or FC4.';
-  if (block.start < 0 || block.start > 65535) return 'Pull Block Start must be between 0 and 65535.';
-  if (block.count < 1 || block.start + block.count > 65536) return 'Pull Block Count must be positive and remain inside the 16-bit address space.';
-  if (block.scan_rate_ms < 1) return 'Pull Block Scan Rate must be greater than zero.';
+  if (!Array.isArray(device.pull_blocks) || !device.pull_blocks.length) return 'At least one Pull Block is required.';
+  for (let index = 0; index < device.pull_blocks.length; index += 1) {
+    const block = device.pull_blocks[index];
+    const label = `Pull Block ${index + 1}`;
+    if (![3, 4].includes(Number(block.function))) return `${label} Function must be FC3 or FC4.`;
+    if (block.start < 0 || block.start > 65535) return `${label} Start must be between 0 and 65535.`;
+    if (block.count < 1 || block.start + block.count > 65536) return `${label} Count must be positive and remain inside the 16-bit address space.`;
+    if (block.scan_rate_ms < 1) return `${label} Scan Rate must be greater than zero.`;
+  }
   if (!device.destination.auto_port && (device.destination.port < 1 || device.destination.port > 65535)) return 'Destination Port must be between 1 and 65535.';
   if (device.destination.unit_id < 0 || device.destination.unit_id > 255) return 'Destination Unit ID must be between 0 and 255.';
   return null;
@@ -117,6 +124,8 @@ const register = (core, args, options, metadata) => {
     document: {devices: []},
     persisted: {devices: []},
     selected: null,
+    selectedBlock: 0,
+    activeTab: 'device',
     search: '',
     suggestion: {port: 5021, unit_id: 1, owner: 'replicator', status: 'AVAILABLE'},
     runtimeStatus: null,
@@ -165,7 +174,7 @@ const register = (core, args, options, metadata) => {
     try {
       state.runtimeStatus = await runtimeCall('status', {name: device.name});
     } catch (error) {
-      state.runtimeStatus = {running: false, source_status: 'ERROR', last_error: error.message || String(error)};
+      state.runtimeStatus = {running: false, source_status: 'ERROR', last_error: error.message || String(error), blocks: []};
     }
     patchStatus();
   };
@@ -184,6 +193,22 @@ const register = (core, args, options, metadata) => {
       lastError.textContent = runtime && runtime.last_error ? runtime.last_error : '';
       lastError.hidden = !(runtime && runtime.last_error);
     }
+    const blocks = runtime && Array.isArray(runtime.blocks) ? runtime.blocks : [];
+    win.$content.querySelectorAll('[data-block-runtime]').forEach(node => {
+      const index = Number(node.dataset.blockRuntime);
+      const block = blocks[index];
+      const running = node.querySelector('[data-value="running"]');
+      const blockSource = node.querySelector('[data-value="source"]');
+      const blockPoll = node.querySelector('[data-value="poll"]');
+      const blockError = node.querySelector('[data-value="error"]');
+      if (running) running.textContent = block ? (block.running ? 'RUNNING' : 'STOPPED') : '—';
+      if (blockSource) blockSource.textContent = block ? block.source_status || '—' : '—';
+      if (blockPoll) blockPoll.textContent = block ? formatLastPoll(block.last_poll) : '—';
+      if (blockError) {
+        blockError.textContent = block && block.last_error ? block.last_error : '';
+        blockError.hidden = !(block && block.last_error);
+      }
+    });
     const bar = win.$content.querySelector('.rep-status');
     if (bar) {
       bar.textContent = state.message;
@@ -224,67 +249,24 @@ const register = (core, args, options, metadata) => {
     return {port, unit_id: unit, owner: 'replicator', status: 'AVAILABLE'};
   };
 
-  const renderEditor = root => {
-    const pane = element('section', 'rep-editor-pane');
-    pane.appendChild(element('h2', 'rep-editor-title', 'Device Definition'));
-    const device = selectedDevice();
-    if (!device) {
-      const pendingDelete = state.persisted.devices.length > 0 && state.document.devices.length === 0;
-      pane.appendChild(element('div', 'rep-empty', pendingDelete
-        ? 'All devices are marked for deletion. Save & Apply to release Replicator-owned destinations, or Discard to restore them.'
-        : 'Select a device or choose Add.'));
-      const actions = element('div', 'rep-editor-actions');
-      const saveButton = button(state.saving ? 'Saving...' : 'Save & Apply', 'save', 'rep-primary');
-      saveButton.disabled = state.saving || !pendingDelete;
-      actions.append(saveButton, button('Discard', 'discard'));
-      pane.appendChild(actions);
-      root.appendChild(pane);
-      return;
-    }
-
+  const renderDeviceTab = (content, device) => {
     const identity = element('div', 'rep-grid');
     identity.appendChild(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
     identity.appendChild(checkboxField('Enabled', device.enabled, value => { device.enabled = value; }));
-    pane.appendChild(identity);
+    content.appendChild(identity);
 
-    pane.appendChild(element('h3', 'rep-section-title', 'Source'));
-    const sourceGrid = element('div', 'rep-grid rep-source-grid');
+    content.appendChild(element('h3', 'rep-section-title', 'Source'));
+    const sourceGrid = element('div', 'rep-grid rep-device-source-grid');
     sourceGrid.appendChild(field('Endpoint', device.endpoint, {type: 'text', placeholder: '192.168.1.20:502'}, value => { device.endpoint = value; }));
     sourceGrid.appendChild(field('Unit ID', device.unit_id, {min: 0, max: 255}, value => { device.unit_id = numberValue(value); }));
-    pane.appendChild(sourceGrid);
+    content.appendChild(sourceGrid);
 
-    pane.appendChild(element('h3', 'rep-section-title', 'Pull Block'));
-    const block = device.pull_block;
-    const blockGrid = element('div', 'rep-grid rep-source-grid');
-    const fc = element('label', 'rep-field');
-    fc.appendChild(element('span', 'rep-field-label', 'FC'));
-    const select = document.createElement('select');
-    [3, 4].forEach(value => {
-      const option = document.createElement('option');
-      option.value = String(value);
-      option.textContent = `FC${value}`;
-      option.selected = Number(block.function) === value;
-      select.appendChild(option);
-    });
-    select.addEventListener('change', event => { block.function = Number(event.target.value); });
-    fc.appendChild(select);
-    blockGrid.appendChild(fc);
-    blockGrid.appendChild(field('Start', block.start, {min: 0, max: 65535}, value => { block.start = numberValue(value); }));
-    blockGrid.appendChild(field('Count', block.count, {min: 1, max: 65535}, value => { block.count = numberValue(value); }));
-    blockGrid.appendChild(field('Scan Rate (ms)', block.scan_rate_ms, {min: 1, step: 1}, value => { block.scan_rate_ms = numberValue(value); }));
-    pane.appendChild(blockGrid);
-
-    pane.appendChild(element('h3', 'rep-section-title', 'Destination'));
+    content.appendChild(element('h3', 'rep-section-title', 'Destination'));
     const destGrid = element('div', 'rep-destination-grid');
-    const portField = field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => {
+    destGrid.appendChild(field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => {
       device.destination.port = numberValue(value);
       inspectDestination();
-    });
-    const unitField = field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => {
-      device.destination.unit_id = numberValue(value);
-      inspectDestination();
-    });
-    destGrid.appendChild(portField);
+    }));
     destGrid.appendChild(checkboxField('Auto Port', device.destination.auto_port, value => {
       device.destination.auto_port = value;
       if (value) {
@@ -296,7 +278,10 @@ const register = (core, args, options, metadata) => {
       render();
       inspectDestination();
     }));
-    destGrid.appendChild(unitField);
+    destGrid.appendChild(field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => {
+      device.destination.unit_id = numberValue(value);
+      inspectDestination();
+    }));
     destGrid.appendChild(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => {
       device.destination.auto_unit_id = value;
       if (value) {
@@ -316,13 +301,9 @@ const register = (core, args, options, metadata) => {
       element('strong', `rep-destination-status rep-destination-${String(device.destination.status || '').toLowerCase().replace(/\s+/g, '-')}`, device.destination.status || 'AVAILABLE')
     );
     destGrid.appendChild(ownership);
-    pane.appendChild(destGrid);
+    content.appendChild(destGrid);
     if (String(device.destination.status).toUpperCase() === 'IN USE') {
-      pane.appendChild(element(
-        'div',
-        'rep-validation',
-        `Destination ${device.destination.port}/${device.destination.unit_id} is owned by ${device.destination.owner || 'another producer'} and cannot be claimed by Replicator.`
-      ));
+      content.appendChild(element('div', 'rep-validation', `Destination ${device.destination.port}/${device.destination.unit_id} is owned by ${device.destination.owner || 'another producer'} and cannot be claimed by Replicator.`));
     }
 
     const runtime = element('div', 'rep-runtime-row');
@@ -334,10 +315,93 @@ const register = (core, args, options, metadata) => {
     runtime.querySelectorAll('strong')[0].dataset.runtime = 'replicator';
     runtime.querySelectorAll('strong')[1].dataset.runtime = 'source';
     runtime.querySelectorAll('strong')[2].dataset.runtime = 'poll';
-    pane.appendChild(runtime);
+    content.appendChild(runtime);
     const lastError = element('div', 'rep-last-error');
     lastError.hidden = true;
-    pane.appendChild(lastError);
+    content.appendChild(lastError);
+  };
+
+  const renderBlocksTab = (content, device) => {
+    const toolbar = element('div', 'rep-block-toolbar');
+    toolbar.append(button('Add Block', 'add-block'), button('Duplicate Block', 'duplicate-block'), button('Delete Block', 'delete-block', 'rep-danger'));
+    content.appendChild(toolbar);
+    const list = element('div', 'rep-block-list');
+    device.pull_blocks.forEach((block, index) => {
+      const card = element('section', `rep-block-card${index === state.selectedBlock ? ' rep-block-selected' : ''}`);
+      card.dataset.action = 'select-block';
+      card.dataset.blockIndex = String(index);
+      card.appendChild(element('h3', 'rep-block-title', `Block ${index + 1}`));
+      const grid = element('div', 'rep-block-grid');
+      const fc = element('label', 'rep-field');
+      fc.appendChild(element('span', 'rep-field-label', 'FC'));
+      const select = document.createElement('select');
+      [3, 4].forEach(value => {
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = `FC${value}`;
+        option.selected = Number(block.function) === value;
+        select.appendChild(option);
+      });
+      select.addEventListener('click', event => event.stopPropagation());
+      select.addEventListener('change', event => { block.function = Number(event.target.value); });
+      fc.appendChild(select);
+      grid.appendChild(fc);
+      const addBlockField = (label, key, settings) => {
+        const node = field(label, block[key], settings, value => { block[key] = numberValue(value); });
+        node.addEventListener('click', event => event.stopPropagation());
+        grid.appendChild(node);
+      };
+      addBlockField('Start', 'start', {min: 0, max: 65535});
+      addBlockField('Count', 'count', {min: 1, max: 65535});
+      addBlockField('Scan Rate (ms)', 'scan_rate_ms', {min: 1, step: 1});
+      card.appendChild(grid);
+      const runtime = element('div', 'rep-block-runtime');
+      runtime.dataset.blockRuntime = String(index);
+      const addStatus = (label, key) => {
+        runtime.append(element('span', '', `${label}: `), element('strong', '', '—'));
+        runtime.lastElementChild.dataset.value = key;
+      };
+      addStatus('Poller', 'running');
+      addStatus('Source', 'source');
+      addStatus('Last Poll', 'poll');
+      const error = element('div', 'rep-block-error');
+      error.dataset.value = 'error';
+      error.hidden = true;
+      runtime.appendChild(error);
+      card.appendChild(runtime);
+      list.appendChild(card);
+    });
+    content.appendChild(list);
+  };
+
+  const renderEditor = root => {
+    const pane = element('section', 'rep-editor-pane');
+    pane.appendChild(element('h2', 'rep-editor-title', 'Device Definition'));
+    const device = selectedDevice();
+    if (!device) {
+      const pendingDelete = state.persisted.devices.length > 0 && state.document.devices.length === 0;
+      pane.appendChild(element('div', 'rep-empty', pendingDelete
+        ? 'All devices are marked for deletion. Save & Apply to release Replicator-owned destinations, or Discard to restore them.'
+        : 'Select a device or choose Add.'));
+      const actions = element('div', 'rep-editor-actions');
+      const saveButton = button(state.saving ? 'Saving...' : 'Save & Apply', 'save', 'rep-primary');
+      saveButton.disabled = state.saving || !pendingDelete;
+      actions.append(saveButton, button('Discard', 'discard'));
+      pane.appendChild(actions);
+      root.appendChild(pane);
+      return;
+    }
+
+    if (state.selectedBlock >= device.pull_blocks.length) state.selectedBlock = Math.max(0, device.pull_blocks.length - 1);
+    const tabs = element('div', 'rep-folder-tabs');
+    const deviceTab = button('Device', 'tab-device', `rep-folder-tab${state.activeTab === 'device' ? ' rep-folder-tab-active' : ''}`);
+    const blocksTab = button('Pull Blocks', 'tab-blocks', `rep-folder-tab${state.activeTab === 'blocks' ? ' rep-folder-tab-active' : ''}`);
+    tabs.append(deviceTab, blocksTab);
+    pane.appendChild(tabs);
+    const tabContent = element('div', 'rep-folder-content');
+    if (state.activeTab === 'blocks') renderBlocksTab(tabContent, device);
+    else renderDeviceTab(tabContent, device);
+    pane.appendChild(tabContent);
 
     const validation = validateDevice(device);
     if (validation) pane.appendChild(element('div', 'rep-validation', validation));
@@ -375,9 +439,10 @@ const register = (core, args, options, metadata) => {
       const row = button('', 'select', index === state.selected ? 'rep-device-selected' : '');
       row.dataset.index = String(index);
       row.classList.add('rep-device-row');
+      const firstBlock = device.pull_blocks[0] || blankBlock();
       row.append(
         element('strong', '', device.name || 'Unnamed device'),
-        element('span', '', `${device.endpoint} • FC${device.pull_block.function} • ${device.enabled ? 'Enabled' : 'Disabled'}`)
+        element('span', '', `${device.endpoint} • FC${firstBlock.function}${device.pull_blocks.length > 1 ? ` +${device.pull_blocks.length - 1}` : ''} • ${device.enabled ? 'Enabled' : 'Disabled'}`)
       );
       list.appendChild(row);
     });
@@ -437,11 +502,13 @@ const register = (core, args, options, metadata) => {
       const action = target.dataset.action;
       if (action === 'select') {
         state.selected = Number(target.dataset.index);
+        state.selectedBlock = 0;
         state.runtimeStatus = null;
         setMessage('Editing a Replicator device definition.');
       } else if (action === 'add') {
         state.document.devices.push(blankDevice(state.document.devices.length + 1, localSuggestion()));
         state.selected = state.document.devices.length - 1;
+        state.selectedBlock = 0;
         state.runtimeStatus = null;
         setMessage('New device added locally. Save & Apply to persist it.');
       } else if (action === 'duplicate' && selectedDevice()) {
@@ -456,16 +523,46 @@ const register = (core, args, options, metadata) => {
         copy.destination.status = 'AVAILABLE';
         state.document.devices.push(copy);
         state.selected = state.document.devices.length - 1;
+        state.selectedBlock = 0;
         state.runtimeStatus = null;
         setMessage('Device duplicated locally with a new automatic destination.');
       } else if (action === 'delete' && selectedDevice()) {
         state.document.devices.splice(state.selected, 1);
         state.selected = state.document.devices.length ? Math.min(state.selected, state.document.devices.length - 1) : null;
+        state.selectedBlock = 0;
         state.runtimeStatus = null;
         setMessage('Device deleted locally. Save & Apply to release its Replicator-owned destination.');
+      } else if (action === 'tab-device') {
+        state.activeTab = 'device';
+      } else if (action === 'tab-blocks') {
+        state.activeTab = 'blocks';
+      } else if (action === 'select-block') {
+        state.selectedBlock = Number(target.dataset.blockIndex);
+      } else if (action === 'add-block' && selectedDevice()) {
+        selectedDevice().pull_blocks.push(blankBlock());
+        state.selectedBlock = selectedDevice().pull_blocks.length - 1;
+        setMessage('Pull Block added locally. Save & Apply to start its poller.');
+      } else if (action === 'duplicate-block' && selectedDevice()) {
+        const blocks = selectedDevice().pull_blocks;
+        const source = blocks[state.selectedBlock] || blocks[0];
+        if (source) {
+          blocks.splice(state.selectedBlock + 1, 0, clone(source));
+          state.selectedBlock += 1;
+          setMessage('Pull Block duplicated locally.');
+        }
+      } else if (action === 'delete-block' && selectedDevice()) {
+        const blocks = selectedDevice().pull_blocks;
+        if (blocks.length > 1) {
+          blocks.splice(state.selectedBlock, 1);
+          state.selectedBlock = Math.min(state.selectedBlock, blocks.length - 1);
+          setMessage('Pull Block deleted locally. Save & Apply to stop that poller.');
+        } else {
+          setMessage('A device must keep at least one Pull Block.', true);
+        }
       } else if (action === 'discard') {
         state.document = clone(state.persisted);
         state.selected = state.document.devices.length ? Math.min(state.selected || 0, state.document.devices.length - 1) : null;
+        state.selectedBlock = 0;
         state.runtimeStatus = null;
         setMessage('Unapplied changes discarded.');
       } else if (action === 'save') {
@@ -484,6 +581,7 @@ const register = (core, args, options, metadata) => {
         state.persisted = clone(persisted);
         state.suggestion = result.suggestion || state.suggestion;
         state.selected = persisted.devices.length ? 0 : null;
+        state.selectedBlock = 0;
         setMessage(persisted.devices.length ? 'Canonical Replicator definitions loaded.' : 'No devices configured. Choose Add to begin.');
         render();
         pollStatus();

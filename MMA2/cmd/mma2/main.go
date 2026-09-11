@@ -30,49 +30,95 @@ func main() {
 
 	ext := strings.ToLower(filepath.Ext(cfgPath))
 	if ext != ".yaml" && ext != ".yml" {
-		log.Fatalf("config file must be .yaml or .yml: %s", cfgPath)
+		log.Fatalf("config path must end in .yaml or .yml, got: %s", cfgPath)
 	}
+
+	log.Printf("mma2 v%s starting", version.Version)
+	log.Printf("config path: %s", cfgPath)
 
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		log.Fatalf("config load failed: %v", err)
 	}
+
 	if err := config.Validate(cfg); err != nil {
 		log.Fatalf("config validation failed: %v", err)
 	}
 
-	log.Printf("[mma2 %s] config loaded and validated successfully", version.Version)
+	log.Println("config loaded and validated successfully")
 
-	store, err := config.BuildStore(cfg)
+	store, err := config.BuildMemoryStore(cfg)
 	if err != nil {
-		log.Fatalf("build store: %v", err)
+		log.Fatalf("memory build failed: %v", err)
 	}
 
-	auth, err := authority.New(cfg)
+	auth := authority.New()
+
+	policies, err := config.BuildAuthorityPolicies(cfg)
 	if err != nil {
-		log.Fatalf("authority init failed: %v", err)
+		log.Fatalf("policy build failed: %v", err)
 	}
+
+	for mid, p := range policies {
+		auth.SetMemoryPolicy(mid, p)
+	}
+
 	log.Println("authority policies loaded")
 
-	notifier, err := notify.New(cfg, store)
-	if err != nil {
-		log.Fatalf("notify init failed: %v", err)
-	}
-	defer notifier.Close()
-	log.Println("notify engine enabled")
+	// --------------------
+	// Notify
+	// --------------------
 
-	ae, err := accessevents.New(cfg)
+	var notifier *notify.Engine
+
+	registry, err := config.BuildNotifyRegistry(cfg)
 	if err != nil {
-		log.Fatalf("access events init failed: %v", err)
+		log.Fatalf("notify registry build failed: %v", err)
 	}
-	if ae != nil {
-		defer ae.Close()
+
+	if registry != nil {
+
+		var adapter notify.Adapter
+
+		// Influx adapter (optional)
+		if cfg.Notify != nil && cfg.Notify.Influx != nil {
+
+			influxCfg := cfg.Notify.Influx
+
+			adapter = notify.NewInfluxAdapter(
+				influxCfg.URL,
+				influxCfg.Org,
+				influxCfg.Bucket,
+				influxCfg.Token,
+				influxCfg.Measurement,
+			)
+
+			log.Println("notify engine enabled (influx adapter)")
+		} else {
+			adapter = notify.NewStdoutAdapter()
+			log.Println("notify engine enabled (stdout adapter)")
+		}
+
+		notifier = notify.NewEngine(registry, adapter, 256)
+
+	} else {
+		log.Println("notify engine disabled (no rules)")
 	}
+
+	// --------------------
+	// Access Events
+	// --------------------
+
+	var ae *accessevents.Engine
 
 	if cfg.AccessEvents != nil && cfg.AccessEvents.Enabled {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/events", ae.HandleEvents)
+		ae = accessevents.New(cfg.AccessEvents)
 
+		mux := http.NewServeMux()
+		mux.Handle(cfg.AccessEvents.Output.Path, accessevents.NewHandler(ae))
+
+		// Bind the listener before starting the goroutine so that bind errors
+		// cause a clean startup failure rather than a silent background crash.
 		ln, err := net.Listen("tcp", cfg.AccessEvents.Output.Listen)
 		if err != nil {
 			log.Fatalf("access events: failed to bind %s: %v", cfg.AccessEvents.Output.Listen, err)
@@ -115,10 +161,9 @@ func main() {
 
 	log.Println("mma2 ingress started")
 
-	// An empty valid configuration has no ingress goroutine. A bare `select {}`
-	// makes the Go runtime treat that state as a deadlock and abort the process.
-	// Block on real process signals instead so MMA2 can stay alive while idle and
-	// still terminate cleanly when the supervisor requests a restart/shutdown.
+	// Keep an empty-but-valid configuration alive. A bare select{} is treated by
+	// the Go runtime as a deadlock when no ingress goroutines exist. Waiting on
+	// process signals preserves normal supervisor restart and shutdown behavior.
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop

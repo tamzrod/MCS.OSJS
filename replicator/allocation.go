@@ -56,6 +56,39 @@ func (s Store) InspectDestination(port, unitID uint16) (DestinationSuggestion, e
 	return DestinationSuggestion{Port: port, UnitID: unitID, Owner: ProducerReplicator, Status: "AVAILABLE"}, nil
 }
 
+// CheckDocumentOwnership is the authoritative Save & Apply guard. The caller
+// must pass a resolved document. It reloads the latest ownership artifact and
+// rejects any enabled destination currently held by another producer before
+// shared MMA2 configuration or Replicator persistence is changed.
+func (s Store) CheckDocumentOwnership(doc Document) error {
+	owners, err := mma2composer.New(s.Root, ProducerReplicator).LoadOwners()
+	if err != nil {
+		return err
+	}
+	foreign := make(map[reservationKey]string)
+	for _, entry := range owners.Reservations {
+		if entry.Owner == ProducerReplicator {
+			continue
+		}
+		foreign[reservationKey{port: entry.Port, unitID: entry.UnitID}] = entry.Owner
+	}
+	seen := make(map[reservationKey]string)
+	for _, device := range doc.Devices {
+		if !device.Enabled {
+			continue
+		}
+		key := reservationKey{port: device.Destination.Port, unitID: device.Destination.UnitID}
+		if owner := foreign[key]; owner != "" {
+			return fmt.Errorf("device %q: %w: destination (%d,%d) owned by %q", device.Name, mma2composer.ErrReservationOwnedByOther, key.port, key.unitID, owner)
+		}
+		if other := seen[key]; other != "" {
+			return fmt.Errorf("device %q: destination (%d,%d) already assigned to Replicator device %q", device.Name, key.port, key.unitID, other)
+		}
+		seen[key] = device.Name
+	}
+	return nil
+}
+
 // ResolveDocumentDestinations applies auto-port/auto-unit choices while treating
 // foreign reservations as immutable. Existing Replicator reservations are
 // rebuildable by this same producer and therefore become candidates again;
@@ -85,7 +118,7 @@ func (s Store) ResolveDocumentDestinations(doc Document) (Document, error) {
 		if !destination.AutoPort && !destination.AutoUnitID {
 			manualKey := reservationKey{port: destination.Port, unitID: destination.UnitID}
 			if owner := foreignOwner[manualKey]; owner != "" {
-				return Document{}, fmt.Errorf("device %q: %w: (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, destination.Port, destination.UnitID, owner)
+				return Document{}, fmt.Errorf("device %q: %w: destination (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, destination.Port, destination.UnitID, owner)
 			}
 		}
 		port, unit, resolveErr := firstAvailable(
@@ -100,7 +133,7 @@ func (s Store) ResolveDocumentDestinations(doc Document) (Document, error) {
 		}
 		key := reservationKey{port: port, unitID: unit}
 		if owner := foreignOwner[key]; owner != "" {
-			return Document{}, fmt.Errorf("device %q: %w: (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, port, unit, owner)
+			return Document{}, fmt.Errorf("device %q: %w: destination (%d,%d) owned by %q", resolved.Devices[i].Name, mma2composer.ErrReservationOwnedByOther, port, unit, owner)
 		}
 		if occupied[key] {
 			return Document{}, fmt.Errorf("device %q: destination (%d,%d) is already assigned in this Replicator document", resolved.Devices[i].Name, port, unit)

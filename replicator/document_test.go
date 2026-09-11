@@ -2,6 +2,7 @@ package replicator
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"strings"
@@ -123,12 +124,12 @@ func TestComposeDocumentPreservesForeignAndAllReplicatorReservations(t *testing.
 	}
 	seen := make(map[string]string)
 	for _, entry := range owners.Reservations {
-		seen[net.JoinHostPort("", portUnit(entry.Port, entry.UnitID))] = entry.Owner
+		seen[fmt.Sprintf("%d/%d", entry.Port, entry.UnitID)] = entry.Owner
 	}
-	if seen[net.JoinHostPort("", portUnit(5020, 1))] != "simulator" {
+	if seen["5020/1"] != "simulator" {
 		t.Fatalf("foreign ownership lost: %#v", owners.Reservations)
 	}
-	if seen[net.JoinHostPort("", portUnit(5021, 1))] != ProducerReplicator || seen[net.JoinHostPort("", portUnit(5021, 2))] != ProducerReplicator {
+	if seen["5021/1"] != ProducerReplicator || seen["5021/2"] != ProducerReplicator {
 		t.Fatalf("Replicator ownership incomplete: %#v", owners.Reservations)
 	}
 
@@ -174,8 +175,4 @@ func TestDeviceRuntimeConfigMapsOneToOneRange(t *testing.T) {
 	if cfg.Source.PollIntervalMS != 750 {
 		t.Fatalf("poll interval = %d", cfg.Source.PollIntervalMS)
 	}
-}
-
-func portUnit(port, unit uint16) string {
-	return string(rune(port)) + "/" + string(rune(unit))
 }

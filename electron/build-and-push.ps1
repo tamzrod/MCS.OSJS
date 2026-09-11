@@ -34,6 +34,25 @@ function Assert-LastExitCode {
   }
 }
 
+function Build-GoModule {
+  param(
+    [string]$Label,
+    [string]$ModuleDir,
+    [string]$Package,
+    [string]$Output
+  )
+
+  Step "Building $Label for Windows"
+  Push-Location $ModuleDir
+  try {
+    go build -o $Output $Package
+    Assert-LastExitCode "$Label go build"
+  }
+  finally {
+    Pop-Location
+  }
+}
+
 function Ensure-Nssm {
   param([string]$Destination)
 
@@ -98,17 +117,20 @@ New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 $nssm = Join-Path $BinDir 'nssm.exe'
 Ensure-Nssm -Destination $nssm
 
-Step 'Building MMA2 for Windows'
-go build -o (Join-Path $BinDir 'mma2.exe') .\MMA2\cmd\mma2
-Assert-LastExitCode 'MMA2 go build'
+Build-GoModule -Label 'MMA2' `
+  -ModuleDir (Join-Path $RepoRoot 'MMA2') `
+  -Package '.\cmd\mma2' `
+  -Output (Join-Path $BinDir 'mma2.exe')
 
-Step 'Building Simulator runtime for Windows'
-go build -o (Join-Path $BinDir 'modbus-simulator-runtime.exe') .\simulator\cmd\modbus-simulator-runtime
-Assert-LastExitCode 'Simulator go build'
+Build-GoModule -Label 'Simulator runtime' `
+  -ModuleDir (Join-Path $RepoRoot 'simulator') `
+  -Package '.\cmd\modbus-simulator-runtime' `
+  -Output (Join-Path $BinDir 'modbus-simulator-runtime.exe')
 
-Step 'Building Replicator runtime for Windows'
-go build -o (Join-Path $BinDir 'modbus-replicator-runtime.exe') .\replicator\cmd\modbus-replicator-runtime
-Assert-LastExitCode 'Replicator go build'
+Build-GoModule -Label 'Replicator runtime' `
+  -ModuleDir (Join-Path $RepoRoot 'replicator') `
+  -Package '.\cmd\modbus-replicator-runtime' `
+  -Output (Join-Path $BinDir 'modbus-replicator-runtime.exe')
 
 Step 'Installing Electron dependencies'
 Set-Location $ElectronDir

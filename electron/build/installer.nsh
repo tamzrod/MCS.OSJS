@@ -13,6 +13,9 @@ Var MCSStartServicesState
 
 !macro customWelcomePage
   !insertmacro MUI_PAGE_WELCOME
+!macroend
+
+!macro customPageAfterChangeDir
   Page custom MCSServicePageCreate MCSServicePageLeave
 !macroend
 

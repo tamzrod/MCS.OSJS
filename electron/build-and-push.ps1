@@ -26,6 +26,14 @@ function Step {
   Write-Host "`n==> $Text" -ForegroundColor Cyan
 }
 
+function Assert-LastExitCode {
+  param([string]$CommandName)
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "$CommandName failed with exit code $LASTEXITCODE"
+  }
+}
+
 function Ensure-Nssm {
   param([string]$Destination)
 
@@ -76,11 +84,13 @@ Require-Command npm
 Step 'Checking repository'
 Set-Location $RepoRoot
 $branch = (git branch --show-current).Trim()
+Assert-LastExitCode 'git branch'
 if ($branch -ne 'main') {
   throw "Expected branch 'main', current branch is '$branch'."
 }
 
 git pull --ff-only origin main
+Assert-LastExitCode 'git pull'
 
 Step 'Preparing Electron binary directory'
 New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
@@ -90,26 +100,31 @@ Ensure-Nssm -Destination $nssm
 
 Step 'Building MMA2 for Windows'
 go build -o (Join-Path $BinDir 'mma2.exe') .\MMA2\cmd\mma2
+Assert-LastExitCode 'MMA2 go build'
 
 Step 'Building Simulator runtime for Windows'
 go build -o (Join-Path $BinDir 'modbus-simulator-runtime.exe') .\simulator\cmd\modbus-simulator-runtime
+Assert-LastExitCode 'Simulator go build'
 
 Step 'Building Replicator runtime for Windows'
 go build -o (Join-Path $BinDir 'modbus-replicator-runtime.exe') .\replicator\cmd\modbus-replicator-runtime
+Assert-LastExitCode 'Replicator go build'
 
 Step 'Installing Electron dependencies'
 Set-Location $ElectronDir
 npm install
+Assert-LastExitCode 'npm install'
 
 Step 'Building Windows installer'
 npm run dist:win
+Assert-LastExitCode 'npm run dist:win'
 
 $installer = Get-ChildItem -Path $DistDir -Filter 'MCS-Modbus-Toolkit-*-Setup.exe' -File |
   Sort-Object LastWriteTime -Descending |
   Select-Object -First 1
 
 if (-not $installer) {
-  throw "Build completed but no installer was found in $DistDir"
+  throw "electron-builder reported success but no installer was found in $DistDir"
 }
 
 Write-Host "`nInstaller: $($installer.FullName)" -ForegroundColor Green
@@ -119,12 +134,15 @@ if (-not $NoPush) {
   Set-Location $RepoRoot
 
   $dirty = git status --porcelain
+  Assert-LastExitCode 'git status'
   if ($dirty) {
     Write-Host 'Working tree has uncommitted changes. They will NOT be committed by this script.' -ForegroundColor Yellow
     git status --short
+    Assert-LastExitCode 'git status --short'
   }
 
   git push origin main
+  Assert-LastExitCode 'git push'
 }
 
 Write-Host "`nDONE" -ForegroundColor Green

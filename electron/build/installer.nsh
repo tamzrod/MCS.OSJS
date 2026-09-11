@@ -80,9 +80,6 @@ FunctionEnd
 !macroend
 
 !macro MCS_NSSM service executable
-  ; Upgrade/reinstall safely: never remove a selected existing service just to
-  ; recreate it under the same name. Windows can keep a removed service marked
-  ; for deletion until all SCM handles close, causing immediate reinstall to fail.
   nsExec::ExecToStack 'sc.exe query "${service}"'
   Pop $0
   Pop $1
@@ -99,8 +96,8 @@ FunctionEnd
     !insertmacro MCS_REQUIRE_SUCCESS "Installing ${service} service"
   ${EndIf}
 
-  ; Clear stale arguments from older service definitions. MMA2 overrides this
-  ; immediately after the common service configuration is applied.
+  ; All packaged runtimes are zero-argument service entry points. Clearing stale
+  ; AppParameters also repairs installs created by older toolkit installers.
   nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "${service}" AppParameters'
   Pop $0
   !insertmacro MCS_REQUIRE_SUCCESS "Resetting ${service} arguments"
@@ -148,9 +145,6 @@ mma2_config_ready:
     Abort
 
     !insertmacro MCS_NSSM "MCS-MMA2" "mma2-supervisor.exe"
-    nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "MCS-MMA2" AppParameters "$\"$INSTDIR\resources\bin\mma2.exe$\" $\"$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\config.yaml$\" $\"$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\restart-request.yaml$\" $\"$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\restart-ack$\""'
-    Pop $0
-    !insertmacro MCS_REQUIRE_SUCCESS "Configuring MCS-MMA2 supervisor arguments"
   ${Else}
     !insertmacro MCS_REMOVE_SERVICE "MCS-MMA2"
   ${EndIf}

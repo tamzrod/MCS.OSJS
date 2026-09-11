@@ -2,48 +2,43 @@
 
 ## Current
 
-ACTIVE SEQUENCE: REP-UI-001 through REP-UI-007
-State: JR PASS WITH TWO UI GAPS RECTIFIED — READY FOR TARGETED RETEST
+ACTIVE SEQUENCE:
+- REP-BLOCK-001 — Explicit Source Pull Block Model
+- REP-OWN-001 — Save-Time Shared MMA2 Conflict Guard
 
-JR's latest consolidated retest passed the MMA2 compile/deployment fix and the Replicator end-to-end runtime path. Accepted evidence already covers:
+State: IMPLEMENTED — READY FOR JR VERIFICATION
 
-- MMA2 build/tests/vet and stable supervised deployment;
-- Simulator source creation and simulator ownership `(5020,1)`;
-- Replicator automatic destination allocation to a separate reservation;
-- Save & Apply, persistence, reopen, Discard, Duplicate;
-- Replicator RUNNING / Source OK runtime status;
-- truthful runtime ERROR on unreachable source and recovery to OK;
-- foreign-owned destination rejection without corrupting persisted state;
-- desktop and Start-menu launch;
-- earlier Replicator focused/full tests, vet, Simulator-to-Replicator E2E, and OS.js build/discovery.
+The previous REP-UI sequence has been cleared from Active Work. Current implementation authority is limited to the two tasks above.
 
-Two UI-level observations remained incomplete even though backend/unit evidence was safe:
+## Implemented Scope
 
-1. deleting the final Replicator device removed the selected editor, so the browser UI no longer exposed a usable Save & Apply control to commit the empty document and release the last Replicator reservation;
-2. the foreign-owner collision was rejected correctly, but the UI did not present a sufficiently explicit visible `IN USE` ownership warning in JR's browser snapshot.
+### REP-BLOCK-001
+- Replicator `DeviceDefinition` now contains one explicit `pull_block` with FC, Start, Count, and Scan Rate.
+- Runtime source polling and destination range mapping are derived from that explicit block.
+- Validation addresses the pull block directly.
+- persisted legacy device YAML with device-level `function/start/count/scan_rate_ms` is migrated in memory and becomes canonical `pull_block` YAML on the next successful save.
+- OS.js Replicator UI now renders a distinct **Pull Block** section.
 
-## Rectification
+### REP-OWN-001
+Save & Apply now follows the required order:
 
-`OSJS/src/packages/ModbusReplicator/index.js` now:
+1. resolve destination and read latest shared MMA2 ownership;
+2. reject foreign `(port, unit_id)` ownership with owner/reservation in the error, before Replicator document persistence;
+3. claim free/self-owned destinations while preserving all foreign MMA2 reservations and write shared MMA2 config/owners;
+4. request MMA2 restart through restart-request/ack and wait for destination readiness;
+5. persist the Replicator document and restart Replicator poll loops only after MMA2 activation succeeds.
 
-- keeps Save & Apply and Discard available after the final device is locally deleted;
-- explicitly tells the operator that all devices are marked for deletion and Save & Apply will release Replicator-owned destinations;
-- re-inspects destination ownership as soon as both automatic destination controls are disabled;
-- renders an explicit warning when a manual destination is `IN USE`, including the actual owner and `(port, unit_id)`.
+Save & Apply now requests the MMA2 restart lifecycle on every successful apply, including source-only or scan-rate-only edits. Pre-save UI Owner/Status remains advisory; backend Save & Apply is the safety boundary.
 
-No backend ownership, allocation, runtime, MMA2 lifecycle, or persistence architecture changed.
+No completion/archive claim is made until JR evidence is reviewed.
 
-All seven Active Work tasks remain active until this targeted JR retest is reviewed by the coding agent.
+## JR TEST TASK — REP-BLOCK-001 + REP-OWN-001
 
-## JR TEST TASK — Targeted Replicator UI closure retest
+JR role: TEST AND REPORT ONLY. Do not fix source, modify Active Work/planning/ICC, or expand scope. Runtime test configuration through Simulator/Replicator UI is authorized. Do not destroy Docker volumes.
 
-JR role: TEST AND REPORT ONLY. Do not fix product failures, modify Active Work, planning, brainstorm, ICC, or product source. Runtime UI configuration changes are authorized. Do not destroy the Docker volume.
+JR may edit only the `## JR TEST REPORT` section and may commit/push only `handoff.md` after testing.
 
-JR may modify only `handoff.md` below `## JR TEST REPORT`, then commit/push that report only.
-
-### 1. Sync and clean repository state
-
-From repository root:
+### 1. Sync and clean state
 
 ```bash
 git pull --ff-only origin main
@@ -51,9 +46,27 @@ git status --short
 git rev-parse HEAD
 ```
 
-Expected: clean tree before testing.
+Expected: clean tree before testing. If unexpectedly dirty, report BLOCKED and stop.
 
-### 2. OS.js changed-surface build gate
+### 2. Replicator formatting/tests/vet
+
+```bash
+cd replicator
+gofmt -l .
+go test -count=1 -run '^(TestDocumentSaveLoadRoundTrip|TestLoadDocumentMigratesLegacyRangeIntoPullBlock|TestSuggestDestinationSkipsOccupiedReservations|TestResolveManualForeignCollisionReportsOwner|TestSaveTimeOwnershipGuardRejectsLatestForeignOwner|TestComposeDocumentPreservesForeignAndAllReplicatorReservations|TestDeviceRuntimeConfigMapsPullBlockOneToOne|TestSaveApplyRejectsForeignReservationBeforeMutation|TestRuntimeManagerApplyLifecycleAndStatus)$' .
+go test -count=1 ./...
+go vet ./...
+```
+
+Expected:
+- `gofmt -l .` prints nothing;
+- all focused tests PASS;
+- full Replicator test suite PASS;
+- vet exits 0.
+
+### 3. OS.js build
+
+From repository root:
 
 ```bash
 cd OSJS
@@ -62,85 +75,104 @@ npm run package:discover
 npm run build
 ```
 
-Use the already prepared compatible Node environment from prior JR runs. Expected: all commands exit 0 and ModbusReplicator builds/discovers successfully.
+Expected: ModbusReplicator builds/discovers and full build exits 0.
 
-Rebuild/restart only the OS.js shell so the updated package is deployed:
+### 4. Deploy changed services
 
 ```bash
 cd ../deploy
-docker compose build osjs-shell
-docker compose up -d osjs-shell
+docker compose build osjs-shell modbus-replicator-runtime mma2
+docker compose up -d osjs-shell modbus-replicator-runtime mma2 modbus-simulator-runtime
 docker compose ps
 ```
 
-Expected: osjs-shell healthy; simulator, replicator runtime, and MMA2 remain running.
+Expected: osjs-shell healthy; Simulator runtime, Replicator runtime, and MMA2 running.
 
-### 3. Foreign ownership warning UI
+### 5. Pull Block UI/runtime check
 
-Use/recreate the known valid setup:
+Use or create a Simulator source at:
 
-- Simulator source owns `(5020,1)`;
-- one persisted Replicator device owns a different destination such as `(5021,1)`.
-
-In Modbus Replicator:
-
-1. select the persisted Replicator device;
-2. disable Auto Port and Auto Unit ID;
-3. set destination Port `5020`, Unit ID `1`;
-4. allow the ownership inspection to complete.
-
-Expected UI before Save & Apply:
-
-- Owner visibly reads `simulator`;
-- Status visibly reads `IN USE`;
-- a clear warning says destination `5020/1` is owned by `simulator` and cannot be claimed by Replicator.
-
-Attempt Save & Apply.
-
-Expected: apply remains rejected and persisted owners remain unchanged. Capture:
-
-```bash
-docker exec mcs-modbus-replicator-runtime cat /data/config/mma2/owners.yaml
+```text
+Port: 5020
+Unit ID: 1
+FC3 Start: 0
+FC3 Count: 16
 ```
 
-Then click Discard to restore the valid persisted Replicator destination.
+In Replicator create one enabled device with:
 
-### 4. Final-device delete/release UI
-
-With exactly one persisted Replicator device present:
-
-1. select it;
-2. click Delete;
-3. verify the editor becomes an empty/pending-delete state but still shows Save & Apply and Discard;
-4. verify the UI text says all devices are marked for deletion and Save & Apply will release Replicator-owned destinations;
-5. click Save & Apply.
+```text
+Endpoint: 127.0.0.1:5020
+Source Unit ID: 1
+Pull Block: FC3 / Start 0 / Count 16 / Scan Rate 1000 ms
+Destination: automatic
+```
 
 Expected:
-
-- apply succeeds with an empty Replicator document;
-- reopening/reloading Modbus Replicator shows no Replicator devices;
-- the deleted Replicator reservation is gone from `owners.yaml`;
-- simulator-owned `(5020,1)` remains untouched.
+- UI visibly has a **Pull Block** section;
+- Save & Apply succeeds on a free destination;
+- persisted `/data/config/replicator/devices.yaml` contains `pull_block:` and does not persist the old loose device-level FC/start/count/scan-rate representation;
+- Replicator reaches RUNNING / Source OK.
 
 Capture:
 
 ```bash
 docker exec mcs-modbus-replicator-runtime cat /data/config/replicator/devices.yaml
-docker exec mcs-modbus-replicator-runtime cat /data/config/mma2/owners.yaml
 ```
 
-Expected final ownership: simulator `(5020,1)` remains; no reservation for the deleted Replicator device remains.
+### 6. Authoritative ownership conflict check
 
-### 5. Final repository state
+Ensure Simulator owns `(5020,1)` and Replicator currently has a different valid destination.
 
-From repository root:
+In Replicator:
+- disable Auto Port and Auto Unit ID;
+- manually set destination Port `5020`, Unit ID `1`;
+- click **Save & Apply**.
+
+Required result:
+- Save & Apply FAILS;
+- error identifies destination `5020/1` and owner `simulator`;
+- Simulator reservation remains owned by `simulator`;
+- the previously persisted Replicator document remains unchanged;
+- no foreign shared MMA2 entry is removed or overwritten.
+
+Capture before/after as needed:
 
 ```bash
+docker exec mcs-modbus-replicator-runtime cat /data/config/mma2/owners.yaml
+docker exec mcs-modbus-replicator-runtime cat /data/config/replicator/devices.yaml
+```
+
+Do not accept a pre-save warning alone as proof. The required evidence is that clicking Save & Apply itself rejects the conflict.
+
+### 7. Free destination claim + MMA2 restart check
+
+Discard the rejected edit. Choose a genuinely free destination manually or use automatic allocation, then click Save & Apply.
+
+Required result:
+- destination is claimed by `replicator` in `owners.yaml`;
+- shared MMA2 effective settings include the Replicator destination;
+- MMA2 restart-request/ack path completes;
+- Save & Apply reports success only after restart/readiness;
+- Replicator returns RUNNING / Source OK.
+
+Then make a **scan-rate-only** edit and Save & Apply again.
+
+Required result:
+- even though destination structure is unchanged, MMA2 restart lifecycle is requested/completed again;
+- apply succeeds only after that restart path completes.
+
+Capture relevant runtime/MMA2 logs and ownership evidence.
+
+### 8. Final repository state
+
+```bash
+cd ..
 git status --short
 ```
 
-Expected: no unexpected tracked changes except `handoff.md` after JR writes the report.
+Expected: no unexpected tracked changes before the report edit.
 
 ## JR TEST REPORT
 
-Pending targeted retest.
+Verdict: PENDING

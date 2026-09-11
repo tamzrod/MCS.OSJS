@@ -96,11 +96,11 @@ FunctionEnd
     !insertmacro MCS_REQUIRE_SUCCESS "Installing ${service} service"
   ${EndIf}
 
-  ; All packaged runtimes are zero-argument service entry points. Clearing stale
-  ; AppParameters also repairs installs created by older toolkit installers.
-  nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" reset "${service}" AppParameters'
-  Pop $0
-  !insertmacro MCS_REQUIRE_SUCCESS "Resetting ${service} arguments"
+  ; All packaged runtimes are zero-argument service entry points. Older toolkit
+  ; installers may have left AppParameters behind. Do not ask NSSM to reset this
+  ; value: some NSSM builds crash while parsing the stale quoted value. Remove the
+  ; registry value directly instead.
+  DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppParameters"
 
   nsExec::ExecToLog '"$INSTDIR\resources\bin\nssm.exe" set "${service}" AppDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"'
   Pop $0

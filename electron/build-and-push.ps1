@@ -122,6 +122,11 @@ Build-GoModule -Label 'MMA2' `
   -Package '.\cmd\mma2' `
   -Output (Join-Path $BinDir 'mma2.exe')
 
+Build-GoModule -Label 'MMA2 supervisor' `
+  -ModuleDir (Join-Path $RepoRoot 'MMA2') `
+  -Package '.\cmd\mma2-supervisor' `
+  -Output (Join-Path $BinDir 'mma2-supervisor.exe')
+
 Build-GoModule -Label 'Simulator runtime' `
   -ModuleDir (Join-Path $RepoRoot 'simulator') `
   -Package '.\cmd\modbus-simulator-runtime' `

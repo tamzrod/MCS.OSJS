@@ -5,7 +5,9 @@ const path = require('path');
 
 let mainWindow = null;
 let statusTimer = null;
+let activityTimer = null;
 const children = new Map();
+const activityMtimes = new Map();
 
 const windowsServiceMode = () => app.isPackaged && process.platform === 'win32';
 
@@ -24,6 +26,11 @@ const processSpecs = [
   {key: 'simulator', file: executableName('modbus-simulator-runtime'), service: 'MCS-Simulator'},
   {key: 'replicator', file: executableName('modbus-replicator-runtime'), service: 'MCS-Replicator'}
 ];
+
+const activityFiles = {
+  mma2: 'mma2.activity',
+  simulator: 'simulator.activity'
+};
 
 const childStatus = key => {
   const child = children.get(key);
@@ -51,6 +58,30 @@ const getStatus = async () => {
 const sendStatus = async () => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.send('runtime:status', await getStatus());
+};
+
+const pollActivity = () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+
+  for (const [key, filename] of Object.entries(activityFiles)) {
+    const file = path.join(dataRoot(), filename);
+    let mtimeMs = 0;
+    try {
+      mtimeMs = fs.statSync(file).mtimeMs;
+    } catch (_) {
+      continue;
+    }
+
+    if (!activityMtimes.has(key)) {
+      activityMtimes.set(key, mtimeMs);
+      continue;
+    }
+
+    if (mtimeMs > activityMtimes.get(key)) {
+      activityMtimes.set(key, mtimeMs);
+      mainWindow.webContents.send('runtime:activity', {process: key, at: mtimeMs});
+    }
+  }
 };
 
 const startProcess = spec => {
@@ -147,6 +178,9 @@ ipcMain.handle('runtime:stop-all', () => {
 
 app.whenReady().then(() => {
   createWindow();
+  fs.mkdirSync(dataRoot(), {recursive: true});
+  activityTimer = setInterval(pollActivity, 100);
+
   if (windowsServiceMode()) {
     statusTimer = setInterval(() => void sendStatus(), 2000);
     void sendStatus();
@@ -160,6 +194,7 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   if (statusTimer) clearInterval(statusTimer);
+  if (activityTimer) clearInterval(activityTimer);
   if (!windowsServiceMode()) stopAll();
 });
 app.on('window-all-closed', () => {

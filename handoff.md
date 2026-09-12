@@ -2,157 +2,54 @@
 
 ## Current
 
-ACTIVE SEQUENCE:
-- REP-BLOCK-002 — Independent Pull Block Pollers
-- REP-BLOCK-003 — Device / Pull Blocks Folder Tabs
+ACTIVE:
+- ELECTRON-002 — Compact Industrial Desktop Layout
 
-State: IMPLEMENTED — READY FOR JR/HUMAN RETEST
+QUEUED:
+- ELECTRON-001 — NSIS + NSSM Service Installer — implementation authored; Windows install/repair/uninstall acceptance still required.
+- REP-BLOCK-002 — Independent Pull Block Pollers — implemented; JR retest pending.
+- REP-BLOCK-003 — Device / Pull Blocks Folder Tabs — implemented; JR rendered retest pending.
 
-REP-BLOCK-001 and REP-OWN-001 remain archived. Shared MMA2 ownership remains exact `(port, unit_id)` pair ownership.
+## ELECTRON-002 intent
 
-## Current implementation
+The MCS desktop UI should follow the mentality of classic Modbus engineering utilities rather than a modern dashboard: every pixel should carry information or control, with compact inputs/buttons, narrow sidebars, dense tables, thin status areas, and little decorative whitespace.
 
-### REP-BLOCK-002
-- One Replicator device carries an ordered `pull_blocks` collection.
-- Each Pull Block has independent FC / Start / Count / Scan Rate and its own poll loop/status.
-- Pull Blocks now support all Modbus read areas:
-  - FC1 Coils
-  - FC2 Discrete Inputs
-  - FC3 Holding Registers
-  - FC4 Input Registers
-- FC1/FC2 source bits are decoded from Modbus bit-packed responses and written through MMA2 Raw Ingest as bit values.
-- FC3/FC4 continue to replicate uint16 register values.
-- Destination MMA2 memory composes coils/discrete_inputs/holding_registers/input_registers from the configured blocks.
-- The destination memory keeps the external Modbus access policy, so third-party clients can read the served FC1-FC4 memory.
-- Same-FC Pull Blocks must overlap or touch; gapped same-FC blocks are rejected instead of exposing unpolled memory gaps.
-- Failed pre-activation Save & Apply restores the previously persisted pollers.
-- Human test already confirmed the Replicator destination is externally serving changing FC3 register values after the access-policy fix.
+The user's tested Electron screenshot contains the real Simulator editor, but `electron/renderer/index.html` on `main` is still the older placeholder shell. The visible Simulator layout in the screenshot matches the canonical UI in `OSJS/src/packages/ModbusSimulator`, and the Replicator has the corresponding canonical UI under `OSJS/src/packages/ModbusReplicator`.
 
-### Operational Status semantics
-- `Owner: replicator` is ownership metadata only.
-- `OWNED` is not an operational success status.
-- Device `Status = OK` is driven by successful runtime replication cycles: destination memory is active, the source read succeeds, and Raw Ingest write succeeds.
-- A failed source read or destination write reports non-OK/error runtime state.
+Therefore this task intentionally tightens both surfaces:
+- Electron shell/window sizing and chrome in `electron/`;
+- canonical Simulator/Replicator density in `OSJS/src/packages/`.
 
-### REP-BLOCK-003
-- Left device tree/list remains unchanged.
-- Right-side selected-device editor keeps exactly two folder tabs: `Device` and `Pull Blocks`.
-- `Pull Blocks` is now a compact spreadsheet/table rather than large cards.
-- One block = one row with columns:
-  - `#`
-  - `FC`
-  - `Start`
-  - `Count`
-  - `Scan Rate (ms)`
-  - `Status`
-  - `Last Poll`
-- FC selector contains FC1, FC2, FC3, and FC4.
-- Add / Duplicate / Delete Block operate on the selected table row.
+Do not overwrite or discard a newer local/uncommitted Electron UI integration when pulling these commits. Reconcile the compact styles into that integration if it has not yet been pushed to `main`.
 
-## JR TEST TASK — REP-BLOCK-002 + REP-BLOCK-003
+## Implemented in ELECTRON-002
 
-JR role: TEST AND REPORT ONLY. Do not fix source, modify Active Work/planning/ICC, or expand scope. Do not destroy Docker volumes.
+- Electron default window reduced from 1120 x 760 to 900 x 560.
+- Electron minimum size reduced from 900 x 600 to 760 x 460.
+- Shell title/status strip, runtime LEDs, top tabs, content padding, diagnostics controls, and log spacing are compacted.
+- Simulator sidebar reduced to 190 px, with 160 px compact breakpoint.
+- Simulator inputs/buttons/device rows/runtime row/identity grid/FC table/status line are compacted.
+- Simulator editor actions are left-aligned like a classic desktop utility.
+- Replicator receives the same compact sidebar/control/status density.
+- Replicator Device/Pull Blocks folder tabs and spreadsheet rows are shortened and narrowed while preserving the existing table-first interaction model.
+- No backend calls, persistence semantics, runtime protocols, or polling behavior were changed by this pass.
 
-JR may edit only the `## JR TEST REPORT` section and may commit/push only `handoff.md` after testing.
+## Verification required
 
-### 1. Sync and backend gate
+Repository source must be re-read after edits to confirm the authored layout values are present.
 
-From repository root:
+Final acceptance is rendered Windows behavior:
+1. build/run the Electron package;
+2. confirm the normal window is useful at roughly 900 x 560 without large blank regions;
+3. confirm Simulator Name/Enabled/Port/Unit plus FC1-FC4 remain visible and usable;
+4. confirm Replicator Device/Pull Blocks remains usable at the smaller size;
+5. confirm dropdowns/inputs keep focus while runtime/activity status updates continue;
+6. confirm enlarging the window still lays out correctly.
 
-```bash
-git pull --ff-only origin main
-git status --short
-git rev-parse HEAD
-cd replicator
-gofmt -l .
-go test -count=1 ./...
-go vet ./...
-```
+Do not mark ELECTRON-002 complete until that rendered Windows check passes.
 
-Expected:
-- clean tree before testing;
-- `gofmt -l .` prints nothing;
-- full Replicator tests PASS;
-- vet exits 0.
+## Queued verification notes
 
-Focus evidence must include:
-- legacy migration and ordered multi-block persistence;
-- independent block cadence/status;
-- exact pair ownership regressions;
-- failed-restart runtime restoration;
-- same-FC contiguous/gap guard;
-- `TestReadSourceRangeFC1AndFC2` PASS;
-- `TestDestinationMemorySupportsFC1AndFC2` PASS;
-- `TestValidateDeviceAllowsAllReadFunctions` PASS.
+ELECTRON-001 still needs the Windows installer sequence: clean Install -> run the same Setup again -> Repair/reconfigure -> run Setup again -> Uninstall.
 
-### 2. Deploy current build
-
-```bash
-cd ../deploy
-docker compose build osjs-shell modbus-replicator-runtime mma2
-docker compose up -d osjs-shell modbus-replicator-runtime mma2 modbus-simulator-runtime
-docker compose ps
-```
-
-Expected: all services running and osjs-shell healthy.
-
-### 3. Rendered UI layout
-
-Open Modbus Replicator.
-
-Required:
-- left device tree/list remains unchanged;
-- right side has exactly `Device` and `Pull Blocks` folder tabs;
-- Pull Blocks renders as a compact spreadsheet/table, not block cards;
-- table FC selector exposes FC1, FC2, FC3, FC4;
-- several block rows fit vertically without card-sized wasted space.
-
-### 4. FC1-FC4 end-to-end replication
-
-Using the Simulator as source, create representative blocks for FC1-FC4 within configured Simulator ranges and Save & Apply.
-
-Required for each FC:
-1. source poll succeeds;
-2. Replicator writes the unchanged value/bit set into MMA2 destination memory;
-3. a real external Modbus client reads the Replicator destination using the corresponding FC;
-4. returned values match the source after replication.
-
-For FC1/FC2 verify boolean bit patterns, including a count that is not a multiple of 8 so bit packing/unpacking is exercised.
-
-### 5. Operational Status
-
-Required:
-- Device tab shows `Owner: replicator` separately from operational Status;
-- healthy end-to-end replication shows `Status: OK`, not `OWNED`;
-- source failure or destination-write failure must not show `OK`;
-- Pull Blocks table shows per-row runtime Status and Last Poll.
-
-### 6. Same-FC guard and ownership regression
-
-Verify a gapped same-FC pair is rejected, contiguous same-FC pair succeeds, and exact `(port, unit_id)` ownership behavior remains unchanged:
-- `(5022,1)` allowed if free;
-- `(5020,2)` allowed if free;
-- `(5020,1)` rejected when Simulator owns that exact pair.
-
-Do not substitute direct socket/API apply calls for required rendered UI checks.
-
-## JR TEST REPORT
-
-Verdict: FAIL
-
-Gate: 1. Sync and backend gate — `gofmt -l .` expected to print nothing, printed `reader_test.go`.
-
-Evidence:
-- `git pull --ff-only origin main` → "Already up to date." (HEAD `cd508302ab9bf5f0e5aa6deda1f0f6654df7061b`)
-- `git status --short` → empty (clean tree before testing.)
-- `gofmt -l .` (Go 1.25.0, matching `go.mod`) → prints `reader_test.go`. Expected "prints nothing" — contradicted.
-
-Defect: `replicator/reader_test.go` is not gofmt-clean underthe project's declared Go 1.25.0. `gofmt -d reader_test.go` shows a single struct-literal alignment change (in `TestReadSourceRange...`'s `Source:` field line.). No other files flagged.
-
-
-
-Environment note: no Go toolchain was present in sandbox; installed Go 1.25.0 sandbox-locally at `~/.local/go125/go` tomatch `go.mod` (no repository mutation.). Also confirmed Go 1.27.1 flags the same file, so this is not a toolchain-version artifact.
-
-
-
-Per JR stop-at-defect rule: remaining packet sections (go test/vet, deploy, UI, e2e, status, guards) were not executed. Coding agent should fix formatting in `replicator/reader_test.go` (run `gofmt -w`) and re-invoke JR for the full packet.
+REP-BLOCK-002/003 remain queued for their previous JR/human retest. The last JR run stopped at the first gate because `replicator/reader_test.go` was not gofmt-clean; later backend/deploy/rendered/e2e checks were therefore not executed in that run.

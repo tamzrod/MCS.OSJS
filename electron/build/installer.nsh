@@ -9,6 +9,12 @@
 !macroend
 
 !ifndef BUILD_UNINSTALLER
+Var MCSMaintenancePage
+Var MCSMaintenanceInstall
+Var MCSMaintenanceRepair
+Var MCSMaintenanceUninstall
+Var MCSMaintenanceMode
+Var MCSExistingInstallDir
 Var MCSServicePage
 Var MCSInstallMMA2
 Var MCSInstallSimulator
@@ -19,15 +25,104 @@ Var MCSInstallSimulatorState
 Var MCSInstallReplicatorState
 Var MCSStartServicesState
 
+!macro customInit
+  StrCpy $MCSMaintenanceMode "install"
+  StrCpy $MCSExistingInstallDir ""
+  ReadRegStr $MCSExistingInstallDir HKLM "${INSTALL_REGISTRY_KEY}" InstallLocation
+
+  ${If} $MCSExistingInstallDir != ""
+    StrCpy $MCSMaintenanceMode "repair"
+    StrCpy $INSTDIR $MCSExistingInstallDir
+  ${EndIf}
+!macroend
+
 !macro customWelcomePage
-  !insertmacro MUI_PAGE_WELCOME
+  Page custom MCSMaintenancePageCreate MCSMaintenancePageLeave
 !macroend
 
 !macro customPageAfterChangeDir
   Page custom MCSServicePageCreate MCSServicePageLeave
 !macroend
 
+Function MCSMaintenancePageCreate
+  nsDialogs::Create 1018
+  Pop $MCSMaintenancePage
+  ${If} $MCSMaintenancePage == error
+    Abort
+  ${EndIf}
+
+  ${If} $MCSExistingInstallDir == ""
+    ${NSD_CreateLabel} 0 0 100% 14u "MCS Modbus Toolkit Setup"
+    Pop $0
+    CreateFont $1 "$(^Font)" "10" "700"
+    SendMessage $0 ${WM_SETFONT} $1 1
+
+    ${NSD_CreateLabel} 0 22u 100% 28u "MCS Modbus Toolkit is not installed on this computer."
+    Pop $0
+
+    ${NSD_CreateRadioButton} 0 60u 100% 14u "Install MCS Modbus Toolkit"
+    Pop $MCSMaintenanceInstall
+    ${NSD_Check} $MCSMaintenanceInstall
+
+    ${NSD_CreateLabel} 0 90u 100% 44u "Setup will install the desktop application and let you choose which backend runtimes are registered as Windows services."
+    Pop $0
+  ${Else}
+    ${NSD_CreateLabel} 0 0 100% 14u "MCS Modbus Toolkit Maintenance"
+    Pop $0
+    CreateFont $1 "$(^Font)" "10" "700"
+    SendMessage $0 ${WM_SETFONT} $1 1
+
+    ${NSD_CreateLabel} 0 22u 100% 34u "An existing installation was detected at:$\r$\n$MCSExistingInstallDir"
+    Pop $0
+
+    ${NSD_CreateRadioButton} 0 66u 100% 14u "Repair / reconfigure the existing installation"
+    Pop $MCSMaintenanceRepair
+    ${NSD_Check} $MCSMaintenanceRepair
+
+    ${NSD_CreateRadioButton} 0 90u 100% 14u "Uninstall MCS Modbus Toolkit"
+    Pop $MCSMaintenanceUninstall
+
+    ${NSD_CreateLabel} 0 120u 100% 48u "Repair reinstalls the application files and lets you review the backend service selection. Existing runtime configuration is preserved. Uninstall runs the installed Windows uninstaller."
+    Pop $0
+  ${EndIf}
+
+  nsDialogs::Show
+FunctionEnd
+
+Function MCSMaintenancePageLeave
+  ${If} $MCSExistingInstallDir == ""
+    StrCpy $MCSMaintenanceMode "install"
+    Return
+  ${EndIf}
+
+  ${NSD_GetState} $MCSMaintenanceUninstall $0
+  ${If} $0 == ${BST_CHECKED}
+    IfFileExists "$MCSExistingInstallDir\${UNINSTALL_FILENAME}" mcs_uninstaller_found 0
+    MessageBox MB_ICONSTOP|MB_OK "The installed uninstaller could not be found at:$\r$\n$MCSExistingInstallDir\${UNINSTALL_FILENAME}$\r$\n$\r$\nChoose Repair to restore the installation first."
+    Abort
+
+mcs_uninstaller_found:
+    HideWindow
+    ExecWait '"$MCSExistingInstallDir\${UNINSTALL_FILENAME}" /allusers' $0
+    ${If} $0 != 0
+      ShowWindow $HWNDPARENT ${SW_SHOW}
+      MessageBox MB_ICONSTOP|MB_OK "Uninstall returned exit code $0."
+      Abort
+    ${EndIf}
+    Quit
+  ${EndIf}
+
+  StrCpy $MCSMaintenanceMode "repair"
+  StrCpy $INSTDIR $MCSExistingInstallDir
+FunctionEnd
+
 Function MCSServicePageCreate
+  ${If} $MCSMaintenanceMode == "repair"
+    ; Repair always targets the detected installation even if the directory page
+    ; was changed manually while walking through the assisted installer.
+    StrCpy $INSTDIR $MCSExistingInstallDir
+  ${EndIf}
+
   nsDialogs::Create 1018
   Pop $MCSServicePage
   ${If} $MCSServicePage == error
@@ -44,15 +139,41 @@ Function MCSServicePageCreate
 
   ${NSD_CreateCheckbox} 0 48u 100% 12u "MMA2 - shared Modbus memory appliance"
   Pop $MCSInstallMMA2
-  ${NSD_Check} $MCSInstallMMA2
 
   ${NSD_CreateCheckbox} 0 68u 100% 12u "Simulator runtime"
   Pop $MCSInstallSimulator
-  ${NSD_Check} $MCSInstallSimulator
 
   ${NSD_CreateCheckbox} 0 88u 100% 12u "Replicator runtime"
   Pop $MCSInstallReplicator
-  ${NSD_Check} $MCSInstallReplicator
+
+  ${If} $MCSMaintenanceMode == "repair"
+    ; Preserve the currently installed service selection by default. The operator
+    ; may still check or uncheck services while repairing/reconfiguring.
+    nsExec::ExecToStack 'sc.exe query "MCS-MMA2"'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+      ${NSD_Check} $MCSInstallMMA2
+    ${EndIf}
+
+    nsExec::ExecToStack 'sc.exe query "MCS-Simulator"'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+      ${NSD_Check} $MCSInstallSimulator
+    ${EndIf}
+
+    nsExec::ExecToStack 'sc.exe query "MCS-Replicator"'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+      ${NSD_Check} $MCSInstallReplicator
+    ${EndIf}
+  ${Else}
+    ${NSD_Check} $MCSInstallMMA2
+    ${NSD_Check} $MCSInstallSimulator
+    ${NSD_Check} $MCSInstallReplicator
+  ${EndIf}
 
   ${NSD_CreateCheckbox} 0 116u 100% 12u "Start selected services after installation"
   Pop $MCSStartServices

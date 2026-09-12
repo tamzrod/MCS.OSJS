@@ -1,6 +1,6 @@
 # ELECTRON-001 — NSIS + NSSM Service Installer
 
-Status: ACTIVE
+Status: QUEUED
 
 ## Outcome
 

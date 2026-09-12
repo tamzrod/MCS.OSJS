@@ -30,11 +30,15 @@
       {
         "from": "bin",
         "to": "bin",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "artifactName": "MCS-Modbus-Toolkit-${version}-Setup.${ext}"
     },
     "nsis": {
@@ -47,5 +51,8 @@
       "include": "build/installer.nsh",
       "uninstallDisplayName": "MCS Modbus Toolkit"
     }
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
   }
 }

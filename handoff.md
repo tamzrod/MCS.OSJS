@@ -34,9 +34,13 @@ Do not overwrite or discard a newer local/uncommitted Electron UI integration wh
 - Replicator Device/Pull Blocks folder tabs and spreadsheet rows are shortened and narrowed while preserving the existing table-first interaction model.
 - No backend calls, persistence semantics, runtime protocols, or polling behavior were changed by this pass.
 
-## Verification required
+## Verification status
 
-Repository source must be re-read after edits to confirm the authored layout values are present.
+Static repository verification completed by re-reading the modified sources on `main` after the edits:
+- `electron/main.js` contains the 900 x 560 default and 760 x 460 minimum window.
+- `electron/renderer/style.css` contains the compact shell chrome/status/tab/control spacing.
+- `OSJS/src/packages/ModbusSimulator/index.scss` contains the 190 px sidebar, 22 px controls, 27 px FC rows, and compact status/actions.
+- `OSJS/src/packages/ModbusReplicator/index.scss` contains the corresponding compact sidebar, controls, folder tabs, and spreadsheet rows.
 
 Final acceptance is rendered Windows behavior:
 1. build/run the Electron package;

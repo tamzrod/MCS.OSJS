@@ -6,7 +6,7 @@ Date: 2026-09-12
 
 ## Test observations
 
-The packaged Electron build is now running successfully on Windows, but hands-on testing exposed three usability / packaging issues that should be resolved before considering the desktop packaging work finished.
+The packaged Electron build is now running successfully on Windows, but hands-on testing exposed several usability / packaging issues that should be resolved before considering the desktop packaging work finished.
 
 ### 1. Parameter editing currently requires Run as administrator
 
@@ -68,14 +68,78 @@ Candidate direction:
 - Configure the Electron `BrowserWindow` icon where needed.
 - Prefer a simple industrial/network/device motif that remains legible at small Windows icon sizes.
 
+### 4. Installer should also provide maintenance / uninstall mode
+
+Desired operator flow:
+
+- If MCS Modbus Toolkit is not installed, running the installer presents an **Install** option.
+- If MCS Modbus Toolkit is already installed, running the same installer presents **Repair** and **Uninstall** options instead of behaving like a blind second installation.
+
+Candidate behavior:
+
+#### Not installed
+
+- Detect that no valid existing installation is present.
+- Present the normal installation workflow.
+- Allow service/component selection as appropriate.
+- Install the Electron application, selected backend services, configuration/runtime directories, shortcuts, and Windows uninstall registration.
+
+#### Already installed
+
+- Detect the existing installation using the application's registered uninstall/install identity rather than only checking whether a directory exists.
+- Present a maintenance page with at least:
+  - **Repair**
+  - **Uninstall**
+
+#### Repair
+
+- Restore missing or damaged application binaries and packaged runtime executables.
+- Re-create required shortcuts and uninstall registration when missing.
+- Reconcile selected Windows services with the expected executable paths and startup settings.
+- Preserve user-created simulator / replicator configuration and mutable runtime data unless the operator explicitly requests a reset.
+- Avoid creating duplicate services, duplicate Start Menu entries, or parallel installation directories.
+
+#### Uninstall
+
+- Stop and remove the MCS Windows services created by the installer.
+- Remove the Electron application, packaged binaries, shortcuts, and Windows installation registration.
+- Decide explicitly whether mutable user/runtime configuration should be preserved by default or optionally removed. Destructive configuration deletion should not happen silently.
+
+Candidate implementation direction:
+
+- Treat the generated Setup.exe as both the initial installer and the maintenance entry point.
+- Use a stable application identity / uninstall registry key so setup can reliably distinguish fresh install from existing install.
+- Reuse the existing NSIS uninstaller logic for the maintenance-mode **Uninstall** action rather than creating a second unrelated removal path.
+- Keep repair idempotent so it can be run repeatedly without duplicating services or changing valid user configuration unnecessarily.
+
+### Candidate installer states
+
+```text
+Setup.exe launched
+      |
+      v
+Existing valid installation?
+   /          \
+  No           Yes
+  |             |
+Install      Maintenance
+                |
+          +-----+-----+
+          |           |
+        Repair     Uninstall
+```
+
 ## Candidate completion order
 
 1. Remove the normal-use Administrator requirement.
 2. Reproduce and isolate the FC dropdown focus loss.
 3. Make periodic status/activity rendering focus-safe.
 4. Replace the default Electron icon.
-5. Rebuild the Windows installer.
-6. Re-test parameter editing as a standard user while Simulator/MMA2 status activity is running.
+5. Add installed-state detection and installer maintenance mode.
+6. Implement / verify repair behavior without overwriting user configuration.
+7. Wire maintenance-mode uninstall to the normal uninstaller path.
+8. Rebuild the Windows installer.
+9. Re-test fresh install, repair, uninstall, and parameter editing as a standard user while Simulator/MMA2 status activity is running.
 
 ## Candidate acceptance checks
 
@@ -84,6 +148,12 @@ Candidate direction:
 - FC dropdown remains open and usable while background runtime/status/activity updates continue.
 - Status LEDs continue to update without rebuilding the editor controls.
 - Packaged executable and Windows shortcuts no longer show the default Electron icon.
+- Running Setup.exe on a clean machine offers the normal Install workflow.
+- Running the same Setup.exe when the toolkit is already installed offers Repair and Uninstall.
+- Repair restores application/service installation state without deleting valid operator configuration.
+- Repair does not create duplicate Windows services, shortcuts, or application registrations.
+- Uninstall removes installer-managed application files and services cleanly.
+- Uninstall behavior for mutable configuration is explicit and does not silently destroy user data.
 
 ## Scope note
 

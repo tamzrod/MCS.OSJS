@@ -1,5 +1,7 @@
 # REP-BLOCK-003 — Device / Pull Blocks Folder Tabs
 
+Status: QUEUED
+
 ## Primary Outcome
 Separate the selected Replicator device's right-side configuration into exactly two classic folder-shaped top-level tabs: **Device** and **Pull Blocks**, while leaving the existing left device tree/list unchanged. The Pull Blocks tab must use a compact spreadsheet-style editor rather than large per-block cards.
 

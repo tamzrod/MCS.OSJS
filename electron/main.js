@@ -146,10 +146,10 @@ const stopAll = () => {
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1120,
-    height: 760,
-    minWidth: 900,
-    minHeight: 600,
+    width: 900,
+    height: 560,
+    minWidth: 760,
+    minHeight: 460,
     title: 'MCS Modbus Toolkit',
     backgroundColor: '#c0c0c0',
     autoHideMenuBar: true,

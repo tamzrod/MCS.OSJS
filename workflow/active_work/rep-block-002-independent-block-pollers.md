@@ -1,5 +1,7 @@
 # REP-BLOCK-002 — Independent Pull Block Pollers
 
+Status: QUEUED
+
 ## Primary Outcome
 Allow one Replicator device to contain multiple explicit Pull Blocks, with each block running its own independent poll interval while sharing the same source endpoint and source Unit ID.
 

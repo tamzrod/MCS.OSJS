@@ -97,13 +97,13 @@ Function MCSMaintenancePageLeave
 
   ${NSD_GetState} $MCSMaintenanceUninstall $0
   ${If} $0 == ${BST_CHECKED}
-    IfFileExists "$MCSExistingInstallDir\${UNINSTALL_FILENAME}" mcs_uninstaller_found 0
-    MessageBox MB_ICONSTOP|MB_OK "The installed uninstaller could not be found at:$\r$\n$MCSExistingInstallDir\${UNINSTALL_FILENAME}$\r$\n$\r$\nChoose Repair to restore the installation first."
+    IfFileExists "$MCSExistingInstallDir\Uninstall ${PRODUCT_NAME}.exe" mcs_uninstaller_found 0
+    MessageBox MB_ICONSTOP|MB_OK "The installed uninstaller could not be found at:$\r$\n$MCSExistingInstallDir\Uninstall ${PRODUCT_NAME}.exe$\r$\n$\r$\nChoose Repair to restore the installation first."
     Abort
 
 mcs_uninstaller_found:
     HideWindow
-    ExecWait '"$MCSExistingInstallDir\${UNINSTALL_FILENAME}" /allusers' $0
+    ExecWait '"$MCSExistingInstallDir\Uninstall ${PRODUCT_NAME}.exe" /allusers' $0
     ${If} $0 != 0
       ShowWindow $HWNDPARENT ${SW_SHOW}
       MessageBox MB_ICONSTOP|MB_OK "Uninstall returned exit code $0."

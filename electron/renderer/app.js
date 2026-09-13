@@ -1,4 +1,4 @@
-const tabs = [...document.querySelectorAll('.tab')];
+﻿const tabs = [...document.querySelectorAll('.tab')];
 const panels = [...document.querySelectorAll('.panel')];
 const log = document.getElementById('log');
 const pulseTimers = new Map();
@@ -84,6 +84,11 @@ const formatTime = value => {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
 };
 
+const setText = (id, value) => {
+  const node = document.getElementById(id);
+  if (node) node.textContent = value;
+};
+
 const addressRange = area => {
   const start = Number(area && area.start) || 0;
   const count = Number(area && area.count) || 0;
@@ -167,7 +172,11 @@ const renderSimulator = () => {
   } else {
     const runtime = h('div', 'runtime-row');
     const status = simulatorState.runtimeStatus;
-    runtime.append(h('span', '', 'MMA2:'), h('strong', '', status && status.mma2_status || '-'), h('span', '', 'Simulator:'), h('strong', '', status && status.device_status || '-'));
+    const mma2Status = h('strong', '', status && status.mma2_status || '-');
+    mma2Status.id = 'sim-runtime-mma2';
+    const deviceStatus = h('strong', '', status && status.device_status || '-');
+    deviceStatus.id = 'sim-runtime-device';
+    runtime.append(h('span', '', 'MMA2:'), mma2Status, h('span', '', 'Simulator:'), deviceStatus);
     editor.appendChild(runtime);
     const identity = h('div', 'tool-grid');
     identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
@@ -233,7 +242,8 @@ const pollSimulator = async () => {
   try {
     const result = await window.mcsDesktop.simulatorCall('status', {name: device.name});
     simulatorState.runtimeStatus = result.status || result;
-    renderSimulator();
+    setText('sim-runtime-mma2', simulatorState.runtimeStatus.mma2_status || '-');
+    setText('sim-runtime-device', simulatorState.runtimeStatus.device_status || '-');
   } catch (_) {}
 };
 
@@ -333,7 +343,13 @@ const renderReplicator = () => {
   } else {
     const runtime = h('div', 'runtime-row');
     const status = replicatorState.runtimeStatus;
-    runtime.append(h('span', '', 'Replicator:'), h('strong', '', status ? (status.running ? 'RUNNING' : 'STOPPED') : '-'), h('span', '', 'Source:'), h('strong', '', status && status.source_status || '-'), h('span', '', 'Last Poll:'), h('strong', '', formatTime(status && status.last_poll)));
+    const runningStatus = h('strong', '', status ? (status.running ? 'RUNNING' : 'STOPPED') : '-');
+    runningStatus.id = 'rep-runtime-running';
+    const sourceStatus = h('strong', '', status && status.source_status || '-');
+    sourceStatus.id = 'rep-runtime-source';
+    const lastPoll = h('strong', '', formatTime(status && status.last_poll));
+    lastPoll.id = 'rep-runtime-last-poll';
+    runtime.append(h('span', '', 'Replicator:'), runningStatus, h('span', '', 'Source:'), sourceStatus, h('span', '', 'Last Poll:'), lastPoll);
     editor.appendChild(runtime);
     const identity = h('div', 'tool-grid');
     identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
@@ -424,7 +440,9 @@ const pollReplicator = async () => {
   if (!device || replicatorState.saving) return;
   try {
     replicatorState.runtimeStatus = await window.mcsDesktop.replicatorCall('status', {name: device.name});
-    renderReplicator();
+    setText('rep-runtime-running', replicatorState.runtimeStatus.running ? 'RUNNING' : 'STOPPED');
+    setText('rep-runtime-source', replicatorState.runtimeStatus.source_status || '-');
+    setText('rep-runtime-last-poll', formatTime(replicatorState.runtimeStatus.last_poll));
   } catch (_) {}
 };
 

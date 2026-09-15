@@ -305,19 +305,6 @@ const validateReplicator = device => {
     if (block.start < 0 || block.start > 65535) return `${label} Start must be between 0 and 65535.`;
     if (block.count < 1 || block.start + block.count > 65536) return `${label} Count must be positive and remain inside the 16-bit address space.`;
     if (block.scan_rate_ms < 1) return `${label} Scan Rate must be greater than zero.`;
-
-    const start = Number(block.start);
-    const end = start + Number(block.count);
-
-    for (let previous = 0; previous < i; previous += 1) {
-      const other = device.pull_blocks[previous];
-      const otherStart = Number(other.start);
-      const otherEnd = otherStart + Number(other.count);
-
-      if (Number(block.function) === Number(other.function) && start < otherEnd && otherStart < end) {
-        return `${label} overlaps Pull Block ${previous + 1} in FC${block.function}.`;
-      }
-    }
   }
   if (!device.destination.auto_port && (device.destination.port < 1 || device.destination.port > 65535)) return 'Destination Port must be between 1 and 65535.';
   if (device.destination.unit_id < 0 || device.destination.unit_id > 255) return 'Destination Unit ID must be between 0 and 255.';

@@ -1,26 +1,21 @@
-# Replicator Authorized Sequence
+# Replicator Authorized Work
 
-Baseline commit: 4a137eb
-Working tree: clean
-Audited Overlay: none
-Source dependencies: handoff.md, workflow/active_work/rep-*.md, mma2composer/*, simulator/mma2_config.go, simulator/compose_test.go, MMA2/pkg/configvalidate/*
+Baseline commit: ee19b8a
+Working tree: dirty; no Replicator workflow overlay. See `ICC/INDEX.md` for the audited Electron overlay.
+Source dependencies: handoff.md, workflow/active_work/rep-block-002-independent-block-pollers.md, workflow/active_work/rep-block-003-tabbed-block-editor.md, workflow/archive/rep-*.md
 Zoom In: none
 Zoom Out: active-work
 
 ## Current boundary
 
-REP-002 is the sole ACTIVE task. REP-003 through REP-007 are QUEUED in the explicit authorized sequence recorded by `handoff.md` and their `Previous` / `Next` links. REP-001 is completed and archived.
+The original REP-002 through REP-006 implementation sequence is archived. REP-007 is no longer active. Current authorized Replicator work remains queued, with no active predecessor:
 
-REP-002 is limited to producer-neutral Raw Ingest v1 packet encoding and TCP send/ack behavior. It must preserve FC1/FC2 LSB-first bit packing, FC3/FC4 big-endian register encoding, and existing response/error behavior while removing Simulator's private duplicate.
+- REP-BLOCK-002: multi-block persistence, independent pollers, mixed FC1-FC4 replication, external destination serving, and end-to-end operational status. The record says implementation exists but JR retest is pending.
+- REP-BLOCK-003: classic Device/Pull Blocks folder tabs and compact spreadsheet rows. It depends on REP-BLOCK-002 and awaits rendered retest.
 
-## REP-001 completion at baseline
+Neither Replicator record is ACTIVE.
 
-- `mma2composer/` owns config/ownership loading, atomic writes, collision mechanics, authoritative MMA2 YAML validation, rollback, and producer-neutral reservation operations.
-- Simulator delegates composition through producer identity `simulator`; its former private duplicate is gone.
-- Focused shared tests and the full Simulator suite and vet gates passed before REP-001 was archived.
+## Workflow integrity observations
 
-## Completion gate
-
-Create a Simulator-independent shared Raw Ingest client, move/adapt byte fixtures for all four areas, migrate Simulator onto it, and pass the shared native gates plus the affected full Simulator suite before archiving REP-002.
-
-REP-003 and later tasks are outside the current execution boundary until deterministic advancement after REP-002 completes and is pushed.
+- REP-BLOCK-002 declares a sizing dimension value of 3 even though planning rules limit every dimension to 0-2; it totals 8 and is oversized under the current rules.
+- REP-BLOCK-003 depends on REP-BLOCK-002, but the pair lacks explicit `Previous` / `Next` advancement links required for an ordered promoted sequence.

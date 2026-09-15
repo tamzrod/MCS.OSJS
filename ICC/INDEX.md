@@ -17,13 +17,13 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: 4a137eb
-Working Tree: clean
-Audited Uncommitted Overlay: none.
+Baseline Commit: ee19b8a
+Working Tree: dirty
+Audited Uncommitted Overlay: parked Electron source/assets as previously fingerprinted, plus workflow closure: `handoff.md` CFA76248, deleted Electron brainstorm and active records, archived `electron-001` 2D65D35E and `electron-002` 5B109E8B. Active Replicator records remain unchanged (REP-BLOCK-002 929E0D54; REP-BLOCK-003 49518F16).
 
-Committed delta: REP-001 completed and was archived after the shared composer and Simulator migration passed their native gates. REP-002 is ACTIVE; REP-003 through REP-007 remain QUEUED.
+Overlay state: no ACTIVE task. REP-BLOCK-002/003 are QUEUED. Electron planning is cleared; ELECTRON-001/002 are RETIRED in archive. Planning contains no brainstorm topics and no task microtask files.
 
-Refreshed only the Active Work/Replicator branch at `4a137eb`. Unrelated sibling registry rows are preserved.
+Refreshed only the Planning and Active Work control branches at `ee19b8a`. Unrelated sibling context nodes and registry rows are preserved.
 
 | `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
 | `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |

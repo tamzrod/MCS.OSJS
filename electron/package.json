@@ -24,6 +24,8 @@
       "main.js",
       "preload.js",
       "renderer/**/*",
+      "build/icon.png",
+      "build/replicator-logo.svg",
       "package.json"
     ],
     "extraResources": [
@@ -36,12 +38,15 @@
       }
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis"
       ],
       "artifactName": "MCS-Modbus-Toolkit-${version}-Setup.${ext}"
     },
     "nsis": {
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
       "oneClick": false,
       "perMachine": true,
       "allowElevation": true,

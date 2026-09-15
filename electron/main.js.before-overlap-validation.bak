@@ -79,24 +79,10 @@ const validateReplicatorDevice = device => {
   if (num(device.unit_id) < 0 || num(device.unit_id) > 255) throw new Error(`${device.name}: Source Unit ID must be between 0 and 255.`);
   const blocks = Array.isArray(device.pull_blocks) ? device.pull_blocks : [];
   if (!blocks.length) throw new Error(`${device.name}: At least one Pull Block is required.`);
-  for (let index = 0; index < blocks.length; index += 1) {
-    const block = blocks[index];
+  for (const block of blocks) {
     if (![1, 2, 3, 4].includes(num(block.function))) throw new Error(`${device.name}: Pull Block Function must be FC1, FC2, FC3, or FC4.`);
     if (num(block.start) < 0 || num(block.start) > 65535 || num(block.count) < 1 || num(block.start) + num(block.count) > 65536) throw new Error(`${device.name}: Pull Block range is invalid.`);
     if (num(block.scan_rate_ms) < 1) throw new Error(`${device.name}: Scan Rate must be greater than zero.`);
-
-    const start = num(block.start);
-    const end = start + num(block.count);
-
-    for (let previous = 0; previous < index; previous += 1) {
-      const other = blocks[previous];
-      const otherStart = num(other.start);
-      const otherEnd = otherStart + num(other.count);
-
-      if (num(block.function) === num(other.function) && start < otherEnd && otherStart < end) {
-        throw new Error(`${device.name}: Pull Blocks ${previous + 1} and ${index + 1} overlap in FC${num(block.function)}.`);
-      }
-    }
   }
 };
 
@@ -390,7 +376,6 @@ const createWindow = () => {
     minWidth: 760,
     minHeight: 460,
     title: 'MCS Modbus Toolkit',
-    icon: path.join(__dirname, 'build', 'icon.png'),
     backgroundColor: '#c0c0c0',
     autoHideMenuBar: true,
     webPreferences: {preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false}

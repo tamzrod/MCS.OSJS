@@ -1,6 +1,6 @@
 # MEM-003 — Simulator Status in Diagnostics
 
-Status: QUEUED
+Status: ACTIVE
 Previous: MEM-002
 Next: MEM-004
 

@@ -1,13 +1,13 @@
 const tabs = [...document.querySelectorAll('.tab')];
 const panels = [...document.querySelectorAll('.panel')];
 const log = document.getElementById('log');
-const pulseTimers = new Map();
 let runtimePaths = null;
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
 const FC_KEYS = ['fc1', 'fc2', 'fc3', 'fc4'];
 const FC_LABELS = {fc1: 'Coils (FC1)', fc2: 'Discrete Inputs (FC2)', fc3: 'Holding Registers (FC3)', fc4: 'Input Registers (FC4)'};
+const rememberedIntervals = new WeakMap();
 
 const h = (tag, className = '', text) => {
   const node = document.createElement(tag);
@@ -15,14 +15,12 @@ const h = (tag, className = '', text) => {
   if (text !== undefined) node.textContent = text;
   return node;
 };
-
 const actionButton = (label, action, className = '') => {
   const node = h('button', `tool-button ${className}`.trim(), label);
   node.type = 'button';
   node.dataset.action = action;
   return node;
 };
-
 const field = (label, value, settings, onInput) => {
   const wrapper = h('label', settings.className || 'tool-field');
   wrapper.appendChild(h('span', 'tool-field-label', label));
@@ -37,9 +35,7 @@ const field = (label, value, settings, onInput) => {
   wrapper.appendChild(input);
   return wrapper;
 };
-
 const isEditableControl = target => Boolean(target.closest('input, select, textarea, option, label'));
-
 const checkboxField = (label, checked, onChange) => {
   const wrapper = h('label', 'tool-checkbox');
   const input = document.createElement('input');
@@ -50,45 +46,37 @@ const checkboxField = (label, checked, onChange) => {
   return wrapper;
 };
 
+// Service status patches text/classes in place. The activity stream is not used
+// for header animation, so it cannot disturb editable controls.
 const setStatuses = value => {
-  ['mma2', 'simulator', 'replicator'].forEach(key => {
+  ['mma2', 'replicator'].forEach(key => {
     const node = document.getElementById(`status-${key}`);
+    if (!node) return;
     const status = value && value[key] || 'STOPPED';
     node.textContent = status;
     node.className = status === 'RUNNING' ? 'status-ok' : 'status-stop';
   });
+  const simulator = document.getElementById('diag-status-simulator');
+  if (simulator) {
+    const status = value && value.simulator || 'STOPPED';
+    simulator.textContent = status;
+    simulator.className = status === 'RUNNING' ? 'status-ok' : 'status-stop';
+  }
 };
-
-const pulseActivity = ({process}) => {
-  if (process !== 'mma2' && process !== 'simulator') return;
-  const node = document.getElementById(`status-${process}`);
-  if (!node || !node.classList.contains('status-ok')) return;
-  node.classList.add('status-activity');
-  const previous = pulseTimers.get(process);
-  if (previous) clearTimeout(previous);
-  pulseTimers.set(process, setTimeout(() => {
-    node.classList.remove('status-activity');
-    pulseTimers.delete(process);
-  }, 110));
-};
-
 const appendLog = entry => {
   const line = `[${new Date().toLocaleTimeString()}] ${entry.process}/${entry.level}: ${entry.text}`;
   log.textContent += line.endsWith('\n') ? line : `${line}\n`;
   log.scrollTop = log.scrollHeight;
 };
-
 const formatTime = value => {
   if (!value) return '-';
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
 };
-
 const setText = (id, value) => {
   const node = document.getElementById(id);
   if (node) node.textContent = value;
 };
-
 const addressRange = area => {
   const start = Number(area && area.start) || 0;
   const count = Number(area && area.count) || 0;
@@ -108,14 +96,14 @@ const simulatorBlankDevice = sequence => ({
     fc3: {start: 0, count: 16},
     fc4: {start: 0, count: 16}
   },
+  // Zero means None. Existing saved positive intervals continue to mean Random.
   random_runtime: {
-    fc1_interval_ms: 1000,
-    fc2_interval_ms: 1000,
-    fc3_interval_ms: 1000,
-    fc4_interval_ms: 1000
+    fc1_interval_ms: 0,
+    fc2_interval_ms: 0,
+    fc3_interval_ms: 0,
+    fc4_interval_ms: 0
   }
 });
-
 const validateSimulator = device => {
   if (!device.name || !device.name.trim()) return 'Name is required.';
   if (!device.mma2.port || device.mma2.port < 1 || device.mma2.port > 65535) return 'Listen Port must be between 1 and 65535.';
@@ -124,24 +112,13 @@ const validateSimulator = device => {
     const area = device.mma2[fc];
     if (area.start < 0 || area.start > 65535 || area.count < 0 || area.count > 65535) return `${FC_LABELS[fc]} values are outside the 16-bit address range.`;
     if (area.start + area.count > 65536) return `${FC_LABELS[fc]} Start + Count exceeds the 16-bit address space.`;
-    if (area.count > 0 && device.random_runtime[`${fc}_interval_ms`] < 1) return `${FC_LABELS[fc]} Randomize Every must be greater than zero.`;
+    const interval = device.random_runtime[`${fc}_interval_ms`];
+    if (!Number.isSafeInteger(interval) || interval < 0 || interval > 4294967295) return `${FC_LABELS[fc]} Interval must be a nonnegative integer in milliseconds.`;
   }
   return null;
 };
-
 const normalizeSimulatorDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
-
-const simulatorState = {
-  document: {devices: []},
-  persisted: {devices: []},
-  selected: null,
-  loading: true,
-  saving: false,
-  message: 'Loading Simulator definitions...',
-  error: false,
-  runtimeStatus: null
-};
-
+const simulatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, loading: true, saving: false, message: 'Loading Memory definitions...', error: false, runtimeStatus: null};
 const selectedSimulator = () => simulatorState.selected === null ? null : simulatorState.document.devices[simulatorState.selected];
 
 const renderSimulator = () => {
@@ -149,7 +126,7 @@ const renderSimulator = () => {
   root.replaceChildren();
   const shell = h('div', 'tool-layout');
   const sidebar = h('aside', 'tool-sidebar');
-  sidebar.appendChild(h('h2', '', 'Simulator Devices'));
+  sidebar.appendChild(h('h2', '', 'Devices'));
   const listActions = h('div', 'tool-actions');
   listActions.append(actionButton('Add', 'sim-add'), actionButton('Duplicate', 'sim-duplicate'), actionButton('Delete', 'sim-delete', 'tool-danger'));
   sidebar.appendChild(listActions);
@@ -176,7 +153,7 @@ const renderSimulator = () => {
     mma2Status.id = 'sim-runtime-mma2';
     const deviceStatus = h('strong', '', status && status.device_status || '-');
     deviceStatus.id = 'sim-runtime-device';
-    runtime.append(h('span', '', 'MMA2:'), mma2Status, h('span', '', 'Simulator:'), deviceStatus);
+    runtime.append(h('span', '', 'MMA2:'), mma2Status, h('span', '', 'Simulation:'), deviceStatus);
     editor.appendChild(runtime);
     const identity = h('div', 'tool-grid');
     identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
@@ -185,19 +162,60 @@ const renderSimulator = () => {
     identity.append(field('Unit ID', device.mma2.unit_id, {min: 0, max: 255}, value => { device.mma2.unit_id = numberValue(value); }));
     editor.appendChild(identity);
 
-    const table = h('div', 'fc-table');
+    const table = h('div', 'fc-table memory-fc-table');
     const header = h('div', 'fc-row fc-header');
-    ['Function', 'Start', 'Count', 'Randomize Every (ms)', 'Address Range'].forEach(label => header.appendChild(h('span', '', label)));
+    ['Area', 'Start', 'Count', 'Simulation', 'Interval (ms)', 'Address Range'].forEach(label => header.appendChild(h('span', '', label)));
     table.appendChild(header);
     FC_KEYS.forEach(fc => {
       const row = h('div', 'fc-row');
       const area = device.mma2[fc];
+      const intervalKey = `${fc}_interval_ms`;
+      const interval = device.random_runtime[intervalKey];
       const range = h('span', 'range-cell', addressRange(area));
       row.appendChild(h('strong', '', FC_LABELS[fc]));
       row.appendChild(field('Start', area.start, {min: 0, max: 65535, className: 'cell-field'}, value => { area.start = numberValue(value); range.textContent = addressRange(area); }));
       row.appendChild(field('Count', area.count, {min: 0, max: 65535, className: 'cell-field'}, value => { area.count = numberValue(value); range.textContent = addressRange(area); }));
-      row.appendChild(field('Interval', device.random_runtime[`${fc}_interval_ms`], {min: 1, step: 1, className: 'cell-field'}, value => { device.random_runtime[`${fc}_interval_ms`] = numberValue(value); }));
-      row.appendChild(range);
+
+      const intervalField = field('Interval', interval, {min: 1, step: 1, className: 'cell-field'}, value => {
+        device.random_runtime[intervalKey] = numberValue(value);
+        if (Number(value) > 0) {
+          const last = rememberedIntervals.get(device.random_runtime) || {};
+          last[fc] = Number(value);
+          rememberedIntervals.set(device.random_runtime, last);
+        }
+      });
+      const intervalInput = intervalField.querySelector('input');
+      intervalInput.disabled = interval === 0;
+      const mode = document.createElement('select');
+      mode.setAttribute('aria-label', `${FC_LABELS[fc]} simulation`);
+      [['none', 'None'], ['random', 'Random']].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        mode.appendChild(option);
+      });
+      mode.value = interval > 0 ? 'random' : 'none';
+      mode.addEventListener('change', () => {
+        if (mode.value === 'none') {
+          if (device.random_runtime[intervalKey] > 0) {
+            const last = rememberedIntervals.get(device.random_runtime) || {};
+            last[fc] = device.random_runtime[intervalKey];
+            rememberedIntervals.set(device.random_runtime, last);
+          }
+          device.random_runtime[intervalKey] = 0;
+          intervalInput.value = '0';
+          intervalInput.disabled = true;
+        } else {
+          const last = rememberedIntervals.get(device.random_runtime) || {};
+          const nextInterval = last[fc] > 0 ? last[fc] : 1000;
+          device.random_runtime[intervalKey] = nextInterval;
+          intervalInput.value = String(nextInterval);
+          intervalInput.disabled = false;
+        }
+      });
+      const modeCell = h('span', 'sim-mode-cell');
+      modeCell.appendChild(mode);
+      row.append(modeCell, intervalField, range);
       table.appendChild(row);
     });
     editor.appendChild(table);
@@ -216,7 +234,7 @@ const renderSimulator = () => {
 
 const loadSimulator = async () => {
   simulatorState.loading = true;
-  simulatorState.message = 'Loading Simulator definitions...';
+  simulatorState.message = 'Loading Memory definitions...';
   simulatorState.error = false;
   renderSimulator();
   try {
@@ -225,7 +243,7 @@ const loadSimulator = async () => {
     simulatorState.document = clone(documentValue);
     simulatorState.persisted = clone(documentValue);
     simulatorState.selected = documentValue.devices.length ? 0 : null;
-    simulatorState.message = documentValue.devices.length ? 'Canonical Simulator definitions loaded.' : 'No devices configured. Choose Add to begin.';
+    simulatorState.message = documentValue.devices.length ? 'Canonical Memory definitions loaded.' : 'No devices configured. Choose Add to begin.';
     simulatorState.error = false;
   } catch (error) {
     simulatorState.message = error.message || String(error);
@@ -235,7 +253,6 @@ const loadSimulator = async () => {
     renderSimulator();
   }
 };
-
 const pollSimulator = async () => {
   const device = selectedSimulator();
   if (!device || simulatorState.saving) return;
@@ -246,7 +263,6 @@ const pollSimulator = async () => {
     setText('sim-runtime-device', simulatorState.runtimeStatus.device_status || '-');
   } catch (_) {}
 };
-
 const saveSimulator = async () => {
   const validation = simulatorState.document.devices.map(validateSimulator).find(Boolean);
   if (validation) {
@@ -256,7 +272,7 @@ const saveSimulator = async () => {
     return;
   }
   simulatorState.saving = true;
-  simulatorState.message = 'Saving Simulator definitions and applying runtime changes...';
+  simulatorState.message = 'Saving Memory definitions and applying runtime changes...';
   simulatorState.error = false;
   renderSimulator();
   try {
@@ -264,7 +280,7 @@ const saveSimulator = async () => {
     const documentValue = normalizeSimulatorDocument(result.document);
     simulatorState.document = clone(documentValue);
     simulatorState.persisted = clone(documentValue);
-    simulatorState.message = `${result.message || 'Simulator settings applied.'} ${result.completed_at ? `Completed at ${formatTime(result.completed_at)}.` : ''}`;
+    simulatorState.message = `${result.message || 'Memory settings applied.'} ${result.completed_at ? `Completed at ${formatTime(result.completed_at)}.` : ''}`;
     simulatorState.error = false;
   } catch (error) {
     simulatorState.message = `Save & Apply failed: ${error.message || error}`;
@@ -285,7 +301,6 @@ const blankReplicator = sequence => ({
   pull_blocks: [blankBlock()],
   destination: {port: 5021, unit_id: 1, auto_port: true, auto_unit_id: true, owner: 'replicator', status: 'AVAILABLE'}
 });
-
 const normalizeRepDevice = value => {
   const device = clone(value || {});
   if (!Array.isArray(device.pull_blocks) || !device.pull_blocks.length) device.pull_blocks = [blankBlock()];
@@ -293,7 +308,6 @@ const normalizeRepDevice = value => {
   return device;
 };
 const normalizeRepDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices.map(normalizeRepDevice) : []});
-
 const validateReplicator = device => {
   if (!device.name || !device.name.trim()) return 'Name is required.';
   if (!device.endpoint || !device.endpoint.includes(':')) return 'Endpoint must be host:port.';
@@ -305,15 +319,12 @@ const validateReplicator = device => {
     if (block.start < 0 || block.start > 65535) return `${label} Start must be between 0 and 65535.`;
     if (block.count < 1 || block.start + block.count > 65536) return `${label} Count must be positive and remain inside the 16-bit address space.`;
     if (block.scan_rate_ms < 1) return `${label} Scan Rate must be greater than zero.`;
-
     const start = Number(block.start);
     const end = start + Number(block.count);
-
     for (let previous = 0; previous < i; previous += 1) {
       const other = device.pull_blocks[previous];
       const otherStart = Number(other.start);
       const otherEnd = otherStart + Number(other.count);
-
       if (Number(block.function) === Number(other.function) && start < otherEnd && otherStart < end) {
         return `${label} overlaps Pull Block ${previous + 1} in FC${block.function}.`;
       }
@@ -323,10 +334,8 @@ const validateReplicator = device => {
   if (device.destination.unit_id < 0 || device.destination.unit_id > 255) return 'Destination Unit ID must be between 0 and 255.';
   return null;
 };
-
 const replicatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, selectedBlock: 0, loading: true, saving: false, message: 'Loading Replicator definitions...', error: false, runtimeStatus: null};
 const selectedReplicator = () => replicatorState.selected === null ? null : replicatorState.document.devices[replicatorState.selected];
-
 const renderReplicator = () => {
   const root = document.getElementById('replicator-root');
   root.replaceChildren();
@@ -347,7 +356,6 @@ const renderReplicator = () => {
   if (!list.children.length) list.appendChild(h('div', 'tool-empty', replicatorState.loading ? 'Loading...' : 'No devices configured.'));
   sidebar.appendChild(list);
   shell.appendChild(sidebar);
-
   const editor = h('section', 'tool-editor');
   editor.appendChild(h('h2', '', 'Device Definition'));
   const device = selectedReplicator();
@@ -370,7 +378,6 @@ const renderReplicator = () => {
     identity.append(field('Endpoint', device.endpoint, {type: 'text', placeholder: '192.168.1.20:502'}, value => { device.endpoint = value; }));
     identity.append(field('Source Unit ID', device.unit_id, {min: 0, max: 255}, value => { device.unit_id = numberValue(value); }));
     editor.appendChild(identity);
-
     editor.appendChild(h('h3', '', 'Destination'));
     const destination = h('div', 'tool-grid');
     destination.append(field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => { device.destination.port = numberValue(value); }));
@@ -378,7 +385,6 @@ const renderReplicator = () => {
     destination.append(field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => { device.destination.unit_id = numberValue(value); }));
     destination.append(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => { device.destination.auto_unit_id = value; }));
     editor.appendChild(destination);
-
     editor.appendChild(h('h3', '', 'Pull Blocks'));
     const blockActions = h('div', 'tool-actions');
     blockActions.append(actionButton('Add Block', 'rep-add-block'), actionButton('Duplicate Block', 'rep-duplicate-block'), actionButton('Delete Block', 'rep-delete-block', 'tool-danger'));
@@ -430,7 +436,6 @@ const renderReplicator = () => {
   shell.appendChild(editor);
   root.appendChild(shell);
 };
-
 const loadReplicator = async () => {
   replicatorState.loading = true;
   replicatorState.message = 'Loading Replicator definitions...';
@@ -452,7 +457,6 @@ const loadReplicator = async () => {
     renderReplicator();
   }
 };
-
 const pollReplicator = async () => {
   const device = selectedReplicator();
   if (!device || replicatorState.saving) return;
@@ -463,7 +467,6 @@ const pollReplicator = async () => {
     setText('rep-runtime-last-poll', formatTime(replicatorState.runtimeStatus.last_poll));
   } catch (_) {}
 };
-
 const saveReplicator = async () => {
   const validation = replicatorState.document.devices.map(validateReplicator).find(Boolean);
   if (validation) {
@@ -527,39 +530,13 @@ document.addEventListener('click', event => {
 
 document.addEventListener('keydown', event => {
   if (event.key !== 'Delete' || isEditableControl(event.target)) return;
-
   const device = selectedReplicator();
   const index = replicatorState.selectedBlock;
   const replicatorPanel = document.getElementById('panel-replicator');
-
   if (!replicatorPanel.classList.contains('active') || !device || index === null) return;
   if (index < 0 || index >= device.pull_blocks.length) return;
-
   device.pull_blocks.splice(index, 1);
-  replicatorState.selectedBlock = device.pull_blocks.length
-    ? Math.min(index, device.pull_blocks.length - 1)
-    : null;
-
-  event.preventDefault();
-  renderReplicator();
-  pollReplicator();
-});
-
-document.addEventListener('keydown', event => {
-  if (event.key !== 'Delete' || isEditableControl(event.target)) return;
-
-  const device = selectedReplicator();
-  const index = replicatorState.selectedBlock;
-  const replicatorPanel = document.getElementById('panel-replicator');
-
-  if (!replicatorPanel.classList.contains('active') || !device || index === null) return;
-  if (index < 0 || index >= device.pull_blocks.length) return;
-
-  device.pull_blocks.splice(index, 1);
-  replicatorState.selectedBlock = device.pull_blocks.length
-    ? Math.min(index, device.pull_blocks.length - 1)
-    : null;
-
+  replicatorState.selectedBlock = device.pull_blocks.length ? Math.min(index, device.pull_blocks.length - 1) : null;
   event.preventDefault();
   renderReplicator();
   pollReplicator();
@@ -569,14 +546,10 @@ tabs.forEach(tab => tab.addEventListener('click', () => {
   tabs.forEach(node => node.classList.toggle('active', node === tab));
   panels.forEach(panel => panel.classList.toggle('active', panel.id === `panel-${tab.dataset.tab}`));
 }));
-
 document.getElementById('start-all').addEventListener('click', () => window.mcsDesktop.startAll());
 document.getElementById('stop-all').addEventListener('click', () => window.mcsDesktop.stopAll());
-
 window.mcsDesktop.onRuntimeStatus(setStatuses);
-window.mcsDesktop.onRuntimeActivity(pulseActivity);
 window.mcsDesktop.onRuntimeLog(appendLog);
-
 Promise.all([
   window.mcsDesktop.getRuntimeStatus(),
   window.mcsDesktop.getRuntimePaths()
@@ -596,7 +569,6 @@ Promise.all([
     appendLog({process: 'electron', level: 'info', text: 'Backend runtimes are managed by NSSM Windows services. Use Windows Services for manual start/stop operations.'});
   }
 }).catch(error => appendLog({process: 'electron', level: 'error', text: error.message || String(error)}));
-
 renderSimulator();
 renderReplicator();
 loadSimulator();

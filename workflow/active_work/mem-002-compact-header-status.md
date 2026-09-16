@@ -1,6 +1,6 @@
 # MEM-002 — Simplify Header Status
 
-Status: QUEUED
+Status: ACTIVE
 Previous: MEM-001
 Next: MEM-003
 

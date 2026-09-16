@@ -88,11 +88,8 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 	if err := a.store.ComposeDocument(edited); err != nil {
 		return err
 	}
-	// MMA2 is an independently managed appliance. After a successful shared-config
-	// commit the Simulator requests exactly one MMA2 RESTART (SIM-014(, waits for
-	// readiness,and reports failure truthfully. It must not start, stop, spawn, kill,
-	// or replace MMA2; it never owns the appliance process. Scheduler arming after the
-	// observed apply/readiness event belongs to SIM-015..
+	// MMA2 is independently managed. Committed shared-config structural changes
+	// request one restart and wait for acknowledgment/readiness before arming.
 	cfg, err := a.store.loadEffective()
 	if err != nil {
 		return fmt.Errorf("load composed MMA2 config: %w", err)
@@ -108,18 +105,14 @@ func (a *SchedulerApplier) ApplyStructural(_, edited Document) error {
 	if err := WaitMMA2Ready(ports, a.restartTimeout); err != nil {
 		return err
 	}
-	// Readiness confirmed: the request has been honored; clear it so no stale
-	// request survives into a later boot restore (SIM-016(..
 	if err := a.store.ClearRestartRequest(); err != nil {
 		return err
 	}
 	return nil
 }
 
-// ArmSchedules arms enabled schedules for theat committed document after the
-// full Save & Apply chain (shared-config commit -> MMA2 RESTART -> readiness(
-// has succeeded. It replaces prior schedules so each successful apply re-arms
-// with the latest persisted state (SIM-015(。
+// ArmSchedules arms schedules after the committed shared-config apply/restart
+// readiness chain has succeeded. MMA2 itself is never owned by this applier.
 func (a *SchedulerApplier) ArmSchedules(doc Document) {
 	a.mu.Lock()
 	a.ready = true
@@ -173,6 +166,15 @@ type DeviceRuntimeStatus struct {
 	FC          map[string]FCRuntimeStatus `json:"fc"`
 }
 
+// needsRandomIngest is true only if an allocated area has positive timing.
+// A zero interval allocates/serves the same MMA2 area, but has no generator.
+func needsRandomIngest(device DeviceDefinition) bool {
+	return (device.MMA2.FC1.Count > 0 && device.RandomRuntime.FC1IntervalMS > 0) ||
+		(device.MMA2.FC2.Count > 0 && device.RandomRuntime.FC2IntervalMS > 0) ||
+		(device.MMA2.FC3.Count > 0 && device.RandomRuntime.FC3IntervalMS > 0) ||
+		(device.MMA2.FC4.Count > 0 && device.RandomRuntime.FC4IntervalMS > 0)
+}
+
 func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, error) {
 	a.mu.Lock()
 	device, ok := a.devices[name]
@@ -201,6 +203,16 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 	if !device.Enabled {
 		return status, nil
 	}
+	if !needsRandomIngest(device) {
+		status.RawIngest = "NOT REQUIRED"
+		status.RawError = ""
+		if status.MMA2 == "RUNNING" {
+			status.Device = "IDLE"
+		} else {
+			status.Device = "WAITING"
+		}
+		return status, nil
+	}
 	switch {
 	case rawError != "":
 		status.RawIngest = "ERROR"
@@ -225,14 +237,8 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 	return status, nil
 }
 
-// NewRuntimeApplyRouter builds the Simulator boot-restore path (SIM-016). It
-// loads the persisted definitions, composes the Simulator-owned reservations into
-// the shared MMA2 configuration (SIM-011), waits for the independently
-// auto-started MMA2 to accept the composed listener ports, and then arms enabled
-// schedules. Ordinary boot never restarts MMA2 and never writes a restart request.
-// If the appliance does not return ready, the router stays alive with schedules unarmed
-// so runtime status surfaces the unavailability truthfully (SIM-015 ready gate( and a
-// later Save & Apply can recover.
+// NewRuntimeApplyRouter restores persisted Simulator reservations on boot;
+// it never starts/stops MMA2 or requests a restart merely for ordinary boot.
 func NewRuntimeApplyRouter(store Store) (*ApplyRouter, *SchedulerApplier, error) {
 	return newRuntimeApplyRouter(store, DefaultRestartReadyTimeout)
 }
@@ -242,19 +248,12 @@ func newRuntimeApplyRouter(store Store, bootTimeout time.Duration) (*ApplyRouter
 	if err != nil {
 		return nil, nil, err
 	}
-	// Compose persisted Simulator reservations into the shared MMA2 configuration,
-	// but never manage the independently started MMA2 process..
 	if err := store.ComposeDocument(initial); err != nil {
 		return nil, nil, err
 	}
 	timing := newSchedulerApplier(store, initial, false)
 	ports := composedSimulatorPorts(initial)
 	if len(ports) > 0 {
-		// SIM-016: an unchanged ordinary boot must not restart MMA2 merely because
-		//the Simulator started.. The appliance auto-started on boot and readsthe
-		// already-persisted config;wait for it to accept our composed listeners,then
-		// arm enabled schedules.. If it stays unavailable, remain alive with schedules
-		// unarmed so runtime status reportsthe truth (SIM-015 ready gate(.
 		if err := WaitMMA2Ready(ports, bootTimeout); err == nil {
 			timing.ArmSchedules(initial)
 		}
@@ -268,10 +267,8 @@ type ApplyResult struct {
 	Message  string    `json:"message"`
 }
 
-// ApplyRouter classifies a valid edit before invoking exactly one downstream
-// consumer. Persistence happens only after the selected consumer succeeds, so
-// validation, ownership, activation, or scheduler errors leave the previously
-// active simulator document untouched.
+// ApplyRouter validates, classifies, applies then persists an edited document.
+// Failed validation or downstream apply leaves the prior document unchanged.
 type ApplyRouter struct {
 	store      Store
 	structural StructuralApplier
@@ -312,9 +309,6 @@ func (r *ApplyRouter) Apply(edited Document) (ApplyResult, error) {
 	if err := r.store.SaveDocument(edited); err != nil {
 		return ApplyResult{}, err
 	}
-	// SIM-015: schedules may arm only after the full chain (commit, restarted,
-	// ready,persisted( succeeded. The live SchedulerApplier owns arming; plumbing
-	// fakes (e.g. applyRecorder( don't arm schedules..
 	if path == ApplyStructural {
 		if armer, ok := r.structural.(*SchedulerApplier); ok {
 			armer.ArmSchedules(edited)

@@ -72,7 +72,7 @@ func TestNoneRuntimeStatusSeparatesMemoryAndGeneratorHealth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.MMA2 != "RUNNING" || status.Device != "RUNNING" || status.RawIngest != "NOT REQUIRED" || len(status.FC) != 0 {
+	if status.MMA2 != "RUNNING" || status.Device != "IDLE" || status.RawIngest != "NOT REQUIRED" || len(status.FC) != 0 {
 		t.Fatalf("all-None status incorrectly awaits simulation: %+v", status)
 	}
 
@@ -81,8 +81,8 @@ func TestNoneRuntimeStatusSeparatesMemoryAndGeneratorHealth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.Device == "RUNNING" || status.MMA2 != "STOPPED" {
-		t.Fatalf("unavailable MMA2 must not report running: %+v", status)
+	if status.Device == "RUNNING" || status.Device == "IDLE" || status.MMA2 != "STOPPED" {
+		t.Fatalf("unavailable MMA2 must not report available: %+v", status)
 	}
 }
 

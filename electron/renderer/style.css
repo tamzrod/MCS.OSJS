@@ -5,7 +5,7 @@ button:disabled, input:read-only { opacity: .7; }
 .app-shell { display: grid; grid-template-rows: auto auto 1fr; width: 100%; height: 100%; min-height: 0; background: #c0c0c0; }
 .titlebar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 7px; border-bottom: 1px solid #808080; background: #d4d4d4; }
 .subtitle { margin-left: 7px; color: #555; font-size: 10px; }
-.runtime-strip { display: flex; gap: 10px; align-items: center; font-size: 10px; }
+.runtime-strip { display: flex; gap: 10px; align-items: center; flex-shrink: 0; white-space: nowrap; font-size: 10px; }
 .runtime-strip span { display: inline-flex; align-items: center; gap: 3px; }
 .runtime-strip b { display: inline-flex; align-items: center; min-height: 12px; font-weight: 700; }
 .runtime-strip b::before { content: ''; display: inline-block; width: 10px; height: 10px; flex: 0 0 10px; margin-right: 3px; border: 1px solid #555; border-radius: 50%; background: #8b0000; box-shadow: inset 1px 1px 1px rgba(255,255,255,.45), inset -1px -1px 1px rgba(0,0,0,.35); }
@@ -13,9 +13,8 @@ button:disabled, input:read-only { opacity: .7; }
 .runtime-strip b.status-ok::before { background: #1f8f2f; }
 .status-stop { color: #8b0000; }
 .runtime-strip b.status-stop::before { background: #b01818; }
-.runtime-strip b.status-ok.status-activity::before { background: #7dff8d; box-shadow: 0 0 7px 2px rgba(80,255,100,.9), inset 1px 1px 1px rgba(255,255,255,.8); }
 .tabs { display: flex; align-items: flex-end; gap: 1px; padding: 3px 5px 0; background: #bdbdbd; border-bottom: 1px solid #808080; }
-.tab { position: relative; min-width: 96px; padding: 3px 9px 4px; border: 2px outset #eee; border-bottom: 2px solid #808080; border-radius: 3px 3px 0 0; background: #b9b9b9; cursor: pointer; }
+.tab { position: relative; min-width: 96px; padding: 3px 9px 4px; border: 2px outset #eee; border-bottom: 1px solid #808080; border-radius: 3px 3px 0 0; background: #b9b9b9; cursor: pointer; }
 .tab::before { display: none; }
 .tab.active { z-index: 2; margin-bottom: -2px; padding-top: 6px; background: #d4d4d4; border-bottom-color: #d4d4d4; }
 .content { min-height: 0; overflow: hidden; padding: 4px; background: #d4d4d4; }
@@ -45,14 +44,18 @@ button:disabled, input:read-only { opacity: .7; }
 .tool-field { display: grid; gap: 2px; min-width: 0; }
 .tool-field-label { color: #555; font-size: 11px; }
 .tool-field input, .tool-field textarea, .cell-field input, select { width: 100%; min-width: 0; height: 22px; padding: 2px 5px; border: 2px inset #ddd; background: #fff; }
+.tool-field input:disabled, .cell-field input:disabled { color: #555; background: #ececec; opacity: .85; }
 .tool-checkbox { display: flex; gap: 3px; align-items: center; padding-top: 15px; }
 .fc-table, .block-table { display: grid; gap: 2px; margin-top: 2px; }
 .fc-row { display: grid; grid-template-columns: minmax(118px, 1.25fr) minmax(58px, .65fr) minmax(58px, .65fr) minmax(94px, .9fr) minmax(76px, .8fr); gap: 4px; align-items: end; padding: 4px 5px; border: 1px solid #bbb; background: #fff; }
+.memory-fc-table .fc-row { grid-template-columns: minmax(120px, 1.25fr) minmax(56px, .6fr) minmax(56px, .6fr) minmax(82px, .8fr) minmax(80px, .8fr) minmax(72px, .75fr); align-items: center; }
+.memory-fc-table .fc-header { font-size: 11px; }
+.sim-mode-cell { display: block; min-width: 0; }
+.sim-mode-cell select { width: 100%; min-width: 0; height: 22px; padding: 1px 2px; }
 .fc-header, .block-header { font-weight: 700; background: #ddd; align-items: center; }
 .block-row { display: grid; grid-template-columns: 24px 60px 68px 68px 96px 24px; gap: 4px; align-items: center; justify-content: start; padding: 3px 5px; border: 1px solid #bbb; background: #fff; }
 .block-row.selected { border-color: #305c9f; background: #eef5ff; }
 .block-row select { height: 22px; cursor: pointer; }
-.tool-row-delete { min-width: 22px; min-height: 22px; padding: 0; line-height: 16px; }
 .tool-row-delete { min-width: 22px; min-height: 22px; padding: 0; line-height: 16px; }
 .cell-field { display: grid; gap: 2px; }
 .cell-field .tool-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; }
@@ -68,6 +71,6 @@ button:disabled, input:read-only { opacity: .7; }
   .tool-layout { grid-template-columns: 1fr; }
   .tool-sidebar { max-height: 210px; }
   .tool-grid, .fc-row, .block-row { grid-template-columns: 1fr; }
-  .runtime-strip { flex-wrap: wrap; justify-content: flex-end; }
+  .memory-fc-table .fc-row { grid-template-columns: 1fr; }
+  .runtime-strip { gap: 5px; }
 }
-

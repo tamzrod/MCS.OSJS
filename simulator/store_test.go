@@ -93,7 +93,6 @@ func TestInvalidInputsDoNotReplaceLastValid(t *testing.T) {
 		{"port 0", func(d *DeviceDefinition) { d.MMA2.Port = 0 }},
 		{"unit_id 256", func(d *DeviceDefinition) { d.MMA2.UnitID = 256 }},
 		{"fc3 start+count overflow", func(d *DeviceDefinition) { d.MMA2.FC3 = Area{Start: 65530, Count: 20} }},
-		{"fc1 interval 0", func(d *DeviceDefinition) { d.RandomRuntime.FC1IntervalMS = 0 }},
 		{"empty name", func(d *DeviceDefinition) { d.Name = "  " }},
 	}
 

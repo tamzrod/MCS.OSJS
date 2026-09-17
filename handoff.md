@@ -2,43 +2,56 @@
 
 ## Current
 
-COMPLETED + ARCHIVED:
+COMPLETED + ARCHIVED (task-defined gates only):
 - RLED-001 — Establish Replicator Runtime Bridge Client — Windows named-pipe fixture verification passed.
-- RLED-002 — Replace Fake Electron Replicator Status — IPC/status and packaged-module verification passed.
+- RLED-002 — Replace Fake Electron Replicator Status — IPC/status and packaged-module verification passed; installed end-to-end integration is NOT verified and the regression review below identifies gaps.
 
-ACTIVE: RLED-003 — Observe Source TCP Health.
+ACTIVE: RLED-003 — Observe Source TCP Health. **STOP implementation/advancement pending recovery triage:** the user reports the Codex result does not work. This handoff documents defects but does not change Active Work authority, reopen an archived task, or authorize coding outside RLED-003. First reconcile the regression with the user and promote the smallest repair microtasks through the normal human-authorized workflow; maintain exactly one ACTIVE task and preserve RLED-003 as pending rather than falsely completing it.
 
-QUEUED RLED sequence (approved): RLED-004 → RLED-005 → RLED-006 → RLED-007 → RLED-008 → RLED-009 → RLED-010 → RLED-011. Each detailed record in workflow/active_work/ has explicit Previous/Next; RLED-011 is final Windows acceptance.
+QUEUED RLED sequence (approved): RLED-004 → RLED-005 → RLED-006 → RLED-007 → RLED-008 → RLED-009 → RLED-010 → RLED-011. Detailed records in `workflow/active_work/` have Previous/Next links; RLED-011 is final installed-Windows acceptance.
 
-PAUSED QUEUED Memory chain: MEM-004 → MEM-005 → MEM-006 → MEM-007 → MEM-008. MEM-001–003 completed and archived. MEM-004 is NOT complete: cd simulator && go test -count=1 ./... && go vet ./... still requires recorded passing evidence. Resume only after deliberate selection while maintaining exactly one ACTIVE task.
+PAUSED QUEUED Memory chain: MEM-004 → MEM-005 → MEM-006 → MEM-007 → MEM-008. MEM-001–003 completed and archived. MEM-004 is NOT complete: `cd simulator && go test -count=1 ./... && go vet ./...` still requires recorded passing evidence. Resume only after deliberate selection and with one ACTIVE task.
 
 Other QUEUED work unchanged: REP-BLOCK-002 and REP-BLOCK-003 retests.
 
+## BLOCKING regression review — 2026-09-17
+
+Review baseline: committed `main` at `2f85cd702b11da433d169be453bd62f282c0c71d` (the RLED-002 live-status wiring). The user reports a failed result but has not specified the exact on-screen symptom or supplied installed-service logs. The following are **observed code discrepancies or verification gaps, not claims that a particular installed-machine failure has been reproduced**. Recheck current HEAD, local uncommitted overlay and installed binaries before editing; do not overwrite parked Electron changes.
+
+1. **Split Windows data roots — concrete code discrepancy, investigate first.** `electron/build/installer.nsh` creates the initial MMA2 config and sets NSSM AppDirectory under `$LOCALAPPDATA\MCS Modbus Toolkit\runtime`. Packaged `electron/main.js` uses `%ProgramData%\MCS Modbus Toolkit\runtime`, as do `replicator/store.go`, `simulator/store.go` and MMA2 supervisor when their explicit environment root is absent. `installer.nsh` also deletes NSSM AppEnvironment/AppEnvironmentExtra. This can leave services reading an uninitialized ProgramData tree while setup seeded LocalAppData. Establish ONE canonical shared root (the already deployed ProgramData path unless an explicitly configured common root is verified); align installer initialization, service working directory/environment and all runtime readers/writers. Preserve existing customer configuration: inspect both trees, back up before any migration, do not blindly overwrite/delete configs, and make fresh-install and repair behavior idempotent.
+
+2. **Two competing Replicator apply paths — concrete code discrepancy.** `electron/main.js` uses `applyReplicator()` to directly compose MMA2, write `config/replicator/devices.yaml` and request MMA2 restart. Codex wired ONLY IPC `status` through `callReplicatorRuntime(...)`; `load` and `apply` still use Electron-local functions. `replicator/manager.go` loads its document at Boot and updates its pollers via `RuntimeManager.Apply`; a file-only save will not update an already running manager, so a new/renamed device can produce `device not found` on Go `Status(name)` despite appearing saved in the UI. Choose one authoritative apply transaction: use the EXISTING Go runtime `load`/`apply` protocol and response shapes for the Windows Replicator editor, or otherwise demonstrate a single atomic equivalent that updates the running manager. Do not run both Electron and Go MMA2 composers/restarts; preserve foreign/simulator reservations, rollback/error semantics and saved config. Verify that Save & Apply changes polling and status immediately without manually restarting the service, then survives service restart.
+
+3. **False service RUNNING and hidden errors — concrete code discrepancy.** Packaged `electron/main.js` `getStatus()` queries MMA2 but unconditionally labels Simulator and Replicator RUNNING. Query the actual service states (or another direct truthful runtime signal); missing/stopped must not display green. `electron/renderer/app.js` `pollReplicator()` currently catches all status errors and replaces them with `UNAVAILABLE` without surfacing the underlying exception. Keep the UI fail-closed but display the real error and selected device in a diagnostic surface/log so `ENOENT`/access denied, service down, timeouts and `device not found` can be distinguished. Do not turn untested or stale observations green.
+
+4. **Packaged versus installed verification gap.** RLED-002 ran `npm run pack:win` and inspected `app.asar`, which proves module inclusion but does NOT rebuild the Go executables or prove installer/service behavior. `electron/build-and-push.ps1` builds the Go executables before `npm run dist:win`; ensure that a clean, current source checkout builds BOTH backends, that the binaries bundled in the installer are the rebuilt named-pipe versions, and that repair/installation deploys them safely. Do not blindly run scripts that call `git pull` or alter local directories over a dirty tree. Capture executable build/version/hash, installer artifact and actual installed service executable paths. No Windows success claim until real installed services and UI are exercised.
+
+5. **The requested LEDs are NOT yet present.** RLED-003 is currently ACTIVE; layout is RLED-008, binding RLED-009, flashing RLED-010 and final Windows acceptance RLED-011. Missing circles are unfinished work, not evidence of a rendering regression. Do not fabricate LED state from the current aggregate `running/source_status` fields.
+
+## Recovery execution and verification gates
+
+- **Triage without modifying data:** On the user's Windows checkout capture `git status --short`, HEAD, app/installer version, `sc.exe query` and `sc.exe qc` for `MCS-MMA2`, `MCS-Simulator`, `MCS-Replicator`, relevant service logs, both candidate config roots, installed runtime binary paths, and exact UI/error symptom. Confirm whether the Replicator named pipe exists and returns the actual Go `status` response for the selected device. Log findings, separate observed failure from hypothesis. Avoid deleting/reinstalling user configs or restarting services merely to conceal errors.
+- **Authorize smallest targeted repairs:** Create narrowly scoped repair microtasks for shared root/installer alignment, single live Replicator apply/load, truthful status/error reporting and installer integration verification as needed. Respect `planning/microtask/rules.md` and `workflow/active_work/README.md`; obtain human promotion/resequence of the blocked RLED-003 chain before implementing repairs outside its scope. `handoff.md` is continuation context, not independent implementation authority. Do not close/reopen archived RLED-001/002 or mark RLED-003 complete on the strength of fixture tests.
+- **Repair and verify in dependency order:** first shared root and service boot; next real Go load/apply and poller refresh; next service/error truth; then fresh Windows installer/repair deployment. Add focused regression tests for cross-root initial install and repair, Save & Apply followed immediately by live `status` and observed polling, disabled/missing device, and runtime pipe failures. Run task-defined Node/Go tests and vet, capturing exact output; report pre-existing full-suite blockers separately, never call failed tests passed.
+- **Installed Windows acceptance:** With config backed up, demonstrate fresh install and repair both preserve configuration; all requested services really start; Electron and Go resolve the SAME data directory; initial MMA2 config exists there; a newly created source saves, begins polling, updates live status without manually restarting Replicator, survives restart, and reports source failure and recovery truthfully. Confirm delivered installer includes matching freshly built Go executables and Electron bridge modules. Only then resume RLED-003 onward by authorized advancement. RLED-011 separately covers final Network/TCP/Modbus/MMA2 LED appearance, hover/tap/accessibility, state transitions and flashes.
+
 ## Approved Windows transport
 
-Electron and its Go backend runtimes are Windows-only. Local runtime IPC uses secured Windows named pipes while preserving the version-1 four-byte big-endian length-prefixed JSON protocol:
-
-- Replicator: Windows pipe mcs-modbus-replicator
-- Simulator: Windows pipe mcs-modbus-simulator
-
+Electron and its Go backend runtimes are Windows-only. Local runtime IPC uses secured Windows named pipes with the version-1 four-byte big-endian length-prefixed JSON protocol:
+- Replicator: Windows pipe `mcs-modbus-replicator`.
+- Simulator: Windows pipe `mcs-modbus-simulator`.
 Pipe security grants full access to SYSTEM and Administrators and read/write access to authenticated users. Filesystem Unix sockets, stale-socket cleanup and chmod are not used.
 
 ## Approved Replicator COMMS design
 
-Selected source device: SOURCE Network, TCP, Modbus LEDs; DESTINATION MMA2 LED. Permanent display is labels plus four small circles only. Circle hover/focus/tap reveals actual diagnostics. Green=observed healthy, yellow=Modbus exception/warning, red=confirmed connection/write failure or Modbus response timeout, gray=disabled/not tested/unknown/stale. ICMP cannot override a working TCP/Modbus connection. Source TCP connection is per poll (green means recent success, not persistent socket). MMA2 flashes only after its existing Raw Ingest positive acknowledgement; TCP flashes on actual activity, never from repeated status polling. Preserve per-FC/block errors and distinguish source from destination failures.
+For the selected source device: SOURCE Network, TCP, Modbus LEDs; DESTINATION MMA2 LED. Permanent display is labels and four small circles only; circle hover/focus/tap reveals actual diagnostics. Green = observed healthy; yellow = Modbus exception/warning; red = confirmed connection/write failure or Modbus response timeout; gray = disabled/not tested/unknown/stale. ICMP cannot override working TCP/Modbus. Source TCP is per poll (green means recent success, not a persistent socket). MMA2 flashes only after its existing Raw Ingest positive acknowledgement; TCP flashes on actual activity, never from status polling. Preserve per-FC/block errors and separate source from destination failures.
 
-## RLED-001 evidence
+## Prior task-defined evidence (not installed acceptance)
 
-On the full Windows checkout, node --test electron/test/replicator-runtime.test.js passed all seven named-pipe fixtures. Success, runtime errors, mismatched request IDs, invalid lengths, truncated responses, timeout, unavailable pipe, unsupported operation and oversized request behavior were verified. The focused Simulator named-pipe framing test passed. go vet ./... passed for both modules.
+RLED-001: On a full Windows checkout, `node --test electron/test/replicator-runtime.test.js` passed seven named-pipe fixtures. Success, runtime errors, mismatched IDs, invalid lengths, truncated responses, timeout, unavailable pipe, unsupported operation and oversized request were verified. Focused Simulator named-pipe framing test passed; `go vet ./...` passed for both modules.
 
-The full Replicator suite remains blocked by pre-existing environment requirements: missing temporary MMA2 executable, missing restart acknowledgement, and configured Windows data-root expectations. The full Simulator suite remains blocked by pre-existing ownership-map and configured Windows data-root expectations. These failures are not substituted for the passing RLED-001 task-defined gate.
+Full Replicator suite remained blocked by missing temporary MMA2 executable, missing restart acknowledgement and configured Windows data-root requirements. Full Simulator suite remained blocked by ownership-map and configured Windows data-root requirements. Do not substitute focused passes for those failing gates.
 
-## RLED-002 evidence
+RLED-002: Electron status was wired to the named-pipe client; the focused IPC/status fixture returned per-device status and unavailability rejected. Node syntax checks and all ten focused named-pipe/IPC fixtures passed; `npm run pack:win` succeeded; `app.asar` included both bridge modules. These checks did not demonstrate real service startup, a matching installer build, synchronized Save & Apply or installed UI operation. The regression review supersedes any implied claim of end-to-end completion.
 
-Electron now forwards Replicator status through the Windows named-pipe client instead of returning hardcoded RUNNING/CONFIGURED data. Runtime-unavailable errors reject at IPC and the existing status row switches to UNAVAILABLE rather than retaining stale green text. Load/apply behavior is preserved. Node syntax checks passed; all ten focused named-pipe and IPC fixtures passed; npm run pack:win succeeded; app.asar contains both bridge modules.
-
-## Next execution
-
-RLED-003 adds truthful per-poll source TCP observations in the Go Replicator runtime according to its task-defined scope and gate. RLED-011 remains the real installed-Windows acceptance gate.
-
-Existing MMA2 allocation, Raw Ingest protocol, Modbus semantics, Poll Blocks, Memory functionality and OS.js UI remain out of scope.
+Do not alter MMA2 protocol, Raw Ingest semantics, unrelated Memory work, existing device allocations or OS.js UI for this recovery. Preserve parked local/uncommitted Electron overlays and foreign MMA2 reservations.

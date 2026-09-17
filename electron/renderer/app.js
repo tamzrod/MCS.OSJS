@@ -336,6 +336,19 @@ const validateReplicator = device => {
 };
 const replicatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, selectedBlock: 0, loading: true, saving: false, message: 'Loading Replicator definitions...', error: false, runtimeStatus: null};
 const selectedReplicator = () => replicatorState.selected === null ? null : replicatorState.document.devices[replicatorState.selected];
+
+const refreshReplicatorValidation = () => {
+  const device = selectedReplicator();
+  const validation = device ? validateReplicator(device) : null;
+  const notice = document.getElementById('rep-validation');
+  const save = document.querySelector('[data-action=rep-save]');
+  if (notice) {
+    notice.textContent = validation || '';
+    notice.hidden = !validation;
+  }
+  if (save) save.disabled = Boolean(validation) || replicatorState.saving;
+};
+
 const renderReplicator = () => {
   const root = document.getElementById('replicator-root');
   root.replaceChildren();
@@ -373,17 +386,17 @@ const renderReplicator = () => {
     runtime.append(h('span', '', 'Replicator:'), runningStatus, h('span', '', 'Source:'), sourceStatus, h('span', '', 'Last Poll:'), lastPoll);
     editor.appendChild(runtime);
     const identity = h('div', 'tool-grid');
-    identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
-    identity.append(checkboxField('Enabled', device.enabled, value => { device.enabled = value; }));
-    identity.append(field('Endpoint', device.endpoint, {type: 'text', placeholder: '192.168.1.20:502'}, value => { device.endpoint = value; }));
-    identity.append(field('Source Unit ID', device.unit_id, {min: 0, max: 255}, value => { device.unit_id = numberValue(value); }));
+    identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; refreshReplicatorValidation(); }));
+    identity.append(checkboxField('Enabled', device.enabled, value => { device.enabled = value; refreshReplicatorValidation(); }));
+    identity.append(field('Endpoint', device.endpoint, {type: 'text', placeholder: '192.168.1.20:502'}, value => { device.endpoint = value; refreshReplicatorValidation(); }));
+    identity.append(field('Source Unit ID', device.unit_id, {min: 0, max: 255}, value => { device.unit_id = numberValue(value); refreshReplicatorValidation(); }));
     editor.appendChild(identity);
     editor.appendChild(h('h3', '', 'Destination'));
     const destination = h('div', 'tool-grid');
-    destination.append(field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => { device.destination.port = numberValue(value); }));
-    destination.append(checkboxField('Auto Port', device.destination.auto_port, value => { device.destination.auto_port = value; }));
-    destination.append(field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => { device.destination.unit_id = numberValue(value); }));
-    destination.append(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => { device.destination.auto_unit_id = value; }));
+    destination.append(field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => { device.destination.port = numberValue(value); refreshReplicatorValidation(); }));
+    destination.append(checkboxField('Auto Port', device.destination.auto_port, value => { device.destination.auto_port = value; refreshReplicatorValidation(); }));
+    destination.append(field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => { device.destination.unit_id = numberValue(value); refreshReplicatorValidation(); }));
+    destination.append(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => { device.destination.auto_unit_id = value; refreshReplicatorValidation(); }));
     editor.appendChild(destination);
     editor.appendChild(h('h3', '', 'Pull Blocks'));
     const blockActions = h('div', 'tool-actions');
@@ -409,13 +422,13 @@ const renderReplicator = () => {
       select.addEventListener('pointerdown', event => event.stopPropagation());
       select.addEventListener('mousedown', event => event.stopPropagation());
       select.addEventListener('click', event => event.stopPropagation());
-      select.addEventListener('change', event => { block.function = Number(event.target.value); });
+      select.addEventListener('change', event => { block.function = Number(event.target.value); refreshReplicatorValidation(); });
       const selectWrap = h('span');
       selectWrap.appendChild(select);
       row.appendChild(selectWrap);
-      row.appendChild(field('Start', block.start, {min: 0, max: 65535, className: 'cell-field'}, value => { block.start = numberValue(value); }));
-      row.appendChild(field('Count', block.count, {min: 1, max: 65535, className: 'cell-field'}, value => { block.count = numberValue(value); }));
-      row.appendChild(field('Scan', block.scan_rate_ms, {min: 1, step: 1, className: 'cell-field'}, value => { block.scan_rate_ms = numberValue(value); }));
+      row.appendChild(field('Start', block.start, {min: 0, max: 65535, className: 'cell-field'}, value => { block.start = numberValue(value); refreshReplicatorValidation(); }));
+      row.appendChild(field('Count', block.count, {min: 1, max: 65535, className: 'cell-field'}, value => { block.count = numberValue(value); refreshReplicatorValidation(); }));
+      row.appendChild(field('Scan', block.scan_rate_ms, {min: 1, step: 1, className: 'cell-field'}, value => { block.scan_rate_ms = numberValue(value); refreshReplicatorValidation(); }));
       const remove = actionButton('-', 'rep-delete-block-row', 'tool-row-delete tool-danger');
       remove.dataset.index = String(index);
       remove.title = `Delete Pull Block ${index + 1}`;
@@ -425,7 +438,10 @@ const renderReplicator = () => {
     });
     editor.appendChild(table);
     const validation = validateReplicator(device);
-    if (validation) editor.appendChild(h('div', 'tool-validation', validation));
+    const validationNotice = h('div', 'tool-validation', validation || '');
+    validationNotice.id = 'rep-validation';
+    validationNotice.hidden = !validation;
+    editor.appendChild(validationNotice);
     const actions = h('div', 'editor-actions');
     const save = actionButton(replicatorState.saving ? 'Saving...' : 'Save & Apply', 'rep-save', 'tool-primary');
     save.disabled = Boolean(validation) || replicatorState.saving;

@@ -217,7 +217,11 @@ const applySimulator = doc => {
   composeAll(simDoc, repDoc);
   writeYamlAtomic(paths().simulatorDevices, simDoc);
   resetSimulatorSchedulers(simDoc);
-  return {document: simDoc, message: 'Simulator settings saved, MMA2 restart requested, and random value publishing started.', completed_at: new Date().toISOString()};
+  const randomEnabled = (simDoc.devices || []).some(device => device.enabled && ['fc1', 'fc2', 'fc3', 'fc4'].some(fc => hasArea(areaFor(device, fc)) && intervalFor(device, fc) > 0));
+  const message = randomEnabled
+    ? 'Memory settings saved, MMA2 restart requested, and random value publishing started.'
+    : 'Memory settings saved, MMA2 restart requested. Random value publishing is not required.';
+  return {document: simDoc, message, completed_at: new Date().toISOString()};
 };
 
 const applyReplicator = doc => {
@@ -410,8 +414,10 @@ ipcMain.handle('runtime:simulator-call', async (_event, operation, payload) => {
     const device = loadSimulator().devices.find(item => item.name === payload.name);
     const runtime = device ? simulatorRuntimeFor(device.name) : {raw_ingest_status: 'STOPPED', fc: {}};
     const mma2 = await portStatus(device && device.mma2 && device.mma2.port);
+    const randomRequired = Boolean(device && device.enabled && ['fc1', 'fc2', 'fc3', 'fc4'].some(fc => hasArea(areaFor(device, fc)) && intervalFor(device, fc) > 0));
     const running = mma2 === 'RUNNING' && runtime.raw_ingest_status === 'OK';
-    return {status: {name: payload.name, mma2_status: mma2, device_status: running ? 'RUNNING' : 'WAITING', raw_ingest_status: runtime.raw_ingest_status, raw_ingest_error: runtime.raw_ingest_error || '', fc: runtime.fc || {}}};
+    const deviceStatus = !randomRequired && mma2 === 'RUNNING' ? 'IDLE' : (running ? 'RUNNING' : 'WAITING');
+    return {status: {name: payload.name, mma2_status: mma2, device_status: deviceStatus, raw_ingest_status: randomRequired ? runtime.raw_ingest_status : 'NOT REQUIRED', raw_ingest_error: runtime.raw_ingest_error || '', fc: runtime.fc || {}}};
   }
   throw new Error(`Unsupported Simulator operation ${operation}`);
 });
@@ -425,7 +431,7 @@ ipcMain.handle('runtime:replicator-call', async (_event, operation, payload) => 
 app.whenReady().then(() => {
   createWindow();
   fs.mkdirSync(dataRoot(), {recursive: true});
-  resetSimulatorSchedulers(loadSimulator());
+  if (!windowsServiceMode()) resetSimulatorSchedulers(loadSimulator());
   statusTimer = setInterval(() => void sendStatus(), 2000);
   if (!windowsServiceMode()) startAll();
   void sendStatus();

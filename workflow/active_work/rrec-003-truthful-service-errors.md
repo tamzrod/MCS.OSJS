@@ -1,6 +1,6 @@
 # RREC-003 — Truthful Service and Runtime Errors
 
-Status: ACTIVE
+Status: COMPLETE
 Previous: RREC-002
 Next: RREC-004
 
@@ -26,3 +26,9 @@ RREC-002.
 
 ## Sizing
 Surface 2, environment 0, behavior 2, verification 1, recovery 0 = 5; tightly coupled truth surfaces.
+## Completion evidence
+- All three backend labels now come from actual Windows service queries.
+- Replicator pipe/runtime failures show the selected device and underlying error in both the status area and diagnostics log.
+- Repeated identical poll errors are deduplicated; a successful poll clears the stale runtime error.
+- Focused Node tests passed: 11/11.
+- npm run pack:win passed, and packaged app.asar contains main.js, renderer/app.js, and runtime-status.js.

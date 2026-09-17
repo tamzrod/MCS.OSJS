@@ -334,7 +334,7 @@ const validateReplicator = device => {
   if (device.destination.unit_id < 0 || device.destination.unit_id > 255) return 'Destination Unit ID must be between 0 and 255.';
   return null;
 };
-const replicatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, selectedBlock: 0, loading: true, saving: false, message: 'Loading Replicator definitions...', error: false, runtimeStatus: null};
+const replicatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, selectedBlock: 0, loading: true, saving: false, message: 'Loading Replicator definitions...', error: false, runtimeError: '', runtimeStatus: null};
 const selectedReplicator = () => replicatorState.selected === null ? null : replicatorState.document.devices[replicatorState.selected];
 
 const refreshReplicatorValidation = () => {
@@ -448,7 +448,9 @@ const renderReplicator = () => {
     actions.append(save, actionButton('Discard', 'rep-discard'));
     editor.appendChild(actions);
   }
-  editor.appendChild(h('div', `tool-status${replicatorState.error ? ' error' : ''}`, replicatorState.message));
+  const statusMessage = h('div', `tool-status${replicatorState.error || replicatorState.runtimeError ? ' error' : ''}`, replicatorState.runtimeError || replicatorState.message);
+  statusMessage.id = 'rep-status-message';
+  editor.appendChild(statusMessage);
   shell.appendChild(editor);
   root.appendChild(shell);
 };
@@ -478,14 +480,28 @@ const pollReplicator = async () => {
   if (!device || replicatorState.saving) return;
   try {
     replicatorState.runtimeStatus = await window.mcsDesktop.replicatorCall('status', {name: device.name});
+    replicatorState.runtimeError = '';
     setText('rep-runtime-running', replicatorState.runtimeStatus.running ? 'RUNNING' : 'STOPPED');
     setText('rep-runtime-source', replicatorState.runtimeStatus.source_status || '-');
     setText('rep-runtime-last-poll', formatTime(replicatorState.runtimeStatus.last_poll));
-  } catch (_) {
+    const statusMessage = document.getElementById('rep-status-message');
+    if (statusMessage) {
+      statusMessage.textContent = replicatorState.message;
+      statusMessage.classList.toggle('error', replicatorState.error);
+    }
+  } catch (error) {
     replicatorState.runtimeStatus = {unavailable: true, running: false, source_status: 'UNAVAILABLE', last_poll: ''};
+    const runtimeError = `Replicator status failed for ${device.name}: ${error.message || error}`;
+    if (replicatorState.runtimeError !== runtimeError) appendLog({process: 'replicator', level: 'error', text: runtimeError});
+    replicatorState.runtimeError = runtimeError;
     setText('rep-runtime-running', 'UNAVAILABLE');
     setText('rep-runtime-source', 'UNAVAILABLE');
     setText('rep-runtime-last-poll', '-');
+    const statusMessage = document.getElementById('rep-status-message');
+    if (statusMessage) {
+      statusMessage.textContent = runtimeError;
+      statusMessage.classList.add('error');
+    }
   }
 };
 const saveReplicator = async () => {

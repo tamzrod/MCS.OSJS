@@ -25,6 +25,7 @@
       "preload.js",
       "replicator-runtime.js",
       "replicator-ipc.js",
+      "runtime-status.js",
       "renderer/**/*",
       "build/icon.png",
       "build/replicator-logo.svg",

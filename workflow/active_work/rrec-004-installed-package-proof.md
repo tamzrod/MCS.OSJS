@@ -1,6 +1,6 @@
 # RREC-004 — Installed Package Proof
 
-Status: QUEUED
+Status: ACTIVE
 Previous: RREC-003
 Next: RLED-003
 

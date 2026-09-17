@@ -7,6 +7,7 @@ const path = require('path');
 const yaml = require('js-yaml');
 const {callReplicatorRuntime} = require('./replicator-runtime');
 const {createReplicatorCall} = require('./replicator-ipc');
+const {getWindowsServiceStatus} = require('./runtime-status');
 
 let mainWindow = null;
 let statusTimer = null;
@@ -345,10 +346,7 @@ const queryWindowsService = service => new Promise(resolve => {
 });
 
 const getStatus = async () => {
-  if (windowsServiceMode()) {
-    const mma2 = await queryWindowsService('MCS-MMA2');
-    return {mma2, simulator: 'RUNNING', replicator: 'RUNNING'};
-  }
+  if (windowsServiceMode()) return getWindowsServiceStatus(queryWindowsService);
   return Object.fromEntries(processSpecs.map(spec => [spec.key, childStatus(spec.key)]));
 };
 

@@ -2,39 +2,20 @@
 
 ## Current
 
-COMPLETED + ARCHIVED:
-- MEM-001 — Rename Memory UI — static verification passed.
-- MEM-002 — Simplify Header Status — static verification passed.
-- MEM-003 — Simulator Status in Diagnostics — static verification passed.
+ACTIVE: RLED-001 — Establish Replicator Runtime Bridge Client. Human approved switching to COMMS LED coding.
 
-ACTIVE: MEM-004 — Allow None Simulation.
+QUEUED RLED sequence (approved): RLED-002 → RLED-003 → RLED-004 → RLED-005 → RLED-006 → RLED-007 → RLED-008 → RLED-009 → RLED-010 → RLED-011. Each detailed record in `workflow/active_work/` has explicit Previous/Next; RLED-011 is final Windows acceptance.
 
-QUEUED (approved sequence, explicit order):
-- MEM-005 — Area Simulation Selector. Previous: MEM-004.
-- MEM-006 — Default None, Preserve Legacy Random. Previous: MEM-005.
-- MEM-007 — Truthful None-mode Status. Previous: MEM-006.
-- MEM-008 — Windows Memory Acceptance. Previous: MEM-007.
+PAUSED QUEUED Memory chain: MEM-004 → MEM-005 → MEM-006 → MEM-007 → MEM-008. MEM-001–003 completed and archived. MEM-004 is NOT complete: `cd simulator && go test -count=1 ./... && go vet ./...` still requires recorded passing evidence. Previously implemented MEM-004–007 code remains; no Memory task may be archived without its gate. Resume the Memory chain only after deliberate selection, maintaining exactly one ACTIVE task.
 
-Unrelated QUEUED tasks unchanged: REP-BLOCK-002 (JR retest); REP-BLOCK-003 (JR rendered retest).
+Other QUEUED work unchanged: REP-BLOCK-002 and REP-BLOCK-003 retests.
 
-## Decision / scope
+## Approved Replicator COMMS design
 
-Minimal change to the integrated Electron Simulator editor. Memory presently displays simulator-owned devices only. Keep Simulator as internal runtime/service/API/storage name, and keep MMA2 ownership untouched. None/Random uses zero/positive existing `random_runtime.*_interval_ms`; zero does not deallocate memory. New devices default None; saved positive intervals remain Random. Header shows steady MMA2 + Replicator only; Simulator runtime status moves to Diagnostics.
+Selected source device: SOURCE Network, TCP, Modbus LEDs; DESTINATION MMA2 LED. Permanent display is labels plus four small circles only. Circle hover/focus/tap reveals actual diagnostics. Green=observed healthy, yellow=Modbus exception/warning, red=confirmed connection/write failure or Modbus response timeout, gray=disabled/not tested/unknown/stale. ICMP cannot override a working TCP/Modbus connection. Source TCP connection is per poll (green means recent success, not persistent socket). MMA2 flashes only after its existing Raw Ingest positive acknowledgement; TCP flashes on actual activity, never from repeated status polling. Preserve per-FC/block errors and distinguish source from destination failures.
 
-## Implementation state
+## Coding order and gates
 
-The committed source already contains the MEM-004 through MEM-007 implementation surface: zero interval validation support, focused None/mixed scheduler/status regression tests, None/Random renderer selector, new-device None defaults, legacy positive-interval Random interpretation, and truthful all-None IDLE / NOT REQUIRED status.
+RLED-001 first establishes an Electron Node client for the existing Go runtime's version-1 length-framed JSON Unix-domain socket, rooted at the Electron data directory. RLED-002 replaces Electron's current hardcoded `{running:true,source_status:'CONFIGURED',last_poll:''}` with the real runtime query. Go Replicator existing per-block Source/LastPoll/LastError is insufficient to infer separate TCP/Modbus/MMA2 state; RLED-003–007 add truthful observations, RLED-008–010 implement LED UI/activity. RLED-011 requires real Windows proof. Follow task-defined gates and stop formal advancement at first unverified gate.
 
-Formal advancement is intentionally stopped at MEM-004 because its task verification explicitly requires:
-
-```text
-cd simulator
-go test -count=1 ./...
-go vet ./...
-```
-
-Those commands have not been executed in this GitHub-only session, so no Go test/vet success is claimed. After that gate passes, MEM-005 through MEM-007 can be advanced and verified in order; MEM-008 remains the final real-Windows acceptance gate.
-
-## Process
-
-All eight MEM tasks are human-approved, but only one is ACTIVE at a time per `workflow/active_work/README.md`. Verify and advance in sequence. Windows-only MEM-008 cannot be accepted without real Windows evidence. Preserve any parked local/uncommitted Electron source/assets when pulling; GitHub main is the committed baseline, not the local overlay.
+Existing MMA2 allocation, Raw Ingest protocol, Modbus semantics, Poll Blocks, Memory functionality and OS.js UI are out of scope. Preserve parked local/uncommitted Electron overlays on checkout; GitHub main describes only the committed baseline.

@@ -1,8 +1,10 @@
 # MEM-004 — Allow None Simulation
 
-Status: ACTIVE
+Status: QUEUED
 Previous: MEM-003
 Next: MEM-005
+
+Paused: Human approved switching the sole ACTIVE task to RLED-001. This is a pause, not a completion; verification remains pending.
 
 ## Primary outcome
 Allow configured memory area with count > 0 and zero simulation interval.

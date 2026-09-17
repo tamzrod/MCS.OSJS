@@ -36,11 +36,11 @@ test('runtime-unavailable status rejects instead of reporting health', async () 
   await assert.rejects(call('status', {name: 'PLC-01'}), /ENOENT/);
 });
 
-test('load and apply behavior remains unchanged', async () => {
+test('load and apply await the live transaction handlers', async () => {
   const document = {devices: [{name: 'PLC-01'}]};
   const call = createReplicatorCall({
-    load: () => document,
-    apply: value => ({document: value, message: 'applied'}),
+    load: async () => document,
+    apply: async value => ({document: value, message: 'applied'}),
     status: () => ({})
   });
   assert.deepEqual(await call('load'), {document});

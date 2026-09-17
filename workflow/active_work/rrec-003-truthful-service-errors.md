@@ -1,6 +1,6 @@
 # RREC-003 — Truthful Service and Runtime Errors
 
-Status: QUEUED
+Status: ACTIVE
 Previous: RREC-002
 Next: RREC-004
 

@@ -226,13 +226,6 @@ const applySimulator = doc => {
   return {document: simDoc, message, completed_at: new Date().toISOString()};
 };
 
-const applyReplicator = doc => {
-  const repDoc = normalizeDocument(doc);
-  const simDoc = loadSimulator();
-  composeAll(simDoc, repDoc);
-  writeYamlAtomic(paths().replicatorDevices, repDoc);
-  return {document: repDoc, message: 'Replicator settings saved and MMA2 restart requested.', completed_at: new Date().toISOString()};
-};
 
 const portStatus = port => new Promise(resolve => {
   if (!port) return resolve('STOPPED');
@@ -424,8 +417,8 @@ ipcMain.handle('runtime:simulator-call', async (_event, operation, payload) => {
   throw new Error(`Unsupported Simulator operation ${operation}`);
 });
 const replicatorCall = createReplicatorCall({
-  load: loadReplicator,
-  apply: applyReplicator,
+  load: async () => (await callReplicatorRuntime(dataRoot(), 'load')).document,
+  apply: document => callReplicatorRuntime(dataRoot(), 'apply', {document}),
   status: payload => callReplicatorRuntime(dataRoot(), 'status', payload)
 });
 ipcMain.handle('runtime:replicator-call', (_event, operation, payload) => replicatorCall(operation, payload));

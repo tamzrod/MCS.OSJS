@@ -1,6 +1,6 @@
 # RREC-002 — Single Live Replicator Transaction
 
-Status: ACTIVE
+Status: COMPLETE
 Previous: RREC-001
 Next: RREC-003
 
@@ -26,3 +26,10 @@ RREC-001.
 
 ## Sizing
 Surface 2, environment 0, behavior 2, verification 1, recovery 0 = 5; one coupled authority correction.
+## Completion evidence
+- Electron load, apply, and status now call the live Replicator named-pipe runtime.
+- The Electron-local Replicator apply implementation was removed.
+- Node focused tests passed: 10/10.
+- Go apply, rollback, and foreign-reservation tests passed.
+- npm run pack:win passed.
+- The full Go suite remains limited by Windows E2E executable naming and the ambient OSJS_DATA_DIR test precondition.

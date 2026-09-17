@@ -5,7 +5,7 @@ const createReplicatorCall = ({load, apply, status}) => {
     throw new Error('Replicator IPC handlers are required');
   }
   return async (operation, payload = {}) => {
-    if (operation === 'load') return {document: load()};
+    if (operation === 'load') return {document: await load()};
     if (operation === 'apply') return apply(payload.document);
     if (operation === 'status') return status(payload);
     throw new Error('Unsupported Replicator operation ' + operation);

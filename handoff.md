@@ -18,4 +18,8 @@ Selected source device: SOURCE Network, TCP, Modbus LEDs; DESTINATION MMA2 LED. 
 
 RLED-001 first establishes an Electron Node client for the existing Go runtime's version-1 length-framed JSON Unix-domain socket, rooted at the Electron data directory. RLED-002 replaces Electron's current hardcoded `{running:true,source_status:'CONFIGURED',last_poll:''}` with the real runtime query. Go Replicator existing per-block Source/LastPoll/LastError is insufficient to infer separate TCP/Modbus/MMA2 state; RLED-003–007 add truthful observations, RLED-008–010 implement LED UI/activity. RLED-011 requires real Windows proof. Follow task-defined gates and stop formal advancement at first unverified gate.
 
+## RLED-001 checkpoint
+
+Committed `electron/replicator-runtime.js` and `electron/test/replicator-runtime.test.js` on main. The client implements bounded V1 framed JSON requests, request ID validation, timeouts and explicit errors. `node --check` on both files and seven fixture tests passed in a separate local mirror. The mirror's Git blob hashes equal the GitHub hashes for both re-read files. This does NOT demonstrate execution against a full repository checkout, live Go runtime or Windows; do not close RLED-001 until its repository-checkout test gate is run and recorded. RLED-002 remains QUEUED. For continuation, from a real checkout run `cd electron && node --test test/replicator-runtime.test.js`, confirm installed Windows Node/Go Unix socket compatibility, then advance sequentially on recorded gates.
+
 Existing MMA2 allocation, Raw Ingest protocol, Modbus semantics, Poll Blocks, Memory functionality and OS.js UI are out of scope. Preserve parked local/uncommitted Electron overlays on checkout; GitHub main describes only the committed baseline.

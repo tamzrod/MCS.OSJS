@@ -21,6 +21,8 @@ No new daemon, HTTP API, IPC operation or Go protocol/version change. Real Windo
 ## Verification
 `node --test electron/test/replicator-runtime.test.js` on a repository checkout; inspect wire contract and re-read written source. Unavailable checks remain unverified.
 
+Checkpoint: `electron/replicator-runtime.js` and `electron/test/replicator-runtime.test.js` authored and committed. On an isolated local mirror, `node --check` passed for both and seven local socket fixture tests passed. Both local git blob hashes matched the re-read GitHub blob SHAs (`8cbbc215c0f7f13f361f2dd8ab128f4369bc2344` and `3421d2099107c89d648b172270f6f476b24edf56`). A full repository checkout / live Go service / Windows test was not run in this session, so keep ACTIVE; do not archive or activate RLED-002 yet.
+
 ## Dependencies
 None. MEM-004 is paused QUEUED, not completed.
 

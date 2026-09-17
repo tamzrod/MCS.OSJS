@@ -377,7 +377,7 @@ const renderReplicator = () => {
   } else {
     const runtime = h('div', 'runtime-row');
     const status = replicatorState.runtimeStatus;
-    const runningStatus = h('strong', '', status ? (status.running ? 'RUNNING' : 'STOPPED') : '-');
+    const runningStatus = h('strong', '', status ? (status.unavailable ? 'UNAVAILABLE' : (status.running ? 'RUNNING' : 'STOPPED')) : '-');
     runningStatus.id = 'rep-runtime-running';
     const sourceStatus = h('strong', '', status && status.source_status || '-');
     sourceStatus.id = 'rep-runtime-source';
@@ -481,7 +481,12 @@ const pollReplicator = async () => {
     setText('rep-runtime-running', replicatorState.runtimeStatus.running ? 'RUNNING' : 'STOPPED');
     setText('rep-runtime-source', replicatorState.runtimeStatus.source_status || '-');
     setText('rep-runtime-last-poll', formatTime(replicatorState.runtimeStatus.last_poll));
-  } catch (_) {}
+  } catch (_) {
+    replicatorState.runtimeStatus = {unavailable: true, running: false, source_status: 'UNAVAILABLE', last_poll: ''};
+    setText('rep-runtime-running', 'UNAVAILABLE');
+    setText('rep-runtime-source', 'UNAVAILABLE');
+    setText('rep-runtime-last-poll', '-');
+  }
 };
 const saveReplicator = async () => {
   const validation = replicatorState.document.devices.map(validateReplicator).find(Boolean);

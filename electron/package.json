@@ -23,6 +23,8 @@
     "files": [
       "main.js",
       "preload.js",
+      "replicator-runtime.js",
+      "replicator-ipc.js",
       "renderer/**/*",
       "build/icon.png",
       "build/replicator-logo.svg",

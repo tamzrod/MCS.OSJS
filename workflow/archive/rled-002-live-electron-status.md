@@ -1,6 +1,6 @@
 # RLED-002 — Replace Fake Electron Replicator Status
 
-Status: ACTIVE
+Status: COMPLETED — focused IPC/status and packaging verification passed 2026-09-17
 Previous: RLED-001
 Next: RLED-003
 
@@ -19,7 +19,7 @@ No new polling loop, service manager or UI LED yet.
 3. Load/apply remain unchanged.
 
 ## Verification
-Repository JS syntax check and focused IPC/status integration test; inspect packaged module inclusion. Windows live integration is RLED-011.
+Verification passed: Node syntax checks passed for main, renderer and both bridge modules; all ten named-pipe and IPC fixtures passed; npm run pack:win succeeded; app.asar contains replicator-runtime.js and replicator-ipc.js. Windows live acceptance remains RLED-011.
 
 ## Dependencies
 RLED-001.

@@ -8,7 +8,9 @@ const MAX_MESSAGE = 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 25000;
 const OPERATIONS = new Set(['load', 'apply', 'status', 'suggest']);
 
-const runtimeSocketPath = () => '\\\\.\\pipe\\mcs-modbus-replicator';
+const runtimeSocketPath = root => typeof root === 'string' && root.startsWith('\\\\.\\pipe\\')
+  ? root
+  : '\\\\.\\pipe\\mcs-modbus-replicator';
 
 // Match replicator/runtime_api.go and cmd/modbus-replicator-runtime/main.go.
 // The runtime uses one 4-byte big-endian length followed by one JSON response.

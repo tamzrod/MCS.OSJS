@@ -4,10 +4,11 @@
 
 COMPLETED + ARCHIVED:
 - RLED-001 — Establish Replicator Runtime Bridge Client — Windows named-pipe fixture verification passed.
+- RLED-002 — Replace Fake Electron Replicator Status — IPC/status and packaged-module verification passed.
 
-ACTIVE: RLED-002 — Replace Fake Electron Replicator Status.
+ACTIVE: RLED-003 — Observe Source TCP Health.
 
-QUEUED RLED sequence (approved): RLED-003 → RLED-004 → RLED-005 → RLED-006 → RLED-007 → RLED-008 → RLED-009 → RLED-010 → RLED-011. Each detailed record in workflow/active_work/ has explicit Previous/Next; RLED-011 is final Windows acceptance.
+QUEUED RLED sequence (approved): RLED-004 → RLED-005 → RLED-006 → RLED-007 → RLED-008 → RLED-009 → RLED-010 → RLED-011. Each detailed record in workflow/active_work/ has explicit Previous/Next; RLED-011 is final Windows acceptance.
 
 PAUSED QUEUED Memory chain: MEM-004 → MEM-005 → MEM-006 → MEM-007 → MEM-008. MEM-001–003 completed and archived. MEM-004 is NOT complete: cd simulator && go test -count=1 ./... && go vet ./... still requires recorded passing evidence. Resume only after deliberate selection while maintaining exactly one ACTIVE task.
 
@@ -32,8 +33,12 @@ On the full Windows checkout, node --test electron/test/replicator-runtime.test.
 
 The full Replicator suite remains blocked by pre-existing environment requirements: missing temporary MMA2 executable, missing restart acknowledgement, and configured Windows data-root expectations. The full Simulator suite remains blocked by pre-existing ownership-map and configured Windows data-root expectations. These failures are not substituted for the passing RLED-001 task-defined gate.
 
+## RLED-002 evidence
+
+Electron now forwards Replicator status through the Windows named-pipe client instead of returning hardcoded RUNNING/CONFIGURED data. Runtime-unavailable errors reject at IPC and the existing status row switches to UNAVAILABLE rather than retaining stale green text. Load/apply behavior is preserved. Node syntax checks passed; all ten focused named-pipe and IPC fixtures passed; npm run pack:win succeeded; app.asar contains both bridge modules.
+
 ## Next execution
 
-RLED-002 must replace Electron's hardcoded status with callReplicatorRuntime using the status operation, preserve load/apply behavior, propagate unavailable-runtime errors, add a focused IPC integration test, and verify packaged module inclusion.
+RLED-003 adds truthful per-poll source TCP observations in the Go Replicator runtime according to its task-defined scope and gate. RLED-011 remains the real installed-Windows acceptance gate.
 
 Existing MMA2 allocation, Raw Ingest protocol, Modbus semantics, Poll Blocks, Memory functionality and OS.js UI remain out of scope.

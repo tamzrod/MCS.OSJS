@@ -18,6 +18,7 @@ const framed = value => {
 const serve = async (t, handler) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'mcs-rep-'));
   await fs.mkdir(path.join(root, 'run'));
+  const socketPath = runtimeSocketPath(root) + '-test-' + path.basename(root);
   const sockets = new Set();
   const server = net.createServer(socket => {
     sockets.add(socket);
@@ -33,14 +34,14 @@ const serve = async (t, handler) => {
   });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(runtimeSocketPath(root), resolve);
+    server.listen(socketPath, resolve);
   });
   t.after(async () => {
     for (const socket of sockets) socket.destroy();
     await new Promise(resolve => server.close(resolve));
     await fs.rm(root, {recursive: true, force: true});
   });
-  return root;
+  return socketPath;
 };
 
 test('status request uses runtime framing and returns the matching result', async t => {
@@ -93,8 +94,9 @@ test('rejects a response timeout', async t => {
 });
 
 test('rejects unavailable socket, unsupported operation and oversized request', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'mcs-rep-missing-'));
-  t.after(() => fs.rm(root, {recursive: true, force: true}));
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'mcs-rep-missing-'));
+  t.after(() => fs.rm(tempRoot, {recursive: true, force: true}));
+  const root = runtimeSocketPath(tempRoot) + '-missing-' + path.basename(tempRoot);
   await assert.rejects(callReplicatorRuntime(root, 'status', {}, 100), /ENOENT/);
   await assert.rejects(callReplicatorRuntime(root, 'destroy', {}, 100), /Unsupported/);
   await assert.rejects(callReplicatorRuntime(root, 'apply', {blob: 'x'.repeat(1024 * 1024)}, 100), /maximum size/);

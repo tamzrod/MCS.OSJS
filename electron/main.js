@@ -5,6 +5,8 @@ const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const yaml = require('js-yaml');
+const {callReplicatorRuntime} = require('./replicator-runtime');
+const {createReplicatorCall} = require('./replicator-ipc');
 
 let mainWindow = null;
 let statusTimer = null;
@@ -421,12 +423,12 @@ ipcMain.handle('runtime:simulator-call', async (_event, operation, payload) => {
   }
   throw new Error(`Unsupported Simulator operation ${operation}`);
 });
-ipcMain.handle('runtime:replicator-call', async (_event, operation, payload) => {
-  if (operation === 'load') return {document: loadReplicator()};
-  if (operation === 'apply') return applyReplicator(payload.document);
-  if (operation === 'status') return {running: true, source_status: 'CONFIGURED', last_poll: ''};
-  throw new Error(`Unsupported Replicator operation ${operation}`);
+const replicatorCall = createReplicatorCall({
+  load: loadReplicator,
+  apply: applyReplicator,
+  status: payload => callReplicatorRuntime(dataRoot(), 'status', payload)
 });
+ipcMain.handle('runtime:replicator-call', (_event, operation, payload) => replicatorCall(operation, payload));
 
 app.whenReady().then(() => {
   createWindow();

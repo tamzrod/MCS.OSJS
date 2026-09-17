@@ -3,7 +3,6 @@ package replicator
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"time"
 )
 
@@ -55,8 +54,8 @@ type applyQuery struct {
 	Document Document `json:"document"`
 }
 
-func RuntimeSocketPath(root string) string {
-	return filepath.Join(root, "run", "modbus-replicator.sock")
+func RuntimeSocketPath(_ string) string {
+	return `\\.\pipe\mcs-modbus-replicator`
 }
 
 func HandleRuntimeRequest(manager *RuntimeManager, request RuntimeRequest) RuntimeResponse {

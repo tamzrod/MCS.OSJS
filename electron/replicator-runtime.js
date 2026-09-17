@@ -2,14 +2,13 @@
 
 const crypto = require('node:crypto');
 const net = require('node:net');
-const path = require('node:path');
 
 const VERSION = 1;
 const MAX_MESSAGE = 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 25000;
 const OPERATIONS = new Set(['load', 'apply', 'status', 'suggest']);
 
-const runtimeSocketPath = root => path.join(root, 'run', 'modbus-replicator.sock');
+const runtimeSocketPath = () => '\\\\.\\pipe\\mcs-modbus-replicator';
 
 // Match replicator/runtime_api.go and cmd/modbus-replicator-runtime/main.go.
 // The runtime uses one 4-byte big-endian length followed by one JSON response.

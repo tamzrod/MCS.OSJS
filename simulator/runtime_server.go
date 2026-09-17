@@ -6,19 +6,18 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Microsoft/go-winio"
 )
 
 const (
 	RuntimeProtocolVersion = 1
-	RuntimeSocketRelPath   = "run/modbus-simulator.sock"
+	RuntimePipePath        = `\\.\pipe\mcs-modbus-simulator`
 	maxRuntimeMessage      = 1 << 20
 )
 
@@ -198,36 +197,18 @@ func classifyRuntimeError(err error) string {
 	}
 }
 
-func RuntimeSocketPath(root string) string {
-	return filepath.Join(root, RuntimeSocketRelPath)
+func RuntimeSocketPath(_ string) string {
+	return RuntimePipePath
 }
 
-func ServeRuntime(ctx context.Context, socketPath string, service *RuntimeService) error {
-	if err := os.MkdirAll(filepath.Dir(socketPath), 0o750); err != nil {
-		return err
-	}
-	if _, err := os.Stat(socketPath); err == nil {
-		conn, dialErr := net.DialTimeout("unix", socketPath, 150*time.Millisecond)
-		if dialErr == nil {
-			_ = conn.Close()
-			return fmt.Errorf("runtime socket already has a live owner: %s", socketPath)
-		}
-		if err := os.Remove(socketPath); err != nil {
-			return fmt.Errorf("remove stale runtime socket: %w", err)
-		}
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-
-	listener, err := net.Listen("unix", socketPath)
+func ServeRuntime(ctx context.Context, pipePath string, service *RuntimeService) error {
+	listener, err := winio.ListenPipe(pipePath, &winio.PipeConfig{
+		SecurityDescriptor: "D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GRGW;;;AU)",
+	})
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
-	defer os.Remove(socketPath)
-	if err := os.Chmod(socketPath, 0o660); err != nil {
-		return err
-	}
 	go func() {
 		<-ctx.Done()
 		_ = listener.Close()

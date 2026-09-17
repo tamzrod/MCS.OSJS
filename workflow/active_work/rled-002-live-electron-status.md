@@ -1,6 +1,6 @@
 # RLED-002 — Replace Fake Electron Replicator Status
 
-Status: QUEUED
+Status: ACTIVE
 Previous: RLED-001
 Next: RLED-003
 

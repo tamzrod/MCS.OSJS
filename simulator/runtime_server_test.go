@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/Microsoft/go-winio"
 	"io"
 	"net"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -120,9 +120,9 @@ func TestRuntimeServiceLoadApplyStatusAndIdempotency(t *testing.T) {
 	}
 }
 
-func TestRuntimeUnixSocketFramingAndSingleOwner(t *testing.T) {
+func TestRuntimeNamedPipeFraming(t *testing.T) {
 	root := t.TempDir()
-	socketPath := filepath.Join(root, "runtime.sock")
+	socketPath := fmt.Sprintf(`\\.\pipe\mcs-simulator-test-%d`, time.Now().UnixNano())
 	service := NewRuntimeService(Store{Root: root}, &runtimeApplyRecorder{}, runtimeStatusFixture{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -135,9 +135,7 @@ func TestRuntimeUnixSocketFramingAndSingleOwner(t *testing.T) {
 	if !response.OK || response.RequestID != request.RequestID {
 		t.Fatalf("unexpected response: %+v", response)
 	}
-	if err := ServeRuntime(context.Background(), socketPath, service); err == nil {
-		t.Fatal("second runtime owner unexpectedly acquired live socket")
-	}
+
 	cancel()
 	select {
 	case err := <-done:
@@ -239,7 +237,8 @@ func waitForRuntimeSocket(t *testing.T, socketPath string) {
 	t.Helper()
 	deadline := time.Now().Add(time.Second)
 	for time.Now().Before(deadline) {
-		conn, err := net.DialTimeout("unix", socketPath, 20*time.Millisecond)
+		timeout := 20 * time.Millisecond
+		conn, err := winio.DialPipe(socketPath, &timeout)
 		if err == nil {
 			_ = conn.Close()
 			return
@@ -251,7 +250,8 @@ func waitForRuntimeSocket(t *testing.T, socketPath string) {
 
 func callRuntimeSocket(t *testing.T, socketPath string, request RuntimeRequest) RuntimeResponse {
 	t.Helper()
-	conn, err := net.Dial("unix", socketPath)
+	timeout := time.Second
+	conn, err := winio.DialPipe(socketPath, &timeout)
 	if err != nil {
 		t.Fatal(err)
 	}

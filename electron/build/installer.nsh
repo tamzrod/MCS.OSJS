@@ -24,6 +24,7 @@ Var MCSInstallMMA2State
 Var MCSInstallSimulatorState
 Var MCSInstallReplicatorState
 Var MCSStartServicesState
+Var MCSRuntimeRoot
 
 !macro customInit
   StrCpy $MCSMaintenanceMode "install"
@@ -217,7 +218,7 @@ FunctionEnd
 
   ; NSSM reads these values from the service Parameters key at each start.
   WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "Application" "$INSTDIR\resources\bin\${executable}"
-  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppDirectory" "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppDirectory" "$MCSRuntimeRoot"
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppParameters"
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppEnvironment"
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppEnvironmentExtra"
@@ -231,12 +232,17 @@ FunctionEnd
 
 !macro customInstall
   SetShellVarContext all
-  CreateDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime"
-  CreateDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config"
-  CreateDirectory "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2"
+  ReadEnvStr $MCSRuntimeRoot "ProgramData"
+  ${If} $MCSRuntimeRoot == ""
+    StrCpy $MCSRuntimeRoot "$LOCALAPPDATA"
+  ${EndIf}
+  StrCpy $MCSRuntimeRoot "$MCSRuntimeRoot\MCS Modbus Toolkit\runtime"
+  CreateDirectory "$MCSRuntimeRoot"
+  CreateDirectory "$MCSRuntimeRoot\config"
+  CreateDirectory "$MCSRuntimeRoot\config\mma2"
 
-  IfFileExists "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\config.yaml" mma2_config_ready 0
-  FileOpen $1 "$LOCALAPPDATA\MCS Modbus Toolkit\runtime\config\mma2\config.yaml" w
+  IfFileExists "$MCSRuntimeRoot\config\mma2\config.yaml" mma2_config_ready 0
+  FileOpen $1 "$MCSRuntimeRoot\config\mma2\config.yaml" w
   FileWrite $1 "{}$\r$\n"
   FileClose $1
 mma2_config_ready:

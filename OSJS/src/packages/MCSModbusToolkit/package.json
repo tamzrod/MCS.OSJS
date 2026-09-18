@@ -1,0 +1,9 @@
+{
+  "name": "mcs-modbus-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCS.OSJS unified Modbus Toolkit OS.js application.",
+  "osjs": {
+    "type": "package"
+  }
+}

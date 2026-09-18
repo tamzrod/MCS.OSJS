@@ -59,11 +59,17 @@ Deployment:  deploy/docker-compose.yml (osjs-shell image, ports OSJS_PORT:-18209
   on `document.body`. Launch uses `core.make('osjs/packages').launch(name)`. The stock Start/Application
   menu remains package-driven; this provider only adds desktop launchers.
 - First independent Toolkit package `OSJS/src/packages/MCSModbusToolkit/` (icon.svg, index.js,
-  index.scss, metadata.json, webpack.config.js). Its `metadata.json` declares type `application`,
-  name `MCSModbusToolkit`, files `main.js`/`main.css`, and title "MCS Modbus Toolkit". `index.js`
-  registers one `MCSModbusToolkitWindow` (960x640, centered) whose body is a placeholder that
-  explicitly reads `NOT CONNECTED — PLACEHOLDER ONLY`; it imports no Electron source and calls no
-  backend. Styling is confined to `.mcs-toolkit-placeholder`.
+  index.scss, metadata.json, package.json, webpack.config.js). Its `metadata.json` declares type
+  `application`, name `MCSModbusToolkit`, files `main.js`/`main.css`, and title "MCS Modbus
+  Toolkit". `index.js` registers one `MCSModbusToolkitWindow` (960x640, centered) whose body is a
+  placeholder that explicitly reads `NOT CONNECTED — PLACEHOLDER ONLY`; it imports no Electron
+  source and calls no backend. Styling is confined to `.mcs-toolkit-placeholder`.
+- The local-package manifest `OSJS/src/packages/MCSModbusToolkit/package.json` was added after the
+  first build/discovery test FAILed without it. At `cd67e15` it declares `mcs-modbus-toolkit`,
+  version `0.1.0`, `private: true`, a description, and the OS.js local-package marker
+  `"osjs": {"type": "package"}`, matching the convention of the sibling `ModbusSimulator` and
+  `ModbusReplicator` packages. `metadata.json` remains the OS.js application metadata. This is a
+  source checkpoint only; no fresh build or discovery run has been observed since it was added.
 - `OSJS/src/packages/MCSModbusToolkit/webpack.config.js` follows the local-package convention
   (entry `index.js`, output `dist/main.js`, externals `{osjs: 'OSjs'}`, MiniCssExtract to
   `main.css`). The build/discovery commands the ACTIVE UMIG-002-T packet names are
@@ -73,6 +79,9 @@ Deployment:  deploy/docker-compose.yml (osjs-shell image, ports OSJS_PORT:-18209
 - Each package carries its own `webpack.config.js`. `OSJS/webpack.config.js` was not modified by
   this delta; only `OSJS/src/client/index.js`, the new shortcut provider, and the new Toolkit
   package are new in the OSJS tree.
+- The `7029e41..9775593` delta touched only `OSJS/src/packages/MCSModbusToolkit/package.json`
+  (the discovery manifest above). Every other path in this node's dependency list is unchanged
+  by that delta.
 - The previously harvested `ModbusSimulator` and `ModbusReplicator` packages were added before this
   baseline (at `500376cf`..`ee19b8a`) and are not part of the `ee19b8a..HEAD` delta. Note for later
   Toolkit work: both still relay over a `$OSJS_DATA_DIR/run/*.sock` Unix socket, which no longer

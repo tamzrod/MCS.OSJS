@@ -41,10 +41,14 @@ not code, fix failures, promote/archive tasks, or write ICC. Only BLACK SHEEP WA
 
 Current position: CODE `UMIG-002` is archived as a source-only checkpoint (placeholder
 `MCSModbusToolkit` package); `UMIG-002-T` (Toolkit build and discovery TEST) is the sole ACTIVE task
-with a current `JR TEST TASK` packet but NO execution result; `UMIG-002-V` (rendered window VERIFY) is
-QUEUED. No donor SHA is approved, no Electron renderer has been copied, no launcher switch happened,
-and no legacy OS.js app has been deleted. Detail in Zoom In `active-work`; planning inventory in
-`planning-workflow`.
+and is now in **retest-pending** state with no PASS. The first run FAILed at `752a541`: both
+commands exited 0 and Toolkit assets existed, but OS.js discovery omitted the package. Human
+authorized bounded repair `UMIG-002-R`, which added the missing local-package manifest
+`OSJS/src/packages/MCSModbusToolkit/package.json` at `cd67e15` and is archived as a source-only
+checkpoint. JR retest `JR TEST TASK` packet is current in `handoff.md` with no result yet;
+`UMIG-002-V` (rendered window VERIFY) remains QUEUED. No donor SHA is approved, no Electron
+renderer has been copied, no launcher switch happened, and no legacy OS.js app has been deleted.
+Detail in Zoom In `active-work`; planning inventory in `planning-workflow`.
 
 Historical baseline still relevant where untouched: MMA2-001/002 and SIM-001 through SIM-024 are
 completed and verified, with SIM-017's real-MMA2 capstone at `57c8714` and predecessors archived at
@@ -65,4 +69,6 @@ this node's scope; use Zoom In `simulator-device-config` when Simulator truth is
 - Orchestrator/Replicator architecture, internal transport, and persistence model remain planning-stage questions.
 - MMA2 Modbus TCP port numbers remain architecture-task decisions governed by the network directive.
 - The internal runtime transport is committed as a Windows named pipe, but the OS.js relay packages still target a Unix socket; which side changes is unresolved.
-- The staged Toolkit migration is mid-flight: only the UMIG-002 placeholder exists, and its build/discovery test has not run.
+- The staged Toolkit migration is mid-flight: only the UMIG-002 placeholder exists, its first
+  build/discovery test FAILed on package discovery, and the source-only manifest repair has not
+  yet been retested.

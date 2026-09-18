@@ -1,6 +1,6 @@
 # UMIG-007 — VERIFY: Three-Tab Visual Parity
 
-Status: PLANNED / BLOCKED — human promotion required.
+Status: QUEUED — promoted 2026-09-18; wait for UMIG-006-V PASS and donor snapshot.
 Stage / owner: VERIFY / OpenHands (JR)
 Previous: UMIG-006-V
 Next: UMIG-007A
@@ -16,7 +16,7 @@ Expected: pinned donor appearance matches or concrete deviations are logged; CSS
 No code fixes, backend protocol changes, old UI removal or acceptance based on screenshots for runtime behavior.
 
 ## Dependencies
-UMIG-006-V PASS, donor snapshot, human promotion and exact JR TEST TASK.
+UMIG-006-V PASS, donor snapshot and exact JR TEST TASK.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

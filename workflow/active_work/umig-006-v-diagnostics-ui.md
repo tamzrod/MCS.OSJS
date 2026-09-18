@@ -1,6 +1,6 @@
 # UMIG-006-V — VERIFY: Rendered Diagnostics Safety
 
-Status: PLANNED / BLOCKED — promotion required.
+Status: QUEUED — promoted 2026-09-18; wait for UMIG-006-T PASS.
 Stage / owner: VERIFY / OpenHands (JR)
 Previous: UMIG-006-T
 Next: UMIG-007

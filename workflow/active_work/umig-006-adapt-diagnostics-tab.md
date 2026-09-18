@@ -1,6 +1,6 @@
 # UMIG-006 — CODE: Adapt OS.js Diagnostics
 
-Status: PLANNED / BLOCKED — promotion required.
+Status: QUEUED — promoted 2026-09-18; wait for UMIG-005-V PASS.
 Stage / owner: CODE / ChatGPT
 Previous: UMIG-005-V
 Next: UMIG-006-T
@@ -20,7 +20,7 @@ No live testing, privileged new endpoint, backend service controls, Windows IPC 
 3. Record implementation files/commit and unsupported capabilities for OpenHands, without claiming tests.
 
 ## Dependencies
-UMIG-005-V PASS and human promotion; any new service-control capability requires independent approval.
+UMIG-005-V PASS; any new service-control capability requires independent approval. Only execute when sole ACTIVE.
 
 ## Sizing
 Surface 1, environment 0, behavior 1, verification 0, recovery 0 = 2.

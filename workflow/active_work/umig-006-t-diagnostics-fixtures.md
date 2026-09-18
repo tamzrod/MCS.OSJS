@@ -1,6 +1,6 @@
 # UMIG-006-T — TEST: Diagnostics Mapping Fixtures
 
-Status: PLANNED / BLOCKED — promotion required.
+Status: QUEUED — promoted 2026-09-18; wait for UMIG-006 source checkpoint.
 Stage / owner: TEST / OpenHands (JR)
 Previous: UMIG-006
 Next: UMIG-006-V
@@ -15,7 +15,7 @@ Run the exact focused diagnostics test command in the current JR packet using mo
 No live service manipulation, rendered UI acceptance or new endpoints.
 
 ## Dependencies
-UMIG-006 code checkpoint, promotion, current JR packet.
+UMIG-006 code checkpoint and current JR packet.
 
 ## Sizing
 Surface 0, environment 0, behavior 0, verification 1, recovery 0 = 1.

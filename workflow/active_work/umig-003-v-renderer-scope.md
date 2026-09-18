@@ -1,6 +1,6 @@
 # UMIG-003-V — VERIFY: Fixture Tabs and Shell Isolation
 
-Status: PLANNED / BLOCKED — human promotion required.
+Status: QUEUED — promoted 2026-09-18; wait for UMIG-003-T PASS.
 Stage / owner: VERIFY / OpenHands (JR)
 Previous: UMIG-003-T
 Next: UMIG-004

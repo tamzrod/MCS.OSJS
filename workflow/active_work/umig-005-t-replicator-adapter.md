@@ -1,6 +1,6 @@
 # UMIG-005-T — TEST: Replicator Adapter Contract
 
-Status: PLANNED / BLOCKED — promotion required.
+Status: QUEUED — promoted 2026-09-18; wait for UMIG-005 source checkpoint.
 Stage / owner: TEST / OpenHands (JR)
 Previous: UMIG-005
 Next: UMIG-005-V
@@ -15,7 +15,7 @@ Run the exact focused adapter tests supplied in the active JR packet. Include su
 No real device writes, live acceptance, source fixes or UI redesign.
 
 ## Dependencies
-UMIG-005 code checkpoint, human promotion, current JR packet.
+UMIG-005 code checkpoint and current JR packet.
 
 ## Sizing
 Surface 0, environment 0, behavior 0, verification 1, recovery 0 = 1.

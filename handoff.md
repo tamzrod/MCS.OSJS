@@ -38,7 +38,142 @@ REPORT-WRITE AUTHORITY: OpenHands/JR may replace only the `## JR TEST REPORT —
 
 ## JR TEST REPORT — UMIG-002-T RETEST
 
-PENDING — the repaired source has not yet been retested. JR replaces only this section with observed PASS / FAIL / BLOCKED and raw evidence after the ICC prerequisite is satisfied and the current packet executes.
+VERDICT: **PASS**
+
+EXECUTED: 2026-09-18, by OpenHands/JR under `operation cwal.md`, against the current
+`JR TEST TASK — CURRENT: UMIG-002-T (RETEST)` packet. No product fix, no workflow change, no ICC
+write, and no UMIG-002-V execution occurred.
+
+### Repository state
+
+- Disposable checkout of `tamzrod/MCS.OSJS` at `/tmp/jr/mcs`, cloned from `origin/main`.
+- HEAD: `24c00de78ccbdf1773c1c9749f2062ff578c1b4f` ("BLACK SHEEP WALL: refresh ICC to baseline
+  9775593"), which contains the retest packet commit `9775593`.
+- Required repair commit `cd67e150139b60f3914db8c6f1998c96c5b8da07` verified as an ancestor of
+  HEAD (`git merge-base --is-ancestor` exit 0).
+- `OSJS/src/packages/MCSModbusToolkit/package.json` present with `name: mcs-modbus-toolkit`,
+  `version: 0.1.0`, `private: true`, and `"osjs": {"type": "package"}`.
+- Pre-test `git status --short`: empty (clean).
+- Post-test `git status --short`: empty (clean). All generated output is git-ignored
+  (`OSJS/dist/`, `OSJS/packages.json`, `OSJS/node_modules/`, `OSJS/package-lock.json`, each
+  package `dist/`). No tracked file was modified by the test.
+
+### ICC prerequisite
+
+SATISFIED. The `handoff.md`-required bounded BLACK SHEEP WALL refresh of the affected branches was
+performed and pushed before this run, at commit `24c00de`, stamped to baseline `9775593`
+(`ICC/INDEX.md` registry). The refresh covered the `handoff.md`,
+`workflow/active_work/umig-002-t-build-discover.md`,
+`workflow/archive/umig-002-r-toolkit-discovery-manifest.md` and
+`OSJS/src/packages/MCSModbusToolkit/package.json` delta, and no unrelated branch was refreshed.
+The test therefore ran against current, non-stale ICC.
+
+### Toolchain / sandbox setup
+
+- Sandbox-local Node `v16.20.2` / npm `8.19.4`, installed under `/tmp/jr/node-v16.20.2-linux-x64`
+  and put first on `PATH` for the test session, per `OSJS/package.json` engines
+  `>=10.0.0 <17`. The host default Node 22 was not used.
+- Dependencies installed with `npm install --no-audit --no-fund` inside the disposable checkout
+  (exit 0, 954 packages). No tracked source, manifest, lockfile or configuration was edited.
+
+### Command 1 — `cd OSJS && npm run build:local-packages`
+
+Exit code: **0**
+
+Relevant raw output (full log preserved in the session):
+
+```text
+> mcs-osjs-base-desktop@0.1.0 build:local-packages
+> node scripts/build-local-packages.js
+
+build-local-packages: building src/packages/MCSModbusToolkit
+Hash: 18a7204d7d86c141d609
+Version: webpack 4.47.0
+Time: 769ms
+       Asset       Size  Chunks                   Chunk Names
+    main.css  433 bytes       0  [emitted]        main
+main.css.map  780 bytes       0  [emitted] [dev]  main
+     main.js   1.86 KiB       0  [emitted]        main
+ main.js.map   6.81 KiB       0  [emitted] [dev]  main
+...
+build-local-packages: built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme
+```
+
+Only non-fatal `DEPRECATION WARNING [legacy-js-api]` notices from Dart Sass appeared. No errors.
+
+### Command 2 — `cd OSJS && npm run package:discover`
+
+Exit code: **0**
+
+Full raw output:
+
+```text
+> mcs-osjs-base-desktop@0.1.0 package:discover
+> osjs-cli package:discover
+
+ℹ Discovering packages...
+ℹ Destination discovery map /tmp/jr/mcs/OSJS/packages.json
+ℹ Destination path /tmp/jr/mcs/OSJS/dist
+ℹ Destination manifest /tmp/jr/mcs/OSJS/dist/metadata.json
+ℹ Including /tmp/jr/mcs/OSJS/node_modules
+ℹ Including /tmp/jr/mcs/OSJS/src/packages
+- mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]
+- modbus-replicator as ModbusReplicator [symlink, local]
+- modbus-simulator as ModbusSimulator [symlink, local]
+- nameless-classic-icons as NamelessClassicIcons [symlink, local]
+- nameless-workstation-theme as NamelessWorkstationTheme [symlink, local]
+- @osjs/gnome-icons as GnomeIcons [symlink, npm]
+- @osjs/standard-theme as StandardTheme [symlink, npm]
+ℹ Flushing out old discoveries...
+ℹ Placing packages in dist...
+✔ 7 package(s) discovered.
+✔ Finished in 146ms
+```
+
+### Mandatory result checks
+
+| Required result | Observed | Evidence |
+| --- | --- | --- |
+| Command 1 exits 0 | YES | exit code 0 |
+| Command 2 exits 0 | YES | exit code 0 |
+| Toolkit `dist/main.js` exists | YES | `OSJS/src/packages/MCSModbusToolkit/dist/main.js`, 1909 bytes |
+| Toolkit `dist/main.css` exists | YES | `OSJS/src/packages/MCSModbusToolkit/dist/main.css`, 433 bytes |
+| Discovery lists `mcs-modbus-toolkit as MCSModbusToolkit` | YES | verbatim line in command 2 output above |
+| `packages.json` references `src/packages/MCSModbusToolkit` | YES | first entry of `OSJS/packages.json` |
+| `dist/metadata.json` contains the application | YES | entry `{"type":"application","name":"MCSModbusToolkit",...,"files":["main.js","main.css"]}` |
+| `dist/apps/MCSModbusToolkit/` exists | YES | symlink to `src/packages/MCSModbusToolkit/dist`, containing `main.js`/`main.css` |
+
+Supporting detail:
+
+```text
+OSJS/packages.json:
+["src/packages/MCSModbusToolkit","src/packages/ModbusReplicator","src/packages/ModbusSimulator",
+ "src/packages/NamelessClassicIcons","src/packages/NamelessWorkstationTheme",
+ "node_modules/@osjs/gnome-icons","node_modules/@osjs/standard-theme"]
+
+OSJS/dist/apps/:
+MCSModbusToolkit -> /tmp/jr/mcs/OSJS/src/packages/MCSModbusToolkit/dist
+ModbusReplicator -> /tmp/jr/mcs/OSJS/src/packages/ModbusReplicator/dist
+ModbusSimulator  -> /tmp/jr/mcs/OSJS/src/packages/ModbusSimulator/dist
+```
+
+### Unexpected behavior
+
+None. Both commands produced the expected output; no tracked repository file changed; no error,
+permission failure, or missing dependency was encountered. The rebuilt `main.js` still contains the
+`NOT CONNECTED — PLACEHOLDER ONLY` placeholder marker, consistent with the committed source.
+
+### Evidence limits
+
+This PASS establishes only the build-and-discovery result the packet named. It is **not** a
+rendered one-window VERIFY (`UMIG-002-V`), not a GUI, backend, runtime, Electron or Windows
+acceptance, and not final OS.js UI migration acceptance. The original FAIL at `752a541` remains
+preserved as history and is not reclassified. JR does not advance tasks; ChatGPT reviews this
+evidence and alone decides subsequent advancement.
+
+### Verdict
+
+**PASS** — every required result in the current packet was directly observed. JR stops here.
 
 ## Evidence limits
 

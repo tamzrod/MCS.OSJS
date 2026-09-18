@@ -11,13 +11,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/Microsoft/go-winio"
 )
 
 const (
 	RuntimeProtocolVersion = 1
-	RuntimePipePath        = `\\.\pipe\mcs-modbus-simulator`
 	maxRuntimeMessage      = 1 << 20
 )
 
@@ -197,17 +194,12 @@ func classifyRuntimeError(err error) string {
 	}
 }
 
-func RuntimeSocketPath(_ string) string {
-	return RuntimePipePath
-}
-
-func ServeRuntime(ctx context.Context, pipePath string, service *RuntimeService) error {
-	listener, err := winio.ListenPipe(pipePath, &winio.PipeConfig{
-		SecurityDescriptor: "D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GRGW;;;AU)",
-	})
+func ServeRuntime(ctx context.Context, endpoint string, service *RuntimeService) error {
+	listener, cleanup, err := listenRuntime(endpoint)
 	if err != nil {
 		return err
 	}
+	defer cleanup()
 	defer listener.Close()
 	go func() {
 		<-ctx.Done()

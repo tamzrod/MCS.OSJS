@@ -38,7 +38,42 @@ REPORT-WRITE AUTHORITY: JR replaces **only** `## JR TEST REPORT — UMIG-003-T` 
 
 ## JR TEST REPORT — UMIG-003-T
 
-PENDING — current packet published for resumed independent test; JR has not executed this test. This section alone is authorized for observed PASS/FAIL/BLOCKED evidence.
+VERDICT: **PASS** — executed 2026-09-19 by OpenHands/JR under `operation cwal.md`. Independent build/static gate only. This PASS does NOT prove tab rendering, visual parity, Docker health, backend connectivity, or the unrun dormant contract/model tests.
+
+### Preconditions / task state (expected: clean disposable checkout at origin/main, Node 16, ancestors present)
+- Disposable checkout: `/tmp/jr-umig-003-t` (clone of workspace `tamzrod/MCS.OSJS`, NOT the operator deployment).
+- `git rev-parse HEAD` = `5eeaed4ea3ee4eef18aa019a444e7973c838a8e2` (current `origin/main`).
+- `git status --porcelain` before dependency setup = empty (tracked-clean).
+- `node --version` = `v16.20.2`; `npm --version` = `8.19.4` (Node 16 requirement `>=10 <17` satisfied).
+- `git merge-base --is-ancestor fede1715fadd5900da12fd9630793e3514117caf HEAD` → exit 0.
+- `git merge-base --is-ancestor 4a036a9525f58f8a8404ddb10ebfae21dd678b38 HEAD` → exit 0.
+- Task files read: `umig-003-t-renderer-build.md` = sole ACTIVE, PENDING/NOT RUN; `umig-003-v-renderer-scope.md` = QUEUED; `umig-003-copy-electron-renderer.md` = COMPLETE (source-only); `umig-cf-001/002/003` archives = COMPLETE SOURCE-ONLY, not PASS. No selection conflict.
+
+### Safe setup
+- Node 16.20.2 downloaded/extracted sandbox-locally to `/tmp/jr-node16/` (outside repo) and added to `PATH` for the test session; sandbox default was Node v22.23.2, incompatible with the `>=10 <17` requirement.
+- `cd OSJS && npm install --no-audit --no-fund` (disposable checkout only): `added 954 packages in 19s`, exit 0. `git status --porcelain` after install = empty (no tracked files changed).
+
+### Exact commands / observed results
+1. `cd OSJS && npm run build:local-packages` → exit **0**. `build-local-packages: built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme`. MCSModbusToolkit child emitted `main.css 121 bytes`, `main.js 18 KiB` (webpack 4.47.0). Only non-fatal Dart Sass legacy-JS-API deprecation warnings.
+2. `cd OSJS && npm run package:discover` → exit **0**. `✔ 7 package(s) discovered.` Discovery list includes `- mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]`.
+3. `cd OSJS && npm run build` → exit **0**. Webpack produced `osjs.js 118 KiB`, `vendors~osjs.js 488 KiB`, `osjs.css 2.17 KiB`, `index.html` etc.; only non-fatal Sass deprecation warnings.
+4. `cd OSJS && node tests/toolkit-fixtures.test.js` → exit **0**. Output: `fixture unknown constant: checked` / `runtime, COMMS and diagnostics fail closed: checked` / `Memory and Replicator example shapes: checked` / `fresh fixture snapshots cannot mutate later windows: checked` / `UMIG-003 fixture contract checks complete`.
+5. Artifacts: `src/packages/MCSModbusToolkit/dist/main.css` = 121 bytes; `dist/main.js` = 18393 bytes (`ls` exit 0). Discovery metadata `dist/metadata.json` contains entry `{"type":"application","name":"MCSModbusToolkit",...,"files":["main.js","main.css"]}`.
+6. `grep -R -n -E 'mcsDesktop|ipcRenderer|contextBridge' src/packages/MCSModbusToolkit --include='*.js'` → exit **1**, no matches (expected).
+7. Import inspection — Toolkit runtime source imports/requires ONLY: `./index.scss`, `osjs`, `./metadata.json`, `./toolkit-renderer`, `!!./css-text-loader.js!./renderer.css`, `./fixtures`. Emitted `dist/main.js` contains NO reference to `memory-contract`/`replicator-contract`/`diagnostics-model` (exit 1), NO Electron token (exit 1), NO legacy `ModbusSimulator`/`ModbusReplicator` (exit 1). The three dormant modules are present on disk but unimported/unwired, as documented.
+8. Provenance-only references (comments, not executed imports; correctly classified, not FAIL): `index.scss:2`, `renderer.css:1`, `toolkit-renderer.js:1-2` mention the frozen Electron donor at `1c971b9`. No Electron runtime import.
+9. `git diff --name-only 5a8ec7d119a3b27ef97d81c20d26a9a28023becb..HEAD` → exactly the expected Toolkit-owned source/tests (`css-text-loader.js`, `diagnostics-model.js`, `fixtures.js`, `index.js`, `index.scss`, `memory-contract.js`, `renderer.css`, `replicator-contract.js`, `toolkit-renderer.js`, `OSJS/tests/toolkit-{diagnostics-model,fixtures,memory-contract,replicator-contract}.test.js`) plus authorized `handoff.md` and workflow active/archive files. No Electron, Go, MMA2, Docker, or legacy UI product changes.
+10. `git status --porcelain` final before report update = empty (tracked-clean).
+
+### Expected vs observed
+Every required item matches expectation: all four build/discovery/fixture commands exit 0; `MCSModbusToolkit` discovered; `dist/main.js`/`main.css` exist; existing fixture contract passes; forbidden grep exits 1 with no matches; runtime/bundle dependencies free of Electron/legacy UI and the dormant three modules unimported; checkout clean.
+
+### Unexpected behavior
+- Sandbox default Node was v22; Node 16.20.2 was installed sandbox-locally outside the repository (no product/repo change). Reported per `operation cwal.md` §3.
+- Only non-fatal Sass legacy-JS-API deprecation warnings and npm deprecation notices; no errors.
+
+### Boundary
+This is a build/static gate result only. It is not a rendered-GUI, Docker, live-backend, or dormant Memory/Replicator/Diagnostics unit-test result. No product defect observed in scope. JR made no product/workflow/ICC edits and selects no successor.
 
 ## Next action and recommendation
 

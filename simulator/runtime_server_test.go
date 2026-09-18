@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/Microsoft/go-winio"
 	"io"
 	"net"
 	"sync"
@@ -120,18 +119,18 @@ func TestRuntimeServiceLoadApplyStatusAndIdempotency(t *testing.T) {
 	}
 }
 
-func TestRuntimeNamedPipeFraming(t *testing.T) {
+func TestRuntimeTransportFraming(t *testing.T) {
 	root := t.TempDir()
-	socketPath := fmt.Sprintf(`\\.\pipe\mcs-simulator-test-%d`, time.Now().UnixNano())
+	endpoint := runtimeTestSocketPath(root)
 	service := NewRuntimeService(Store{Root: root}, &runtimeApplyRecorder{}, runtimeStatusFixture{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan error, 1)
-	go func() { done <- ServeRuntime(ctx, socketPath, service) }()
-	waitForRuntimeSocket(t, socketPath)
+	go func() { done <- ServeRuntime(ctx, endpoint, service) }()
+	waitForRuntimeSocket(t, endpoint)
 
 	request := RuntimeRequest{Version: 1, RequestID: "wire-load", Operation: "load", Payload: json.RawMessage(`{}`)}
-	response := callRuntimeSocket(t, socketPath, request)
+	response := callRuntimeSocket(t, endpoint, request)
 	if !response.OK || response.RequestID != request.RequestID {
 		t.Fatalf("unexpected response: %+v", response)
 	}
@@ -233,12 +232,11 @@ func testRuntimeDevice(name string) DeviceDefinition {
 	}
 }
 
-func waitForRuntimeSocket(t *testing.T, socketPath string) {
+func waitForRuntimeSocket(t *testing.T, endpoint string) {
 	t.Helper()
 	deadline := time.Now().Add(time.Second)
 	for time.Now().Before(deadline) {
-		timeout := 20 * time.Millisecond
-		conn, err := winio.DialPipe(socketPath, &timeout)
+		conn, err := dialRuntimeSocket(endpoint, 20*time.Millisecond)
 		if err == nil {
 			_ = conn.Close()
 			return
@@ -248,10 +246,9 @@ func waitForRuntimeSocket(t *testing.T, socketPath string) {
 	t.Fatal("runtime socket did not become ready")
 }
 
-func callRuntimeSocket(t *testing.T, socketPath string, request RuntimeRequest) RuntimeResponse {
+func callRuntimeSocket(t *testing.T, endpoint string, request RuntimeRequest) RuntimeResponse {
 	t.Helper()
-	timeout := time.Second
-	conn, err := winio.DialPipe(socketPath, &timeout)
+	conn, err := dialRuntimeSocket(endpoint, time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,16 @@
+{
+  "type": "application",
+  "name": "MCSModbusToolkit",
+  "category": "development",
+  "icon": "icon.svg",
+  "title": {
+    "en_EN": "MCS Modbus Toolkit"
+  },
+  "description": {
+    "en_EN": "Unified Modbus Memory, Replicator and Diagnostics toolkit."
+  },
+  "files": [
+    "main.js",
+    "main.css"
+  ]
+}

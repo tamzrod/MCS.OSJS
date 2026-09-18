@@ -1,27 +1,27 @@
-# UMIG-001 — Freeze the Final Electron UI Donor
+# UMIG-001 — Freeze the Electron UI Donor Snapshot
 
-Status: PLANNED / BLOCKED — wait for human confirmation that Electron UI is finished and accepted. Not ACTIVE.
-Previous: none
-Next: UMIG-002
+Status: PLANNED / BLOCKED — early OS.js scaffold is authorized, but no Electron donor snapshot has been selected or approved for copying. Not ACTIVE.
+Previous: UMIG-002 (independent OS.js placeholder scaffold)
+Next: UMIG-003
 
 ## Primary outcome
-Record one approved, immutable Electron renderer commit as the OS.js UI migration reference.
+Record one human-approved, immutable Electron renderer commit as the OS.js UI copy reference.
 
 ## Scope
-After the human declares Electron UI finished, record the exact source commit and the final Memory, Replicator and Diagnostics tab surfaces, including renderer HTML/CSS/JS and any UI assets. Identify native-only calls that need an OS.js adapter. Record the reference in a small migration donor note; do not use an older in-progress renderer. The commit is source provenance for a one-time copy, never a shared build, live source import, or dependency between deployments.
+After UMIG-002 is verified, obtain human approval for the renderer snapshot to copy; pin the exact SHA and list Memory, Replicator, Diagnostics, HTML/CSS/JS and UI assets. Identify Electron-only host calls requiring an OS.js adapter. The reference is provenance for one-time copying, not a shared build or automatic sync. The human's direction to begin OS.js migration does not by itself certify Windows installer or COMMS LED runtime acceptance; any later Windows fixes are tracked independently and require explicit donor reapproval only if the copied UI changes.
 
 ## Non-scope
-No Electron modifications, OS.js port, workflow promotion, UI redesign or runtime changes. No shared-source integration or automated donor synchronization.
+No Windows LED repairs, Electron changes, OS.js renderer copy, promotion, runtime changes or automatic synchronization.
 
 ## Acceptance
-1. Human approval of the finished Electron UI and the exact commit SHA are recorded.
-2. The donor note identifies the final renderer files/assets, native-only API boundary, and copy-only provenance without a cross-deployment dependency.
+1. Human approval of the chosen UI snapshot and exact commit SHA is recorded; Windows runtime verification is not misrepresented as complete.
+2. A donor note identifies UI files/assets, native host boundary and one-time independent-copy provenance.
 
 ## Verification
-Check the approved commit and inspect only the listed donor paths; confirm the donor note points to that SHA and specifies copy-only transfer.
+Inspect the approved SHA and listed donor paths; verify the donor note states copy-only transfer and documents any known backend/UI status mismatch instead of claiming success.
 
 ## Dependencies
-Hard gate: Electron UI completion, its remaining acceptance/verification as determined by the human, and explicit human selection of this task for promotion. Do not infer completion from packaging or a prior partial test. Before promotion, validate the current planning ICC branch through BLACK SHEEP WALL if stale.
+UMIG-002 verified, plus explicit human selection for promotion and an approved visual donor commit. This gate is for UI source identity, not blanket Windows LED/installer acceptance. Refresh stale affected ICC context through BLACK SHEEP WALL before promotion.
 
 ## Sizing
 Surface 1, environment 0, behavior 0, verification 1, recovery 0 = 2.

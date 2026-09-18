@@ -13,3 +13,5 @@ BLACK SHEEP WALL does not authorize the microtask for execution.
 After context validation, follow `rules.md`.
 
 Tasks here are not authorized for execution until human promotion moves them into `workflow/active_work/`.
+
+For Toolkit migration: `UMIG-NNN` is ChatGPT CODE, `UMIG-NNN-T` is OpenHands TEST and `UMIG-NNN-V` is OpenHands VERIFY. Human donor approval and intrinsically verification-only tasks retain their existing IDs. Each task has its own file, acceptance gate and handoff; no test pass is inferred from coding.

@@ -2,13 +2,13 @@
 
 Status: PLANNED / BLOCKED — donor freeze and human promotion required. Not ACTIVE.
 Previous: UMIG-006
-Next: UMIG-008
+Next: UMIG-007A
 
 ## Primary outcome
 Verify that the new OS.js Toolkit visually matches the approved Electron donor in one window.
 
 ## Scope
-Compare rendered Memory, Replicator and Diagnostics tabs against screenshots of the pinned Electron build using the same fixture devices and window dimensions. Check tabs, forms, spacing, active/selected states, scrolling and that OS.js desktop/taskbar/window chrome remains intact. Record only concrete visual differences; correct visual defects through separately scoped work if found.
+Compare rendered Memory, Replicator and Diagnostics tabs against screenshots of the pinned Electron build using the same fixture devices and window dimensions. Check tabs, forms, spacing, active/selected states, scrolling and that OS.js desktop/taskbar/window chrome remains intact. Record only concrete visual differences; correct visual defects through separately scoped work if found. Screenshots are comparison references, not an Electron deployment dependency.
 
 ## Non-scope
 No backend protocol changes, acceptance by screenshots alone for runtime functions, or old app removal.
@@ -19,10 +19,10 @@ No backend protocol changes, acceptance by screenshots alone for runtime functio
 3. Visual discrepancies are resolved or explicitly recorded as blockers before cutover.
 
 ## Verification
-One rendered visual inspection workflow with matched Electron/OS.js dimensions and screenshots. Report precisely what was inspected; do not call it a runtime test.
+One rendered visual inspection workflow with matched Electron/OS.js dimensions and screenshots. Report precisely what was inspected; do not call it a runtime or deployment test.
 
 ## Dependencies
-UMIG-006, approved donor snapshot and human promotion. UMIG-004/005/006 retain their own focused runtime gates.
+UMIG-006, approved donor snapshot and human promotion. UMIG-004/005/006 retain their own focused runtime gates. Independent OS.js deployment is verified separately in UMIG-007A.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

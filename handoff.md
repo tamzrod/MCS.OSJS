@@ -2,29 +2,40 @@
 
 ## Current direction — 2026-09-18
 
-Human priority: staged OS.js replacement with one `MCS Modbus Toolkit`. Windows LED repairs, if any, are a separate track and do not block initial OS.js package staging. The OS.js desktop, Start menu, taskbar and clock remain; final default desktop has exactly one Toolkit icon. Legacy UI packages are removed only after Toolkit testing and verification. MMA2, Go services, shared memory and user configuration are never decommissioned by this UI migration.
+Human priority: staged OS.js replacement with one `MCS Modbus Toolkit`. Windows LED repairs, if any, are a separate track. Preserve the OS.js desktop, Start menu, taskbar and clock; final default desktop has exactly one Toolkit icon. Legacy UI packages are removed only after verified replacement and cutover. MMA2, Go services, shared memory, user configuration and Windows Electron are not decommissioned by this UI migration.
 
-## Roles and separate gates
+## Roles and authoritative state
 
-ChatGPT = coding agent: implements one CODE microtask, reads back exact source change, commits a source-only checkpoint, writes current OpenHands test packet, reviews test evidence and controls task advancement. OpenHands = JR test runner: TEST builds/fixtures and VERIFY actual runtime/UI acceptance from separate tasks using `operation cwal.md`; no source edits, bug fixes, task promotion, archival or ICC edits. A failed/blocked test stops advancement and returns to a separately authorized coding fix. Source presence is not test PASS; unit tests are not rendered runtime PASS.
+ChatGPT owns CODE, source changes, source checkpoint and task advancement. OpenHands is JR for separate TEST and VERIFY stages, invoked using `operation cwal.md` and governed by its current `JR TEST TASK`; OpenHands does not code, fix failures, promote/archive tasks or update ICC. Only BLACK SHEEP WALL updates ICC.
 
-## Current authorized sequence
+CODE `UMIG-002`: source-only milestone archived. Placeholder source added at `f83f1e716a3ab4c12446c04a7d264e9eb280bc06`; scoped disconnected display commits `1812e1c17a29dff5b56d7c4cb078da6b9a099ac9` and `9410edccd3f8914cc76a365980c0d0f1e9bd8bbb`. Read back `OSJS/src/packages/MCSModbusToolkit/{index.js,index.scss,metadata.json,icon.svg,webpack.config.js}`. Compared coding delta: only Toolkit `index.js` and `index.scss` modified after the earlier scaffold. This evidence proves source authorship only, NOT a successful build or UI launch.
 
-ACTIVE: `UMIG-002` CODE — the independent OS.js Toolkit package source is staged; source-only handoff/readback is pending. No build/discovery/UI launch has been performed or claimed.
-QUEUED: `UMIG-002-T` OpenHands package build/discovery TEST; `UMIG-002-V` OpenHands one-window launch VERIFY. Ordered links UMIG-002 → UMIG-002-T → UMIG-002-V → STOP. These two test stages must not be executed until each is ACTIVE and has its own current JR TEST TASK packet.
-PLANNED: UMIG-001 donor approval, then UMIG-003 through UMIG-009 and their separately planned TEST/VERIFY stages. They require separate human promotion. No Electron donor SHA has been approved.
-PAUSED QUEUED: RREC-004, RLED-003 through RLED-011, MEM-004 through MEM-008 and REP-BLOCK-002/003. RREC-001/002/003 remain COMPLETE in Active Work, pending archival reconciliation; they are not currently executable.
+ACTIVE: `UMIG-002-T` — OpenHands build and discovery TEST. QUEUED: `UMIG-002-V` — separate rendered one-window VERIFY, not authorized for execution by the current packet. Other parked Windows/Memory/Replicator tasks are unchanged; UMIG-001 donor approval and UMIG-003 onward stay in Planning. No donor SHA approved, no UI copy, launcher switch or old app deletion.
 
-## UMIG-002 scope
+## ICC prerequisite
 
-Only author and inspect the self-owned `OSJS/src/packages/MCSModbusToolkit` placeholder source. Do not change Electron files, backend services, existing launchers, legacy application packages or user data. Existing OS.js Simulator and Replicator server bridges must be migrated before those UI packages are retired in a future approved code task.
+`ICC/INDEX.md` still records an earlier baseline and its Planning/Active Work views are stale. Request a bounded BLACK SHEEP WALL refresh for affected Planning and Active Work branches before invoking OpenHands; JR cannot perform that refresh. If this prerequisite has not been satisfied, report BLOCKED rather than treating stale ICC as current. Do not modify unrelated ICC branches or assume a clean Windows checkout.
 
-## Test packet status and safety
+## JR TEST TASK — CURRENT: UMIG-002-T
 
-NO CURRENT `JR TEST TASK` yet. The coding agent must finish the UMIG-002 source checkpoint, update Active Work/handoff atomically to UMIG-002-T ACTIVE, then supply its exact command, expected result and evidence. OpenHands must not start a test based on this general handoff paragraph. After TEST PASS, coding agent may activate UMIG-002-V with a separate real GUI observation packet. OpenHands reports raw PASS/FAIL/BLOCKED evidence only and stops. Never run Electron build-and-push or perform destructive config/service changes as a substitute.
+GOAL / TARGET: Verify only the independent OS.js `MCSModbusToolkit` package build and discovery from committed source. Task authority: `workflow/active_work/umig-002-t-build-discover.md`. Do not run UMIG-002-V in this invocation.
 
-`ICC/INDEX.md` and affected Planning/Active Work contexts are stale and need a bounded BLACK SHEEP WALL refresh before OpenHands execution or further promotion. Only BLACK SHEEP WALL edits ICC; no claimed clean Windows working tree or unobserved test result.
+REPOSITORY STATE: Use a disposable checkout of `tamzrod/MCS.OSJS` at current `origin/main`, including source commit `9410edccd3f8914cc76a365980c0d0f1e9bd8bbb`. Record `git rev-parse HEAD` and `git status --short` before starting. If the required baseline is absent, checkout has unexpected tracked changes, or ICC prerequisite above remains unresolved, report BLOCKED; do not reset/clean/restore product files to force execution.
+
+EXACT COMMAND / ACTION: From repository root, run `cd OSJS && npm run build:local-packages && npm run package:discover`. Record each command's actual exit code and raw output separately. Then inspect `OSJS/src/packages/MCSModbusToolkit/dist/main.js`, `dist/main.css` and OS.js package-discovery output/manifest to find `MCSModbusToolkit`. Record `git status --short` after. Do not launch GUI or invoke Electron tools.
+
+OPTIONAL SAFE SETUP: Check the local Node/npm toolchain and install missing dependencies only within the disposable sandbox through the existing OS.js package manager/lockfile as permitted by `operation cwal.md`; do not edit tracked manifests, locks or source. If no safe local setup exists, report BLOCKED. Generated ignored build output may be inspected, but unexpected tracked modifications must be reported and not cleaned.
+
+EXPECTED RESULT: The two exact OS.js commands exit zero, `main.js` and `main.css` exist in Toolkit `dist/`, and OS.js discovery lists the Toolkit package. No Electron build/install, backend service startup, saved configuration mutation or desktop change is required. No browser or backend PASS is implied.
+
+EVIDENCE TO RETURN: HEAD SHA, pre/post `git status --short`, toolchain/setup notes if needed, verbatim output and exit code for each command, artifact paths and observed existence, discovered Toolkit metadata/path, and unexpected changes/errors. Overall verdict must be PASS only if all required results are observed; FAIL for an executed product test contradicting expectations; BLOCKED for unobservable prerequisites. Never substitute static/source inspection for build/discovery evidence.
+
+REPORT-WRITE AUTHORITY: OpenHands/JR may append or replace only the `## JR TEST REPORT — UMIG-002-T` section below in `handoff.md`. Preserve every other section. It may commit/push only `handoff.md` if the current packet permits this; this packet permits a handoff-only report commit/push. Do not change task status, source or ICC. After reporting, STOP. ChatGPT reviews the evidence and, if PASS, separately activates `UMIG-002-V` with a new exact packet.
+
+## JR TEST REPORT — UMIG-002-T
+
+PENDING — no OpenHands test has been executed or observed by ChatGPT. OpenHands replaces this section with its raw evidence and PASS / FAIL / BLOCKED verdict when the packet runs.
 
 ## Evidence limits
 
-Prior Windows `RLED` source/UI appearance was accepted by the human, not independently verified live end-to-end here. RREC-004 installer repair/hash/ProgramData evidence remains incomplete. Do not attribute Windows installation/COMMS success to the OS.js migration or these source-only edits.
+Windows RLED appearance was accepted by the human, but installed live COMMS status and RREC-004 installer repair/hash/ProgramData verification are not established by this OS.js source milestone. Do not claim Windows tests or the final OS.js UI migration passed.

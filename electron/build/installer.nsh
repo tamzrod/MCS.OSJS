@@ -29,11 +29,41 @@ Var MCSRuntimeRoot
 !macro customInit
   StrCpy $MCSMaintenanceMode "install"
   StrCpy $MCSExistingInstallDir ""
+  StrCpy $MCSInstallMMA2State ${BST_CHECKED}
+  StrCpy $MCSInstallSimulatorState ${BST_CHECKED}
+  StrCpy $MCSInstallReplicatorState ${BST_CHECKED}
+  StrCpy $MCSStartServicesState ${BST_CHECKED}
   ReadRegStr $MCSExistingInstallDir HKLM "${INSTALL_REGISTRY_KEY}" InstallLocation
 
   ${If} $MCSExistingInstallDir != ""
     StrCpy $MCSMaintenanceMode "repair"
     StrCpy $INSTDIR $MCSExistingInstallDir
+    IfSilent mcs_service_defaults_ready 0
+    StrCpy $MCSInstallMMA2State ${BST_UNCHECKED}
+    StrCpy $MCSInstallSimulatorState ${BST_UNCHECKED}
+    StrCpy $MCSInstallReplicatorState ${BST_UNCHECKED}
+
+    nsExec::ExecToStack 'sc.exe query "MCS-MMA2"'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+      StrCpy $MCSInstallMMA2State ${BST_CHECKED}
+    ${EndIf}
+
+    nsExec::ExecToStack 'sc.exe query "MCS-Simulator"'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+      StrCpy $MCSInstallSimulatorState ${BST_CHECKED}
+    ${EndIf}
+
+    nsExec::ExecToStack 'sc.exe query "MCS-Replicator"'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+      StrCpy $MCSInstallReplicatorState ${BST_CHECKED}
+    ${EndIf}
+mcs_service_defaults_ready:
   ${EndIf}
 !macroend
 

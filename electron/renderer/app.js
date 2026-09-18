@@ -2,6 +2,8 @@ const tabs = [...document.querySelectorAll('.tab')];
 const panels = [...document.querySelectorAll('.panel')];
 const log = document.getElementById('log');
 let runtimePaths = null;
+let replicatorPollVersion = 0;
+let replicatorStatusReceivedAt = 0;
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
@@ -375,16 +377,9 @@ const renderReplicator = () => {
   if (!device) {
     editor.appendChild(h('div', 'tool-empty', 'Select a device or choose Add.'));
   } else {
-    const runtime = h('div', 'runtime-row');
-    const status = replicatorState.runtimeStatus;
-    const runningStatus = h('strong', '', status ? (status.unavailable ? 'UNAVAILABLE' : (status.running ? 'RUNNING' : 'STOPPED')) : '-');
-    runningStatus.id = 'rep-runtime-running';
-    const sourceStatus = h('strong', '', status && status.source_status || '-');
-    sourceStatus.id = 'rep-runtime-source';
-    const lastPoll = h('strong', '', formatTime(status && status.last_poll));
-    lastPoll.id = 'rep-runtime-last-poll';
-    runtime.append(h('span', '', 'Replicator:'), runningStatus, h('span', '', 'Source:'), sourceStatus, h('span', '', 'Last Poll:'), lastPoll);
-    editor.appendChild(runtime);
+    const commsStrip = window.mcsComms.create(document);
+    editor.appendChild(commsStrip);
+    window.mcsComms.update(commsStrip, Date.now() - replicatorStatusReceivedAt < 6000 && device.enabled ? replicatorState.runtimeStatus : null, device.name, replicatorState.runtimeError);
     const identity = h('div', 'tool-grid');
     identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; refreshReplicatorValidation(); }));
     identity.append(checkboxField('Enabled', device.enabled, value => { device.enabled = value; refreshReplicatorValidation(); }));
@@ -478,25 +473,28 @@ const loadReplicator = async () => {
 const pollReplicator = async () => {
   const device = selectedReplicator();
   if (!device || replicatorState.saving) return;
+  const name = device.name;
+  const version = ++replicatorPollVersion;
+  const stillSelected = () => version === replicatorPollVersion && selectedReplicator() === device && device.name === name && !replicatorState.saving;
   try {
-    replicatorState.runtimeStatus = await window.mcsDesktop.replicatorCall('status', {name: device.name});
+    const status = await window.mcsDesktop.replicatorCall('status', {name});
+    if (!stillSelected()) return;
+    replicatorState.runtimeStatus = status;
+    replicatorStatusReceivedAt = Date.now();
     replicatorState.runtimeError = '';
-    setText('rep-runtime-running', replicatorState.runtimeStatus.running ? 'RUNNING' : 'STOPPED');
-    setText('rep-runtime-source', replicatorState.runtimeStatus.source_status || '-');
-    setText('rep-runtime-last-poll', formatTime(replicatorState.runtimeStatus.last_poll));
+    window.mcsComms.update(document.getElementById('rep-comms'), device.enabled ? status : null, name);
     const statusMessage = document.getElementById('rep-status-message');
     if (statusMessage) {
       statusMessage.textContent = replicatorState.message;
       statusMessage.classList.toggle('error', replicatorState.error);
     }
   } catch (error) {
+    if (!stillSelected()) return;
     replicatorState.runtimeStatus = {unavailable: true, running: false, source_status: 'UNAVAILABLE', last_poll: ''};
     const runtimeError = `Replicator status failed for ${device.name}: ${error.message || error}`;
     if (replicatorState.runtimeError !== runtimeError) appendLog({process: 'replicator', level: 'error', text: runtimeError});
     replicatorState.runtimeError = runtimeError;
-    setText('rep-runtime-running', 'UNAVAILABLE');
-    setText('rep-runtime-source', 'UNAVAILABLE');
-    setText('rep-runtime-last-poll', '-');
+    window.mcsComms.update(document.getElementById('rep-comms'), null, name, runtimeError);
     const statusMessage = document.getElementById('rep-status-message');
     if (statusMessage) {
       statusMessage.textContent = runtimeError;
@@ -612,3 +610,9 @@ loadSimulator();
 loadReplicator();
 setInterval(pollSimulator, 2000);
 setInterval(pollReplicator, 2000);
+setInterval(() => {
+  const device = selectedReplicator();
+  if (device && Date.now() - replicatorStatusReceivedAt >= 6000) {
+    window.mcsComms.update(document.getElementById('rep-comms'), null, device.name, 'Runtime status is stale or unavailable');
+  }
+}, 1000);

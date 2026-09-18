@@ -1,23 +1,26 @@
-# UMIG-003-T — TEST: Copied Renderer Build and Fixtures
+# UMIG-003-T — TEST: Toolkit Renderer Build and Fixtures
 
-Status: QUEUED — human deferred JR testing on 2026-09-19 while OpenHands works on other projects. NOT RUN, NOT PASS. Resume explicitly after the separate code-first preparation task; do not infer verification from later code.
-Stage / owner: TEST / OpenHands (JR via Operation CWAL)
-Previous: UMIG-003 (COMPLETE, `workflow/archive/umig-003-copy-electron-renderer.md`)
-Next: UMIG-003-V (QUEUED; only after independent PASS)
+Status: ACTIVE — explicitly resumed by human on 2026-09-19; PENDING, NOT RUN, NOT PASS.
+Stage / owner: TEST / OpenHands (JR via `operation cwal.md`)
+Previous: UMIG-003 (COMPLETE, `workflow/archive/umig-003-copy-electron-renderer.md`, source checkpoint `fede1715fadd5900da12fd9630793e3514117caf`)
+Next: UMIG-003-V (QUEUED; activate only after ChatGPT reviews independent TEST PASS)
 
 ## Primary outcome
-Independently prove the frozen-donor Toolkit fixture renderer builds/discovers under OS.js with a passing focused fixture contract and no Electron runtime import. Build/static TEST only, not rendered GUI, functional backend or Docker acceptance.
+Independently build and discover the fixture-only Toolkit renderer under OS.js, run its focused fixture contract, and verify its source/bundle has no Electron or legacy UI runtime dependency. This is a static/build gate ONLY. It does not verify actual rendered behavior, Docker health, or live Memory/Replicator/Diagnostics integration.
 
-## Packet preservation and resumption
-The complete original JR packet and PENDING report remain in immutable commit `bc8fe7330969259a8e39a0fa4f533d88078b79cd` (`handoff.md`). No packet is CURRENT while this task is QUEUED. On explicit resumption, ChatGPT must ensure this task is the sole ACTIVE, regenerate its packet against then-current HEAD, retain the original code checkpoint `fede1715fadd5900da12fd9630793e3514117caf` and determine whether later dormant files affect checks. Do not give JR an outdated active-task check or infer PASS from code review.
+## Exact test authority
+Use `## JR TEST TASK — CURRENT: UMIG-003-T` in current `handoff.md` for exact ordered commands, expected results, safe disposable setup, evidence, and report-only write permission. Use compatible Node 16; never touch the operator's working Compose stack or persisted data. If the checkout is dirty or prerequisite/task state conflicts, report BLOCKED rather than cleaning or repairing it.
+
+## Current source boundary
+The approved donor is pinned at `1c971b9a6e00bafadf329df8821421a40cfc079c`. Renderer implementation was archived source-only at `fede1715fadd5900da12fd9630793e3514117caf`. Since that checkpoint, separately approved UMIG-CF-001/002/003 added unimported `memory-contract.js`, `replicator-contract.js` and `diagnostics-model.js` plus unrun tests. Those three modules are dormant and must not be confused with a wired renderer or silently tested as part of this task. Their mere presence is allowed in a bounded baseline diff, but Electron/legacy imports in any Toolkit runtime source/bundle are not.
 
 ## Acceptance and evidence
-1. On a disposable Node 16 checkout, `cd OSJS && npm run build:local-packages`, `npm run package:discover`, and `npm run build` exit 0; Toolkit discovered; its JS/CSS artifacts exist.
-2. `cd OSJS && node tests/toolkit-fixtures.test.js` exits 0 for UNKNOWN/UNAVAILABLE, fixture shapes and fresh snapshots, with no Electron/legacy dependency in Toolkit source or bundle.
-3. Report HEAD, ancestry, clean tracked pre/post status, commands/output/exits, discovery, artifacts, dependency inspection, and errors; edit only JR's authorized handoff report. No code or workflow edits by JR.
+1. `npm run build:local-packages`, `npm run package:discover`, `npm run build` and `node tests/toolkit-fixtures.test.js` succeed independently; `MCSModbusToolkit` is discovered and local `dist/main.js`/`main.css` exist.
+2. Fixture checks cover UNKNOWN/UNAVAILABLE, representative Memory/Replicator shapes and fresh independent snapshots. Inspect Toolkit source/bundle: no Electron or legacy UI runtime import; dormant contract/model modules stay unimported by Toolkit entry points.
+3. Report exact HEAD and predecessor ancestry; Node/npm versions; pre/post tracked status; commands, outputs and exit codes; discovery, artifact paths/sizes, explicit grep exit, bundle/import observations and unexpected findings. JR edits only the permitted handoff test report, commits/pushes only `handoff.md`, then STOPS.
 
-## Non-scope and dependency
-No rendered UI (UMIG-003-V), live backend, Docker lifecycle, product fixes or ICC writes. Previous CODE checkpoint and exact newly published JR packet required. Stale ICC is not a prerequisite. User's coding-first priority does not waive this gate.
+## Non-scope
+No rendered UI (UMIG-003-V), tests of new dormant modules (independent future tasks), backend requests, privileged endpoints, product fixes, server restarts, operator Docker deployment, ICC, source/workflow changes, or automatic advancement. Original verification dependencies remain intact.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 0 = 2.

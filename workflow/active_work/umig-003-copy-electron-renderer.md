@@ -1,26 +1,30 @@
 # UMIG-003 — CODE: Copy Approved Renderer into OS.js
 
-Status: QUEUED — promoted 2026-09-18; blocked from execution until UMIG-001 records an approved donor SHA.
+Status: ACTIVE — UMIG-001 donor decision complete and archived 2026-09-19; source implementation NOT STARTED.
 Stage / owner: CODE / ChatGPT
-Previous: UMIG-001
-Next: UMIG-003-T
+Previous: UMIG-001 (COMPLETE, `workflow/archive/umig-001-freeze-electron-ui-donor.md`)
+Next: UMIG-003-T (QUEUED; no auto-activation before CODE source checkpoint)
 
 ## Primary outcome
 Author a self-contained, OS.js-owned copy of the approved three-tab Toolkit renderer.
 
+## Frozen donor and source provenance
+
+Human-approved Electron renderer commit: `1c971b9a6e00bafadf329df8821421a40cfc079c`. Read `workflow/archive/umig-001-freeze-electron-ui-donor.md` for the exact `electron/renderer/index.html`, `style.css`, `app.js`, `comms-status.js` and optional local SVG/PNG asset inventory, host/API boundary and scoped-CSS requirements. Never drift to latest Electron tip or silently sync with it.
+
 ## Scope
-Copy files/assets from the pinned donor SHA into `OSJS/src/packages/MCSModbusToolkit`, adapt OS.js window bootstrap, scope CSS away from OS.js chrome, provide fixture-only data and explicit unknown LED states. Retain Memory, Replicator and Diagnostics tab layout. The Toolkit is built within the existing `osjs-shell` Docker image; do not add an Electron runtime or a new Toolkit container.
+Copy/adapt the approved Memory, Replicator and Diagnostics tab DOM/layout into `OSJS/src/packages/MCSModbusToolkit`, replace standalone HTML/BrowserWindow bootstrap with existing OS.js window lifecycle, scope all CSS to Toolkit content (including global selectors), supply fixture-only tab data and explicit UNKNOWN/UNAVAILABLE status/LEDs. Disable native Windows service Start/Stop and unsupported path/actions. Keep the app inside the existing `osjs-shell` Docker image; do not add another container.
 
 ## Non-scope
-No build/tests, real backend calls, Electron preload/main, legacy UI deletion, Modpoll implementation, new feature or visual-parity PASS.
+No build/tests or verification claims; no real backend calls/Save & Apply, Electron preload/main/runtime imports, legacy package deletion, Modpoll, portable app, new service controls or visual-parity PASS.
 
 ## Coding acceptance / handoff
-1. Self-owned three-tab renderer and required assets authored and committed from the approved SHA.
-2. No Electron runtime/global CSS or legacy-package dependency added; missing status remains UNKNOWN.
-3. Read back changed files and record commit, donor provenance, fixtures and known host gaps for OpenHands; do not claim tested.
+1. Three-tab Toolkit renderer and required local assets authored and committed from pinned SHA with fixture-only rendering and no Electron imports.
+2. OS.js desktop/window chrome unaffected by Toolkit-scoped styling; no missing/stale observation displayed as healthy, and unsupported actions cannot execute.
+3. Read back changed source, record exact commit, donor provenance, fixture setup and host gaps in `handoff.md`, then archive CODE and activate UMIG-003-T only on a valid source checkpoint. No build, GUI or backend test PASS may be inferred from source review.
 
 ## Dependencies
-UMIG-001 human-approved donor SHA and accepted source-only donor note. Only execute when this task becomes sole ACTIVE.
+UMIG-001 accepted and archived; sole ACTIVE confirmed. Later JR TEST and VERIFY have distinct acceptance stages. Only BLACK SHEEP WALL may update ICC; stale cache is not an automatic blocker for this source task.
 
 ## Sizing
 Surface 2, environment 0, behavior 0, verification 0, recovery 1 = 3.

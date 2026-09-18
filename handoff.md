@@ -2,181 +2,44 @@
 
 ## Current direction — 2026-09-18
 
-Human priority: staged OS.js replacement with one `MCS Modbus Toolkit`. Windows LED repairs, if any, are a separate track. Preserve the OS.js desktop, Start menu, taskbar and clock; final default desktop has exactly one Toolkit icon. Legacy UI packages are removed only after verified replacement and cutover. MMA2, Go services, shared memory, user configuration and Windows Electron are not decommissioned by this UI migration.
+Human priority: staged OS.js replacement with one `MCS Modbus Toolkit`. Preserve the OS.js desktop, Start menu, taskbar and clock; the final default desktop has exactly one Toolkit icon. Do not remove legacy UI packages before verified cutover. MMA2, Go services, shared memory, user configuration and Windows Electron remain in scope and are not decommissioned by this UI migration. Windows LED/installer work is a separate parked track.
 
 ## Roles and authoritative state
 
-ChatGPT owns CODE, source changes, source checkpoint and task advancement. OpenHands is JR for separate TEST and VERIFY stages, invoked using `operation cwal.md` and governed by its current `JR TEST TASK`; OpenHands does not code, fix failures, promote/archive tasks or update ICC. Only BLACK SHEEP WALL updates ICC.
+ChatGPT owns CODE, source checkpoints, repair and workflow advancement. OpenHands is JR for separate TEST and VERIFY stages via `operation cwal.md`: JR never codes, fixes, advances tasks or updates ICC, and may edit only an explicitly authorized test-report section in this file. Only BLACK SHEEP WALL updates ICC.
 
-CODE `UMIG-002`: source-only milestone archived. Placeholder source added at `f83f1e716a3ab4c12446c04a7d264e9eb280bc06`; scoped disconnected display commits `1812e1c17a29dff5b56d7c4cb078da6b9a099ac9` and `9410edccd3f8914cc76a365980c0d0f1e9bd8bbb`. Read back `OSJS/src/packages/MCSModbusToolkit/{index.js,index.scss,metadata.json,icon.svg,webpack.config.js}`. Compared coding delta: only Toolkit `index.js` and `index.scss` modified after the earlier scaffold. This evidence proves source authorship only, NOT a successful build or UI launch.
+ACTIVE: `UMIG-002-T` — independent OS.js Toolkit build and discovery TEST, **retest pending, no PASS**. QUEUED: `UMIG-002-V` — separate rendered one-window VERIFY, not authorized by the current packet. The original UMIG-002 CODE task and bounded repair `UMIG-002-R` are archived as source-only checkpoints. All other parked work is unchanged; no donor UI copy, launcher switch, legacy app removal or Windows Electron change is authorized by this packet.
 
-ACTIVE: `UMIG-002-T` — OpenHands build and discovery TEST. QUEUED: `UMIG-002-V` — separate rendered one-window VERIFY, not authorized for execution by the current packet. Other parked Windows/Memory/Replicator tasks are unchanged; UMIG-001 donor approval and UMIG-003 onward stay in Planning. No donor SHA approved, no UI copy, launcher switch or old app deletion.
+## Failed test and coding repair
+
+Original JR test verdict: **FAIL**, commit `752a54108ecaf91d9e53440ed344f8f31a1ce8de`. Both build and discovery commands exited 0 and Toolkit `dist/main.js`/`main.css` existed, but Toolkit was missing from discovered package list, `packages.json`, `dist/metadata.json` and `dist/apps/`. JR identified the absent Toolkit `package.json` required by OS.js discovery. The full original raw evidence remains preserved in the immutable report at https://github.com/tamzrod/MCS.OSJS/blob/752a54108ecaf91d9e53440ed344f8f31a1ce8de/handoff.md ; this FAIL is not erased or reclassified.
+
+Human authorized repair on 2026-09-18. `UMIG-002-R` added only `OSJS/src/packages/MCSModbusToolkit/package.json` with `name: mcs-modbus-toolkit`, `version: 0.1.0`, `private: true`, and `osjs.type: package`, matching sibling OS.js package discovery convention. Source commit: `cd67e150139b60f3914db8c6f1998c96c5b8da07`. Coding agent read the committed file back and compared the source delta; this is **source-only evidence**, NOT an executed build/discovery or rendered UI PASS. Repair record: `workflow/archive/umig-002-r-toolkit-discovery-manifest.md`.
 
 ## ICC prerequisite
 
-`ICC/INDEX.md` still records an earlier baseline and its Planning/Active Work views are stale. Request a bounded BLACK SHEEP WALL refresh for affected Planning and Active Work branches before invoking OpenHands; JR cannot perform that refresh. If this prerequisite has not been satisfied, report BLOCKED rather than treating stale ICC as current. Do not modify unrelated ICC branches or assume a clean Windows checkout.
+`ICC/INDEX.md` records baseline `7029e41`; subsequent JR report, task-state changes, and Toolkit package manifest affect handoff/active-work and OS.js shell context. Request a **bounded BLACK SHEEP WALL refresh of the affected branches** and record its evidence before invoking OpenHands. JR must not edit ICC or treat the prior baseline as synchronized. If this required refresh is still pending, return BLOCKED rather than testing against a knowingly stale prerequisite. Do not refresh unrelated context branches.
 
-## JR TEST TASK — CURRENT: UMIG-002-T
+## JR TEST TASK — CURRENT: UMIG-002-T (RETEST)
 
-GOAL / TARGET: Verify only the independent OS.js `MCSModbusToolkit` package build and discovery from committed source. Task authority: `workflow/active_work/umig-002-t-build-discover.md`. Do not run UMIG-002-V in this invocation.
+GOAL / TARGET: Rerun only the existing Toolkit build-and-discovery TEST against committed repair `cd67e150139b60f3914db8c6f1998c96c5b8da07`. Task authority: `workflow/active_work/umig-002-t-build-discover.md`. This is a retest after prior FAIL, not UMIG-002-V or a new feature test.
 
-REPOSITORY STATE: Use a disposable checkout of `tamzrod/MCS.OSJS` at current `origin/main`, including source commit `9410edccd3f8914cc76a365980c0d0f1e9bd8bbb`. Record `git rev-parse HEAD` and `git status --short` before starting. If the required baseline is absent, checkout has unexpected tracked changes, or ICC prerequisite above remains unresolved, report BLOCKED; do not reset/clean/restore product files to force execution.
+REPOSITORY STATE: In a disposable checkout of `tamzrod/MCS.OSJS` at current `origin/main`, record HEAD and `git status --short` before starting. Verify required repair commit `cd67e150139b60f3914db8c6f1998c96c5b8da07` is an ancestor of HEAD and `OSJS/src/packages/MCSModbusToolkit/package.json` is present. If missing, unexpectedly dirty, or the ICC prerequisite above has not been satisfied, report BLOCKED without reset/clean/restore of product files.
 
-EXACT COMMAND / ACTION: From repository root, run `cd OSJS && npm run build:local-packages && npm run package:discover`. Record each command's actual exit code and raw output separately. Then inspect `OSJS/src/packages/MCSModbusToolkit/dist/main.js`, `dist/main.css` and OS.js package-discovery output/manifest to find `MCSModbusToolkit`. Record `git status --short` after. Do not launch GUI or invoke Electron tools.
+EXACT COMMAND / ACTION: From the repository root, execute the two original product commands in order, capturing independent exit codes and raw output for each: (1) `cd OSJS && npm run build:local-packages`; (2) `cd OSJS && npm run package:discover`. Inspect Toolkit `dist/main.js`, `dist/main.css`; verify Toolkit appears in discovery command output, `OSJS/packages.json`, `OSJS/dist/metadata.json`, and `OSJS/dist/apps/MCSModbusToolkit/`. Record pre/post `git status --short`. If command 1 fails, report FAIL with its output; do not pretend command 2 ran. Do not launch GUI, invoke Electron tools or run other product tests.
 
-OPTIONAL SAFE SETUP: Check the local Node/npm toolchain and install missing dependencies only within the disposable sandbox through the existing OS.js package manager/lockfile as permitted by `operation cwal.md`; do not edit tracked manifests, locks or source. If no safe local setup exists, report BLOCKED. Generated ignored build output may be inspected, but unexpected tracked modifications must be reported and not cleaned.
+OPTIONAL SAFE SETUP: Check Node/npm toolchain; `OSJS/package.json` declares Node >=10 <17, so prefer compatible sandbox-local Node 16 when safely available. JR may install missing dependencies only inside its disposable sandbox using the existing package manager without edits to tracked source, manifests, locks or configuration, per `operation cwal.md`. Note actual tool versions. If safe setup is unavailable, BLOCKED. Generated ignored build outputs can be inspected; unexpected tracked modifications must be reported without cleanup.
 
-EXPECTED RESULT: The two exact OS.js commands exit zero, `main.js` and `main.css` exist in Toolkit `dist/`, and OS.js discovery lists the Toolkit package. No Electron build/install, backend service startup, saved configuration mutation or desktop change is required. No browser or backend PASS is implied.
+EXPECTED RESULT: Both commands exit zero, Toolkit `main.js` and `main.css` exist, discovery output lists `mcs-modbus-toolkit as MCSModbusToolkit`, `packages.json` references `src/packages/MCSModbusToolkit`, `dist/metadata.json` contains the application, and `dist/apps/MCSModbusToolkit/` exists. A zero exit code alone is never sufficient for PASS. No GUI, backend or Windows verification is implied.
 
-EVIDENCE TO RETURN: HEAD SHA, pre/post `git status --short`, toolchain/setup notes if needed, verbatim output and exit code for each command, artifact paths and observed existence, discovered Toolkit metadata/path, and unexpected changes/errors. Overall verdict must be PASS only if all required results are observed; FAIL for an executed product test contradicting expectations; BLOCKED for unobservable prerequisites. Never substitute static/source inspection for build/discovery evidence.
+EVIDENCE TO RETURN: HEAD SHA; pre/post status; ICC-prerequisite status; toolchain/setup; each command's raw output and exit code; actual artifact existence and paths; exact relevant discovered-list/manifest entries and directory listing; errors or unexpected changes. PASS only when **all** mandatory results are observed, FAIL for an executed contradictory product result, BLOCKED for a missing prerequisite or unobservable requirement. Preserve the initial FAIL separately as history.
 
-REPORT-WRITE AUTHORITY: OpenHands/JR may append or replace only the `## JR TEST REPORT — UMIG-002-T` section below in `handoff.md`. Preserve every other section. It may commit/push only `handoff.md` if the current packet permits this; this packet permits a handoff-only report commit/push. Do not change task status, source or ICC. After reporting, STOP. ChatGPT reviews the evidence and, if PASS, separately activates `UMIG-002-V` with a new exact packet.
+REPORT-WRITE AUTHORITY: OpenHands/JR may replace only the `## JR TEST REPORT — UMIG-002-T RETEST` section immediately below; preserve every other section, including initial FAIL reference and this packet. JR may commit/push **only `handoff.md`** for its report, then STOP. Do not edit product source, workflow or ICC or activate UMIG-002-V. ChatGPT reviews the new evidence and alone decides subsequent task advancement.
 
-## JR TEST REPORT — UMIG-002-T
+## JR TEST REPORT — UMIG-002-T RETEST
 
-VERDICT: **FAIL** — executed product test contradicts a stated expected result.
-
-The two exact commands both exited 0, but OS.js package discovery does **not** list the Toolkit
-package. The packet requires "OS.js discovery lists the Toolkit package" as a required result, so the
-overall verdict cannot be PASS.
-
-### Repository state (disposable checkout)
-
-- Clone: `https://github.com/tamzrod/MCS.OSJS.git` → `/tmp/jr-umig-002-t` (outside the product repo).
-- `git rev-parse HEAD` (pre): `db6b4edd98390d9bbb0e5d66e5525471a9e224be`
-- `git status --short` (pre): *(empty — clean)*
-- Required source commit `9410edccd3f8914cc76a365980c0d0f1e9bd8bbb` is an ancestor of HEAD: verified
-  `git merge-base --is-ancestor 9410edccd3f8914cc76a365980c0d0f1e9bd8bbb HEAD` → included.
-- `git status --short` (post): *(empty — no unexpected tracked modifications)*
-
-Note: this checkout is one commit past the recorded ICC baseline `7029e41`. The extra commit
-`db6b4ed` changes only `ICC/`, and the Toolkit source under test is byte-identical at both commits.
-
-### Toolchain / safe setup
-
-- Host Node was `v22.23.2` (npm `10.9.8`); `OSJS/package.json` declares `"node": ">=10.0.0 <17"`.
-- Sandbox-local preparation only: `cd OSJS && npm install --no-audit --no-fund` → exit 0,
-  `added 953 packages in 21s`. No tracked manifest, lockfile, config or product source was edited.
-- `OSJS/.gitignore` ignores `node_modules/`, `dist/`, `packages.json`, `package-lock.json`, so all
-  generated output stayed untracked and `git status` stayed clean.
-- Webpack 4 / sass legacy-JS deprecation warnings were emitted; they did not fail the build.
-
-### Command 1 — `cd OSJS && npm run build:local-packages`
-
-Exit code: **0**
-
-Raw output (tail):
-
-```
-> mcs-osjs-base-desktop@0.1.0 build:local-packages
-> node scripts/build-local-packages.js
-
-build-local-packages: building src/packages/MCSModbusToolkit
-Hash: 1d89f44b2867d440a75b
-Version: webpack 4.47.0
-Time: 876ms
-       Asset       Size  Chunks                   Chunk Names
-    main.css  433 bytes       0  [emitted]        main
-main.css.map  780 bytes       0  [emitted] [dev]  main
-     main.js   1.89 KiB       0  [emitted]        main
- main.js.map   6.82 KiB       0  [emitted] [dev]  main
-...
-build-local-packages: built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme
-```
-
-Toolkit build artifacts observed on disk:
-
-```
-src/packages/MCSModbusToolkit/dist/main.js    1934 bytes  -> exists: YES
-src/packages/MCSModbusToolkit/dist/main.css    433 bytes  -> exists: YES
-src/packages/MCSModbusToolkit/dist/main.js.map
-src/packages/MCSModbusToolkit/dist/main.css.map
-```
-
-### Command 2 — `cd OSJS && npm run package:discover`
-
-Exit code: **0**
-
-Raw output (verbatim, complete package list):
-
-```
-> mcs-osjs-base-desktop@0.1.0 package:discover
-> osjs-cli package:discover
-
-ℹ Discovering packages...
-ℹ Destination discovery map /tmp/jr-umig-002-t/OSJS/packages.json
-ℹ Destination path /tmp/jr-umig-002-t/OSJS/dist
-ℹ Destination manifest /tmp/jr-umig-002-t/OSJS/dist/metadata.json
-ℹ Including /tmp/jr-umig-002-t/OSJS/node_modules
-ℹ Including /tmp/jr-umig-002-t/OSJS/src/packages
-- modbus-replicator as ModbusReplicator [symlink, local]
-- nameless-classic-icons as NamelessClassicIcons [symlink, local]
-- modbus-simulator as ModbusSimulator [symlink, local]
-- nameless-workstation-theme as NamelessWorkstationTheme [symlink, local]
-- @osjs/gnome-icons as GnomeIcons [symlink, npm]
-- @osjs/standard-theme as StandardTheme [symlink, npm]
-ℹ Flushing out old discoveries...
-ℹ Placing packages in dist...
-✔ 6 package(s) discovered.
-✔ Finished in 149ms
-```
-
-`MCSModbusToolkit` is **absent** from the discovered list.
-
-### Discovered-manifest evidence
-
-`packages.json` (complete):
-
-```
-["src/packages/ModbusReplicator","src/packages/NamelessClassicIcons","src/packages/ModbusSimulator","src/packages/NamelessWorkstationTheme","node_modules/@osjs/gnome-icons","node_modules/@osjs/standard-theme"]
-```
-
-- `grep -c MCSModbusToolkit packages.json` → **0**
-- `grep -c MCSModbusToolkit dist/metadata.json` → **0**
-- `ls dist/apps/` → `ModbusReplicator  ModbusSimulator` (no Toolkit; `dist/apps/MCSModbusToolkit` does not exist)
-
-### Observed cause (reported, not fixed)
-
-Discovery selects local packages by globbing for `package.json`:
-
-`node_modules/@osjs/cli/src/utils.js:38`
-```js
-const globs = await globby(root.replace(/\\/g, '/') + '/**/package.json', {deep: 3});
-```
-
-`OSJS/src/packages/MCSModbusToolkit/` contains **no `package.json`**; the other four local packages
-each do and are discovered:
-
-```
-src/packages/MCSModbusToolkit/            package.json: NO
-src/packages/ModbusReplicator/            package.json: YES
-src/packages/ModbusSimulator/             package.json: YES
-src/packages/NamelessClassicIcons/        package.json: YES
-src/packages/NamelessWorkstationTheme/    package.json: YES
-```
-
-The Toolkit ships `metadata.json` instead, while its siblings' `package.json` carry the
-`"osjs": {"type": "package"}` marker that discovery consumes. This is the reason the Toolkit is
-skipped. It is a product defect; per Operation CWAL, JR reports it and does not fix it.
-
-### Expected-result comparison
-
-| Packet requirement | Observed | Result |
-| --- | --- | --- |
-| `npm run build:local-packages` exits 0 | exit 0 | pass |
-| `npm run package:discover` exits 0 | exit 0 | pass |
-| Toolkit `dist/main.js` exists | found, 1934 bytes | pass |
-| Toolkit `dist/main.css` exists | found, 433 bytes | pass |
-| OS.js discovery lists the Toolkit package | **absent from all discovered output** | **fail** |
-
-Overall: **FAIL**. Not BLOCKED — the requested test executed and produced a result that contradicts
-the stated expectation; the environment and target were available.
-
-### Not performed (packet non-scope)
-
-No GUI launch, no Electron build/install, no backend service startup, no saved-configuration
-mutation, no desktop change, no browser PASS claim, no source fix, no workflow advancement, no ICC write.
+PENDING — the repaired source has not yet been retested. JR replaces only this section with observed PASS / FAIL / BLOCKED and raw evidence after the ICC prerequisite is satisfied and the current packet executes.
 
 ## Evidence limits
 
-Windows RLED appearance was accepted by the human, but installed live COMMS status and RREC-004 installer repair/hash/ProgramData verification are not established by this OS.js source milestone. Do not claim Windows tests or the final OS.js UI migration passed.
+No independent retest PASS, rendered one-window verification, Windows COMMS/install verification, or final OS.js UI migration acceptance has been established by the source-only manifest repair.

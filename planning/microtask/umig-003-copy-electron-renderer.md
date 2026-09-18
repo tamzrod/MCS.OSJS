@@ -1,28 +1,26 @@
-# UMIG-003 — Copy the Approved Electron Renderer into Toolkit
+# UMIG-003 — CODE: Copy Approved Renderer into OS.js
 
-Status: PLANNED / BLOCKED — UMIG-002 scaffold and UMIG-001 donor freeze must pass; human promotion required. Not ACTIVE.
+Status: PLANNED / BLOCKED — donor approval and human promotion required.
+Stage / owner: CODE / ChatGPT
 Previous: UMIG-001
-Next: UMIG-004
+Next: UMIG-003-T
 
 ## Primary outcome
-Display a self-contained copy of the approved Electron Toolkit UI inside the single OS.js window using fixture data.
+Author a self-contained, OS.js-owned copy of the approved three-tab Toolkit renderer.
 
 ## Scope
-Copy the pinned Electron renderer HTML/CSS/JS, communications display script and required UI assets into OS.js-owned files within the new package. Adapt only host bootstrap and style scoping so desktop-wide `html, body` rules cannot affect the OS.js shell. Use fixture data for rendering; preserve Memory, Replicator and Diagnostics tabs and approved layout/controls. Document host differences and known status-contract gaps without inventing healthy LED values. This is a one-time source copy; Windows Electron and OS.js remain independently maintained, built and deployed.
+Copy files/assets from the pinned donor SHA into `OSJS/src/packages/MCSModbusToolkit`, adapt OS.js window bootstrap, scope CSS away from OS.js chrome, provide fixture-only data and explicit unknown LED states. Retain Memory, Replicator and Diagnostics tab layout. No live Electron source imports, symlinks or automatic sync.
 
 ## Non-scope
-No shared renderer package, symlink, cross-directory import, generated link, automatic synchronization, real backend calls, Electron preload/main process, Windows service management, legacy app deletion or new UI features.
+No build/tests, real backend calls, Electron preload/main, legacy UI deletion, new feature or claim of visual parity.
 
-## Acceptance
-1. All three donor tabs render within one OS.js window from the pinned, locally copied source.
-2. Styles are scoped and do not alter OS.js desktop, taskbar or window chrome.
-3. Fixture rendering and the bundle require no Electron installation, `window.mcsDesktop`, cross-deployment source or native Electron APIs.
-
-## Verification
-Run the OS.js Toolkit build and static fixture rendering; inspect DOM, CSS scoping and bundle/import/asset paths. Verify unknown/unavailable LED state is truthful when evidence is missing. Backend acceptance belongs to later tasks.
+## Coding acceptance / handoff
+1. Self-owned three-tab renderer and required assets authored and committed from the approved SHA.
+2. No Electron runtime/global CSS or legacy-package dependency added; missing status remains UNKNOWN.
+3. Read back changed files and record commit, donor provenance and known host gaps for OpenHands; do not claim tested.
 
 ## Dependencies
-UMIG-002 accepted and UMIG-001 approved donor SHA pinned, then human promotion. If donor changes, stop and obtain renewed approval rather than silently tracking the latest Electron files.
+UMIG-001 approved donor note and human promotion.
 
 ## Sizing
-Surface 2, environment 0, behavior 0, verification 1, recovery 1 = 4; bounded copy/static-render workflow, separated from runtime wiring.
+Surface 2, environment 0, behavior 0, verification 0, recovery 1 = 3.

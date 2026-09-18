@@ -1,28 +1,26 @@
-# UMIG-005 — Connect Toolkit Replicator Tab to Runtime
+# UMIG-005 — CODE: Connect Toolkit Replicator Adapter
 
-Status: PLANNED / BLOCKED — donor freeze and human promotion required. Not ACTIVE.
-Previous: UMIG-004
-Next: UMIG-006
+Status: PLANNED / BLOCKED — promotion required.
+Stage / owner: CODE / ChatGPT
+Previous: UMIG-004-V
+Next: UMIG-005-T
 
 ## Primary outcome
-Make the copied Replicator tab use the existing OS.js Replicator runtime contract.
+Author the Toolkit-owned OS.js Replicator adapter for load/apply/status/suggest.
 
 ## Scope
-Implement the Toolkit-owned OS.js adapter for Replicator load/apply/status/suggest using the existing OS.js message bridge, without retaining a dependency on a package planned for retirement. Preserve the final approved Electron editor, but do not discard backend ownership checks, required-block constraints, errors or any verified per-block status behavior. Surface actual runtime errors rather than reporting fabricated healthy state.
+Move or reuse the existing OS.js Replicator bridge inside Toolkit ownership, retaining one Go apply transaction, destination ownership checks, Pull Block validation, actual errors and available per-block status. Do not fabricate green COMMS observations unsupported by the backend.
 
 ## Non-scope
-No new Replicator protocol, MMA2 composer changes, Windows service controls, Memory changes or UI redesign.
+No live tests, new protocol, MMA2 composer changes, Windows service calls, Memory changes or UI redesign.
 
-## Acceptance
-1. Existing Replicator definitions load in Toolkit.
-2. Save & Apply goes through one authoritative backend transaction with real errors exposed.
-3. Selected-device status and available suggestion/ownership responses are truthful.
-
-## Verification
-Focused adapter fixture tests and a Replicator-only OS.js load/apply/status test with a real runtime. Preserve current configs and record any existing backend test blockers separately.
+## Coding acceptance / handoff
+1. Toolkit owns load/apply/status/suggest bridge and adapter without legacy-package dependency.
+2. Ownership/validation and genuine unknown/error behavior remain explicit.
+3. Record exact changed files/commit and expected response mapping for OpenHands; no test claims.
 
 ## Dependencies
-UMIG-004, human promotion, and available verified Replicator backend. Electron UI completion does not imply backend readiness.
+UMIG-004-V PASS, approved available backend and human promotion.
 
 ## Sizing
-Surface 1, environment 0, behavior 1, verification 1, recovery 1 = 4 (Replicator-only runtime surface).
+Surface 2, environment 0, behavior 1, verification 0, recovery 0 = 3.

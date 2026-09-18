@@ -1,27 +1,29 @@
-# UMIG-002 — Scaffold One OS.js Toolkit Package
+# UMIG-002 — CODE: Scaffold One OS.js Toolkit Package
 
-Status: ACTIVE — human redirected work to OS.js Toolkit migration on 2026-09-18. Scaffold source staged; build/discovery and launch verification remain pending.
+Status: ACTIVE — source staged, source-only coding checkpoint pending. No tests passed or claimed.
+Stage / owner: CODE / ChatGPT
 Previous: none
-Next: none
+Next: UMIG-002-T
 
 ## Primary outcome
-Create a buildable OS.js package that opens one MCS Modbus Toolkit window.
+Author the independent `MCSModbusToolkit` OS.js placeholder package.
 
 ## Scope
-Add minimal metadata, OS.js-owned icon, build configuration, and one-window placeholder bootstrap in `OSJS/src/packages/`, following existing package patterns. Keep the current desktop shell, legacy application packages, desktop shortcuts, backend services and user configurations unchanged. Do not import Electron code or expose unfinished Memory/Replicator/Diagnostics as working.
+Use only `OSJS/src/packages/MCSModbusToolkit/`: metadata, icon, webpack config, scoped styling and one-window placeholder. Preserve existing desktop, legacy packages/launchers, services and user data. No Electron imports or backend calls.
 
 ## Non-scope
-No Electron renderer copy or final donor approval, IPC, backend behavior, desktop launcher cutover, shared build pipeline or deletion of legacy apps.
+No build/test execution, launch claims, donor copy, live adapters, launcher change or legacy deletion.
 
-## Acceptance
-1. OS.js local-package build and discovery recognize `MCSModbusToolkit` without Electron installation or build.
-2. The package opens one placeholder OS.js window without removing or changing existing apps.
+## Coding acceptance
+1. Package source contains one registered OS.js window and a clearly labeled disconnected placeholder.
+2. Metadata, own icon, webpack config and styles are committed without Electron or legacy source imports.
+3. Source changes and exact commit are read back and identified in handoff without claiming test or runtime success.
 
-## Verification
-From the OS.js project, run `npm run build:local-packages` and `npm run package:discover`, then launch `MCSModbusToolkit` in an isolated OS.js test session. Record build/discovery and rendered launch results separately. Source presence or syntax alone does not close this task. If runtime access is unavailable, report BLOCKED and leave ACTIVE.
+## Coding handoff
+Review committed package files and diff, record source checkpoint and create the UMIG-002-T OpenHands packet; do not run its commands. Only after this CODE gate is met may the coding agent archive this task and activate already-authorized UMIG-002-T.
 
 ## Dependencies
-Human direction on 2026-09-18 authorizes starting the independent placeholder before choosing the Electron donor snapshot. This is a standalone early-staging sequence: after verified completion, archive UMIG-002 and STOP. UMIG-001 remains in Planning and needs a separate human promotion and donor approval before UI copying; never auto-advance a task still in Planning.
+Human authorization of early OS.js staging. UMIG-001 donor selection remains separate and in Planning.
 
 ## Sizing
-Surface 1, environment 1, behavior 0, verification 1, recovery 0 = 3.
+Surface 1, environment 0, behavior 0, verification 0, recovery 0 = 1.

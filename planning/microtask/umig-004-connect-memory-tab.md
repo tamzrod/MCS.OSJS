@@ -1,28 +1,26 @@
-# UMIG-004 — Connect Toolkit Memory Tab to Simulator Runtime
+# UMIG-004 — CODE: Connect Toolkit Memory Adapter
 
-Status: PLANNED / BLOCKED — donor freeze and human promotion required. Not ACTIVE.
-Previous: UMIG-003
-Next: UMIG-005
+Status: PLANNED / BLOCKED — promotion required.
+Stage / owner: CODE / ChatGPT
+Previous: UMIG-003-V
+Next: UMIG-004-T
 
 ## Primary outcome
-Make the copied Memory tab use the existing OS.js Simulator runtime contract.
+Author the Toolkit-owned OS.js Simulator messaging adapter for Memory load/apply/status.
 
 ## Scope
-Implement the Toolkit-owned OS.js host adapter for Simulator load/apply/status, reusing or relocating the existing OS.js simulator message bridge without depending on a package slated for deletion. Map responses and errors to the copied renderer's expected shapes. Keep the approved Electron UI and final None/Random semantics; make status failures visible and preserve saved configuration.
+Reuse or relocate the existing Simulator OS.js server bridge into Toolkit-owned code so retiring old UI does not break it. Map backend responses/errors to copied Memory renderer, preserve saved definitions and None/Random behavior, make unavailable states explicit.
 
 ## Non-scope
-No new simulator protocol, MMA2 redesign, Windows named pipes, Replicator wiring, Diagnostics or UI re-layout.
+No live testing, protocol/MMA2 redesign, Windows pipe use, other tab, old UI deletion or fabricated status.
 
-## Acceptance
-1. Memory loads existing definitions through OS.js runtime messaging.
-2. Save & Apply and selected-device status use the existing backend and report real success/failure.
-3. None/Random and saved settings are not silently changed by the adapter.
-
-## Verification
-Focused Simulator adapter fixtures followed by an OS.js Memory load/apply/status test against the existing runtime; record results without modifying unrelated backends.
+## Coding acceptance / handoff
+1. Toolkit has a self-owned Simulator bridge and Memory adapter for load/apply/status.
+2. Existing semantics and error handling are retained without legacy-package import.
+3. Record exact files/commit and message contract for OpenHands without claiming a test pass.
 
 ## Dependencies
-UMIG-003 and human promotion; existing Simulator runtime must be available for live verification.
+UMIG-003-V PASS and human promotion.
 
 ## Sizing
-Surface 1, environment 0, behavior 1, verification 1, recovery 1 = 4 (one Simulator-only contract and verification branch).
+Surface 2, environment 0, behavior 1, verification 0, recovery 0 = 3.

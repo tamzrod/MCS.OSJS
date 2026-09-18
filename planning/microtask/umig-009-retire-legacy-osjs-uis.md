@@ -1,28 +1,26 @@
-# UMIG-009 — Retire Legacy OS.js Modbus UI Packages
+# UMIG-009 — CODE: Retire Legacy OS.js UI Packages
 
-Status: PLANNED / BLOCKED — donor freeze and human promotion required. Not ACTIVE.
-Previous: UMIG-008
-Next: none
+Status: PLANNED / BLOCKED — launcher cutover verified and human approval required.
+Stage / owner: CODE / ChatGPT
+Previous: UMIG-008-V
+Next: UMIG-009-T
 
 ## Primary outcome
-Remove superseded separate Modbus UI packages from OS.js application discovery after verified Toolkit cutover.
+Author removal of superseded `ModbusSimulator` and `ModbusReplicator` OS.js UI packages from discovery/build without touching backend systems.
 
 ## Scope
-Only after one-window launcher, Memory, Replicator and Diagnostics checks pass, remove obsolete OS.js package discovery/build references and legacy UI package files that Toolkit no longer uses. Ensure any still-required OS.js server bridge code has been migrated into Toolkit before deletion. Keep a known-good commit for rollback. Electron's standalone Windows source, packaging and deployment must remain untouched; the OS.js Toolkit must retain its own copied UI files and build pipeline.
+Only after all Toolkit gates pass, remove obsolete UI package source/metadata/discovery references. Ensure every required Simulator/Replicator OS.js bridge has been moved into Toolkit. Record pre-removal known-good commit for rollback.
 
 ## Non-scope
-Do not remove OS.js desktop/theme/icons, Go services, MMA2 configuration, user data or Electron app. No runtime protocol or storage migration, shared renderer, or cross-deployment coupling.
+No test execution, user config deletion, Go runtime/MMA2 removal, OS.js desktop/theme removal, Windows Electron changes or cross-deployment links.
 
-## Acceptance
-1. Toolkit is the only MCS Modbus application shown by fresh OS.js package discovery.
-2. Simulator/Replicator communication still works after old UI removal, without any Electron installation.
-3. User configuration and backend services are unchanged, with a documented rollback commit.
-
-## Verification
-Run OS.js package build/discovery and a post-removal Toolkit smoke test against its own deployed services; inspect the changed file list to confirm no data, runtime or Electron files were touched. Preserve the successful UMIG-007A independent-deployment evidence.
+## Coding acceptance / handoff
+1. Legacy UI packages and project-owned references removed; Toolkit remains registered.
+2. Existing backend bridges, data, services and desktop shell source preserved.
+3. Record before/after paths, source commit and rollback SHA for OpenHands; do not claim post-removal behavior verified.
 
 ## Dependencies
-UMIG-008 completed; recorded UI parity, independent-deployment gate and each tab's focused runtime verification; explicit human promotion. Any failed acceptance blocks deletion.
+UMIG-008-V PASS, focused tab tests and independent deployment verified, explicit human retirement approval/promotion.
 
 ## Sizing
-Surface 1, environment 0, behavior 1, verification 1, recovery 1 = 4 (one legacy UI retirement boundary).
+Surface 1, environment 0, behavior 1, verification 0, recovery 1 = 3.

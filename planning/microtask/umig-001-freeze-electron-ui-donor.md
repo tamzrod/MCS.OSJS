@@ -1,27 +1,26 @@
-# UMIG-001 — Freeze the Electron UI Donor Snapshot
+# UMIG-001 — Human Approval: Freeze Electron UI Donor
 
-Status: PLANNED / BLOCKED — early OS.js scaffold is authorized, but no Electron donor snapshot has been selected or approved for copying. Not ACTIVE.
-Previous: UMIG-002 (independent OS.js placeholder scaffold)
+Status: PLANNED / BLOCKED — human approval and promotion required.
+Stage / owner: DONOR DECISION / Human selects; ChatGPT records source provenance.
+Previous: UMIG-002-V (separate early scaffold sequence ends there)
 Next: UMIG-003
 
 ## Primary outcome
-Record one human-approved, immutable Electron renderer commit as the OS.js UI copy reference.
+Record one explicitly human-approved Electron renderer SHA as the OS.js one-time UI copy reference.
 
 ## Scope
-After UMIG-002 is verified, obtain human approval for the renderer snapshot to copy; pin the exact SHA and list Memory, Replicator, Diagnostics, HTML/CSS/JS and UI assets. Identify Electron-only host calls requiring an OS.js adapter. The reference is provenance for one-time copying, not a shared build or automatic sync. The human's direction to begin OS.js migration does not by itself certify Windows installer or COMMS LED runtime acceptance; any later Windows fixes are tracked independently and require explicit donor reapproval only if the copied UI changes.
+After UMIG-002-V passes, request selection of a UI snapshot; list its HTML/CSS/JS, Memory, Replicator, Diagnostics and assets; document Electron-only host calls and any known COMMS status mismatch. Electron and OS.js remain independently maintained, built and deployed.
 
 ## Non-scope
-No Windows LED repairs, Electron changes, OS.js renderer copy, promotion, runtime changes or automatic synchronization.
+No implementation, source copying, Windows LED repair, installer acceptance or test claim. Human approval of appearance is not proof of live behavior.
 
-## Acceptance
-1. Human approval of the chosen UI snapshot and exact commit SHA is recorded; Windows runtime verification is not misrepresented as complete.
-2. A donor note identifies UI files/assets, native host boundary and one-time independent-copy provenance.
-
-## Verification
-Inspect the approved SHA and listed donor paths; verify the donor note states copy-only transfer and documents any known backend/UI status mismatch instead of claiming success.
+## Acceptance / evidence
+1. Approved exact donor SHA and human approval recorded.
+2. Source-only donor note identifies copied paths/assets and native API boundary.
+3. Note states one-time copy, no runtime/build dependency or silent donor synchronization.
 
 ## Dependencies
-UMIG-002 verified, plus explicit human selection for promotion and an approved visual donor commit. This gate is for UI source identity, not blanket Windows LED/installer acceptance. Refresh stale affected ICC context through BLACK SHEEP WALL before promotion.
+UMIG-002-V PASS, human donor selection and promotion; refresh stale ICC through BLACK SHEEP WALL before promotion.
 
 ## Sizing
-Surface 1, environment 0, behavior 0, verification 1, recovery 0 = 2.
+Surface 1, environment 0, behavior 0, verification 0, recovery 1 = 2.

@@ -2,118 +2,38 @@
 
 ## ICC-First Context Rule
 
-Before applying these rules to repository-dependent work, read `ICC/INDEX.md` first and use synchronized relevant ICC context.
-
-If required context is stale or missing, BLACK SHEEP WALL refreshes only the affected context inside the semantic branch selected by the current planning operation. Do not recompute or refresh unrelated repository knowledge.
-
-Sizing, splitting, acceptance criteria, dependencies, and promotion decisions must be based on synchronized context.
-
-BLACK SHEEP WALL does not authorize execution or promotion; it only establishes current repository understanding.
+Before repository-dependent task planning, read `ICC/INDEX.md`. Use valid relevant context; if stale, request a bounded refresh from BLACK SHEEP WALL. Only BLACK SHEEP WALL edits ICC; Git source remains authoritative. Never claim stale ICC is synchronized.
 
 ## Core Rule
 
-> One task = one primary outcome.
+One task = one primary outcome. One task = one detailed task file. Planning does not authorize execution; human promotion moves a task into `workflow/active_work/` and synchronizes `handoff.md`.
 
-A microtask should be independently understandable, implementable, verifiable, and completable.
+## Execution roles and separate gates (2026-09-18 human decision)
 
-A single narrative outcome does not automatically mean a single JR-sized task. If the work crosses independently failure-prone execution boundaries, split it even when those boundaries contribute to one larger outcome.
+For MCS Modbus Toolkit UMIG work, ChatGPT is the coding agent; OpenHands is the independent JR test runner. Do not imply OpenHands was called or executed unless its actual report exists. Keep three distinct task files when a feature needs all three stages:
 
-## File Boundary Rule
+- **CODE** (`UMIG-NNN`, existing stable ID): only source implementation and a handoff-ready source checkpoint. Owner: ChatGPT. Record exact files and commit/diff; read back changes. No build, unit-test, runtime or acceptance PASS is claimed by source inspection.
+- **TEST** (`UMIG-NNN-T`): deterministic build, package discovery, unit/fixture or static verification of the committed coding output. Owner: OpenHands acting as JR. No product source fixes, feature implementation or workflow advancement. Return raw commands, exit codes and results.
+- **VERIFY** (`UMIG-NNN-V`): independent rendered UI, live runtime, installed behavior, data-safety or deployment acceptance, in a specified safe target. Owner: OpenHands acting as JR. No product fixes or speculative substitute evidence. Return actual observations and PASS/FAIL/BLOCKED.
 
-> **One microtask = one detailed task file.**
+If a task is inherently human approval (`UMIG-001`) or solely a verification gate (`UMIG-007`, `UMIG-007A`), keep that identity; do not manufacture coding work. Test and verify may be a single task only when there genuinely is one indivisible check, but never combine coding with either. Preserve explicit `Previous`/`Next` across stages; never auto-promote a Planning successor.
 
-Do not place multiple executable microtasks into one giant planning document.
-
-A microtask file must contain only one task ID and one primary outcome. A feature may require many microtask files.
-
-If a feature decomposes into `TASK-001`, `TASK-002`, and `TASK-003`, store them as three separate files, for example:
-
-```text
-planning/microtask/task-001-something.md
-planning/microtask/task-002-something.md
-planning/microtask/task-003-something.md
-```
-
-A feature-level index or brainstorm may describe ordering, but it must not replace the individual detailed microtask files used for sizing, promotion, execution, and verification.
+**Handoff:** Once CODE source is committed and inspected, the coding agent records its source-only outcome, archives/advances through authorized Active Work, and writes one explicit current `JR TEST TASK` in `handoff.md` for the active OpenHands test stage. The packet contains GOAL, EXACT COMMAND/ACTION, EXPECTED RESULT, EVIDENCE, safe setup and report-write authority. OpenHands follows `operation cwal.md`: runs only that packet, changes no product files, reports evidence, and stops. The coding agent reviews the report and alone decides verified completion and advancement. On FAIL/BLOCKED: do not mark passed or auto-advance; create/authorize a bounded coding repair when needed, then retest. Source review is never a replacement for a test, and automated tests never substitute for required actual UI/runtime verification.
 
 ## Preferred Size
 
-Score tasks across five dimensions. Count **0, 1, or 2** points in each dimension:
-
-1. **Implementation surface** — number and spread of files/components that must change.
-2. **Environment / dependency uncertainty** — donor import, toolchain setup, external package/runtime requirements, or unknown local prerequisites.
-3. **Behavioral surface** — number of independently meaningful behaviors being introduced or changed.
-4. **Verification surface** — number of distinct proof workflows needed to establish completion.
-5. **Decision / recovery surface** — unresolved choices or independently recoverable failure points likely to require investigation.
-
-Total score:
-
-- 0–3: good JR task;
-- 4–5: split unless the work is tightly coupled and has one deterministic verification workflow;
-- 6–7: split;
-- 8–10: must split.
-
-Do not reduce the score merely because all work contributes to one feature. Size is about execution complexity and context load, not feature count.
+Score five dimensions, each 0, 1 or 2: implementation surface, environment/dependency uncertainty, behavioral surface, verification surface and decision/recovery surface. Total 0-3 is preferred; 4-5 split unless tightly coupled with one deterministic workflow; 6-7 split; 8-10 must split. Never artificially lower a score because multiple phases belong to one feature.
 
 ## Mandatory Split Triggers
 
-Split a task when any of these are true:
+Split for more than 3 independent acceptance outcomes, more than 3 independent implementation verbs, multiple verification workflows, multiple architecture decisions, independently verifiable sequential subtasks, donor/import/toolchain plus live behavior, unknown environment discovery plus product implementation, or an early failure forcing later steps to be reinterpreted. Coding, TEST and VERIFY stages are distinct by default, even for a small feature.
 
-1. More than 3 independent acceptance outcomes.
-2. More than 3 independent implementation verbs.
-3. Multiple distinct verification workflows.
-4. Multiple architectural decisions.
-5. The task naturally contains sequential sub-tasks that can stand alone and be verified independently.
-6. The task combines **donor/import/toolchain establishment** with **runtime behavioral verification**.
-7. The task combines environment discovery with product implementation unless the environment is already known and explicitly established in current repository context.
-8. A failure in an early phase would force JR to abandon or substantially reinterpret later-phase work.
+For imported components: establish/code first; OpenHands build/static TEST next; OpenHands runtime/UI VERIFY last. If an integration needs separate unit and live probes, keep separate tests and verification tasks. A task must stay within one bounded semantic branch and working set; split when in doubt.
 
-### Donor / Runtime Rule
+## Required Task Shape
 
-Default decomposition for imported components:
-
-```text
-IMPORT / ESTABLISH COMPONENT
-→ BUILD / STATIC VERIFY
-
-then
-
-RUN COMPONENT
-→ BEHAVIORAL / PROTOCOL VERIFY
-```
-
-Keep these in one task only when the imported material, toolchain, runtime, and verification path are already proven in the target repository and no independent investigation is expected.
-
-## Context-Budget Check
-
-Before finalizing a task, ask:
-
-```text
-Can JR execute this task while staying inside one semantic branch
-and one bounded working set of implementation details?
-```
-
-If successful execution predictably requires JR to load donor structure, toolchain setup, runtime configuration, protocol behavior, deployment constraints, and restart/recovery semantics at the same time, the task is oversized even if its numeric score appears acceptable.
-
-When uncertain, split at the strongest independently verifiable boundary.
-
-## Task Shape
-
-Each microtask file should contain:
-
-- exactly one task ID and title;
-- one primary outcome;
-- scope;
-- explicit non-scope when useful;
-- acceptance criteria;
-- verification method;
-- dependencies;
-- sizing assessment with the five-dimension score or a concise justification.
+Every task has one ID/title, stage and owner, one primary outcome, scope, non-scope, no more than three independently testable acceptance outcomes, a stage-appropriate evidence/handoff requirement, dependencies, Previous/Next and five-dimension sizing. TEST/VERIFY tasks must spell out exact commands or repeatable actions, expected observations and evidence. Do not allow a tester to choose its own scope from neighboring tasks. Record actual failures and environment blockers separately.
 
 ## Promotion Boundary
 
-A microtask remains planning material until a human promotes it.
-
-Before promotion, use synchronized ICC context for the selected task and workflow state. Refresh only stale affected context inside the selected semantic branch through BLACK SHEEP WALL.
-
-Promotion moves the selected task file into `workflow/active_work/` and synchronizes `handoff.md`.
+A human approves promotion into `workflow/active_work/`. An explicitly human-authorized ordered sequence may move between its already QUEUED tasks after evidence; a successor still in Planning needs separate promotion. Maintain exactly one ACTIVE. Only the coding agent manages implementation/task state; OpenHands/JR may update only the explicitly authorized handoff report. Only BLACK SHEEP WALL updates ICC.

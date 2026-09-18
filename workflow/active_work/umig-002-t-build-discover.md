@@ -1,6 +1,6 @@
 # UMIG-002-T — TEST: Toolkit Build and Discovery
 
-Status: QUEUED — prior run FAIL; awaiting authorized CODE repair and a fresh JR packet.
+Status: ACTIVE — retest pending after source-only discovery-manifest repair; no PASS yet.
 Stage / owner: TEST / OpenHands (JR via Operation CWAL)
 Previous: UMIG-002
 Next: UMIG-002-V
@@ -9,21 +9,22 @@ Next: UMIG-002-V
 Demonstrate that the standalone Toolkit package builds and is discovered by OS.js.
 
 ## Scope / safe setup
-Use committed UMIG-002 source in a disposable OS.js checkout. Prepare sandbox-local Node dependencies safely if needed, without changing tracked product source, manifest or configuration. Leave Windows Electron and user data untouched. Check the HEAD and checkout state before running.
+Use committed UMIG-002 source including repair `cd67e150139b60f3914db8c6f1998c96c5b8da07` in a disposable OS.js checkout. Prepare sandbox-local Node dependencies safely if needed, without changing tracked product source, manifest or configuration. Leave Windows Electron and user data untouched. Check HEAD and checkout state before running. Fulfill the bounded ICC prerequisite in `handoff.md` before JR execution.
 
 ## Test instruction
-Exact product test command: `cd OSJS && npm run build:local-packages && npm run package:discover`.
-Expected: both commands exit 0; `MCSModbusToolkit` has `dist/main.js` and `dist/main.css` and appears in discovered OS.js metadata; Electron is not required.
-Evidence: HEAD, `git status --short` before and after, raw command output and exit codes, discovered Toolkit metadata entry and artifact paths. A genuine build failure is FAIL; an unsafe or unavailable test environment is BLOCKED. Source inspection alone is not PASS.
+The current `JR TEST TASK — CURRENT: UMIG-002-T (RETEST)` in `handoff.md` is the exact packet. Execute `cd OSJS && npm run build:local-packages` and `cd OSJS && npm run package:discover` in order, recording each actual exit code and raw output. Inspect Toolkit `dist/main.js` and `dist/main.css` plus discovery output, `OSJS/packages.json`, `OSJS/dist/metadata.json` and `OSJS/dist/apps/MCSModbusToolkit/`.
+
+Expected: both commands exit 0; Toolkit assets exist; Toolkit appears in the discovered package output and all named discovery destinations. An exit-zero-only reading is not a PASS.
+Evidence: HEAD SHA with repair ancestor, pre/post `git status --short`, ICC-prerequisite status, toolchain and setup, separate raw command output and exit codes, discovered entries and artifact existence. A genuine product-test contradiction is FAIL; an unsafe, unavailable or stale-prerequisite test is BLOCKED. Source inspection alone is not PASS.
 
 ## Recorded failure / repair interruption
-JR executed the original packet and reported FAIL in `handoff.md` at commit `752a541`: build and discovery commands exited 0 and Toolkit assets existed, but Toolkit was absent from discovery manifests and `dist/apps/`. Toolkit lacks the `package.json` discovery marker required by OS.js. The human authorized a bounded CODE repair (`UMIG-002-R`) on 2026-09-18. This TEST is temporarily QUEUED, not passed; resume only after repair checkpoint, ICC review, and replacement JR packet. The repair is an interruption/retry, not a change to the original UMIG-002 → UMIG-002-T → UMIG-002-V feature sequence.
+First JR run reported FAIL at `752a541`: both commands exited 0 and assets existed but Toolkit was absent from discovery manifests and `dist/apps/`. Human authorized bounded CODE task UMIG-002-R; it added only the missing OS.js local-package manifest at `cd67e15` and was archived at `workflow/archive/umig-002-r-toolkit-discovery-manifest.md`. Original raw FAIL evidence remains accessible via the immutable `handoff.md` version at commit `752a541`. This is a retry of the originally authorized TEST, not a change to the UMIG-002 → UMIG-002-T → UMIG-002-V feature sequence.
 
 ## Non-scope
 No rendered UI launch, backend/runtime tests, source fixes, workflow advancement or ICC writes.
 
 ## Dependencies
-UMIG-002 source checkpoint archived; repair UMIG-002-R must be completed before this TEST becomes ACTIVE again. Required ICC refresh is performed by BLACK SHEEP WALL, not JR, before execution.
+UMIG-002 and UMIG-002-R CODE checkpoints archived. A current JR test packet is present in `handoff.md`; BLACK SHEEP WALL must refresh affected stale ICC context before JR executes. UMIG-002-V stays QUEUED until an actual TEST PASS is reviewed and the coding agent advances it.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 0 = 2.

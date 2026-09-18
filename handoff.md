@@ -36,7 +36,68 @@ REPORT-WRITE AUTHORITY: OpenHands/JR may replace **only** the `## JR TEST REPORT
 
 ## JR TEST REPORT — UMIG-002-V
 
-PENDING — rendered one-window VERIFY has not yet been executed. JR replaces only this section with its observed PASS / FAIL / BLOCKED and raw evidence after the ICC prerequisite is satisfied.
+VERDICT: **BLOCKED** — the packet's mandatory ICC prerequisite is not satisfied. No build, discovery, serve or rendered UI step was executed.
+
+### Block reason
+
+The packet (`REPOSITORY STATE`) makes a recorded **bounded BLACK SHEEP WALL ICC refresh** a gate, and `workflow/active_work/umig-002-v-window-launch.md` independently requires that affected ICC context be refreshed before JR execution. That refresh has not happened.
+
+- The last committed ICC change is `24c00de78ccbdf1773c1c9749f2062ff578c1b4f` ("BLACK SHEEP WALL: refresh ICC to baseline 9775593"). `git log --oneline 9775593..HEAD -- ICC/` returns exactly that one commit.
+- The five later commits (`e9d25e3`, `e90f2fe`, `f54d277`, `f3fe611`, `9a9daf0`) changed `handoff.md` and `workflow/` but did not touch `ICC/`.
+- Consequently committed ICC still describes the **superseded** state: `ICC/INDEX.md` reads "Overlay state: exactly one ACTIVE task, `UMIG-002-T` (Toolkit build and discovery TEST), **retest pending with no PASS**" and "`UMIG-002-V` is QUEUED", and `ICC/context/active-work.md` says "`handoff.md` agrees with this directory: `UMIG-002-T` is ACTIVE and `UMIG-002-V` is QUEUED" and, under Verification state, "UMIG-002-T: the retest has produced no evidence yet. `handoff.md` carries a `PENDING` `JR TEST REPORT — UMIG-002-T RETEST` placeholder, not a result."
+
+That committed ICC statement is now factually wrong, and it is stale for the exact delta it declares a dependency on. `ICC/INDEX.md` registers `handoff.md` and `workflow/active_work/*.md` as source dependencies of both `L0-project` and `active-work`, and `ICC/context/active-work.md` repeats that dependency list. The delta since the last ICC write is precisely those dependency files (`git diff --name-status 9775593..HEAD` shows `M handoff.md`, `M workflow/active_work/umig-002-v-window-launch.md`, `D workflow/active_work/umig-002-t-build-discover.md`, `A workflow/archive/umig-002-t-build-discover.md`). The dependency set therefore intersects the delta, so ICC is stale rather than merely irrelevant, and the packet forbids treating the old `UMIG-002-T` execution summary as current.
+
+Honoring the recorded gate: jr may not refresh ICC (`operation cwal.md` §2 and §4; only BLACK SHEEP WALL writes ICC), may not proceed on unverified prerequisite evidence, and may not self-authorize a cross-directive BLACK SHEEP WALL run under the Directive Composition Rule. Verdict is BLOCKED, not PASS and not FAIL: the requested product test was never executed, so no product result contradicts any expectation.
+
+### Repository-state checks that did pass
+
+- HEAD: `9a9daf09e4190004e4b27cd6d63417170b52233a`; `origin/main` is at the same SHA.
+- Pre-test `git status --short`: empty (tracked checkout clean).
+- `UMIG-002-V` predecessor: `git merge-base --is-ancestor e9d25e3d4c1b832126a161a6071fd4abf8b5546b HEAD` exits 0, so the independent TEST PASS commit is an ancestor of HEAD.
+- Exactly one ACTIVE task in `workflow/active_work/`: `grep -rln "^Status: ACTIVE"` returns only `workflow/active_work/umig-002-v-window-launch.md`; 17 files are QUEUED.
+- Port 18209 was free before execution.
+
+None of these compensate for the unsatisfied ICC gate.
+
+### Commands executed (evidence only; no product test run)
+
+```text
+git rev-parse HEAD                              -> 9a9daf09e4190004e4b27cd6d63417170b52233a
+git status --short                              -> (empty)
+git merge-base --is-ancestor e9d25e3 HEAD       -> exit 0
+git log --oneline 9775593..HEAD                 -> 9a9daf0, f3fe611, f54d277, e90f2fe, 5a7155e, e9d25e3, 24c00de
+git log --oneline 9775593..HEAD -- ICC/         -> 24c00de only
+git diff --name-status 9775593..HEAD            -> ICC/INDEX.md, ICC/context/{L0-project,active-work,osjs-shell}.md,
+                                                   electron/renderer/app.js, electron/test/memory-settings.test.js,
+                                                   handoff.md, workflow/active_work/umig-002-t-build-discover.md (D),
+                                                   workflow/active_work/umig-002-v-window-launch.md,
+                                                   workflow/archive/umig-002-t-build-discover.md (A)
+grep -rln "^Status: ACTIVE" workflow/active_work/ -> umig-002-v-window-launch.md
+git config user.name / user.email               -> unset in this disposable checkout
+```
+
+`git ls-remote origin main` also returns `9a9daf09e4190004e4b27cd6d63417170b52233a`, confirming no newer remote HEAD carried an ICC refresh.
+
+### Environment notes (not the block reason)
+
+- Sandbox-local toolchain present: Node `v22.23.2`, npm `10.9.8`. The repository declares `engines` Node `>=10 <17`, so the optional safe-setup step expected a Node 16 install; a webpack 4 / MD4 build may additionally require `NODE_OPTIONS=--openssl-legacy-provider` on Node 17+, as the `osjs-shell` ICC node records. This was not tested, because the gate above failed first.
+- No repository file was modified. No `npm install`, build, discovery, serve, browser or GUI action was performed. No server was started and no test data directory was created, so no cleanup was required.
+- Post-test `git status --short`: empty (unchanged from pre-test). The only working-tree change this run makes is this authorized report section.
+
+### Not verified / not claimed
+
+No rendered Toolkit window, placeholder text, Start-menu launch, window count, desktop/taskbar integrity, legacy Simulator/Replicator availability, backend health, Electron, Windows or final migration acceptance is claimed. This report records a blocked prerequisite only.
+
+### Unblock path (for the coding agent; JR cannot do this)
+
+1. Run the bounded BLACK SHEEP WALL refresh for the affected ICC branch and its necessary parents (`active-work`, `L0-project`, `osjs-shell`, plus this index), so committed ICC records `UMIG-002-T` COMPLETE/PASS at `e9d25e3`, `UMIG-002-V` as the sole ACTIVE task, and the current `PENDING` report state. Commit/push it.
+2. Confirm port 18209 remains free and the disposable-checkout plan is unchanged.
+3. Re-issue or confirm the `UMIG-002-V` packet, then re-invoke JR. The packet text itself needs no correction; only its prerequisite must be met.
+
+### Report commit
+
+Report-write authority was used for this section only. `handoff.md` is committed and pushed with this report; no other file is included.
 
 ## Evidence limits
 

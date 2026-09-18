@@ -17,11 +17,18 @@ const register = (core, args, options, metadata) => {
   win.render($content => {
     const root = document.createElement('section');
     root.className = 'mcs-toolkit-placeholder';
+
     const heading = document.createElement('h1');
     heading.textContent = 'MCS Modbus Toolkit';
+
+    const status = document.createElement('strong');
+    status.className = 'mcs-toolkit-placeholder__status';
+    status.textContent = 'NOT CONNECTED — PLACEHOLDER ONLY';
+
     const message = document.createElement('p');
-    message.textContent = 'Toolkit shell staged. Memory, Replicator and Diagnostics are not connected yet.';
-    root.append(heading, message);
+    message.textContent = 'Memory, Replicator and Diagnostics are not connected yet. Existing applications remain available.';
+
+    root.append(heading, status, message);
     $content.appendChild(root);
   });
 

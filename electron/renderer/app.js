@@ -4,6 +4,7 @@ const log = document.getElementById('log');
 let runtimePaths = null;
 let replicatorPollVersion = 0;
 let replicatorStatusReceivedAt = 0;
+let simulatorPollVersion = 0;
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const numberValue = value => value === '' ? 0 : Number(value);
@@ -124,6 +125,8 @@ const simulatorState = {document: {devices: []}, persisted: {devices: []}, selec
 const selectedSimulator = () => simulatorState.selected === null ? null : simulatorState.document.devices[simulatorState.selected];
 
 const renderSimulator = () => {
+  simulatorPollVersion++;
+  simulatorState.runtimeStatus = null;
   const root = document.getElementById('simulator-root');
   root.replaceChildren();
   const shell = h('div', 'tool-layout');
@@ -180,6 +183,11 @@ const renderSimulator = () => {
 
       const intervalField = field('Interval', interval, {min: 1, step: 1, className: 'cell-field'}, value => {
         device.random_runtime[intervalKey] = numberValue(value);
+        if (device.random_runtime[intervalKey] === 0) {
+          mode.value = 'none';
+          intervalInput.value = '0';
+          intervalInput.disabled = true;
+        }
         if (Number(value) > 0) {
           const last = rememberedIntervals.get(device.random_runtime) || {};
           last[fc] = Number(value);
@@ -258,12 +266,21 @@ const loadSimulator = async () => {
 const pollSimulator = async () => {
   const device = selectedSimulator();
   if (!device || simulatorState.saving) return;
+  const name = device.name;
+  const version = ++simulatorPollVersion;
+  const isCurrent = () => version === simulatorPollVersion && selectedSimulator() === device && device.name === name && !simulatorState.saving;
   try {
-    const result = await window.mcsDesktop.simulatorCall('status', {name: device.name});
+    const result = await window.mcsDesktop.simulatorCall('status', {name});
+    if (!isCurrent()) return;
     simulatorState.runtimeStatus = result.status || result;
     setText('sim-runtime-mma2', simulatorState.runtimeStatus.mma2_status || '-');
     setText('sim-runtime-device', simulatorState.runtimeStatus.device_status || '-');
-  } catch (_) {}
+  } catch (_) {
+    if (!isCurrent()) return;
+    simulatorState.runtimeStatus = null;
+    setText('sim-runtime-mma2', 'UNAVAILABLE');
+    setText('sim-runtime-device', 'UNAVAILABLE');
+  }
 };
 const saveSimulator = async () => {
   const validation = simulatorState.document.devices.map(validateSimulator).find(Boolean);

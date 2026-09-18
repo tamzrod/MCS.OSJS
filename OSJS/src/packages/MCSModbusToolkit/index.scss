@@ -1,21 +1,10 @@
-// UMIG-002: all styles remain within the Toolkit content; never style OS.js chrome.
-.mcs-toolkit-placeholder {
-  box-sizing: border-box;
-  min-height: 100%;
-  padding: 16px;
-  background: #e6e6e6;
-  color: #202020;
-  font-family: Tahoma, Arial, sans-serif;
-
-  h1 { margin: 0 0 12px; font-size: 16px; }
-  p { margin: 10px 0 0; font-size: 12px; }
-
-  &__status {
-    display: inline-block;
-    padding: 4px 6px;
-    border: 1px solid #777;
-    background: #fff;
-    color: #333;
-    font-size: 12px;
-  }
+// UMIG-003: this single selector affects only the Toolkit's own host.
+// The frozen Electron renderer CSS is injected into its ShadowRoot, never
+// emitted as a global stylesheet that could alter OS.js desktop chrome.
+.mcs-toolkit-host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }

@@ -1,6 +1,6 @@
 # UMIG-002-V — VERIFY: One Toolkit Window
 
-Status: ACTIVE — human-authorized independent rendered verification; not run.
+Status: ACTIVE — human-authorized independent rendered verification; prior invocation BLOCKED by superseded ICC prerequisite, product test not run.
 Stage / owner: VERIFY / OpenHands (JR via Operation CWAL)
 Previous: UMIG-002-T
 Next: none
@@ -19,7 +19,7 @@ Evidence: HEAD SHA and pre/post git status, exact build/serve and browser/launch
 No functional Memory/Replicator/Diagnostics acceptance, icon cutover, deletion, product fixes, backend startup, Electron/Windows work, ICC writes or workflow advancement by JR.
 
 ## Dependencies
-UMIG-002-T reported independent PASS at `e9d25e3d4c1b832126a161a6071fd4abf8b5546b`, reviewed and archived by the coding agent. Previous task names this successor; human authorization already exists. The current `handoff.md` packet must be present, and affected ICC context must be refreshed by BLACK SHEEP WALL before JR execution.
+UMIG-002-T reported independent PASS at `e9d25e3d4c1b832126a161a6071fd4abf8b5546b`, reviewed and archived by the coding agent. Previous task names this successor; human authorization already exists. A current `handoff.md` packet is required. Confirm current task status and predecessor directly from authoritative Git files; ICC is an optional context cache, not a prerequisite for this self-contained verification. Do not invoke BLACK SHEEP WALL, require an ICC refresh, or block solely on stale ICC. The prior BLOCKED report caused by the former prerequisite is preserved at commit `3831e33338a77fcea2e70e96d3f5127193fc5c10` and is not a product FAIL or PASS.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 0 = 2.

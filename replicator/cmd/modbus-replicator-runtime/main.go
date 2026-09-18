@@ -12,8 +12,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Microsoft/go-winio"
-
 	"github.com/tamzrod/MCS.OSJS/replicator"
 )
 
@@ -30,13 +28,12 @@ func main() {
 	}
 	defer manager.Stop()
 
-	pipePath := replicator.RuntimeSocketPath(root)
-	listener, err := winio.ListenPipe(pipePath, &winio.PipeConfig{
-		SecurityDescriptor: "D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GRGW;;;AU)",
-	})
+	endpoint := replicator.RuntimeSocketPath(root)
+	listener, cleanup, err := listenRuntime(endpoint)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer cleanup()
 	defer listener.Close()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
@@ -44,7 +41,7 @@ func main() {
 		<-ctx.Done()
 		_ = listener.Close()
 	}()
-	log.Printf("Replicator runtime listening on %s", pipePath)
+	log.Printf("Replicator runtime listening on %s", endpoint)
 
 	for {
 		conn, err := listener.Accept()

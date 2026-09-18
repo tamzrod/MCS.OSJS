@@ -54,10 +54,6 @@ type applyQuery struct {
 	Document Document `json:"document"`
 }
 
-func RuntimeSocketPath(_ string) string {
-	return `\\.\pipe\mcs-modbus-replicator`
-}
-
 func HandleRuntimeRequest(manager *RuntimeManager, request RuntimeRequest) RuntimeResponse {
 	response := RuntimeResponse{Version: RuntimeProtocolVersion, RequestID: request.RequestID}
 	if request.Version != RuntimeProtocolVersion {

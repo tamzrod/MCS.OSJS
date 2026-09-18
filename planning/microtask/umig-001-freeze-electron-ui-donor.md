@@ -8,17 +8,17 @@ Next: UMIG-002
 Record one approved, immutable Electron renderer commit as the OS.js UI migration reference.
 
 ## Scope
-After the human declares Electron UI finished, record the exact source commit and the final Memory, Replicator and Diagnostics tab surfaces, including renderer HTML/CSS/JS and any UI assets. Identify native-only calls that need an OS.js adapter. Record the reference in a small migration donor note; do not use an older in-progress renderer.
+After the human declares Electron UI finished, record the exact source commit and the final Memory, Replicator and Diagnostics tab surfaces, including renderer HTML/CSS/JS and any UI assets. Identify native-only calls that need an OS.js adapter. Record the reference in a small migration donor note; do not use an older in-progress renderer. The commit is source provenance for a one-time copy, never a shared build, live source import, or dependency between deployments.
 
 ## Non-scope
-No Electron modifications, OS.js port, workflow promotion, UI redesign or runtime changes.
+No Electron modifications, OS.js port, workflow promotion, UI redesign or runtime changes. No shared-source integration or automated donor synchronization.
 
 ## Acceptance
 1. Human approval of the finished Electron UI and the exact commit SHA are recorded.
-2. The donor note identifies the final renderer files/assets and native-only API boundary.
+2. The donor note identifies the final renderer files/assets, native-only API boundary, and copy-only provenance without a cross-deployment dependency.
 
 ## Verification
-Check the approved commit and inspect only the listed donor paths; confirm the donor note points to that SHA.
+Check the approved commit and inspect only the listed donor paths; confirm the donor note points to that SHA and specifies copy-only transfer.
 
 ## Dependencies
 Hard gate: Electron UI completion, its remaining acceptance/verification as determined by the human, and explicit human selection of this task for promotion. Do not infer completion from packaging or a prior partial test. Before promotion, validate the current planning ICC branch through BLACK SHEEP WALL if stale.

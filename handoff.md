@@ -38,7 +38,103 @@ REPORT-WRITE AUTHORITY: OpenHands/JR may replace **only** the `## JR TEST REPORT
 
 ## JR TEST REPORT — UMIG-002-V
 
-PENDING — corrected packet is ready for independent rendered verification; no UMIG-002-V product test has run. Prior ICC-gate BLOCKED report is preserved in the immutable handoff at commit `3831e33338a77fcea2e70e96d3f5127193fc5c10`. JR replaces only this section with observed PASS / FAIL / BLOCKED and direct evidence for the current packet, then stops.
+VERDICT: **PASS** — every required rendered observation was directly confirmed in a real browser against a disposable checkout of `origin/main`.
+
+### Repository-state checks
+
+- Disposable checkout `git clone --depth 1 file:///workspace/project/MCS.OSJS /tmp/umigv`; HEAD `758a585817ce83bec40fc0fae764132dfece3efd`, equal to `origin/main` (`git ls-remote origin main` = `758a585817ce83bec40fc0fae764132dfece3efd`).
+- Pre-test `git status --short`: empty. Post-test: empty. No repository file was modified.
+- `git merge-base --is-ancestor e9d25e3d4c1b832126a161a6071fd4abf8b5546b HEAD` exits 0 (independent TEST PASS is an ancestor).
+- `grep -rln "^Status: ACTIVE" workflow/active_work/` returns only `umig-002-v-window-launch.md`; 17 files are QUEUED. Sole ACTIVE task confirmed from authoritative workflow files.
+- Port 18209 was free before start and free again after stop.
+
+### Toolchain and safe setup (sandbox-local only)
+
+Node 16.20.2 / npm 8.19.4 installed under `$HOME/.local/node16` (repository `engines` = `>=10.0.0 <17`). Playwright 1.63.0 + Chromium (headless shell 153) installed user-local under `$HOME/.local` / `$HOME/.cache/ms-playwright-agent` for real-browser driving. Fresh disposable `OSJS_DATA_DIR=$(mktemp -d)` outside the checkout. `cd OSJS && npm install --no-audit --no-fund` exited 0 (954 packages); tracked checkout remained clean.
+
+### Commands and results
+
+```text
+(1) cd OSJS && npm run build:local-packages   -> exit 0
+    "built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator,
+     ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme"
+    Toolkit dist: main.js 1909 bytes, main.css 433 bytes
+(2) cd OSJS && npm run package:discover       -> exit 0
+    "7 package(s) discovered": mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]
+    OSJS/packages.json contains "src/packages/MCSModbusToolkit"
+    OSJS/dist/metadata.json entry 0: type application, name MCSModbusToolkit,
+      title.en_EN "MCS Modbus Toolkit"
+    OSJS/dist/apps/MCSModbusToolkit -> src/packages/MCSModbusToolkit/dist
+(3) cd OSJS && npm run build                  -> exit 0 (webpack 4.47.0, osjs bundle emitted)
+(4) OSJS_DATA_DIR="$TEST_DATA_DIR" PORT=18209 npm run serve
+    "Server listening on http://0.0.0.0:18209", "WebSocket listening on ws://0.0.0.0:18209"
+    GET / -> 200 ; GET /healthz -> {"status":"ok","shell":"neutral"}
+```
+
+### Rendered browser verification (real Chromium, 1280x800)
+
+```text
+desktop_entries              ["Modbus Replicator"]      (desktop iconview wrapper present)
+windows_before               0                          (clean baseline)
+placeholders_before          0
+clock_t0 "12:18:10" -> t1 "12:18:14"; clock_advanced = true
+Start menu display after open  "block"
+Start menu entries         ["Development", "MCS Modbus Toolkit", "Modbus Replicator",
+                            "Modbus Simulator", "Save Session & Log Out", "Log Out"]
+Start menu band text       "ROD DESKTOP" (intentional Win2000-style vertical band, OSUI-008)
+launch clicks by operator   exactly 1 (real coordinate mouse click on the menu entry)
+windows_after              1
+placeholders_after         1
+window_dump                [{dataId: "MCSModbusToolkitWindow", header: "MCS Modbus Toolkit",
+                             placeholders: 1,
+                             status: ["NOT CONNECTED — PLACEHOLDER ONLY"]}]
+placeholder full text      "MCS Modbus Toolkit\nNOT CONNECTED — PLACEHOLDER ONLY\n\nMemory,
+                            Replicator and Diagnostics are not connected yet. Existing
+                            applications remain available."
+panel_after               "MCS Modbus Toolkit\n12:18:20"  (taskbar window button appeared)
+menu reopened display      "block"; entries unchanged with both legacy apps still listed
+legacy_simulator_listed    true
+legacy_replicator_listed   true
+windows_final              1
+page_errors                []
+```
+
+Independent launch-count confirmation from the browser console during the same single session:
+
+```text
+packages_launch_toolkit_calls  ["Packages::launch() MCSModbusToolkit {} {}"]  -> count 1
+window_ctor_calls              ["Window::constructor() {id: MCSModbusToolkitWindow,
+                                title: MCS Modbus Toolkit, ...}"]              -> count 1
+```
+
+Taskbar liveness (real mouse input, window-chrome minimize then taskbar restore):
+
+```text
+window minimize button (data-action="minimize") clicked
+  -> data-minimized "true", data-focused "false", display "none"
+taskbar window entry clicked (label "MCS Modbus Toolkit")
+  -> data-minimized "false", data-focused "true", display "block"
+placeholder still present after restore: 1
+```
+
+Every required acceptance item is directly confirmed: exactly one Toolkit window after exactly one Start-menu launch, the literal `NOT CONNECTED — PLACEHOLDER ONLY` placeholder, functional desktop/Start menu/taskbar with a live clock, and both legacy Simulator and Replicator still listed. Legacy applications were not launched and no backend was started.
+
+### Non-blocking observations
+
+- Four 404s during normal OS.js boot, all pre-existing and unrelated to the Toolkit window: `/apps/MCSModbusToolkit/icon.svg`, `/apps/ModbusReplicator/icon.png`, `/apps/ModbusSimulator/icon.png`, `/sounds/FreedesktopSounds/service-login.mp3`. The Toolkit menu entry does render with an icon in the menu DOM (the `/apps/.../icon.svg` background-image is applied); the 404 is the bare fetch. Reported as an observation only, not reclassified as a product failure by JR and not part of the acceptance criteria.
+- OS.js session snapshot correctly persists window state between page loads; a rebuilt session restored the prior Toolkit window. All counts above come from a single clean session on a freshly wiped `OSJS_DATA_DIR`.
+
+### Evidence artifacts (sandbox paths; not committed)
+
+Screenshots (1280x800 PNG, Playwright/Chromium): `/tmp/jr-umigv-shots/DEFINITIVE-01-desktop.png`, `DEFINITIVE-02-startmenu.png`, `DEFINITIVE-03-toolkit-window.png`, `DEFINITIVE-04-menu-reopened.png`, `DEFINITIVE-05-taskbar-minimized.png`, `DEFINITIVE-06-taskbar-restored.png`, `tb-3-minimized.png`, `tb-4-restored.png`. Raw JSON: `/tmp/jr-umigv-definitive.json`, `/tmp/jr-umigv-final.json`, `/tmp/jr-umigv-report.json`. Server startup log: `/tmp/umigv-serve4.log`.
+
+### Cleanup
+
+Only the server process started by this test was stopped (port 18209 free again). All disposable `OSJS_DATA_DIR` directories were removed. No product, workflow, task-state or ICC file was touched.
+
+### Evidence limits
+
+This establishes rendered one-window VERIFY PASS only. No backend/Modbus connectivity, functional Memory/Replicator/Diagnostics acceptance, icon cutover, legacy package deletion, Windows COMMS/installer or Electron acceptance, or final migration acceptance is claimed or implied. The prior ICC-gate BLOCKED report remains preserved at `3831e33338a77fcea2e70e96d3f5127193fc5c10`.
 
 ## Evidence limits
 

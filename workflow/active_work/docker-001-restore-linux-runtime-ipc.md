@@ -1,18 +1,21 @@
 # DOCKER-001 — CODE: Restore Linux runtime IPC without changing Windows pipes
 
-Status: ACTIVE — human explicitly authorized fix and push to main on 2026-09-18; implementation and independent verification pending.
+Status: ACTIVE — bounded source repair authored and read back; Linux/Windows build and live deployment verification still pending.
 Stage / owner: CODE / ChatGPT
-Previous: none — independent deployment regression repair
-Next: none — stop after source checkpoint and request deployment verification; no unrelated task promotion.
+Previous: none — independent human-authorized deployment regression repair
+Next: none — do not select unrelated work or archive before the required gate.
 
 ## Repro and scope
-After `docker compose down`, `git pull` to `66fed78` and `docker compose up -d --build`, Linux Simulator compilation failed at `simulator/runtime_server.go` with undefined `winio.ListenPipe` and `winio.PipeConfig`; Replicator and OS.js builds were canceled. The Linux OS.js relays still connect to Unix sockets at `$OSJS_DATA_DIR/run/modbus-{simulator,replicator}.sock`, but Go runtimes were switched to Windows-only named pipes. Original evidence is user-supplied deployment log; no product test has passed for this repair.
+The user's `git pull` reached `66fed78`, then `docker compose up -d --build` failed compiling Simulator on Linux: `undefined: winio.ListenPipe` and `undefined: winio.PipeConfig`; Replicator and OS.js builds were canceled. OS.js relays still use `$OSJS_DATA_DIR/run/modbus-simulator.sock` and `modbus-replicator.sock` whereas the Go runtimes used Windows pipes. The Compose stack was taken down without `-v`, so no volume removal is authorized.
 
-## Bounded repair
-Separate Go transport implementations by OS: retain the exact existing Windows named-pipe names, ACLs and JSON framing; restore Linux Unix-socket paths, listener ownership/cleanup and matching relay endpoints for Simulator and Replicator. Ensure cross-platform Simulator test code does not unconditionally import Windows-only go-winio. Avoid MMA2 protocol, OS.js UI, Electron installer, configuration, persistent volume and unrelated changes.
+## Implemented source checkpoint
+- `simulator/runtime_server.go` retains its protocol, service logic and accept loop, delegating listener/path selection to `runtime_transport_windows.go` (same named pipe and ACL) or `runtime_transport_unix.go` (Unix socket under the shared data root, existing-owner protection, stale-socket handling and cleanup).
+- `replicator/runtime_api.go` and runtime `main.go` delegate path and listener to Windows/Unix implementations. Windows pipe name and ACL remain unchanged; Linux uses `run/modbus-replicator.sock`, matching the unchanged OS.js relay.
+- Simulator framing tests now dial via Windows/Unix test helpers rather than importing go-winio unconditionally; Linux Replicator tests cover relay path, live-owner protection, cleanup and stale-socket recovery.
+- The Go framing protocol, MMA2, OS.js UI/relays, Electron and Docker Compose were not changed. Source files and patches were re-read; the actual Go/Docker gates have NOT run in the editing environment (Go 1.23 only; repository checkout and Docker unavailable).
 
-## Gates
-Read back all authored files; inspect diff for Windows behavior and Linux relay compatibility. Required independent evidence: `cd simulator && go test ./... && go build -o /tmp/mcs-simulator-test ./cmd/modbus-simulator-runtime`; `cd replicator && go test ./... && go build -o /tmp/mcs-replicator-test ./cmd/modbus-replicator-runtime`; `cd deploy && docker compose up -d --build`, `docker compose ps` and appropriate runtime socket/relay checks; check Windows cross-compilation and named-pipe fixtures on a Windows-capable runner. Do not call a source-only patch or a generic parser equivalent to these gates. Do not change ICC except via separate BLACK SHEEP WALL directive.
+## Verification required before COMPLETE
+Use a real checkout with Go 1.25 and Docker. Record independent `cd simulator && go test ./... && go build -o /tmp/mcs-simulator-test ./cmd/modbus-simulator-runtime`, `cd replicator && go test ./... && go build -o /tmp/mcs-replicator-test ./cmd/modbus-replicator-runtime`, then `cd deploy && docker compose up -d --build && docker compose ps` and runtime logs / shared Unix socket connectivity. Check Windows compilation and named-pipe framing fixtures on a Windows-capable runner. Report exact command outputs; a rebuild alone cannot prove the relays work. Do not use `docker compose down -v` or alter persistent data.
 
 ## Continuation
-If direct execution is unavailable, push the bounded source checkpoint as unverified, keep task ACTIVE and ask for independent TEST evidence. Never archive or advance on an unexecuted build. The user retains control of live Docker lifecycle and persistent data; never run `docker compose down -v`.
+Keep this task ACTIVE until independent evidence proves the required deployment gate. If verification fails, report the exact failure, do not relabel the source checkpoint PASS. Only BLACK SHEEP WALL may edit ICC, and no ICC refresh is an automatic prerequisite for the deployment test.

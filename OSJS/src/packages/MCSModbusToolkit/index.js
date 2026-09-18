@@ -1,9 +1,10 @@
 import './index.scss';
 import osjs from 'osjs';
 import {name as applicationName} from './metadata.json';
+import {createToolkit} from './toolkit-renderer';
 
-// UMIG-002: isolated OS.js-owned shell only. No Electron source or runtime
-// services are imported here; the donor UI and adapters belong to later tasks.
+// UMIG-003: one OS.js-owned window with a self-contained fixture renderer.
+// Real Simulator/Replicator adapters belong to the later UMIG-004/005 stages.
 const register = (core, args, options, metadata) => {
   const proc = core.make('osjs/application', {args, options, metadata});
   const win = proc.createWindow({
@@ -12,24 +13,18 @@ const register = (core, args, options, metadata) => {
     dimension: {width: 960, height: 640},
     position: 'center'
   });
+  let toolkit = null;
 
-  win.on('destroy', () => proc.destroy());
+  win.on('destroy', () => {
+    if (toolkit) {
+      toolkit.destroy();
+      toolkit = null;
+    }
+    proc.destroy();
+  });
   win.render($content => {
-    const root = document.createElement('section');
-    root.className = 'mcs-toolkit-placeholder';
-
-    const heading = document.createElement('h1');
-    heading.textContent = 'MCS Modbus Toolkit';
-
-    const status = document.createElement('strong');
-    status.className = 'mcs-toolkit-placeholder__status';
-    status.textContent = 'NOT CONNECTED — PLACEHOLDER ONLY';
-
-    const message = document.createElement('p');
-    message.textContent = 'Memory, Replicator and Diagnostics are not connected yet. Existing applications remain available.';
-
-    root.append(heading, status, message);
-    $content.appendChild(root);
+    toolkit = createToolkit(document);
+    $content.appendChild(toolkit.element);
   });
 
   return proc;

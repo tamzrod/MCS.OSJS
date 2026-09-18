@@ -1,6 +1,6 @@
 # Donor Licensing and Provenance
 
-Baseline commit: 500376cfb5c222298aadfcf035aad0af0a635773
+Baseline commit: ee19b8a
 Working tree: clean
 Source dependencies: docs/LICENSING.md, THIRD_PARTY_NOTICES.md, LICENSE
 Parent: L0-project
@@ -40,3 +40,22 @@ License texts required for redistribution of harvested OS.js slice:  BSD-2-Claus
 ## Third-Party Notices File
 
 THIRD_PARTY_NOTICES.md records provenance/redistribution obligations; inclusion under Apache-2.0 does not relicense third-party material. Update whenever new component incorporated or provenance/version/licensing changes; preserve full license texts where required alongside distribution..
+
+## MMA2 Notice Added by This Delta
+
+`THIRD_PARTY_NOTICES.md` gained a new entry for the MMA2 component, the only new provenance record
+in `ee19b8a..HEAD`:
+
+- Source: `tamzrod/mma2` (main), project-owned donor.
+- Exact material harvested into `MMA2/` at commit `12311c1d06510840b42723a83438574e6b3ed06f`:
+  build/runtime source (`cmd/`, `internal/`), build scaffolding (`go.mod`, `go.sum`, `Dockerfile`,
+  `.gitignore`), `README.md` rewritten as the MCS component doc, `docs/`, and the Apache-2.0 `LICENSE`.
+- License: Apache-2.0, compatible with the MCS.OSJS project license; obligation to retain the
+  Apache-2.0 text alongside the distribution is recorded.
+- Excluded: the prebuilt donor `mma2` binary (build artifact) and donor `test/` e2e scaffolding.
+
+This notice was added after the OS.js harvest gate and does not by itself approve any Electron donor.
+The Toolkit migration's donor freeze (`UMIG-001`) is still PLANNED/BLOCKED in Planning; no donor SHA
+is approved and no Electron renderer has been copied into the repository. `docs/LICENSING.md` and
+`LICENSE` were not changed by this delta.
+

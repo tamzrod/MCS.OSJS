@@ -1,6 +1,6 @@
 # External Network Exposure Directive
 
-Baseline commit: 500376cfb5c222298aadfcf035aad0af0a635773
+Baseline commit: ee19b8a
 Working tree: clean
 Source dependencies: docs/NETWORK_EXPOSURE.md, deploy/docker-compose.yml, OSJS/Dockerfile, OSJS/src/server/config.js
 Parent: L0-project
@@ -44,3 +44,25 @@ The shell listens on TCP 18209 by default:
 - `deploy/docker-compose.yml` — standalone shell deployment publishes `18209` via `ports:` (OSJS_PORT env override(;, OSJS_DATA_DIR=/data volume-mounted persistence (named volume osjs-data(, /healthz healthcheck..
 
 The full OS.js desktop UI (HTTP + WebSocket( serves on this port. In the final appliance deployment, this listener shares host network namespace under required host networking; Docker `ports:` publishing not required for the appliance container. This resolves the OS.js TCP port only; MMA2 Modbus TCP port numbers remain architecture-task decisions per the directive..
+
+## Committed compose topology (delta to `ee19b8a`)
+
+`deploy/docker-compose.yml` now defines four services, all sharing the `osjs-data` named volume:
+
+- `osjs-shell` — unchanged: builds `../OSJS`, publishes `"${OSJS_PORT:-18209}:18209"` via Docker
+  `ports:`, `PORT=18209`, `OSJS_DATA_DIR=/data`, `/healthz` healthcheck on 127.0.0.1:18209.
+- `modbus-simulator-runtime` — builds `simulator/Dockerfile` from the repository root context,
+  `network_mode: host`, `OSJS_DATA_DIR=/data`, no published ports.
+- `modbus-replicator-runtime` — builds `replicator/Dockerfile`, `network_mode: host`,
+  `OSJS_DATA_DIR=/data`, `depends_on: mma2`, no published ports.
+- `mma2` — builds `../MMA2` with `Dockerfile.supervised`, `network_mode: host`, shared
+  `osjs-data` volume, no published ports.
+
+Directive consistency: the Modbus runtimes and MMA2 now use host networking rather than bridge/NAT,
+which matches the directive's requirement. Only `osjs-shell` still publishes a port; its comment
+still records that the standalone shell uses `ports:` and that the appliance must not rely on it.
+The delta therefore needs no new directive rule, but it does resolve part of the Non-Goals above:
+internal component-to-component transport is now a Windows named pipe, not a Unix socket
+(`simulator-memory-none`, `replicator`). MMA2 Modbus TCP port numbers, listener count and memory
+mapping remain open architecture decisions.
+

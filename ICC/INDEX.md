@@ -17,24 +17,27 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
-Baseline Commit: ee19b8a
-Working Tree: dirty
-Audited Uncommitted Overlay: parked Electron source/assets as previously fingerprinted, plus workflow closure: `handoff.md` CFA76248, deleted Electron brainstorm and active records, archived `electron-001` 2D65D35E and `electron-002` 5B109E8B. Active Replicator records remain unchanged (REP-BLOCK-002 929E0D54; REP-BLOCK-003 49518F16).
+Baseline Commit: 7029e41
+Working Tree: clean
+Audited Uncommitted Overlay: none. The overlay previously recorded here (parked Electron source/assets plus the Electron/Planning workflow closure) is now committed: it is part of the `ee19b8a..7029e41` delta. No uncommitted path differs from the audited state.
 
-Overlay state: no ACTIVE task. REP-BLOCK-002/003 are QUEUED. Electron planning is cleared; ELECTRON-001/002 are RETIRED in archive. Planning contains no brainstorm topics and no task microtask files.
+Overlay state: exactly one ACTIVE task, `UMIG-002-T` (Toolkit build and discovery TEST), with a current `JR TEST TASK` packet in `handoff.md` and no execution result. `UMIG-002-V` is QUEUED. MEM-004 through MEM-008, RLED-003 through RLED-011, RREC-004 and REP-BLOCK-002/003 are QUEUED; RREC-001/002/003 are COMPLETE. Planning holds the UMIG-001 and UMIG-003..009 series, all PLANNED/BLOCKED; Brainstorm is empty. Electron `ELECTRON-001/002` remain RETIRED in archive.
 
-Refreshed only the Planning and Active Work control branches at `ee19b8a`. Unrelated sibling context nodes and registry rows are preserved.
+Refreshed at `7029e41`: L0-project, governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, osjs-shell, active-work, simulator-device-config, replicator, plus the new `simulator-memory-none` node. Unchanged: no repository path outside the delta was reopened.
+
+Known unresolved mismatch recorded by this refresh: the committed Go runtimes listen on Windows named pipes while the committed OS.js relay packages still target `$OSJS_DATA_DIR/run/*.sock`. ICC records the mismatch; resolving it requires an authorized task.
 
 | `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
-| `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md` |
+| `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md`, `the gathering.md`, `there is no cow level.md` |
 | `context/donor-licensing.md` | L0-project | — | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
 | `context/network-exposure.md` | L0-project | — | `docs/NETWORK_EXPOSURE.md`, `deploy/docker-compose.yml`, `OSJS/Dockerfile`, `OSJS/src/server/config.js` |
-| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/Brainstorm/modbus-simulator-status-display.md`, `planning/microtask/rep-001-share-mma2-reservation-composer.md` through `planning/microtask/rep-007-simulator-to-replicator-e2e.md` |
-| `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/mma2-basic-install-test.md`, `planning/Brainstorm/osjs-modbus-simulator.md`, `planning/Brainstorm/mcs-three-app-model.md`, `planning/Brainstorm/modbus-simulator-status-display.md` |
-| `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.ejs`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | simulator-device-config, replicator | `handoff.md`, `workflow/active_work/*`, `workflow/archive/*`, `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `mma2composer/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/*`, `planning/Brainstorm/modbus-simulator-status-display.md` |
-| `context/simulator-device-config.md` | active-work | — | `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/internal/config/validate.go`, `MMA2/internal/restartwatch/*`, `MMA2/cmd/mma2-supervisor/*`, `workflow/active_work/rep-001-share-mma2-reservation-composer.md`, `workflow/archive/sim-001-simulator-device-config.md` through `workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md` |
-| `context/replicator.md` | active-work | — | `handoff.md`, `workflow/active_work/rep-*.md`, `mma2composer/*`, `simulator/mma2_config.go`, `simulator/compose_test.go`, `MMA2/pkg/configvalidate/*` |
+| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/microtask/umig-*.md`, `workflow/active_work/README.md` |
+| `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/README.md` |
+| `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.js`, `OSJS/src/client/index.ejs`, `OSJS/src/client/providers/nameless-app-shortcuts.js`, `OSJS/src/packages/MCSModbusToolkit/*`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
+| `context/active-work.md` | L0-project | replicator, simulator-device-config | `handoff.md`, `workflow/active_work/*.md`, `workflow/archive/electron-001-nsis-nssm-service-installer.md`, `workflow/archive/electron-002-compact-industrial-layout.md`, `workflow/archive/umig-002-scaffold-single-osjs-toolkit.md` |
+| `context/simulator-device-config.md` | active-work | simulator-memory-none | `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/pkg/configvalidate/validate.go`, `MMA2/internal/restartwatch/*`, `MMA2/cmd/mma2-supervisor/*`, `workflow/archive/rep-001-share-mma2-reservation-composer.md`, `workflow/archive/sim-001-*.md` through `workflow/archive/sim-024-*.md` |
+| `context/simulator-memory-none.md` | simulator-device-config | — | `simulator/validate.go`, `simulator/apply.go`, `simulator/store.go`, `simulator/memory_none_test.go`, `simulator/runtime_server.go`, `simulator/runtime_server_test.go`, `simulator/cmd/modbus-simulator-runtime/main.go`, `simulator/cmd/modbus-simulator-runtime/main_test.go`, `simulator/go.mod`, `simulator/go.sum`, `simulator/Dockerfile`, `deploy/docker-compose.yml`, `OSJS/src/packages/ModbusSimulator/server.js` |
+| `context/replicator.md` | active-work | — | `handoff.md`, `workflow/active_work/rep-block-002-independent-block-pollers.md`, `workflow/active_work/rep-block-003-tabbed-block-editor.md`, `workflow/archive/rep-*.md`, `replicator/runtime_api.go`, `replicator/cmd/modbus-replicator-runtime/main.go`, `replicator/go.mod` |
 
 ## Access Rule
 

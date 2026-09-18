@@ -1,10 +1,13 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-024)
 
-Baseline commit: ba52432
+Baseline commit: ee19b8a
 Working tree: clean
 Audited Overlay: none
-Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, MMA2/internal/restartwatch/*, MMA2/cmd/mma2-supervisor/*, workflow/active_work/rep-001-share-mma2-reservation-composer.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md
-Zoom In:(none; leaf node)
+Superseded detail: SIM-018/SIM-019 below still name a Unix-domain socket at
+`$OSJS_DATA_DIR/run/modbus-simulator.sock`, and SIM-021A still describes the pre-None status
+rules. Both are superseded; see Zoom In `simulator-memory-none` for current truth.
+Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, MMA2/internal/restartwatch/*, MMA2/cmd/mma2-supervisor/*, workflow/archive/rep-001-share-mma2-reservation-composer.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md
+Zoom In: simulator-memory-none
 Zoom Out: active-work
 
 ## Established truth (SIM-001)

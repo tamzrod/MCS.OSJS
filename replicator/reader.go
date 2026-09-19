@@ -36,6 +36,19 @@ func ReadSourceRange(source SourceConfig) (RegisterValues, error) {
 }
 
 func readSourceRange(source SourceConfig, timeout time.Duration) (RegisterValues, error) {
+	return readSourceObserved(source, timeout, &CycleComms{})
+}
+
+func readSourceObserved(source SourceConfig, timeout time.Duration, comms *CycleComms) (result RegisterValues, readErr error) {
+	defer func() {
+		if readErr != nil && comms.TCP.State == "OK" && comms.Modbus.State != "WARNING" {
+			comms.Modbus = observation("ERROR", "READ_FAILED", comms.TCP.Endpoint)
+			comms.Modbus.Error = readErr.Error()
+		} else if readErr == nil {
+			comms.Modbus = observation("OK", "VALID_RESPONSE", comms.TCP.Endpoint)
+			comms.Modbus.LastSuccessAt = comms.Modbus.ObservedAt
+		}
+	}()
 	if source.Function < 1 || source.Function > 4 {
 		return RegisterValues{}, fmt.Errorf("source.function must be FC1, FC2, FC3, or FC4")
 	}
@@ -55,8 +68,13 @@ func readSourceRange(source SourceConfig, timeout time.Duration) (RegisterValues
 	address := net.JoinHostPort(source.Host, fmt.Sprintf("%d", source.Port))
 	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
+		comms.TCP = observation("ERROR", "CONNECT_FAILED", address)
+		comms.TCP.Error = err.Error()
+		comms.Network = observation("UNKNOWN", "REACHABILITY_UNCONFIRMED", address)
 		return RegisterValues{}, fmt.Errorf("connect %s: %w", address, err)
 	}
+	comms.Network = observation("OK", "REACHABLE_VIA_TCP", address)
+	comms.TCP = observation("OK", "CONNECTED", address)
 	defer conn.Close()
 	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
 		return RegisterValues{}, fmt.Errorf("set deadline: %w", err)
@@ -72,8 +90,11 @@ func readSourceRange(source SourceConfig, timeout time.Duration) (RegisterValues
 	binary.BigEndian.PutUint16(request[8:10], source.Start)
 	binary.BigEndian.PutUint16(request[10:12], source.Count)
 	if _, err := conn.Write(request); err != nil {
+		comms.TCP = observation("ERROR", "WRITE_FAILED", address)
+		comms.TCP.Error = err.Error()
 		return RegisterValues{}, fmt.Errorf("write Modbus request: %w", err)
 	}
+	comms.TCP.ActivityAt = time.Now().UTC().Format(time.RFC3339Nano)
 
 	header := make([]byte, 7)
 	if _, err := io.ReadFull(conn, header); err != nil {
@@ -100,6 +121,9 @@ func readSourceRange(source SourceConfig, timeout time.Duration) (RegisterValues
 		if len(pdu) < 2 {
 			return RegisterValues{}, fmt.Errorf("malformed Modbus exception response")
 		}
+		comms.Modbus = observation("WARNING", "EXCEPTION", address)
+		comms.Modbus.ExceptionCode = &pdu[1]
+		comms.Modbus.Error = fmt.Sprintf("Modbus exception code %d", pdu[1])
 		return RegisterValues{}, fmt.Errorf("Modbus exception code %d", pdu[1])
 	}
 	if pdu[0] != source.Function {

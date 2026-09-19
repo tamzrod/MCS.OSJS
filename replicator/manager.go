@@ -10,6 +10,10 @@ import (
 
 // BlockRuntimeStatus is the truthful runtime state for one Pull Block/poller.
 type BlockRuntimeStatus struct {
+	CycleComms
+	Function  uint8  `json:"function"`
+	Start     uint16 `json:"start"`
+	Count     uint16 `json:"count"`
 	Index     int    `json:"index"`
 	Running   bool   `json:"running"`
 	Cycles    uint64 `json:"cycles"`
@@ -21,6 +25,8 @@ type BlockRuntimeStatus struct {
 // DeviceRuntimeStatus preserves the previous aggregate fields while exposing
 // the ordered per-block states required by the Pull Blocks editor.
 type DeviceRuntimeStatus struct {
+	Comms     map[string]string    `json:"comms"`
+	Network   CommsObservation     `json:"network"`
 	Name      string               `json:"name"`
 	Enabled   bool                 `json:"enabled"`
 	Running   bool                 `json:"running"`
@@ -75,11 +81,13 @@ func (r *managedRuntime) stop() {
 
 func (r *managedRuntime) runCycle() {
 	start := time.Now()
-	_, err := runConfigCycle(r.cfg)
+	var comms CycleComms
+	_, err := runConfigCycleObserved(r.cfg, &comms)
 	end := time.Now()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.state.Cycles++
+	r.state.Comms = comms
 	r.state.LastCycleStart = start
 	r.state.LastCycleEnd = end
 	if err != nil {
@@ -196,6 +204,7 @@ func blockStatus(index int, runtime *managedRuntime) BlockRuntimeStatus {
 		return status
 	}
 	snapshot := runtime.snapshot()
+	status.CycleComms = snapshot.Comms
 	status.Running = snapshot.Running
 	status.Cycles = snapshot.Cycles
 	status.LastError = snapshot.LastError
@@ -229,7 +238,7 @@ func (m *RuntimeManager) Status(name string) (DeviceRuntimeStatus, error) {
 		return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name)
 	}
 	blocks := device.blocks()
-	status := DeviceRuntimeStatus{Name: name, Enabled: device.Enabled, Source: "WAITING", Blocks: make([]BlockRuntimeStatus, len(blocks))}
+	status := DeviceRuntimeStatus{Name: name, Enabled: device.Enabled, Source: "WAITING", Blocks: make([]BlockRuntimeStatus, len(blocks)), Comms: map[string]string{"network": "UNKNOWN", "tcp": "UNKNOWN", "modbus": "UNKNOWN", "mma2": "UNKNOWN"}}
 	if !device.Enabled {
 		status.Source = "DISABLED"
 		for i := range status.Blocks {
@@ -243,6 +252,9 @@ func (m *RuntimeManager) Status(name string) (DeviceRuntimeStatus, error) {
 			runtime = runtimes[i]
 		}
 		bs := blockStatus(i, runtime)
+		bs.Function = blocks[i].Function
+		bs.Start = blocks[i].Start
+		bs.Count = blocks[i].Count
 		status.Blocks[i] = bs
 		status.Cycles += bs.Cycles
 		status.Running = status.Running || bs.Running
@@ -252,6 +264,19 @@ func (m *RuntimeManager) Status(name string) (DeviceRuntimeStatus, error) {
 		if status.LastError == "" && bs.LastError != "" {
 			status.LastError = bs.LastError
 		}
+	}
+	observations := map[string][]CommsObservation{}
+	for _, block := range status.Blocks {
+		observations["network"] = append(observations["network"], block.Network)
+		observations["tcp"] = append(observations["tcp"], block.TCP)
+		observations["modbus"] = append(observations["modbus"], block.Modbus)
+		observations["mma2"] = append(observations["mma2"], block.MMA2)
+		if block.Network.ObservedAt > status.Network.ObservedAt {
+			status.Network = block.Network
+		}
+	}
+	for layer, observed := range observations {
+		status.Comms[layer] = aggregateComms(observed)
 	}
 	switch {
 	case len(status.Blocks) == 0:

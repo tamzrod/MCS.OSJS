@@ -49,6 +49,12 @@ test('process existence, wrong selection and disabled devices cannot imply healt
   }
 });
 
+test('older runtime status explains missing telemetry without inventing health', () => {
+  const model = comms.viewModel({name: 'PLC', enabled: true, running: true, source_status: 'OK'}, 'PLC');
+  assert.equal(model.tcp.state, 'UNKNOWN');
+  assert.match(model.tcp.detail, /Update and restart the Replicator backend/);
+});
+
 test('activity pulses once per new observation and never for failed writes', () => {
   const strip = comms.create(document);
   const status = statusFixture();

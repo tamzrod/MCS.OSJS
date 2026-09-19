@@ -9,6 +9,7 @@ import (
 
 // RuntimeState is the truthful current state of the single-range poll loop.
 type RuntimeState struct {
+	Comms          CycleComms
 	Running        bool
 	Cycles         uint64
 	LastSuccess    bool

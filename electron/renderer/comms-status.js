@@ -65,6 +65,7 @@
       const state = ['OK', 'WARNING', 'ERROR'].includes(reported) ? reported : 'UNKNOWN';
       const lines = [`${label}: ${state.toLowerCase()}`, `Device: ${name || 'none'}`];
       if (!usable) lines.push(reason || 'Disabled, unavailable, stale or not tested');
+      else if (!status.comms) lines.push('Runtime does not provide communication telemetry. Update and restart the Replicator backend.');
       else {
         const observations = key === 'network' ? [{observation: status.network}] : (status.blocks || []).map(block => ({block, observation: block[key]}));
         for (const {block, observation} of observations) {

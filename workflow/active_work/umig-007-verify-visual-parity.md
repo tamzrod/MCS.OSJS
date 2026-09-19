@@ -1,24 +1,23 @@
 # UMIG-007 — VERIFY: Three-Tab Visual Parity
 
-Status: QUEUED — predecessor UMIG-006-V COMPLETE/PASS; BLOCKED from activation until approved three-tab donor screenshot baseline is retrievable and an exact JR packet can be authored.
-Stage / owner: VERIFY / OpenHands (JR), packet and advancement / ChatGPT
-Previous: UMIG-006-V (archived COMPLETE/PASS at `workflow/archive/umig-006-v-diagnostics-ui.md`)
-Next: UMIG-007A
+Status: QUEUED / DEFERRED — predecessor UMIG-006-V COMPLETE/PASS; 2026-09-19 human direction now follows the CURRENT Electron MCS Toolkit model. Do not activate visual-only parity before functional/model alignment and an approved current-model baseline.
+Stage / owner: VERIFY / OpenHands JR; packet, review and advancement / ChatGPT.
+Previous: UMIG-006-V (archived PASS; historical chronological link only). New model-alignment dependencies are described below and must be formally linked through approved microtasks before activation.
+Next: UMIG-007A (QUEUED; no cutover approval implied).
 
 ## Primary outcome
-Independently verify single-window OS.js Toolkit appearance against the human-approved Electron donor.
+Independently compare the functional OS.js Toolkit's three-tab appearance with the human-approved CURRENT Electron model, after the model has been mapped and implemented through separate CODE/TEST/VERIFY gates. Do not treat the old frozen one-time renderer screenshot or source as the current target.
 
-## Verified reference and missing prerequisite
-Frozen donor source is pinned at `1c971b9a6e00bafadf329df8821421a40cfc079c` in `workflow/archive/umig-001-freeze-electron-ui-donor.md`, including renderer HTML/CSS/JS. This is source provenance, NOT approved screenshots. `workflow/archive/umig-003-v-renderer-scope.md` says its screenshots were stored outside the repository at `/tmp/jr-shots/`; no durable approved comparable Memory, Replicator, Diagnostics donor screenshot set is identified. Request the three approved donor images or an explicit human-approved reproducible donor capture/baseline procedure with fixed dimensions and test state, then pin its accessible path/hash. Do not invent images, conflate the frozen source SHA with screenshots, or claim parity from a source diff. The actual OS.js tabs now load canonical data, not donor fixtures: define comparable synthetic device state and explicitly record any unavoidable data differences before issuing the packet.
+## Changed dependency / source truth
+Original frozen one-time visual donor `1c971b9a6e00bafadf329df8821421a40cfc079c` remains immutable history and explains current Toolkit provenance. Human's newer direction is Electron MCS Toolkit at `ff6846f973ad973bd3270b0ff2d707ce5c2616c9` for the current review; a further Electron push requires a new assessed diff/re-pin. That Electron model introduces Device Definition/Advanced folder tabs, per-device RBE/State Sealing/Access Policy, a separate shared MMA Settings modal and new Go/MMA2 RBE behavior. OS.js has not yet implemented those features. The earlier UMIG-006-V PASS is valid at its tested SHA, not a regression pass for upgraded MMA2 or feature parity.
 
-## Verification action after prerequisite is met
-Using a separately authorized, safe isolated OS.js test desktop, compare all three tabs at matched dimensions against the approved donor baseline: forms, spacing, selection, scrolling, device content, OS.js desktop/taskbar/window chrome, and no global CSS leakage. Keep actual appearance comparison separate from runtime success. Require donor and current screenshots/observations with dimensions and discrepancy list. Unavailable required visuals = BLOCKED; concrete mismatch = FAIL pending a separately authorized CODE fix. JR does not debug/fix product or improvise screenshots.
+First finalize the PLANNED `planning/microtask/umig-em-001-electron-model-contract.md` design/compatibility gate and separately authorize its resulting small CODE/TEST/VERIFY tasks. Current-model Memory, Replicator and Diagnostics donor screenshots or an explicit human-approved reproducible capture procedure must then be fixed at comparable window size/state, with durable accessible artifacts. The image previously shared in chat is an isolated Electron Memory Advanced/RBE view with design annotations; it is NOT a three-tab approved baseline or a runtime acceptance test. Original `/tmp/jr-shots/` artifacts are not durable donor evidence.
 
-## Non-scope and authority
-No code edits, backend protocol changes, destructive tests, production/user-data access, legacy UI removal, cutover or `operation cwal.md` edits. This QUEUED task and this descriptive file are NOT an executable JR instruction. ChatGPT must first verify reference availability, promote this as the sole ACTIVE task and issue the task-specific `handoff.md` JR TEST TASK; until then no `OPERATION CWAL` invocation.
+## VERIFY action AFTER all dependencies
+Under a separate exact task-specific `handoff.md` packet, compare actual OS.js Memory (definition, advanced, shared modal), Replicator and Diagnostics against current-model Electron at matched dimensions and safe comparable synthetic states. Check navigation, forms, control availability, spacing, selection, scrolling, taskbar/window chrome and ShadowRoot CSS isolation. Separate platform-specific controls (Windows service/bin paths) and unsupported RBE network output from visual discrepancies; never fabricate health, COMMS, logs or backend results. Require paired screenshots/observations and discrepancies, not source-only inference. Missing baseline/target => BLOCKED; proven discrepancy => FAIL for independently authorized repair.
 
-## Dependencies
-UMIG-006-V PASS (met); approved retrievable donor screenshots or approved reproducible capture procedure (missing); exact JR packet (missing).
+## Boundaries
+No code fixes/debugging by JR, production user data, enabled RBE network listener without separate safety review, protocol changes, legacy retirement, cutover, ICC or general CWAL changes. QUEUED is not executable; no JR packet exists yet.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

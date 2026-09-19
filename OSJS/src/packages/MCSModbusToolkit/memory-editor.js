@@ -1,8 +1,7 @@
 'use strict';
 
-// Toolkit-only Memory editor. Canonical definitions come solely from Simulator
-// load/apply, NEVER the fixture preview. No request is sent on mount except load;
-// apply requires an explicit Save & Apply click. No legacy UI import.
+// Toolkit-only Memory editor. The Simulator load/apply response is the sole
+// canonical document; the Toolkit's visual fixtures are never used as data.
 const FC = [['fc1', 'Coils (FC1)'], ['fc2', 'Discrete Inputs (FC2)'],
   ['fc3', 'Holding Registers (FC3)'], ['fc4', 'Input Registers (FC4)']];
 const STATES = new Set(['RUNNING', 'WAITING', 'STOPPED', 'ERROR', 'IDLE']);
@@ -44,8 +43,21 @@ const validateDocument = document => {
 };
 const statusWord = (status, name, field, unavailable) => {
   if (unavailable) return 'UNAVAILABLE';
-  if (!status || status.name !== name || !STATES.has(status[field])) return 'UNKNOWN';
-  return status[field];
+  return status && status.name === name && STATES.has(status[field]) ? status[field] : 'UNKNOWN';
+};
+// Zero is None, positive is Random. Remember a positive interval only for
+// the current unsaved editor session, never by writing hidden config fields.
+const changeMode = (device, fc, mode, remembered) => {
+  const key = `${fc}_interval_ms`;
+  const current = device.random_runtime[key];
+  if (mode === 'none') {
+    if (integer(current, 1, 4294967295)) remembered.set(key, current);
+    device.random_runtime[key] = 0;
+  } else if (mode === 'random') {
+    const previous = remembered.get(key);
+    device.random_runtime[key] = integer(current, 1, 4294967295) ? current :
+      integer(previous, 1, 4294967295) ? previous : 1000;
+  }
 };
 
 const createMemoryEditor = (doc, root, memory) => {
@@ -61,6 +73,11 @@ const createMemoryEditor = (doc, root, memory) => {
   let statusError = null;
   let timer = null;
   let generation = 0;
+  const rememberedByDevice = new WeakMap();
+  const rememberedFor = device => {
+    if (!rememberedByDevice.has(device)) rememberedByDevice.set(device, new Map());
+    return rememberedByDevice.get(device);
+  };
   const h = (tag, className = '', text) => {
     const el = doc.createElement(tag);
     if (className) el.className = className;
@@ -69,9 +86,7 @@ const createMemoryEditor = (doc, root, memory) => {
   };
   const button = (label, action, disabled = false, className = '') => {
     const el = h('button', `tool-button ${className}`.trim(), label);
-    el.type = 'button';
-    el.dataset.memoryAction = action;
-    el.disabled = disabled;
+    el.type = 'button'; el.dataset.memoryAction = action; el.disabled = disabled;
     return el;
   };
   const selectedDevice = () => documentValue && selected !== null ? documentValue.devices[selected] : null;
@@ -81,13 +96,9 @@ const createMemoryEditor = (doc, root, memory) => {
     return current && previous && current.name === previous.name ? previous.name : null;
   };
   const setMessage = (text, error = false) => {
-    message = text;
-    messageError = error;
+    message = text; messageError = error;
     const node = root.querySelector('.tool-status');
-    if (node) {
-      node.textContent = text;
-      node.classList.toggle('error', error);
-    }
+    if (node) { node.textContent = text; node.classList.toggle('error', error); }
   };
   const patchStatus = () => {
     const name = appliedName();
@@ -101,10 +112,7 @@ const createMemoryEditor = (doc, root, memory) => {
   const stopPolling = () => {
     generation++;
     if (timer !== null) clearTimeout(timer);
-    timer = null;
-    status = null;
-    statusError = null;
-    patchStatus();
+    timer = null; status = null; statusError = null; patchStatus();
   };
   const poll = token => {
     const name = appliedName();
@@ -117,9 +125,7 @@ const createMemoryEditor = (doc, root, memory) => {
       patchStatus();
     }).catch(error => {
       if (closed || saving || token !== generation || appliedName() !== name) return;
-      status = null;
-      statusError = error.message || String(error);
-      patchStatus();
+      status = null; statusError = error.message || String(error); patchStatus();
     }).then(() => {
       if (!closed && !saving && token === generation && appliedName() === name) {
         timer = setTimeout(() => poll(token), 1000);
@@ -129,6 +135,14 @@ const createMemoryEditor = (doc, root, memory) => {
   const restartPolling = () => {
     stopPolling();
     if (!closed && !loading && !saving && appliedName()) poll(generation);
+  };
+  const updateValidation = () => {
+    const error = validateDocument(documentValue);
+    const validation = root.querySelector('[data-memory-validation]');
+    if (validation) validation.textContent = error || '';
+    const save = root.querySelector('[data-memory-action="save"]');
+    if (save) save.disabled = Boolean(error) || loading || saving;
+    patchStatus();
   };
   const field = (label, value, update, options = {}) => {
     const wrapper = h('label', options.className || 'tool-field');
@@ -142,21 +156,15 @@ const createMemoryEditor = (doc, root, memory) => {
     if (options.max !== undefined) input.max = options.max;
     input.addEventListener('input', () => {
       update(input.type === 'number' ? numberValue(input.value) : input.value);
-      const validation = root.querySelector('[data-memory-validation]');
-      const error = validateDocument(documentValue);
-      if (validation) validation.textContent = error || '';
-      const save = root.querySelector('[data-memory-action="save"]');
-      if (save) save.disabled = Boolean(error) || saving;
-      patchStatus();
+      updateValidation();
+      if (options.reselectPoll) restartPolling();
     });
     wrapper.appendChild(input);
     return wrapper;
   };
   const checkbox = (label, value, update) => {
     const wrapper = h('label', 'tool-checkbox');
-    const input = h('input');
-    input.type = 'checkbox';
-    input.checked = Boolean(value);
+    const input = h('input'); input.type = 'checkbox'; input.checked = Boolean(value);
     input.disabled = saving;
     input.addEventListener('change', () => update(input.checked));
     wrapper.append(input, h('span', '', label));
@@ -168,7 +176,8 @@ const createMemoryEditor = (doc, root, memory) => {
     const sidebar = h('aside', 'tool-sidebar');
     sidebar.appendChild(h('h2', '', 'Devices'));
     const actions = h('div', 'tool-actions');
-    actions.append(button('Add', 'add', loading || saving), button('Duplicate', 'duplicate', loading || saving || selected === null),
+    actions.append(button('Add', 'add', loading || saving),
+      button('Duplicate', 'duplicate', loading || saving || selected === null),
       button('Delete', 'delete', loading || saving || selected === null, 'tool-danger'));
     sidebar.appendChild(actions);
     const list = h('div', 'tool-list');
@@ -191,7 +200,7 @@ const createMemoryEditor = (doc, root, memory) => {
       runtime.children[3].dataset.memoryStatus = 'simulation';
       editor.appendChild(runtime);
       const identity = h('div', 'tool-grid');
-      identity.append(field('Name', device.name, value => { device.name = value; }, {type: 'text'}),
+      identity.append(field('Name', device.name, value => { device.name = value; }, {type: 'text', reselectPoll: true}),
         checkbox('Enabled', device.enabled, value => { device.enabled = value; }),
         field('Listen Port', device.mma2.port, value => { device.mma2.port = value; }, {min: 1, max: 65535}),
         field('Unit ID', device.mma2.unit_id, value => { device.mma2.unit_id = value; }, {min: 0, max: 255}));
@@ -217,7 +226,7 @@ const createMemoryEditor = (doc, root, memory) => {
         });
         select.value = device.random_runtime[intervalKey] > 0 ? 'random' : 'none';
         select.addEventListener('change', () => {
-          device.random_runtime[intervalKey] = select.value === 'none' ? 0 : 1000;
+          changeMode(device, key, select.value, rememberedFor(device));
           render();
         });
         mode.appendChild(select);
@@ -226,12 +235,19 @@ const createMemoryEditor = (doc, root, memory) => {
           field('Count', area.count, value => { area.count = value; updateRange(); }, {className: 'cell-field', min: 0, max: 65535}),
           mode, field('Interval', device.random_runtime[intervalKey], value => {
             device.random_runtime[intervalKey] = value;
+            if (integer(value, 1, 4294967295)) rememberedFor(device).set(intervalKey, value);
             select.value = value > 0 ? 'random' : 'none';
           }, {className: 'cell-field', min: 0, max: 4294967295}), range);
-        updateRange();
-        table.appendChild(row);
+        updateRange(); table.appendChild(row);
       });
       editor.appendChild(table);
+    } else {
+      editor.appendChild(h('div', 'tool-empty', loading ? 'Loading canonical definitions...' : 'Select a device or choose Add.'));
+    }
+    // Keep Save & Apply visible even after deletion of the final device.
+    // It can commit an intentionally empty canonical document; failed apply
+    // leaves the prior persisted snapshot and local edits unchanged.
+    if (documentValue) {
       const validation = h('div', 'tool-validation');
       validation.dataset.memoryValidation = 'true';
       validation.textContent = validateDocument(documentValue) || '';
@@ -240,14 +256,11 @@ const createMemoryEditor = (doc, root, memory) => {
       controls.append(button(saving ? 'Saving...' : 'Save & Apply', 'save', saving || Boolean(validateDocument(documentValue)), 'tool-primary'),
         button('Discard', 'discard', saving));
       editor.appendChild(controls);
-    } else {
-      editor.appendChild(h('div', 'tool-empty', loading ? 'Loading canonical definitions...' : 'Select a device or choose Add.'));
     }
-    const statusMessage = h('div', `tool-status${messageError ? ' error' : ''}`, message);
-    editor.appendChild(statusMessage);
-    const statusDiagnostic = h('div', 'tool-validation');
-    statusDiagnostic.dataset.memoryStatusError = 'true';
-    editor.appendChild(statusDiagnostic);
+    editor.appendChild(h('div', `tool-status${messageError ? ' error' : ''}`, message));
+    const diagnostic = h('div', 'tool-validation');
+    diagnostic.dataset.memoryStatusError = 'true';
+    editor.appendChild(diagnostic);
     shell.append(sidebar, editor);
     root.replaceChildren(shell);
     patchStatus();
@@ -263,9 +276,7 @@ const createMemoryEditor = (doc, root, memory) => {
       messageError = false;
     } catch (error) {
       if (closed) return;
-      persisted = null;
-      documentValue = null;
-      selected = null;
+      persisted = null; documentValue = null; selected = null;
       message = `Simulator runtime unavailable: ${error.message || error}`;
       messageError = true;
     } finally {
@@ -292,7 +303,7 @@ const createMemoryEditor = (doc, root, memory) => {
     } catch (error) {
       if (closed) return;
       message = `Save & Apply failed: ${error.message || error}`;
-      messageError = true; // Keep unsaved document intact on any failed apply.
+      messageError = true;
     } finally {
       if (!closed) { saving = false; render(); restartPolling(); }
     }
@@ -327,9 +338,9 @@ const createMemoryEditor = (doc, root, memory) => {
   root.addEventListener('click', onClick);
   render();
   load();
-  return {
-    destroy: () => { closed = true; stopPolling(); root.removeEventListener('click', onClick); }
-  };
+  return {destroy: () => {
+    closed = true; stopPolling(); root.removeEventListener('click', onClick);
+  }};
 };
 
-module.exports = {blankDevice, normalizeDocument, validateDevice, validateDocument, statusWord, createMemoryEditor};
+module.exports = {blankDevice, normalizeDocument, validateDevice, validateDocument, statusWord, changeMode, createMemoryEditor};

@@ -13,17 +13,18 @@ type persistedDocument struct {
 }
 
 type persistedDevice struct {
-	Name        string               `yaml:"name"`
-	Enabled     bool                 `yaml:"enabled"`
-	Endpoint    string               `yaml:"endpoint"`
-	UnitID      uint16               `yaml:"unit_id"`
-	PullBlocks  []PullBlock          `yaml:"pull_blocks"`
-	PullBlock   *PullBlock           `yaml:"pull_block"`
-	Function    uint8                `yaml:"function"`
-	Start       uint16               `yaml:"start"`
-	Count       uint16               `yaml:"count"`
-	ScanRateMS  uint32               `yaml:"scan_rate_ms"`
-	Destination DestinationSelection `yaml:"destination"`
+	MMA2Advanced map[string]interface{} `yaml:"mma2_advanced"`
+	Name         string                 `yaml:"name"`
+	Enabled      bool                   `yaml:"enabled"`
+	Endpoint     string                 `yaml:"endpoint"`
+	UnitID       uint16                 `yaml:"unit_id"`
+	PullBlocks   []PullBlock            `yaml:"pull_blocks"`
+	PullBlock    *PullBlock             `yaml:"pull_block"`
+	Function     uint8                  `yaml:"function"`
+	Start        uint16                 `yaml:"start"`
+	Count        uint16                 `yaml:"count"`
+	ScanRateMS   uint32                 `yaml:"scan_rate_ms"`
+	Destination  DestinationSelection   `yaml:"destination"`
 }
 
 func (s Store) DocumentPath() string {
@@ -55,12 +56,13 @@ func (s Store) LoadDocument() (Document, error) {
 			blocks = []PullBlock{{Function: item.Function, Start: item.Start, Count: item.Count, ScanRateMS: item.ScanRateMS}}
 		}
 		device := DeviceDefinition{
-			Name:        item.Name,
-			Enabled:     item.Enabled,
-			Endpoint:    item.Endpoint,
-			UnitID:      item.UnitID,
-			PullBlocks:  blocks,
-			Destination: item.Destination,
+			MMA2Advanced: item.MMA2Advanced,
+			Name:         item.Name,
+			Enabled:      item.Enabled,
+			Endpoint:     item.Endpoint,
+			UnitID:       item.UnitID,
+			PullBlocks:   blocks,
+			Destination:  item.Destination,
 		}
 		if len(blocks) > 0 {
 			device.PullBlock = blocks[0]

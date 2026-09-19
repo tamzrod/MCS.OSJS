@@ -39,6 +39,22 @@ test('new defaults are independent and opening advanced tabs does not alter save
   assert.equal(JSON.stringify(params), before);
 });
 
+test('Replicator advanced editor uses destination area unions and persists only advanced fields', () => {
+  const device = {pull_blocks: [{function: 1, start: 10, count: 4}, {function: 1, start: 20, count: 2}, {function: 3, start: 100, count: 8}], mma2_advanced: ui.defaults()};
+  const params = ui.replicatorParams(device);
+  assert.deepEqual(params.fc1, {start: 10, count: 12});
+  assert.deepEqual(params.fc3, {start: 100, count: 8});
+  const {root} = setup(params);
+  click(root, 'Add');
+  assert.equal(device.mma2_advanced.rbe.coils[0].start, 10);
+  click(root, 'State Sealing');
+  const enabled = find(root, 'Enable state sealing'); enabled.checked = true; enabled.events.change();
+  type(find(root, 'Control address'), '11');
+  assert.equal(device.mma2_advanced.state_sealing.address, 11);
+  assert.equal(device.mma2_advanced.fc1, undefined);
+  assert.equal(ui.replicatorParams(device).rbe.coils[0].id, 1);
+});
+
 test('state sealing controls are disabled while off and emit the selected values without help text', () => {
   const {root, params} = setup(); click(root, 'State Sealing');
   assert.equal(find(root, 'Control address').disabled, true);
@@ -60,12 +76,25 @@ test('access checkboxes are Custom-only and preset/source selections use canonic
   const coil = find(root, 'FC1 Read Coils'); coil.checked = true; coil.events.change();
   assert.ok(params.policy.rules[0].allow_fc.includes(1));
   const source = find(root, 'Source IP / CIDR');
-  assert.ok(source.attributes.list);
+  assert.equal(source.attributes.list, undefined);
   type(source, 'All IPv6'); assert.equal(params.policy.rules[0].source_ip[0], '::/0');
-  type(source, 'Custom'); assert.equal(source.value, '');
+  change(find(root, 'Source presets'), 'Custom'); assert.equal(source.value, '');
   type(source, '192.168.4.0/24'); assert.equal(params.policy.rules[0].source_ip[0], '192.168.4.0/24');
+  change(find(root, 'Source presets'), 'All IPv4');
+  assert.equal(params.policy.rules[0].source_ip[0], '0.0.0.0/0');
   change(find(root, 'Access'), 'Read/Write');
   assert.equal(collect(root).filter(node => node.type === 'checkbox').length, 0);
+});
+
+test('comma-separated sources normalize without shifting later source rows while typing', () => {
+  const {root, params} = setup(); click(root, 'Access Policy');
+  const source = find(root, 'Source IP / CIDR');
+  type(source, '192.168.1.5, 10.0.0.0/8, ,2001:db8::/32');
+  assert.deepEqual(params.policy.rules[0].source_ip, ['192.168.1.5', '10.0.0.0/8', '2001:db8::/32', '::/0']);
+  type(source, '192.168.1.6, 10.0.0.0/8');
+  assert.deepEqual(params.policy.rules[0].source_ip, ['192.168.1.6', '10.0.0.0/8', '::/0']);
+  change(find(root, 'Source presets'), 'All IPv6');
+  assert.deepEqual(params.policy.rules[0].source_ip, ['::/0', '::/0']);
 });
 
 test('policy ordering, removal and draft edits persist across subtab changes', () => {

@@ -131,6 +131,7 @@ const discardSimulator = () => {
 };
 const memoryView = {section: 'devices', editor: 'definition'};
 const mmaState = {document: {}, persisted: {}, loaded: false, loading: false, saving: false, message: '', error: false};
+const advancedDevices = () => [...simulatorState.document.devices, ...(typeof replicatorState === 'undefined' ? [] : replicatorState.document.devices.map(device => ({mma2: device.mma2_advanced || {}})))];
 
 const memoryTab = (label, active, callback) => {
   const button = h('button', 'tool-button', label);
@@ -288,7 +289,7 @@ const renderSimulator = () => {
     editor.appendChild(table);
     } else {
       const advanced = h('div', 'memory-advanced');
-      window.mcsMemoryUI.mount(advanced, device.mma2, {document, devices: simulatorState.document.devices,
+      window.mcsMemoryUI.mount(advanced, device.mma2, {document, devices: advancedDevices(),
         outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen});
       editor.appendChild(advanced);
     }
@@ -401,6 +402,7 @@ const saveSimulator = async () => {
 
 const blankBlock = () => ({function: 3, start: 0, count: 16, scan_rate_ms: 1000});
 const blankReplicator = sequence => ({
+  mma2_advanced: window.mcsMemoryUI.defaults(),
   name: `Rep-PLC-${sequence}`,
   enabled: true,
   endpoint: '127.0.0.1:5020',
@@ -443,6 +445,7 @@ const validateReplicator = device => {
 };
 const replicatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, selectedBlock: 0, loading: true, saving: false, message: 'Loading Replicator definitions...', error: false, runtimeError: '', runtimeStatus: null};
 const selectedReplicator = () => replicatorState.selected === null ? null : replicatorState.document.devices[replicatorState.selected];
+const replicatorView = {editor: 'definition'};
 
 const refreshReplicatorValidation = () => {
   const device = selectedReplicator();
@@ -459,7 +462,8 @@ const refreshReplicatorValidation = () => {
 const renderReplicator = () => {
   const root = document.getElementById('replicator-root');
   root.replaceChildren();
-  const shell = h('div', 'tool-layout');
+  const shell = h('fieldset', 'tool-layout memory-fields');
+  shell.disabled = replicatorState.saving;
   const sidebar = h('aside', 'tool-sidebar');
   sidebar.appendChild(h('h2', '', 'Replicator Devices'));
   const listActions = h('div', 'tool-actions');
@@ -477,7 +481,10 @@ const renderReplicator = () => {
   sidebar.appendChild(list);
   shell.appendChild(sidebar);
   const editor = h('section', 'tool-editor');
-  editor.appendChild(h('h2', '', 'Device Definition'));
+  const tabs = h('nav', 'memory-subtabs');
+  tabs.append(memoryTab('Device Definition', replicatorView.editor === 'definition', () => { replicatorView.editor = 'definition'; renderReplicator(); }),
+    memoryTab('Advanced Settings', replicatorView.editor === 'advanced', () => { replicatorView.editor = 'advanced'; renderReplicator(); }));
+  editor.appendChild(tabs);
   const device = selectedReplicator();
   if (!device) {
     editor.appendChild(h('div', 'tool-empty', 'Select a device or choose Add.'));
@@ -485,6 +492,13 @@ const renderReplicator = () => {
     const commsStrip = window.mcsComms.create(document);
     editor.appendChild(commsStrip);
     window.mcsComms.update(commsStrip, Date.now() - replicatorStatusReceivedAt < 6000 && device.enabled ? replicatorState.runtimeStatus : null, device.name, replicatorState.runtimeError);
+    if (replicatorView.editor === 'advanced') {
+      const advanced = h('div', 'memory-advanced');
+      window.mcsMemoryUI.mount(advanced, window.mcsMemoryUI.replicatorParams(device), {
+        document, devices: advancedDevices(), outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen
+      });
+      editor.appendChild(advanced);
+    } else {
     const identity = h('div', 'tool-grid');
     identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; refreshReplicatorValidation(); }));
     identity.append(checkboxField('Enabled', device.enabled, value => { device.enabled = value; refreshReplicatorValidation(); }));
@@ -537,6 +551,7 @@ const renderReplicator = () => {
       table.appendChild(row);
     });
     editor.appendChild(table);
+    }
     const validation = validateReplicator(device);
     const validationNotice = h('div', 'tool-validation', validation || '');
     validationNotice.id = 'rep-validation';
@@ -650,7 +665,7 @@ document.addEventListener('click', event => {
   else if (action === 'sim-duplicate' && selectedSimulator()) {
     const copy = clone(selectedSimulator()); copy.name = `${copy.name} (copy)`;
     try {
-      window.mcsMemoryUI.assignCopiedIDs(copy.mma2, simulatorState.document.devices);
+      window.mcsMemoryUI.assignCopiedIDs(copy.mma2, advancedDevices());
       simulatorState.document.devices.push(copy); simulatorState.selected = simulatorState.document.devices.length - 1;
     } catch (error) { simulatorState.error = true; simulatorState.message = error.message; }
   }
@@ -659,7 +674,13 @@ document.addEventListener('click', event => {
   else if (action === 'sim-save') { saveSimulator(); return; }
   else if (action === 'rep-select') { replicatorState.selected = Number(target.dataset.index); replicatorState.selectedBlock = 0; }
   else if (action === 'rep-add') { replicatorState.document.devices.push(blankReplicator(replicatorState.document.devices.length + 1)); replicatorState.selected = replicatorState.document.devices.length - 1; replicatorState.selectedBlock = 0; }
-  else if (action === 'rep-duplicate' && selectedReplicator()) { const copy = clone(selectedReplicator()); copy.name = `${copy.name} (copy)`; replicatorState.document.devices.push(copy); replicatorState.selected = replicatorState.document.devices.length - 1; replicatorState.selectedBlock = 0; }
+  else if (action === 'rep-duplicate' && selectedReplicator()) {
+    const copy = clone(selectedReplicator()); copy.name = `${copy.name} (copy)`;
+    try {
+      window.mcsMemoryUI.assignCopiedIDs(copy.mma2_advanced || {}, advancedDevices());
+      replicatorState.document.devices.push(copy); replicatorState.selected = replicatorState.document.devices.length - 1; replicatorState.selectedBlock = 0;
+    } catch (error) { replicatorState.error = true; replicatorState.message = error.message; }
+  }
   else if (action === 'rep-delete' && selectedReplicator()) { replicatorState.document.devices.splice(replicatorState.selected, 1); replicatorState.selected = replicatorState.document.devices.length ? Math.min(replicatorState.selected, replicatorState.document.devices.length - 1) : null; replicatorState.selectedBlock = 0; }
   else if (action === 'rep-select-block') replicatorState.selectedBlock = Number(target.dataset.index);
   else if (action === 'rep-add-block' && selectedReplicator()) { selectedReplicator().pull_blocks.push(blankBlock()); replicatorState.selectedBlock = selectedReplicator().pull_blocks.length - 1; }

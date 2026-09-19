@@ -3,9 +3,24 @@ const memoryUI = (() => {
   const functions = {1: 'Read Coils', 2: 'Read Discrete Inputs', 3: 'Read Holding Registers', 4: 'Read Input Registers', 5: 'Write Single Coil', 6: 'Write Single Register', 15: 'Write Multiple Coils', 16: 'Write Multiple Registers'};
   const areas = {coils: 'Coils', discrete_inputs: 'Discrete Inputs', holding_registers: 'Holding Registers', input_registers: 'Input Registers'};
   const states = new WeakMap();
-  let fieldID = 0;
+  const sourceAliases = {'All IPv4': '0.0.0.0/0', 'All IPv6': '::/0'};
+  const splitSources = value => String(value).split(',').map(item => item.trim()).filter(Boolean).map(item => sourceAliases[item] || item);
   const defaults = () => ({state_sealing: {enabled: false}, policy: {rules: [{id: 'all-addresses', source_ip: ['0.0.0.0/0', '::/0'], allow_fc: [...presets['Read/Write']]}]}});
   const accessMode = codes => Object.keys(presets).find(key => codes.length === presets[key].length && presets[key].every(code => codes.includes(code))) || 'Custom';
+  const replicatorParams = device => {
+    device.mma2_advanced ||= {};
+    const params = {};
+    for (const key of ['policy', 'rbe', 'state_sealing']) Object.defineProperty(params, key, {
+      get: () => device.mma2_advanced[key], set: value => { device.mma2_advanced[key] = value; }
+    });
+    for (let number = 1; number <= 4; number++) {
+      const blocks = device.pull_blocks.filter(block => Number(block.function) === number);
+      const start = blocks.length ? Math.min(...blocks.map(block => Number(block.start))) : 0;
+      const end = blocks.length ? Math.max(...blocks.map(block => Number(block.start) + Number(block.count))) : 0;
+      params[`fc${number}`] = {start, count: end - start};
+    }
+    return params;
+  };
   const allRules = params => Object.keys(areas).flatMap(area => (params.rbe?.[area] || []).map(rule => ({area, rule})));
   const nextID = devices => {
     const used = new Set(devices.flatMap(device => allRules(device.mma2).map(item => Number(item.rule.id))));
@@ -157,20 +172,30 @@ const memoryUI = (() => {
       if (!rule) { root.append(element('div', 'No access rules.', 'tool-empty')); return; }
       const form = element('div', undefined, 'advanced-form');
       form.append(input('Rule ID', rule.id, value => { rule.id = value; }));
-      (rule.source_ip || []).forEach((source, index) => {
+      const sourceDrafts = [...rule.source_ip || []];
+      sourceDrafts.forEach((source, index) => {
         const row = element('div', undefined, 'source-row');
-        const aliases = {'All IPv4': '0.0.0.0/0', 'All IPv6': '::/0'};
-        const display = Object.keys(aliases).find(key => aliases[key] === source) || source;
+        const display = Object.keys(sourceAliases).find(key => sourceAliases[key] === source) || source;
+        const update = value => {
+          sourceDrafts[index] = value === 'Custom' ? '' : value;
+          rule.source_ip = sourceDrafts.flatMap(splitSources);
+        };
         const field = input('Source IP / CIDR', display, (value, control) => {
-          rule.source_ip[index] = aliases[value] || (value === 'Custom' ? '' : value);
+          update(value);
           if (value === 'Custom') control.value = '';
         });
-        const suggestions = element('datalist'); suggestions.id = `source-presets-${++fieldID}`;
-        for (const value of ['All IPv4', 'All IPv6', 'Custom']) {
-          const option = element('option'); option.value = value; suggestions.append(option);
-        }
-        field.querySelector('input').setAttribute('list', suggestions.id);
-        row.append(field, suggestions, button('Remove source', () => { rule.source_ip.splice(index, 1); draw(); })); form.append(row);
+        const control = field.querySelector('input');
+        control.placeholder = 'IP / CIDR, separated by commas';
+        const presetsField = select('Source presets', '', [['', '▼'], ...['All IPv4', 'All IPv6', 'Custom'].map(value => [value, value])], value => {
+          if (!value) return;
+          update(value); control.value = value === 'Custom' ? '' : value;
+          presetsField.querySelector('select').value = '';
+          control.focus?.();
+        });
+        presetsField.className = 'source-presets';
+        row.append(field, presetsField, button('Remove source', () => {
+          sourceDrafts.splice(index, 1); rule.source_ip = sourceDrafts.flatMap(splitSources); draw();
+        })); form.append(row);
       });
       form.append(button('Add source', () => { rule.source_ip ||= []; rule.source_ip.push(''); draw(); }));
       const mode = state.custom.has(rule) ? 'Custom' : accessMode(rule.allow_fc || []);
@@ -225,7 +250,7 @@ const memoryUI = (() => {
     };
     draw();
   };
-  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs};
+  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams};
 })();
 if (typeof module !== 'undefined') module.exports = memoryUI;
 if (typeof window !== 'undefined') window.mcsMemoryUI = memoryUI;

@@ -34,6 +34,11 @@ func (s Store) ComposeDocumentDestinations(doc Document) (Document, mma2composer
 		}
 	}
 
+	for index := range resolved.Devices {
+		if err := inheritAdvanced(&resolved.Devices[index], cfg); err != nil {
+			return Document{}, mma2composer.EffectiveConfig{}, err
+		}
+	}
 	cfg, owners = composer.DropProducerReservations(cfg, owners)
 	for i := range resolved.Devices {
 		device := &resolved.Devices[i]
@@ -47,6 +52,9 @@ func (s Store) ComposeDocumentDestinations(doc Document) (Document, mma2composer
 			return Document{}, mma2composer.EffectiveConfig{}, fmt.Errorf("device %q: %w", device.Name, err)
 		}
 		id := fmt.Sprintf("replicator-%d-%d", device.Destination.Port, device.Destination.UnitID)
+		if err := applyAdvanced(&memory, device.MMA2Advanced); err != nil {
+			return Document{}, mma2composer.EffectiveConfig{}, err
+		}
 		listen := net.JoinHostPort("0.0.0.0", strconv.Itoa(int(device.Destination.Port)))
 		cfg = mma2composer.AddMemory(cfg, id, listen, memory)
 		owners.Reservations = append(owners.Reservations, mma2composer.OwnershipEntry{

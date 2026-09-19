@@ -76,4 +76,12 @@ const callReplicatorRuntime = (root, operation, payload = {}, timeoutMS = DEFAUL
   });
 };
 
-module.exports = {callReplicatorRuntime, runtimeSocketPath};
+const applyReplicatorRuntime = async (root, document, call = callReplicatorRuntime) => {
+  if ((document.devices || []).some(device => Object.keys(device.mma2_advanced || {}).length)) {
+    const loaded = await call(root, 'load');
+    if (!loaded.capabilities?.mma2_advanced) throw new Error('Update and restart the Replicator backend before saving Advanced Settings.');
+  }
+  return call(root, 'apply', {document});
+};
+
+module.exports = {callReplicatorRuntime, runtimeSocketPath, applyReplicatorRuntime};

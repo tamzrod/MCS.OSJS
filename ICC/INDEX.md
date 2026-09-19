@@ -17,6 +17,8 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
+Scoped Replicator advanced-settings context: [electron-replicator-advanced](context/electron-replicator-advanced.md). Includes shared IP/CIDR input behavior and destination persistence.
+
 Scoped installer settings-owner context: [electron-settings-owner](context/electron-settings-owner.md). Tracks account-specific settings ACLs independently of runtime and workflow state.
 
 Scoped Electron Replicator LED context: [electron-replicator-leds](context/electron-replicator-leds.md). This node tracks the runtime/renderer telemetry contract independently of workflow state.

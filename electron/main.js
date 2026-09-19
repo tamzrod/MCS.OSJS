@@ -5,7 +5,7 @@ const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const yaml = require('js-yaml');
-const {callReplicatorRuntime} = require('./replicator-runtime');
+const {callReplicatorRuntime, applyReplicatorRuntime} = require('./replicator-runtime');
 const {createReplicatorCall} = require('./replicator-ipc');
 const {getWindowsServiceStatus} = require('./runtime-status');
 const memorySettings = require('./memory-settings');
@@ -205,7 +205,7 @@ const composeAll = (simDoc, repDoc) => {
     if (!device.enabled) continue;
     device.destination = device.destination || {port: 5021, unit_id: 1};
     assertNoCollision(owners, device.destination.port, device.destination.unit_id, 'replicator');
-    const params = memorySettings.inheritSettings({port: device.destination.port, unit_id: device.destination.unit_id}, previous);
+    const params = memorySettings.inheritSettings({...device.mma2_advanced, port: device.destination.port, unit_id: device.destination.unit_id}, previous);
     addMemory(cfg, `replicator-${device.destination.port}-${device.destination.unit_id}`, device.destination.port, memorySettings.applySettings(repMemory(device), params));
     owners.reservations.push({port: num(device.destination.port), unit_id: num(device.destination.unit_id), owner: 'replicator'});
     device.destination.owner = 'replicator';
@@ -447,7 +447,7 @@ ipcMain.handle('runtime:simulator-call', async (_event, operation, payload) => {
 });
 const replicatorCall = createReplicatorCall({
   load: async () => (await callReplicatorRuntime(dataRoot(), 'load')).document,
-  apply: document => callReplicatorRuntime(dataRoot(), 'apply', {document}),
+  apply: document => applyReplicatorRuntime(dataRoot(), document),
   status: payload => callReplicatorRuntime(dataRoot(), 'status', payload)
 });
 ipcMain.handle('runtime:replicator-call', (_event, operation, payload) => {

@@ -29,13 +29,14 @@ type PullBlock struct {
 // DeviceDefinition keeps source identity and destination ownership at device
 // level while each Pull Block owns its FC/range/scan cadence.
 type DeviceDefinition struct {
-	Name        string               `yaml:"name" json:"name"`
-	Enabled     bool                 `yaml:"enabled" json:"enabled"`
-	Endpoint    string               `yaml:"endpoint" json:"endpoint"`
-	UnitID      uint16               `yaml:"unit_id" json:"unit_id"`
-	PullBlocks  []PullBlock          `yaml:"pull_blocks" json:"pull_blocks"`
-	PullBlock   PullBlock            `yaml:"-" json:"-"` // in-memory compatibility for older callers/tests
-	Destination DestinationSelection `yaml:"destination" json:"destination"`
+	MMA2Advanced map[string]interface{} `yaml:"mma2_advanced,omitempty" json:"mma2_advanced,omitempty"`
+	Name         string                 `yaml:"name" json:"name"`
+	Enabled      bool                   `yaml:"enabled" json:"enabled"`
+	Endpoint     string                 `yaml:"endpoint" json:"endpoint"`
+	UnitID       uint16                 `yaml:"unit_id" json:"unit_id"`
+	PullBlocks   []PullBlock            `yaml:"pull_blocks" json:"pull_blocks"`
+	PullBlock    PullBlock              `yaml:"-" json:"-"` // in-memory compatibility for older callers/tests
+	Destination  DestinationSelection   `yaml:"destination" json:"destination"`
 }
 
 // DestinationSelection stores both the resolved reservation and whether the

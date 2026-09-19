@@ -394,6 +394,9 @@ func cloneDocument(doc Document) Document {
 	out := Document{Devices: make([]DeviceDefinition, len(doc.Devices))}
 	copy(out.Devices, doc.Devices)
 	for i := range out.Devices {
+		if doc.Devices[i].MMA2Advanced != nil {
+			out.Devices[i].MMA2Advanced = cloneAdvancedValue(doc.Devices[i].MMA2Advanced).(map[string]interface{})
+		}
 		out.Devices[i].PullBlocks = append([]PullBlock(nil), doc.Devices[i].PullBlocks...)
 	}
 	return out

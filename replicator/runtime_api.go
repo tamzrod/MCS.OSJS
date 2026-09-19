@@ -36,8 +36,9 @@ type ApplyResponse struct {
 }
 
 type LoadResponse struct {
-	Document   Document              `json:"document"`
-	Suggestion DestinationSuggestion `json:"suggestion"`
+	Capabilities map[string]bool       `json:"capabilities"`
+	Document     Document              `json:"document"`
+	Suggestion   DestinationSuggestion `json:"suggestion"`
 }
 
 type destinationQuery struct {
@@ -72,7 +73,7 @@ func HandleRuntimeRequest(manager *RuntimeManager, request RuntimeRequest) Runti
 			return fail("LOAD_FAILED", err)
 		}
 		response.OK = true
-		response.Result = LoadResponse{Document: manager.Document(), Suggestion: suggestion}
+		response.Result = LoadResponse{Document: manager.Document(), Suggestion: suggestion, Capabilities: map[string]bool{"mma2_advanced": true}}
 	case "suggest":
 		var query destinationQuery
 		if len(request.Payload) > 0 {

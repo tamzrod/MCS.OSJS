@@ -7,6 +7,21 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const {callReplicatorRuntime, runtimeSocketPath} = require('../replicator-runtime');
+const {applyReplicatorRuntime} = require('../replicator-runtime');
+
+test('advanced saves reject old backends before sending apply', async () => {
+  const document = {devices: [{mma2_advanced: {state_sealing: {enabled: false}}}]};
+  const operations = [];
+  await assert.rejects(applyReplicatorRuntime('root', document, async (root, operation) => {
+    operations.push(operation); return {document: {devices: []}};
+  }), /Update and restart/);
+  assert.deepEqual(operations, ['load']);
+  const result = await applyReplicatorRuntime('root', document, async (root, operation, payload) => {
+    if (operation === 'load') return {capabilities: {mma2_advanced: true}};
+    return payload;
+  });
+  assert.deepEqual(result.document, document);
+});
 
 const framed = value => {
   const body = Buffer.from(JSON.stringify(value));

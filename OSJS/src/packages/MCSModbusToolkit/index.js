@@ -5,9 +5,12 @@ import {createToolkit} from './toolkit-renderer';
 import {createMemoryContract} from './memory-contract';
 import {createMemoryTransport} from './memory-transport';
 import {createMemoryEditor} from './memory-editor';
+import {createReplicatorContract} from './replicator-contract';
+import {createReplicatorTransport} from './replicator-transport';
+import {createReplicatorEditor} from './replicator-editor';
 
-// One OS.js-owned window. Only Memory uses a live adapter; Replicator and
-// Diagnostics remain fixture-only. No legacy Simulator application imports.
+// One OS.js Toolkit window. Memory and Replicator use independent transports;
+// Diagnostics remains fixture-only. No legacy application imports.
 const register = (core, args, options, metadata) => {
   const proc = core.make('osjs/application', {args, options, metadata});
   const win = proc.createWindow({
@@ -16,14 +19,19 @@ const register = (core, args, options, metadata) => {
     dimension: {width: 960, height: 640},
     position: 'center'
   });
-  const transport = createMemoryTransport(proc);
-  const memory = createMemoryContract(transport.send);
+  const memoryTransport = createMemoryTransport(proc);
+  const memory = createMemoryContract(memoryTransport.send);
+  const replicatorTransport = createReplicatorTransport(proc);
+  const replicator = createReplicatorContract(replicatorTransport.send);
   let toolkit = null;
   let editor = null;
+  let replicatorEditor = null;
 
   win.on('destroy', () => {
     if (editor) { editor.destroy(); editor = null; }
-    transport.close();
+    if (replicatorEditor) { replicatorEditor.destroy(); replicatorEditor = null; }
+    memoryTransport.close();
+    replicatorTransport.close();
     if (toolkit) { toolkit.destroy(); toolkit = null; }
     proc.destroy();
   });
@@ -31,11 +39,13 @@ const register = (core, args, options, metadata) => {
     toolkit = createToolkit(document);
     const shadow = toolkit.element.shadowRoot;
     const memoryRoot = shadow.getElementById('simulator-root');
-    // Remove fixture DOM before the Toolkit is mounted. A failed load must
-    // never display sample values as if they were canonical configuration.
+    const replicatorRoot = shadow.getElementById('replicator-root');
+    // Never show fixture definitions if canonical load fails or is unavailable.
     memoryRoot.replaceChildren();
-    shadow.querySelector('.subtitle').textContent = 'Memory runtime / Replicator + Diagnostics preview';
+    replicatorRoot.replaceChildren();
+    shadow.querySelector('.subtitle').textContent = 'Memory + Replicator runtime / Diagnostics preview';
     editor = createMemoryEditor(document, memoryRoot, memory);
+    replicatorEditor = createReplicatorEditor(document, replicatorRoot, replicator);
     $content.appendChild(toolkit.element);
   });
 

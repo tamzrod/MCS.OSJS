@@ -30,6 +30,7 @@ func validConfig() Config {
 
 func TestConfigRootFromEnv(t *testing.T) {
 	t.Setenv(envDataDirKey, "")
+	t.Setenv("ProgramData", "")
 	if _, err := ConfigRootFromEnv(); err == nil {
 		t.Fatal("expected error when OSJS_DATA_DIR is unset")
 	}

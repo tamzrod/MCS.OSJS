@@ -66,6 +66,9 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("parse config yaml: %w", err)
 	}
 
+	if err := rejectRemovedInflux(&cfg); err != nil {
+		return nil, err
+	}
 	return &cfg, nil
 }
 

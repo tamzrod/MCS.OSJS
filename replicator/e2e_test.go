@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 
@@ -68,6 +69,9 @@ func TestSimulatorToReplicatorE2E(t *testing.T) {
 	}
 
 	binaryPath := filepath.Join(root, "mma2")
+	if runtime.GOOS == "windows" {
+		binaryPath += ".exe"
+	}
 	build := exec.Command("go", "build", "-o", binaryPath, "../MMA2/cmd/mma2")
 	build.Env = append(os.Environ(), "GOCACHE="+filepath.Join(root, "go-cache"))
 	if output, err := build.CombinedOutput(); err != nil {
@@ -80,7 +84,9 @@ func TestSimulatorToReplicatorE2E(t *testing.T) {
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Signal(os.Interrupt)
+			if err := cmd.Process.Signal(os.Interrupt); err != nil {
+				_ = cmd.Process.Kill()
+			}
 			_, _ = cmd.Process.Wait()
 		}
 	}()

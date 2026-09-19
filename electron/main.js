@@ -1,5 +1,5 @@
 const {app, BrowserWindow, ipcMain} = require('electron');
-const {spawn, execFile} = require('child_process');
+const {spawn, execFile, execFileSync} = require('child_process');
 const crypto = require('crypto');
 const fs = require('fs');
 const net = require('net');
@@ -8,6 +8,9 @@ const yaml = require('js-yaml');
 const {callReplicatorRuntime} = require('./replicator-runtime');
 const {createReplicatorCall} = require('./replicator-ipc');
 const {getWindowsServiceStatus} = require('./runtime-status');
+const memorySettings = require('./memory-settings');
+const reviewRoot = process.env.MCS_REVIEW_DATA_ROOT ? path.resolve(process.env.MCS_REVIEW_DATA_ROOT) : null;
+if (reviewRoot) app.setPath('userData', path.join(reviewRoot, 'electron-profile'));
 
 let mainWindow = null;
 let statusTimer = null;
@@ -15,11 +18,11 @@ const children = new Map();
 const simulatorTimers = new Map();
 const simulatorRuntime = new Map();
 
-const windowsServiceMode = () => app.isPackaged && process.platform === 'win32';
+const windowsServiceMode = () => !reviewRoot && app.isPackaged && process.platform === 'win32';
 const binRoot = () => app.isPackaged ? path.join(process.resourcesPath, 'bin') : path.join(__dirname, 'bin');
-const dataRoot = () => windowsServiceMode()
+const dataRoot = () => reviewRoot || (windowsServiceMode()
   ? path.join(process.env.ProgramData || 'C:\\ProgramData', 'MCS Modbus Toolkit', 'runtime')
-  : path.join(app.getPath('userData'), 'runtime');
+  : path.join(app.getPath('userData'), 'runtime'));
 const executableName = name => process.platform === 'win32' ? `${name}.exe` : name;
 
 const processSpecs = [
@@ -142,7 +145,7 @@ const simMemory = params => {
   if (hasArea(params.fc3)) memory.holding_registers = {start: num(params.fc3.start), count: num(params.fc3.count)};
   if (hasArea(params.fc4)) memory.input_registers = {start: num(params.fc4.start), count: num(params.fc4.count)};
   memory.policy = {rules: [{id: 'simulator-fc-access', source_ip: ['0.0.0.0/0', '::/0', '127.0.0.1', '::1'], allow_fc: [1, 2, 3, 4, 5, 6, 15, 16]}]};
-  return memory;
+  return memorySettings.applySettings(memory, params);
 };
 
 const unionArea = (current, start, count) => {
@@ -175,6 +178,7 @@ const writeRestartRequest = cfg => {
 const composeAll = (simDoc, repDoc) => {
   const p = paths();
   const cfg = readYaml(p.mma2Config, {listeners: []});
+  const previous = clone(cfg);
   const owners = readYaml(p.mma2Owners, {reservations: []});
   cfg.listeners = Array.isArray(cfg.listeners) ? cfg.listeners : [];
   owners.reservations = Array.isArray(owners.reservations) ? owners.reservations : [];
@@ -183,6 +187,7 @@ const composeAll = (simDoc, repDoc) => {
 
   const seen = new Set();
   for (const device of simDoc.devices || []) {
+    device.mma2 = memorySettings.inheritSettings(device.mma2, previous);
     validateSimulatorDevice(device);
     if (!device.enabled) continue;
     const mma2 = device.mma2 || {};
@@ -200,19 +205,41 @@ const composeAll = (simDoc, repDoc) => {
     if (!device.enabled) continue;
     device.destination = device.destination || {port: 5021, unit_id: 1};
     assertNoCollision(owners, device.destination.port, device.destination.unit_id, 'replicator');
-    addMemory(cfg, `replicator-${device.destination.port}-${device.destination.unit_id}`, device.destination.port, repMemory(device));
+    const params = memorySettings.inheritSettings({port: device.destination.port, unit_id: device.destination.unit_id}, previous);
+    addMemory(cfg, `replicator-${device.destination.port}-${device.destination.unit_id}`, device.destination.port, memorySettings.applySettings(repMemory(device), params));
     owners.reservations.push({port: num(device.destination.port), unit_id: num(device.destination.unit_id), owner: 'replicator'});
     device.destination.owner = 'replicator';
     device.destination.status = 'OWNED';
   }
 
+  memorySettings.preserveListeners(cfg, previous);
+  validateMMA2(cfg);
   writeYamlAtomic(p.mma2Config, cfg);
   writeYamlAtomic(p.mma2Owners, owners);
   writeRestartRequest(cfg);
 };
 
-const loadSimulator = () => normalizeDocument(readYaml(paths().simulatorDevices, {devices: []}));
+const loadSimulator = () => memorySettings.hydrateDocument(normalizeDocument(readYaml(paths().simulatorDevices, {devices: []})), readYaml(paths().mma2Config, {listeners: []}));
 const loadReplicator = () => normalizeDocument(readYaml(paths().replicatorDevices, {devices: []}));
+
+const validateMMA2 = config => {
+  try {
+    execFileSync(path.join(binRoot(), executableName('mma2')), ['--validate-stdin'], {
+      input: yaml.dump(config, {lineWidth: 120, noRefs: true}), encoding: 'utf8',
+      windowsHide: true, timeout: 10000, maxBuffer: 4 * 1024 * 1024
+    });
+  } catch (error) {
+    throw new Error(`MMA2 validation failed: ${String(error.stderr || error.message).trim()}`);
+  }
+};
+
+const applyMMASettings = settings => {
+  const config = memorySettings.updateSharedSettings(readYaml(paths().mma2Config, {listeners: []}), settings);
+  validateMMA2(config);
+  writeYamlAtomic(paths().mma2Config, config);
+  writeRestartRequest(config);
+  return {settings: memorySettings.sharedSettings(config), message: reviewRoot ? 'MMA settings saved to isolated review data. Backend not started.' : 'MMA settings saved; restart requested.'};
+};
 
 const applySimulator = doc => {
   const simDoc = normalizeDocument(doc);
@@ -224,7 +251,7 @@ const applySimulator = doc => {
   const message = randomEnabled
     ? 'Memory settings saved, MMA2 restart requested, and random value publishing started.'
     : 'Memory settings saved, MMA2 restart requested. Random value publishing is not required.';
-  return {document: simDoc, message, completed_at: new Date().toISOString()};
+  return {document: simDoc, message: reviewRoot ? 'Memory settings saved to isolated review data. Backend not started.' : message, completed_at: new Date().toISOString()};
 };
 
 
@@ -318,6 +345,7 @@ const resetSimulatorSchedulers = doc => {
   for (const timer of simulatorTimers.values()) clearInterval(timer);
   simulatorTimers.clear();
   simulatorRuntime.clear();
+  if (reviewRoot) return;
   for (const device of doc.devices || []) {
     if (!device.enabled || !device.mma2) continue;
     for (const fc of ['fc1', 'fc2', 'fc3', 'fc4']) {
@@ -356,7 +384,7 @@ const sendStatus = async () => {
 };
 
 const startProcess = spec => {
-  if (windowsServiceMode() || children.has(spec.key)) return;
+  if (reviewRoot || windowsServiceMode() || children.has(spec.key)) return;
   const file = path.join(binRoot(), spec.file);
   if (!fs.existsSync(file)) return;
   fs.mkdirSync(dataRoot(), {recursive: true});
@@ -386,7 +414,7 @@ const createWindow = () => {
     height: 560,
     minWidth: 760,
     minHeight: 460,
-    title: 'MCS Modbus Toolkit',
+    title: reviewRoot ? 'MCS Modbus Toolkit — Isolated UI Review' : 'MCS Modbus Toolkit',
     icon: path.join(__dirname, 'build', 'icon.png'),
     backgroundColor: '#c0c0c0',
     autoHideMenuBar: true,
@@ -397,13 +425,16 @@ const createWindow = () => {
 };
 
 ipcMain.handle('runtime:get-status', getStatus);
-ipcMain.handle('runtime:get-paths', () => ({bin: binRoot(), data: dataRoot(), mode: windowsServiceMode() ? 'windows-service' : 'child-process'}));
+ipcMain.handle('runtime:get-paths', () => ({bin: binRoot(), data: dataRoot(), mode: reviewRoot ? 'isolated-review' : windowsServiceMode() ? 'windows-service' : 'child-process'}));
 ipcMain.handle('runtime:start-all', () => startAll());
 ipcMain.handle('runtime:stop-all', () => { const changed = stopAll(); void sendStatus(); return changed; });
 ipcMain.handle('runtime:simulator-call', async (_event, operation, payload) => {
+  if (operation === 'mma-load') return {settings: memorySettings.sharedSettings(readYaml(paths().mma2Config, {listeners: []}))};
+  if (operation === 'mma-apply') return applyMMASettings(payload.settings);
   if (operation === 'load') return {document: loadSimulator()};
   if (operation === 'apply') return applySimulator(payload.document);
   if (operation === 'status') {
+    if (reviewRoot) return {status: {name: payload.name, mma2_status: 'NOT STARTED', device_status: 'REVIEW ONLY', raw_ingest_status: 'NOT STARTED', fc: {}}};
     const device = loadSimulator().devices.find(item => item.name === payload.name);
     const runtime = device ? simulatorRuntimeFor(device.name) : {raw_ingest_status: 'STOPPED', fc: {}};
     const mma2 = await portStatus(device && device.mma2 && device.mma2.port);
@@ -419,7 +450,13 @@ const replicatorCall = createReplicatorCall({
   apply: document => callReplicatorRuntime(dataRoot(), 'apply', {document}),
   status: payload => callReplicatorRuntime(dataRoot(), 'status', payload)
 });
-ipcMain.handle('runtime:replicator-call', (_event, operation, payload) => replicatorCall(operation, payload));
+ipcMain.handle('runtime:replicator-call', (_event, operation, payload) => {
+  if (reviewRoot) {
+    if (operation === 'load') return {document: {devices: []}};
+    throw new Error('Replicator runtime connections are disabled in isolated UI review.');
+  }
+  return replicatorCall(operation, payload);
+});
 
 app.whenReady().then(() => {
   createWindow();

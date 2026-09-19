@@ -29,7 +29,7 @@ const setup = () => {
     getElementById: id => id === 'simulator-root' ? root : root.querySelector(`#${id}`)
   };
   const pending = [];
-  const context = vm.createContext({document, window: {mcsDesktop: {
+  const context = vm.createContext({document, window: {mcsMemoryUI: require('../renderer/memory-advanced'), mcsDesktop: {
     simulatorCall: () => new Promise((resolve, reject) => pending.push({resolve, reject}))
   }}});
   const source = fs.readFileSync(path.join(__dirname, '../renderer/app.js'), 'utf8');
@@ -90,4 +90,24 @@ test('current polling failure clears healthy status without rerendering the edit
   assert.equal(root.querySelector('#sim-runtime-device').textContent, 'UNAVAILABLE');
   assert.equal(root.querySelector('input'), input);
   assert.equal(run('simulatorState.runtimeStatus'), null);
+});
+
+test('device drafts survive tab changes, save failure, and discard restores the saved snapshot', async () => {
+  const {pending, run} = setup();
+  run('simulatorState.persisted = clone(simulatorState.document); selectedSimulator().mma2.state_sealing = {enabled:true,area:"coil",address:0,exception:6}; memoryView.editor = "advanced"; renderSimulator(); memoryView.editor = "definition"; renderSimulator();');
+  assert.equal(run('selectedSimulator().mma2.state_sealing.enabled'), true);
+  const save = run('saveSimulator()'); pending[0].reject(new Error('validation failed')); await save;
+  assert.equal(run('selectedSimulator().mma2.state_sealing.enabled'), true);
+  run('discardSimulator(); renderSimulator();');
+  assert.equal(run('selectedSimulator().mma2.state_sealing.enabled'), false);
+});
+
+test('shared Save uses MMA IPC and preserves drafts on rejection', async () => {
+  const {pending, run} = setup();
+  run('mmaState.loaded = true; mmaState.document = {rbe:{tcp:{listen:"127.0.0.1:9900"}}}; memoryView.section = "mma";');
+  const save = run('saveMMASettings()'); pending[0].reject(new Error('port collision')); await save;
+  assert.equal(run('mmaState.document.rbe.tcp.listen'), '127.0.0.1:9900');
+  assert.equal(run('mmaState.error'), true);
+  const retry = run('saveMMASettings()'); pending[1].resolve({settings:{rbe:{tcp:{listen:'127.0.0.1:9900'}}}}); await retry;
+  assert.equal(run('mmaState.persisted.rbe.tcp.listen'), '127.0.0.1:9900');
 });

@@ -3,7 +3,6 @@ package simulator
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"strconv"
 	"testing"
 )
@@ -124,7 +123,7 @@ func TestSaveAndComposeFreeReservationPersistsOwner(t *testing.T) {
 	}
 	seen := map[string]string{}
 	for _, r := range owners.Reservations {
-		seen[filepath.Join(strconv.Itoa(int(r.Port)), strconv.Itoa(int(r.UnitID)))] = r.Owner
+		seen[strconv.Itoa(int(r.Port))+"/"+strconv.Itoa(int(r.UnitID))] = r.Owner
 	}
 	if seen["61000/1"] != "replicator" || seen["61001/1"] != ProducerSimulator {
 		t.Fatalf("ownership entries wrong: %+v", seen)
@@ -213,7 +212,7 @@ func TestSaveAndComposeUpdatesOwnReservationPreservesForeign(t *testing.T) {
 	}
 	seen := map[string]string{}
 	for _, r := range owners.Reservations {
-		seen[filepath.Join(strconv.Itoa(int(r.Port)), strconv.Itoa(int(r.UnitID)))] = r.Owner
+		seen[strconv.Itoa(int(r.Port))+"/"+strconv.Itoa(int(r.UnitID))] = r.Owner
 	}
 	if seen["61000/1"] != "replicator" || seen["61001/1"] != ProducerSimulator {
 		t.Fatalf("ownership owners wrong: %+v", seen)

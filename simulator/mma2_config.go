@@ -48,6 +48,7 @@ func (s Store) SaveAndCompose(def DeviceDefinition) error {
 	if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil {
 		return err
 	}
+	inheritMemorySettings(&def.MMA2, cfg)
 	cfg, owners = composer.DropProducerReservations(cfg, owners)
 	if hasMMA2Areas(def.MMA2) {
 		cfg = addReservation(cfg, def.MMA2)
@@ -74,10 +75,12 @@ func (s Store) ComposeDocument(doc Document) error {
 	if err != nil {
 		return err
 	}
-	for _, def := range doc.Devices {
+	for index := range doc.Devices {
+		def := &doc.Devices[index]
 		if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil {
 			return err
 		}
+		inheritMemorySettings(&def.MMA2, cfg)
 	}
 	cfg, owners = composer.DropProducerReservations(cfg, owners)
 	seen := make(map[mma2Key]bool)
@@ -144,7 +147,55 @@ func memoryFromMMA2Params(p MMA2Params) MMA2Memory {
 		SourceIP: []string{"0.0.0.0/0", "::/0", "127.0.0.1", "::1"},
 		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16},
 	}}}
+	if p.Policy != nil {
+		mem.Policy = p.Policy
+	}
+	mem.Extra = make(map[string]interface{})
+	for key, value := range p.Extra {
+		mem.Extra[key] = value
+	}
+	if p.StateSealing != nil {
+		mem.Extra["state_sealing"] = p.StateSealing
+	}
+	if p.RBE != nil {
+		mem.Extra["rbe"] = p.RBE
+	}
 	return mem
+}
+
+func inheritMemorySettings(params *MMA2Params, cfg EffectiveMMA2Config) {
+	for _, listener := range cfg.Listeners {
+		if mma2composer.ListenPort(listener.Listen) != params.Port {
+			continue
+		}
+		for _, memory := range listener.Memory {
+			if memory.UnitID != params.UnitID {
+				continue
+			}
+			if params.Policy == nil {
+				params.Policy = memory.Policy
+			}
+			if params.Extra == nil {
+				params.Extra = make(map[string]interface{})
+			}
+			for key, value := range memory.Extra {
+				switch key {
+				case "state_sealing":
+					if params.StateSealing == nil {
+						params.StateSealing, _ = value.(map[string]interface{})
+					}
+				case "rbe":
+					if params.RBE == nil {
+						params.RBE, _ = value.(map[string]interface{})
+					}
+				default:
+					if _, exists := params.Extra[key]; !exists {
+						params.Extra[key] = value
+					}
+				}
+			}
+		}
+	}
 }
 
 func hasMMA2Areas(p MMA2Params) bool {

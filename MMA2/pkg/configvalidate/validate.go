@@ -15,5 +15,9 @@ func YAML(data []byte) error {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return fmt.Errorf("parse MMA2 config: %w", err)
 	}
-	return internalconfig.Validate(&cfg)
+	if err := internalconfig.Validate(&cfg); err != nil {
+		return err
+	}
+	_, err := internalconfig.BuildRBERules(&cfg)
+	return err
 }

@@ -1,5 +1,7 @@
 package simulator
 
+import "github.com/tamzrod/MCS.OSJS/mma2composer"
+
 // DeviceDefinition is one simulator-owned persistent device.
 // MMA2 structural parameters and random-runtime parameters are persisted
 // together but remain separate domains with separate future consumers.
@@ -16,12 +18,16 @@ type DeviceDefinition struct {
 // JSON tags wire the same structs through the loopback simulator-server bridge
 // (SIM-005( so browser edits round-trip through the SIM-001 Go model..
 type MMA2Params struct {
-	Port   uint16 `yaml:"port" json:"port"`
-	UnitID uint16 `yaml:"unit_id" json:"unit_id"`
-	FC1    Area   `yaml:"fc1" json:"fc1"`
-	FC2    Area   `yaml:"fc2" json:"fc2"`
-	FC3    Area   `yaml:"fc3" json:"fc3"`
-	FC4    Area   `yaml:"fc4" json:"fc4"`
+	Policy       *mma2composer.Policy   `yaml:"policy,omitempty" json:"policy,omitempty"`
+	StateSealing map[string]interface{} `yaml:"state_sealing,omitempty" json:"state_sealing,omitempty"`
+	RBE          map[string]interface{} `yaml:"rbe,omitempty" json:"rbe,omitempty"`
+	Extra        map[string]interface{} `yaml:",inline" json:"-"`
+	Port         uint16                 `yaml:"port" json:"port"`
+	UnitID       uint16                 `yaml:"unit_id" json:"unit_id"`
+	FC1          Area                   `yaml:"fc1" json:"fc1"`
+	FC2          Area                   `yaml:"fc2" json:"fc2"`
+	FC3          Area                   `yaml:"fc3" json:"fc3"`
+	FC4          Area                   `yaml:"fc4" json:"fc4"`
 }
 
 // Area is one function-code memory window. Count 0 means the area is unused..

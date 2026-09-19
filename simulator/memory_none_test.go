@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"net"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -20,7 +21,7 @@ func TestNoneSimulationKeepsAllAreasAllocatedWithoutGeneration(t *testing.T) {
 	if err != nil || len(loaded.Devices) != 1 {
 		t.Fatalf("reload None memory: document=%+v err=%v", loaded, err)
 	}
-	if loaded.Devices[0].MMA2 != device.MMA2 || loaded.Devices[0].RandomRuntime != (RandomRuntimeParams{}) {
+	if !reflect.DeepEqual(loaded.Devices[0].MMA2, device.MMA2) || loaded.Devices[0].RandomRuntime != (RandomRuntimeParams{}) {
 		t.Fatalf("None changed memory structure or intervals: %+v", loaded.Devices[0])
 	}
 

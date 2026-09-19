@@ -45,14 +45,14 @@ type Area struct {
 }
 
 type PolicyRule struct {
-	ID       string                 `yaml:"id"`
-	SourceIP []string               `yaml:"source_ip"`
-	AllowFC  []uint8                `yaml:"allow_fc"`
+	ID       string                 `yaml:"id" json:"id"`
+	SourceIP []string               `yaml:"source_ip" json:"source_ip"`
+	AllowFC  []uint8                `yaml:"allow_fc" json:"allow_fc"`
 	Extra    map[string]interface{} `yaml:",inline"`
 }
 
 type Policy struct {
-	Rules []PolicyRule           `yaml:"rules"`
+	Rules []PolicyRule           `yaml:"rules" json:"rules"`
 	Extra map[string]interface{} `yaml:",inline"`
 }
 
@@ -90,8 +90,9 @@ type reservationKey struct {
 // while preserving foreign-owned reservations. Ownership is first-come-first-
 // save; a producer may modify/delete only reservations it owns..
 type Composer struct {
-	Root     string
-	Producer string
+	Root           string
+	Producer       string
+	priorListeners []Listener
 }
 
 // New builds a Composer rooted at root with an explicit producer identity..
@@ -199,6 +200,23 @@ func Collision(port, unitID uint16, owner string, owners OwnershipDoc) error {
 // atomically replaces each artifact. If the second replace fails,the first
 // artifact is restored byte-for-byte..
 func (c *Composer) Commit(cfg EffectiveConfig, owners OwnershipDoc) error {
+	for index := range cfg.Listeners {
+		for _, previous := range c.priorListeners {
+			if ListenPort(cfg.Listeners[index].Listen) == ListenPort(previous.Listen) {
+				cfg.Listeners[index].ID = previous.ID
+				cfg.Listeners[index].Listen = previous.Listen
+				extra := make(map[string]interface{}, len(previous.Extra))
+				for key, value := range previous.Extra {
+					extra[key] = value
+				}
+				for key, value := range cfg.Listeners[index].Extra {
+					extra[key] = value
+				}
+				cfg.Listeners[index].Extra = extra
+				break
+			}
+		}
+	}
 	cfgBytes, err := yaml.Marshal(&cfg)
 	if err != nil {
 		return err
@@ -237,6 +255,7 @@ func (c *Composer) Commit(cfg EffectiveConfig, owners OwnershipDoc) error {
 // composer's producer from the effective configuration and ownership registry,
 // preserving all other reservations and their listeners untouched..
 func (c *Composer) DropProducerReservations(cfg EffectiveConfig, owners OwnershipDoc) (EffectiveConfig, OwnershipDoc) {
+	c.priorListeners = append([]Listener(nil), cfg.Listeners...)
 	prod := make(map[reservationKey]bool)
 	keptOwn := owners.Reservations[:0]
 	for _, r := range owners.Reservations {

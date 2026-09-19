@@ -1,21 +1,21 @@
 # UMIG-005-V — VERIFY: Live Replicator Behavior
 
-Status: QUEUED — promoted 2026-09-18; wait for UMIG-005-T PASS and safe runtime.
-Stage / owner: VERIFY / OpenHands (JR)
-Previous: UMIG-005-T
-Next: UMIG-006
+Status: ACTIVE — promoted 2026-09-19 after independent UMIG-005-T UNIT/BUILD PASS review; LIVE VERIFY NOT RUN / NO PASS.
+Stage / owner: VERIFY / OpenHands JR; evidence review / ChatGPT
+Previous: UMIG-005-T (COMPLETE/PASS, `workflow/archive/umig-005-t-replicator-adapter.md`)
+Next: UMIG-006 (QUEUED; only after ChatGPT accepts a real live VERIFY PASS)
 
-## Primary outcome
-Observe Toolkit Replicator load/apply/status/suggest using an actual test runtime.
+## Outcome
+Direct real-browser and actual sandbox Go runtime verification of Toolkit Replicator canonical load, destination suggest/inspect including foreign ownership conflict, explicit Save & Apply, source/Pull Block status, loss/recovery and restore, using ONLY a new disposable project and synthetic local source/destination. No fabricated COMMS health.
 
-## Instruction / expected / evidence
-Use only disposable device endpoints and backed-up test configs. Load existing test definitions, inspect destination suggestion/ownership, Save & Apply a safe test change, observe real polling/status/error recovery and restore test state as instructed. Expect a single authoritative transaction, preserved foreign reservations, actual responses and no false health. Record test topology, commands/actions, before/after config, backend messages, UI/logs, cleanup and HEAD. Missing safe runtime or unsatisfied backend prerequisite = BLOCKED.
+## Target and exact authority
+Test-only `deploy/verify/compose.yaml` now adds a Replicator service sharing ONLY the private MMA2 network namespace and the disposable test volume, plus a canonical empty Replicator seed. These changes are CODE preparation, NOT executed or proven. The prior Memory test volume is retained and forbidden to reuse. The existing ephemeral OpenHands sandbox is the intended target, without a separate-VM precondition. Re-establish daemon/project ownership before startup and permit sandbox-local dockerd preparation. The sole binding commands/actions, expected results, evidence, report authority and cleanup are `## JR TEST TASK — CURRENT: UMIG-005-V LIVE VERIFY` in `handoff.md`.
 
-## Non-scope
-No production config changes, protocol fixes, Windows COMMS acceptance or workflow advancement.
+## Acceptance
+Real UI starts without Replicator fixture leakage or automatic write; synthetic Simulator source on private 15020/1 and Replicator destination on private 15021/1; real ownership inspection on simulator-owned 15020/1 reports IN USE and cannot claim it; one authoritative Go Replicator apply produces persisted canonical config and matching ownership plus real per-block source status. An unreachable synthetic loopback endpoint produces a truthful ERROR rather than fabricated green, recovery restores successful polling, and explicit deletion releases the Replicator destination. Inspect actual logs/config/browser evidence; safely tear down only project-owned containers/networks while retaining named test volume.
 
-## Dependencies
-UMIG-005-T PASS, safe runtime and current JR packet. Never use the operator's persistent Docker data for destructive testing.
+## Boundary
+No production/customer endpoint or port, no real operator Docker or persistent volume, no host-published Modbus port, no unscheduled source changes, no Windows COMMS proof, no Diagnostics integration, no launcher cutover, no deletion of any volume. Unit/build PASS is not live VERIFY PASS.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

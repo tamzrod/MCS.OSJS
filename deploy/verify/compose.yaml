@@ -1,7 +1,5 @@
-# UMIG-004-E: disposable verification stack ONLY. NEVER combine with
-# deploy/docker-compose.yml or use on the operator's production Docker daemon.
-# Run with a unique --project-name on a verified disposable sandbox daemon.
-# No container_name, external volumes, host networking or host Modbus ports.
+# Test ONLY: standalone disposable Compose. Never combine with operator Compose.
+# Fresh --project-name, sandbox-local daemon, scoped volume; no published Modbus ports.
 services:
   seed:
     image: alpine:3.19
@@ -13,13 +11,12 @@ services:
       - sh
       - -ec
       - |
-        # Refuse reuse of ANY populated data volume, especially user data.
+        # Refuse reuse of ANY populated volume, including retained earlier test data.
         test -z "$(ls -A /data)" || { echo 'VERIFY REFUSED: data volume is not empty' >&2; exit 1; }
-        mkdir -p /data/config/mma2 /data/config/simulator
+        mkdir -p /data/config/mma2 /data/config/simulator /data/config/replicator
         printf 'listeners: []\n' > /data/config/mma2/config.yaml
-        # Explicit disposable canonical empty document: avoids Go's nil-slice
-        # JSON representation when no devices.yaml has ever existed.
         printf 'devices: []\n' > /data/config/simulator/devices.yaml
+        printf 'devices: []\n' > /data/config/replicator/devices.yaml
 
   mma2:
     build:
@@ -27,9 +24,7 @@ services:
       dockerfile: Dockerfile.supervised
     restart: "no"
     init: true
-    # Test-only permission accommodation: seed/Simulator create files under
-    # /data/config/mma2 as root. MMA2 supervisor must write restart-ack there.
-    # This does NOT change the production Dockerfile or Compose configuration.
+    # Test-only write access for supervisor restart acknowledgment, not privileged.
     user: "0:0"
     depends_on:
       seed:
@@ -50,8 +45,24 @@ services:
     depends_on:
       mma2:
         condition: service_started
-    # Existing Simulator 127.0.0.1 readiness and Raw Ingest traffic stays
-    # within this disposable MMA2 network namespace, not the host network.
+    # Test MMA2 loopback for readiness and Raw Ingest, never host loopback.
+    network_mode: service:mma2
+    volumes:
+      - verify-data:/data
+
+  modbus-replicator-runtime:
+    build:
+      context: ../..
+      dockerfile: replicator/Dockerfile
+    restart: "no"
+    init: true
+    environment:
+      OSJS_DATA_DIR: /data
+    depends_on:
+      mma2:
+        condition: service_started
+    # Synthetic source 127.0.0.1:15020 and destination 15021 live ONLY
+    # in this shared private network namespace. No host or LAN access.
     network_mode: service:mma2
     volumes:
       - verify-data:/data

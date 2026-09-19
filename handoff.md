@@ -39,7 +39,76 @@ REPORT-WRITE AUTHORITY: JR may replace ONLY `## JR TEST REPORT — UMIG-006-V` b
 
 ## JR TEST REPORT — UMIG-006-V
 
-PENDING — live Diagnostics and real Toolkit window close/relaunch NOT RUN / NO PASS. Source/packet only; no sandbox Docker, browser, Go or config execution by ChatGPT.
+**VERDICT: PASS** — every required stop gate and live action completed against a fresh, isolated, sandbox-local disposable project with a real Chromium browser and the real Go backend. All required observations are direct evidence. No product, Compose or workflow file was edited by JR.
+
+### Preconditions / daemon provenance
+- Fresh checkout of `tamzrod/MCS.OSJS` at latest `origin/main`; HEAD `f4994d435e1b3f02d05f2355abcd2e5c09b14901` = `origin/main` = `origin/HEAD`. `git status --porcelain` empty at start and empty at the end (tracked-clean). `git merge-base --is-ancestor 0cce2bf662c8f5065182e06c948db73459194479 HEAD` → exit 0 (clone already unshallowed earlier; no reset/clean/restore).
+- Task state: exactly one `^Status: ACTIVE` = `workflow/active_work/umig-006-v-diagnostics-ui.md`; `workflow/archive/umig-006-t-diagnostics-fixtures.md` = `COMPLETE / PASS`; `workflow/active_work/umig-007-verify-visual-parity.md` = `QUEUED`, `Previous: UMIG-006-V`. Read `operation cwal.md`, this packet, `deploy/verify/compose.yaml`, README, the archived UMIG-006-T and the active UMIG-006-V tasks.
+- Sandbox-local daemon: `hostname` = `runtime-zjjjlyriuejoqchn-7d699868c6-plbmj`; `id` = `uid=10001(openhands) … groups=…,27(sudo)`; `docker context show` = `default`; `DOCKER_HOST` = unset; daemon identity `76f58f77-1e9f-4aa3-b656-d9b235808098 runtime-zjjjlyriuejoqchn-7d699868c6-plbmj /var/lib/docker` (same sandbox-local daemon already running from the prior CWAL stage; no separate VM). Docker Compose v5.5.1. No remote/operator daemon, no production service names, no `osjs-data` present.
+- Prior retained volume `mcsverify-rep-005-20260919_verify-data` was present and **excluded/never mounted**; the earlier `mcsverify-1789784184-232_verify-data` was not present on this daemon. `docker ps -a` had **zero** containers; only default networks existed.
+- Port check: `ss` absent, so `/proc/net/tcp` + `/proc/net/tcp6` were read (16 / 0 entries) → no listener on 18219, 15020, 15021 or 18209; 18219 free.
+
+### Stop-gate 3 — resolved Compose and zero project resources
+- `PROJECT=mcsverify-diag-006-20260919`, `MCS_VERIFY_OSJS_PORT=18219`.
+- `sudo docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml config` → exit 0, exactly five services `seed, mma2, modbus-simulator-runtime, modbus-replicator-runtime, osjs-shell`.
+- Resolved config verified: `seed` = `alpine:3.19`, `network_mode: none`, refuses any nonempty `/data` then writes `listeners: []` + Simulator `devices: []` + Replicator `devices: []`; `mma2` builds `../../MMA2` `Dockerfile.supervised`, `user: '0:0'`, only internal `verify-runtime`; **both** Go runtimes build from `../..` with `network_mode: service:mma2`; `osjs-shell` publishes only `host_ip: 127.0.0.1, published: "18219" → target 18209`; volume `verify-data` project-scoped; networks `verify-runtime` (`internal: true`) and `verify-ui`. **No** external/bind/user volume, host network, fixed container names, privileged mode or host Modbus ports.
+- `ps -a` plus `docker ps -a` / `volume ls` / `network ls` filtered by `label=com.docker.compose.project=$PROJECT` → **all empty** (zero pre-existing resources). No collision; token not changed.
+
+### Step 4 — startup, health, sockets
+- `up -d --build` ONCE → exit 0. `ps -a`: `seed` **Exited (0)** (inspect `exit=0 exited`); `mma2`, `modbus-simulator-runtime`, `modbus-replicator-runtime`, `osjs-shell` all **Up**; shell ports `127.0.0.1:18219->18209/tcp`; runtime services publish no ports.
+- `logs --tail=120 seed mma2 … osjs-shell` captured (no unsupported `--no-color` used); grep `error|fatal|panic|traceback|refused|denied` → **nothing**.
+- `curl -fsS http://127.0.0.1:18219/healthz` → **HTTP 200** `{"status":"ok","shell":"neutral"}` on the first attempt.
+- Both sockets present: `exec -T osjs-shell sh -c 'test -S …simulator.sock && test -S …replicator.sock'` → exit 0; `ls -la /data/run/` shows both. Host scan confirms only `127.0.0.1:18219` bound.
+
+### Step 5 — baseline and empty Diagnostics
+- Baseline: Simulator `devices: []`, Replicator `devices: []`, MMA2 `listeners: []`; hashes `a7f10115…f810` (both device files) and `84ce1e5c…4ba1f` (MMA2).
+- New real Chromium profile at `http://127.0.0.1:18219`; Start → Development → **MCS Modbus Toolkit** ONCE → exactly one Toolkit window; Memory and Replicator both `No devices configured. Choose Add.` (no fixture devices).
+- Diagnostics: `Memory device: No canonical devices configured`, `Replicator device: No canonical devices configured`; all three global service fields `UNKNOWN`; runtime mode / binary folder / data folder `UNAVAILABLE`; text pane says `Read-only device observations; not runtime service logs.`; Start/Stop rendered `disabled` (they do not appear in the interactive element list while `Refresh observations` does); no fixture warning.
+- Hashes re-read after opening/refresh: **unchanged** → no auto apply. No JS exception.
+
+### Step 6 — Memory seed + Diagnostics read (Memory apply #1)
+- Created only `VERIFY-DIAG-SIM-1` (port 15020, unit 1, FC1–FC4 start 0/count 16, Simulation None, all intervals 0); Memory **Save & Apply ONCE**.
+- Canonical `/data/config/simulator/devices.yaml` persisted (hash `22eb5062…69d3`); `owners.yaml` = `15020/1 → simulator`; MMA2 restarted itself and added `sim-15020-1 listening on 0.0.0.0:15020`. GUI Memory `MMA2: RUNNING / Simulation: IDLE`; no host 15020 exposure.
+- Diagnostics after refresh: `Memory device: VERIFY-DIAG-SIM-1 (first of 1 canonical device(s))`, `Memory device MMA2: RUNNING`, `Memory simulation: IDLE`, Replicator still `No canonical devices configured`/`UNKNOWN`, globals `UNKNOWN`, paths `UNAVAILABLE`. Hashes unchanged by the read-only refresh.
+
+### Step 7 — Replicator device apply (Rep apply #1)
+- Created only `VERIFY-DIAG-REP-1`: source `127.0.0.1:15020`, unit 1, one FC3 Pull Block start 0/count 16 scan 1000; **Auto Port and Auto Unit ID both OFF**; destination `15021/1`.
+- `Check ownership` ONCE → `replicator / AVAILABLE` (`Destination 15021/1: AVAILABLE (replicator).`), Save enabled. Replicator **Save & Apply ONCE**.
+- Canonical `/data/config/replicator/devices.yaml` persisted (hash `105fc62c…f697`); `owners.yaml` = `15020/1 → simulator` **plus** `15021/1 → replicator`; MMA2 added `replicator-15021-1`. Within ≤90 s the GUI showed real `Replicator: RUNNING / Source: OK`, `Block 1: OK; last poll …; no reported error`. No host 15021 exposure.
+
+### Step 8 — Diagnostics truthful scoped status, no writes
+- Diagnostics showed `VERIFY-DIAG-SIM-1 (first of 1 canonical device(s))` and `VERIFY-DIAG-REP-1 (first of 1 canonical device(s))`; Memory `MMA2 RUNNING` / `simulation IDLE`; Replicator `runtime RUNNING` / `source OK` and `Pull Block 1: OK / poller RUNNING`; `#log` recorded the real `last poll … no reported error`.
+- Global *service* fields remained **all UNKNOWN** even with devices OK; runtime mode/binary/data `UNAVAILABLE`; Start/Stop present but `disabled` (inspected, not clicked); Refresh enabled and read-only; `#log` explicitly says observations NOT runtime service logs.
+- Before refresh: Simulator `22eb5062…69d3`, Replicator `105fc62c…f697`, MMA2 `afc237f5…e0b3`, owners `1b301d7e…cc4a`; MMA2 restart-request count = **2**. After one `Refresh observations`: **all four hashes identical** and restart count still **2** → Diagnostics caused no apply/config mutation.
+
+### Step 9 — MANDATORY real WINDOW close and Start-menu relaunch
+- Before close (with `VERIFY-DIAG-REP-1` present, destination 15021/1): hashes Simulator `22eb5062…69d3`, Replicator `105fc62c…f697`, MMA2 `afc237f5…e0b3`, owners `1b301d7e…cc4a`; restart count **2**.
+- Closed the **actual `MCS Modbus Toolkit` window** via its OS.js window chrome (not a tab switch/hide): the browser then showed the bare desktop with **zero** Toolkit windows (content/screenshot confirm only the start menu/desktop; no Toolbar window entry).
+- Re-opened once from desktop Start → Development → **MCS Modbus Toolkit** → exactly ONE NEW Toolkit window. Replicator showed a fresh canonical load (`Canonical Replicator definitions loaded.`) with `VERIFY-DIAG-REP-1`, endpoint `127.0.0.1:15020`, destination `15021/1`, `RUNNING / Source: OK`; Diagnostics showed both canonical labels and truthful scoped statuses.
+- After relaunch: **all four hashes unchanged** and MMA2 restart count still **2** → no Save & Apply click and no auto apply across close/relaunch. Screenshots captured BEFORE close, AFTER zero windows, and AFTER relaunch.
+
+### Step 10 — truthful source loss (Rep apply #2)
+- Verified `127.0.0.1:15999` unbound inside the shared test MMA2 namespace: listeners were only `0B00007F:8193` (loopback) plus `…:3AAC` (15020) and `…:3AAD` (15021); `0x3E7F` (15999) absent.
+- Changed ONLY the source endpoint to `127.0.0.1:15999`; **Save & Apply ONCE** (Rep apply #2). Canonical file updated to `endpoint: 127.0.0.1:15999`; MMA2 restarted (`08:19:12`, restart count 3) keeping both listeners.
+- Observed real backend failure, not fabricated state: Replicator `RUNNING / Source: ERROR`, `connect 127.0.0.1:15999: dial tcp 127.0.0.1:15999: connect: connection refused`; Diagnostics `Replicator source: ERROR`, `Pull Block 1: ERROR / poller RUNNING`, with the real `connection refused` detail in the observation pane. Memory device still `RUNNING`/`IDLE`; global services `UNKNOWN`; Start/Stop still disabled; paths `UNAVAILABLE`. Overall Go service was not labelled unavailable or healthy. No container stop/start, no new endpoint.
+
+### Step 11 — recovery and explicit deletion (Rep apply #3/#4, Memory apply #2)
+- Restored endpoint `127.0.0.1:15020`; **Save & Apply ONCE** (Rep apply #3, MMA2 restart `08:22:35`, count 4). Canonical file restored; owners unchanged; recovery observed directly as `RUNNING / Source: OK`, `Block 1: OK; last poll 2026-09-19T08:24:39.712019428Z`, Memory still `IDLE` (Diagnostics matched).
+- Deleted only `VERIFY-DIAG-REP-1`; **Save & Apply ONCE** (Rep apply #4, count 5) → Replicator `devices: []`; owners = only `15020/1 → simulator` (**15021/1 released**, Simulator ownership preserved).
+- Deleted only `VERIFY-DIAG-SIM-1`; **Save & Apply ONCE** (Memory apply #2, count 6) → Simulator `devices: []`, MMA2 `listeners: []`, owners `reservations: []`.
+- Final hashes EXACTLY equal the seeded baseline: `a7f10115e2af055a59d35e47e8bfa8dbdb324c2a27128f3be32ca7065db6f810` (Simulator), `a7f10115…f810` (Replicator), `84ce1e5cb983eb306fef398a735b6fcdf37f4aa09ed7192f117d8b3764c4ba1f` (MMA2). Diagnostics refresh then showed both `No canonical devices configured`, per-device `UNKNOWN`, globals `UNKNOWN`.
+- Total Save & Apply clicks: **Memory 2 (add, delete) + Replicator 4 (add, fault, recovery, delete) = 6** — exactly the packet maximum. Browser closed; `git status --porcelain` empty BEFORE writing this report; shell log shows no JS exception or unhandled error (only benign asset 404s and one settings `ENOENT` warning).
+
+### Mandatory cleanup
+- Pre-clean ownership check with `label=com.docker.compose.project=$PROJECT`: 5 containers (each labelled this exact project + service), 1 volume `mcsverify-diag-006-20260919_verify-data` (labelled this project), 2 networks `verify-runtime`/`verify-ui` (labelled this project). The only other volume on the daemon was the previously retained `mcsverify-rep-005-20260919_verify-data` — excluded from the deletion set.
+- `down --remove-orphans` (**no `-v`**) → exit 0; all five containers and both project networks removed.
+- Post-check: project-filtered `ps -a`/`network ls` empty; `docker ps -a` empty; only default `bridge`/`host`/`none` networks. Retained exactly `mcsverify-diag-006-20260919_verify-data` (this run) plus the untouched `mcsverify-rep-005-20260919_verify-data`; no prune, wildcard cleanup, force rm, volume removal or production Compose used. No Compose `up/start` was re-run after initial startup.
+
+### Unexpected behavior / deviations
+- None blocking. Notes: (1) `sudo docker logs --no-color` is unsupported by this CLI, so `--tail` was used as the packet directed; (2) `ss` is absent, so `/proc/net/tcp` + `/proc/net/tcp6` were used as the packet permits; (3) the UI enforces a re-render on each state change, so each field required a fresh browser state before interaction — values were confirmed from the rendered device rows and decisively from the persisted canonical YAML; (4) a GUI snapshot taken at `08:22:31` still displayed the pre-recovery value while MMA2's reload completed at `08:22:35`, so the recovery was confirmed after the reload instant had passed — no Save & Apply was repeated and the canonical file plus logs resolved the ordering.
+
+### Scope honesty
+This proves live Diagnostics against genuine canonical Memory/Replicator statuses and errors without fabricating global service health, the disabled native controls and read-only pane, no Diagnostics writes, the previously unverified real Toolkit window close + Start-menu relaunch with unchanged config/owners and no auto apply, truthful synthetic source ERROR and recovery, original empty restoration, and scoped teardown retaining only project volumes. It does **not** prove Windows service control, real global Docker/MMA2 supervisor health, real four-layer COMMS probes, genuine runtime logs, production deployment, launcher cutover or 3-tab visual parity. JR made no product/Compose/workflow/ICC/`operation cwal.md` edits, applied no fix, and selected no successor task.
 
 ## Next action and recommendation
 

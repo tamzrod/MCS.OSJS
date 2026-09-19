@@ -9,6 +9,7 @@
   "description": {
     "en_EN": "Unified Modbus Memory, Replicator and Diagnostics toolkit."
   },
+  "server": "server.js",
   "files": [
     "main.js",
     "main.css"

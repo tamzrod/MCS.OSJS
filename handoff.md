@@ -59,4 +59,68 @@ EVIDENCE / REPORT-WRITE AUTHORITY: Return HEAD/origin/main/preflight flags/diff/
 
 ## JR TEST REPORT — UMIG-EM-002-B
 
-Pending independent JR execution. No Node/build PASS is implied.
+VERDICT: PASS (UMIG-EM-002-B Toolkit Node unit/fixture, OS.js build, discovery and artifact scope only)
+
+Executed 2026-09-19 by OpenHands JR in its own disposable checkout. No Go test, simulator/replicator socket, GUI, Docker, live service, production, customer configuration, RBE/access-event listener, Windows installer test, source repair, or other task was run. No tracked product/test/source/workflow/config/lock file was edited; the only committed change is this authorized report.
+
+### Preflight (all exit 0; no shallow unshallow needed)
+
+- `git fetch origin main` — exit 0.
+- `git status --porcelain` — empty, exit 0.
+- `git rev-parse HEAD` — `dc0a11cdedcdc47c56ac9f34ff38ae44202626cf`, exit 0.
+- `git rev-parse origin/main` — `5c5894d715e1acd4ed0e35ceda5b29bce2d1ea5b`, exit 0.
+- `git merge-base --is-ancestor 8b5541fcefeba8df82bea675b15bd0d03c7c6c20 origin/main` — exit 0.
+- `git diff --name-only 8b5541fcefeba8df82bea675b15bd0d03c7c6c20 origin/main` — `handoff.md`, `planning/microtask/umig-em-002-b-toolkit-build.md`, `workflow/active_work/umig-em-002-b-toolkit-build.md` ONLY (the three permitted paths), exit 0.
+- `git merge-base --is-ancestor HEAD origin/main` — exit 0.
+
+### Guarded clean fast-forward (authorized, executed once)
+
+- HEAD differed from origin/main, all checks clean. `git merge --ff-only origin/main` — exit 0, `Updating dc0a11c..5c5894d` (documentation/workflow/Electron paths only; no OS.js or Go source).
+- Post-merge HEAD = origin/main = `5c5894d715e1acd4ed0e35ceda5b29bce2d1ea5b`; `git status --porcelain` empty. No reset, clean, rebase, cherry-pick or force.
+
+### Environment / dependency setup (sandbox-local, non-product)
+
+- Pre-existing system Node was `v22.23.2` / npm `10.9.8`, which violates the required 16.x and the `OSJS/package.json` engine `>=10.0.0 <17`.
+- Installed Node `v16.20.2` (npm `8.19.4`) user-locally under `~/.local/node16` from the official nodejs.org distribution; SHA-256 verified OK against published `874463523f26ed528634580247f403d200ba17a31adf2de98a7b124c6eb33d87`. Reported versions used for all testing: `node --version` = `v16.20.2`, `npm --version` = `8.19.4`.
+- `OSJS/node_modules/.bin/webpack` was missing, so exactly ONE authorized dependency preparation ran: `(cd OSJS && npm install --no-save --package-lock=false --legacy-peer-deps)` — exit 0, `added 950 packages`. It emitted `EBADENGINE` warnings for newer transitive packages (jsdom, sass, node-releases, undici, chokidar, etc.) and `npm WARN deprecated` notices (glob, rimraf, html-webpack-plugin, uuid, …) plus `39 vulnerabilities`; these are warnings only and no required command failed.
+- `git status --porcelain` after setup was empty: no tracked manifest, test, source, workflow, config or lock file changed. `node_modules/`, `dist/` and generated `packages.json` are ignored artifacts.
+
+### Twelve Node Toolkit tests (each exact invocation, exit 0; real assertions observed, none skipped)
+
+- `(cd OSJS && node tests/toolkit-fixtures.test.js)` — exit 0; "fixture unknown constant: checked / runtime, COMMS and diagnostics fail closed: checked / Memory and Replicator example shapes: checked / fresh fixture snapshots cannot mutate later windows: checked / UMIG-003 fixture contract checks complete".
+- `(cd OSJS && node tests/toolkit-memory-contract.test.js)` — exit 0; 5 contract lines checked; "UMIG-CF-001 Memory contract cases complete".
+- `(cd OSJS && node tests/toolkit-memory-adapter.test.js)` — exit 0; 5 adapter lines checked; "UMIG-004 Memory adapter contract cases complete".
+- `(cd OSJS && node tests/toolkit-memory-relay.test.js)` — exit 0; 3 relay lines checked (including isolated Unix socket framing); "UMIG-004 Toolkit Memory relay cases complete".
+- `(cd OSJS && node tests/toolkit-replicator-contract.test.js)` — exit 0; 4 lines checked; "UMIG-CF-002 Replicator contract cases complete".
+- `(cd OSJS && node tests/toolkit-replicator-adapter.test.js)` — exit 0; 3 lines checked; "UMIG-005 Toolkit Replicator adapter checks complete".
+- `(cd OSJS && node tests/toolkit-replicator-errors.test.js)` — exit 0; "UMIG-005 Toolkit Replicator typed-error cases complete".
+- `(cd OSJS && node tests/toolkit-replicator-relay.test.js)` — exit 0; 3 lines checked; "UMIG-005 Toolkit Replicator relay checks complete".
+- `(cd OSJS && node tests/toolkit-replicator-transport.test.js)` — exit 0; 2 lines checked; "UMIG-005 Toolkit Replicator transport checks complete".
+- `(cd OSJS && node tests/toolkit-diagnostics-model.test.js)` — exit 0; 4 lines checked; "UMIG-CF-003 Diagnostics model cases complete".
+- `(cd OSJS && node tests/toolkit-diagnostics-observer.test.js)` — exit 0; 4 lines checked; "UMIG-006 Diagnostics observer checks complete".
+- `(cd OSJS && node tests/toolkit-diagnostics-editor.test.js)` — exit 0; 3 lines checked; "UMIG-006 Diagnostics editor checks complete".
+
+### Three repo-native build/discovery commands
+
+- `(cd OSJS && npm run build:local-packages)` — exit 0. Built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme (webpack 4.47.0). Toolkit emitted `main.css` 121 bytes and `main.js` 52.6 KiB. Only Dart Sass `legacy-js-api` deprecation warnings.
+- `(cd OSJS && npm run package:discover)` — exit 0. `✔ 7 package(s) discovered`, including `- mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]`; wrote `packages.json` and `dist/metadata.json`; finished in 162ms.
+- `(cd OSJS && npm run build)` — exit 0. Webpack desktop bundle built `osjs`/[big] entrypoint with `dist/index.html` asset; only Sass deprecation notices.
+
+### Six artifact checks (all exit 0)
+
+- `(cd OSJS && test -s src/packages/MCSModbusToolkit/dist/main.js)` — exit 0.
+- `(cd OSJS && test -s src/packages/MCSModbusToolkit/dist/main.css)` — exit 0.
+- `(cd OSJS && test -s packages.json)` — exit 0.
+- `(cd OSJS && grep -E 'mcs-modbus-toolkit|MCSModbusToolkit' packages.json)` — exit 0; matched `["src/packages/MCSModbusToolkit","src/packages/ModbusSimulator","src/packages/ModbusReplicator","src/packages/NamelessClassicIcons","src/packages/NamelessWorkstationTheme","node_modules/@osjs/gnome-icons","node_modules/@osjs/standard-theme"]`.
+- `(cd OSJS && test -s dist/index.html)` — exit 0.
+- `(cd OSJS && wc -c src/packages/MCSModbusToolkit/dist/main.js src/packages/MCSModbusToolkit/dist/main.css packages.json dist/index.html)` — exit 0; actual byte counts `53849`, `121`, `242`, `555` (total 54767).
+
+### Post-test state and race check
+
+- Final `git status --porcelain` — empty (exit 0); tracked tree remains clean after all tests/builds.
+- Report-time re-fetch: HEAD = origin/main = `5c5894d715e1acd4ed0e35ceda5b29bce2d1ea5b`, unchanged; no remote race, so the report was committed as a single `handoff.md` commit with no rebase or merge.
+
+### Notes
+
+- Warnings were expected/benign per packet (npm/Sass deprecation and EBADENGINE only); every required command exited 0.
+- Scope not proven: rendered UI, Go backend integration, deployed service, COMMS green LEDs, RBE/access-event network exposure, Windows installer, or production certification. ChatGPT alone adjudicates PASS/FAIL and controls task advancement.

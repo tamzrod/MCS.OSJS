@@ -38,7 +38,83 @@ REPORT-WRITE AUTHORITY: JR may replace ONLY `## JR TEST REPORT — UMIG-005-V` b
 
 ## JR TEST REPORT — UMIG-005-V
 
-PENDING — source-only disposable Replicator service/seed addition and JR LIVE VERIFY packet published. NOT RUN; no Compose/build/browser/Go backend or production verification is claimed.
+**VERDICT: PASS** — every required stop gate and live action completed against a fresh, isolated, sandbox-local disposable project. All required observations are direct: real Chromium GUI, real Go backend, real canonical YAML/owners and real logs. No product or Compose file was modified by JR.
+
+### Preconditions and sandbox-local daemon provenance
+- Fresh checkout of `tamzrod/MCS.OSJS` at latest `origin/main`; HEAD `d3e3d9e3d087c6d20916a22b73c5ae02c2a36606` = `origin/main` = `origin/HEAD`. Initial `git status --porcelain` empty; final `git status --porcelain` after all actions empty (tracked-clean). `git merge-base --is-ancestor 4bbe4df852c5ab38c8081abdc15047279b8ceff4 HEAD` → exit 0 (clone already unshallowed in the prior CWAL run; no reset/clean used).
+- Task state: `workflow/active_work/umig-005-v-replicator-runtime.md` = exactly one `ACTIVE`; `workflow/archive/umig-005-t-replicator-adapter.md` = COMPLETE (independent UNIT/BUILD PASS); `umig-006-adapt-diagnostics-tab.md` = QUEUED with `Previous: UMIG-005-V` implied successor chain. Read `operation cwal.md`, this packet, `deploy/verify/compose.yaml` and `deploy/verify/README.md`.
+- Sandbox owns its own local daemon. `hostname` = `runtime-zjjjlyriuejoqchn-7d699868c6-plbmj`; `id` = `uid=10001(openhands) gid=10001(openhands) groups=10001(openhands),27(sudo)`; `docker context show` = `default`; `${DOCKER_HOST:-unset}` = `unset`; Docker CLI 29.8.0; Docker Compose v5.5.1; passwordless `sudo` available.
+- dockerd was **idle** (no `/var/run/docker.sock`). Per packet/README this is test-tooling preparation, not BLOCKED. Started sandbox-local `sudo dockerd` (log `/var/log/cwal-dockerd.log`): containerd booted, storage-driver=overlayfs, `API listen on /var/run/docker.sock`. Daemon identity `sudo docker info --format '{{.ID}} {{.Name}} {{.DockerRootDir}}'` → `76f58f77-1e9f-4aa3-b656-d9b235808098 runtime-zjjjlyriuejoqchn-7d699868c6-plbmj /var/lib/docker`.
+- **Freshness:** immediately after daemon start, `sudo docker ps -a` was empty, `sudo docker volume ls` listed **no** volumes (so no operator `osjs-data` and no earlier Memory test volume existed on this daemon), and `sudo docker network ls` had only the three default networks. Filters `name=osjs`, `name=mma2`, `label=com.docker.compose.project=osjs` all returned nothing.
+- Port check: `ss` unavailable, so `/proc/net/tcp` + `/proc/net/tcp6` scanned directly (11 entries, 0 tcp6); **no** listener on 18219, 15020, 15021 or 15999. No port assumption used.
+
+### Stop-gate 3 — resolved Compose and zero project resources
+- `PROJECT=mcsverify-rep-005-20260919`, `MCS_VERIFY_OSJS_PORT=18219`.
+- `sudo docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml config` → exit 0, exactly five services `seed, mma2, modbus-simulator-runtime, modbus-replicator-runtime, osjs-shell`.
+- Inspected resolved config: `seed` is `alpine:3.19`, `network_mode: none`, command refuses any nonempty `/data` (`test -z "$(ls -A /data)"`) then writes `listeners: []`, Simulator `devices: []`, Replicator `devices: []`; `mma2` builds `../../MMA2` `Dockerfile.supervised`, `user: '0:0'`, only `verify-runtime`; **both** Go runtimes build from `../..` (`simulator/Dockerfile`, `replicator/Dockerfile`) with `network_mode: service:mma2`; `osjs-shell` publishes only `host_ip: 127.0.0.1, published: "18219" → target 18209`; volume `verify-data` is project-scoped (`mcsverify-rep-005-20260919_verify-data`); networks `verify-runtime` (`internal: true`) and `verify-ui`. **No** external/bind/production volume, no `container_name`, no host/privileged networking, no `privileged: true`, no host Modbus port.
+- `ps -a`, `docker ps -a`, `docker volume ls`, `docker network ls` filtered by `label=com.docker.compose.project=$PROJECT` → **all empty** (zero pre-existing resources for this project). No collision.
+
+### Step 4 — startup, health, sockets
+- `sudo docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml up -d --build` → exit 0. `ps -a`: `seed` **Exited (0)** (inspect: `exit=0 status=exited`); `mma2`, `modbus-simulator-runtime`, `modbus-replicator-runtime`, `osjs-shell` all **Up**; `osjs-shell` ports `127.0.0.1:18219->18209/tcp`; the three runtime services publish **no** ports.
+- `logs --no-color --tail=120 seed mma2 modbus-simulator-runtime modbus-replicator-runtime osjs-shell` captured; grep for `error|fatal|panic|traceback|refused|denied` found **nothing**. Notable: `config loaded and validated successfully`; `Replicator runtime listening on /data/run/modbus-replicator.sock`; shell `Loading /src/packages/MCSModbusToolkit/server.js`, `WebSocket listening on ws://0.0.0.0:18209`, `Server listening on http://0.0.0.0:18209`.
+- `curl -fsS http://127.0.0.1:18219/healthz` → **HTTP 200** `{"status":"ok","shell":"neutral"}` (first attempt, no polling needed).
+- Both sockets present: `exec -T osjs-shell sh -c 'test -S /data/run/modbus-simulator.sock && test -S /data/run/modbus-replicator.sock'` → exit 0; `ls -la /data/run/` shows `modbus-replicator.sock` and `modbus-simulator.sock`.
+
+### Step 5 — baseline and no-fixture UI
+- Baseline (`exec`): Simulator `devices: []`, Replicator `devices: []`, MMA2 `listeners: []`; hashes `a7f10115…f810` (both device files) and `84ce1e5c…4ba1f` (MMA2 config).
+- Fresh real Chromium profile at `http://127.0.0.1:18219`; Start menu → Development → **MCS Modbus Toolkit** clicked **once**. Exactly one Toolkit window ("MCS Modbus Toolkit") present.
+- GUI showed Memory `No devices configured. Choose Add.` and Replicator `No devices configured. Choose Add.` — **no** `Fixture Sim-PLC-1` / `Fixture Rep-PLC-1` leakage; Diagnostics panel still states `FIXTURE ONLY — no Windows services, Docker controls or live diagnostic endpoints are connected.`
+- Baseline hashes re-checked after opening the Toolkit: **unchanged** → no automatic apply.
+- `mma2`/`replicator`/`simulator` container logs before any UI edit show no config write.
+
+### Step 6 — Memory seed (1 Memory Save & Apply)
+- GUI Memory: Add, then set Name `VERIFY-SIM-1`, Listen Port `15020`, Unit `1`, FC1–FC4 start `0` count `16`, Simulation `None`/interval `0`; clicked Memory **Save & Apply ONCE**.
+- Canonical `/data/config/simulator/devices.yaml` now holds exactly `VERIFY-SIM-1 / 15020 / unit 1 / fc1..fc4 start 0 count 16 / *_interval_ms 0`; hash `a83b36a6…05ed`.
+- MMA2 reacted on its own: log `restart request consumed fingerprint=ffd92ede88c8886d` → `ingress sim-15020-1 listening on 0.0.0.0:15020`; `/data/config/mma2/config.yaml` contains listener `sim-15020-1` with `listen: 0.0.0.0:15020` and the four FC memory windows. GUI then reported `MMA2: RUNNING / Simulation: IDLE` and `MMA2 structural changes applied through the restart/reload path. Applied at 9/19/2026, 6:30:34 AM.`
+- Host `/proc/net/tcp`/`tcp6` re-scan and `docker ps` confirm **no host 15020 exposure** (only `127.0.0.1:18219->18209/tcp`).
+
+### Step 7 — real suggest and foreign-ownership protection
+- Replicator tab: canonical list was **empty** (`No devices configured. Choose Add.`), not fixture. Clicking **Add** invoked the real Go `suggest`; GUI message `Destination suggestion is advisory, not reserved; Save & Apply validates ownership.`
+- Configured exactly `VERIFY-REP-1`, endpoint `127.0.0.1:15020`, source unit `1`, one Pull Block FC3 start `0` count `16` scan rate `1000`; turned **both** Auto Port and Auto Unit ID **off** and set manual destination `15020` / unit `1`.
+- **Check ownership → `Destination ownership: simulator / IN USE`**, validation text `Destination 15020/1 is owned by simulator.`, message `Destination 15020/1: IN USE (simulator).`, and **Save & Apply disabled**. No apply was attempted: `/data/config/replicator/devices.yaml` remained `devices: []` with the baseline hash `a7f10115…f810`.
+- Changed destination to `15021` / unit `1`; **Check ownership → `replicator / AVAILABLE`**, message `Destination 15021/1: AVAILABLE (replicator).`, Save enabled.
+
+### Step 8 — one authoritative apply, persistence, real FC3 polling, COMMS truth
+- Replicator **Save & Apply clicked ONCE** (apply #1). Canonical `/data/config/replicator/devices.yaml` (hash `ef641ba9…5d21`) contains exactly `VERIFY-REP-1`, `endpoint: 127.0.0.1:15020`, `unit_id: 1`, `pull_blocks: [{function: 3, start: 0, count: 16, scan_rate_ms: 1000}]`, `destination: {port: 15021, unit_id: 1, auto_port: false, auto_unit_id: false}`.
+- MMA2 ownership after apply (`/data/config/mma2/owners.yaml`): `15020/1 → simulator` **and** `15021/1 → replicator` — the Simulator reservation was preserved, the Replicator destination was added by the backend. MMA2 log: `restart request consumed fingerprint=c68ae315b092e161` → `ingress sim-15020-1 listening on 0.0.0.0:15020` **and** `ingress replicator-15021-1 listening on 0.0.0.0:15021`.
+- Persistence across close/reopen: after switching tabs (and re-selecting), the Replicator device list and destination still showed `VERIFY-REP-1 / 127.0.0.1:15020 / 1 Pull Blocks` and `15021/1`; reloaded canonical document matched the file above.
+- Real per-block polling observed in the GUI: `Replicator: RUNNING`, `Source: OK`, `Block 1: OK; last poll 2026-09-19T06:52:06.133472738Z; no reported error`; a later poll advanced to `2026-09-19T07:04:16.523294866Z` and then `07:04:51.523911249Z` — advancing `last_poll` with no fabricated health.
+- **All four COMMS LEDs remained `UNKNOWN`** while the source poll was `OK`. Source confirms they are hard-wired `data-state="UNKNOWN"`, `disabled`, `aria-label="<layer>: UNKNOWN (no direct probe)"`; the only other `dataset.state` writer is the fixture renderer. No green was inferred from source polling.
+- No host 15021 exposure (host port scan and `docker ps` clean).
+
+### Step 9 — truthful loss and recovery (apply #2 and #3)
+- Verified `15999` is genuinely unbound inside the shared test namespace: `/proc/net/tcp` + `/proc/net/tcp6` listeners were only `0B00007F:8197` (loopback) plus `…:3AAC` (15020) and `…:3AAD` (15021); `0x3E7F` (15999) absent.
+- Changed only the source endpoint to `127.0.0.1:15999`; Replicator **Save & Apply clicked ONCE** (apply #2). Canonical file updated to `endpoint: 127.0.0.1:15999` (hash `535f745c…6235`); MMA2 restarted (`07:01:07` path) keeping both listeners.
+- GUI then reported the real backend failure, not a fabricated state: `Replicator: RUNNING`, `Source: ERROR`, `Runtime status: connect 127.0.0.1:15999: dial tcp 127.0.0.1:15999: connect: connection refused`, and `Block 1: ERROR; last poll 2026-09-19T07:00:53.771014264Z; connect 127.0.0.1:15999: dial tcp 127.0.0.1:15999: connect: connection refused`. COMMS LEDs still `UNKNOWN`.
+- Restored endpoint to `127.0.0.1:15020`; Replicator **Save & Apply clicked ONCE** (apply #3). Canonical file restored to `endpoint: 127.0.0.1:15020`; owners unchanged (`15020/simulator`, `15021/replicator`); MMA2 restarted at `07:01:07` with both listeners.
+- Recovery observed directly: `Replicator: RUNNING`, `Source: OK`, `Block 1: OK; last poll 2026-09-19T07:04:16.523294866Z; no reported error`, then advancing `07:04:51…` — no persistent error. **No Compose service was stopped/started**; only the GUI synthetic endpoint change was used (matching the README's explicit instruction and avoiding the known one-shot seed restart defect). Replicator apply clicks total = **3**.
+
+### Step 10 — explicit deletion and ownership release (apply #4 and Memory apply #2)
+- Replicator: Delete `VERIFY-REP-1`, then **Save & Apply ONCE** (apply #4) → `/data/config/replicator/devices.yaml` = `devices: []`; `/data/config/mma2/owners.yaml` = only `15020/1 → simulator` (**15021/1 released**, Simulator ownership preserved); MMA2 `listeners` count dropped accordingly.
+- Memory: Delete `VERIFY-SIM-1`, then **Save & Apply ONCE** → `/data/config/simulator/devices.yaml` = `devices: []`; owners `reservations: []`; MMA2 config `listeners: []`.
+- Final hashes exactly equal the seeded baseline: `a7f10115e2af055a59d35e47e8bfa8dbdb324c2a27128f3be32ca7065db6f810` (Simulator), `a7f10115…f810` (Replicator), `84ce1e5cb983eb306fef398a735b6fcdf37f4aa09ed7192f117d8b3764c4ba1f` (MMA2). GUI showed both lists empty with `Device removed locally. Save & Apply to persist.` / restored empty state.
+- Total counted Save & Apply clicks: **1 Memory seed + 4 Replicator (initial, error, recovery, deletion) + 1 Memory deletion = 6**, within the packet's stated allowance (one Memory seed, up to four Replicator including deletion, one Memory deletion).
+- Browser JS/WebSocket observations: shell log shows one `POST /login 200`, `WebSocket connection opened`, `ws://0.0.0.0:18209`, and only benign asset 404s (`/apps/MCSModbusToolkit/icon.svg`, `ModbusSimulator/icon.png`, `ModbusReplicator/icon.png`, `sounds/…service-login.mp3`) plus one `ENOENT … /data/vfs/demo/.osjs/settings.json` warning. **No JS exception or unhandled error appeared**; no error surfaced in the page content.
+- `git status --porcelain` recorded clean **before** writing this report.
+
+### Mandatory cleanup
+- Pre-clean ownership check with `label=com.docker.compose.project=$PROJECT`: 5 containers (`osjs-shell`, `modbus-simulator-runtime`, `modbus-replicator-runtime`, `mma2`, `seed`) each labelled with this exact project + service; 1 volume `mcsverify-rep-005-20260919_verify-data` labelled with this project; 2 networks `verify-runtime`, `verify-ui` labelled with this project. No other containers/volumes/networks existed on the daemon, so ownership was unambiguous.
+- `sudo docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml down --remove-orphans` (**no `-v`**) → exit 0; all five containers removed and both project networks removed.
+- Post-check: project-filtered `ps -a` and `network ls` → empty; `docker ps -a` → empty; only default `bridge`/`host`/`none` networks remain. Retained exactly one volume: `mcsverify-rep-005-20260919_verify-data` (labels=`mcsverify-rep-005-20260919`) — **not** removed. No prune, wildcard cleanup, production Compose, operator resource, or seed-guard bypass was used.
+
+### Unexpected behavior / deviations
+- `sudo docker logs --no-color` is unsupported by this Docker CLI (`unknown flag: --no-color`); used `--tail` without it. No impact on evidence.
+- `ss` is not installed; the packet explicitly permits `/proc/net/tcp` when `ss` is unavailable, and that method was used and recorded.
+- `dockerd` had to be started locally (packet/README explicitly allow this as test-tooling preparation; the daemon proved empty/fresh, so no operator resource was touched).
+- The GUI render cycle replaces the editor DOM on each state change, so the port/unit/checkbox fields required one interaction per fresh `browser_get_state`; values were confirmed from the rendered device rows (`Port 15020 / Unit 1`, `127.0.0.1:15999`) and, decisively, from the persisted canonical YAML rather than from transient input elements.
+
+### Scope honesty
+This proves the disposable stack's real live behavior: fresh project isolation, five-service startup, empty no-fixture baseline, synthetic Simulator source, real Go suggestion/foreign-ownership protection, one authoritative apply with persistence and matching MMA2 ownership, real FC3 per-block polling, truthful loss/recovery, explicit deletion with ownership release, and project-scoped cleanup retaining only the project volume. It does **not** prove standalone production acceptance, real four-layer COMMS probing, missing-file `devices: null` behavior, Windows functionality, Diagnostics integration, launcher cutover or legacy retirement. JR made no product/Compose/workflow/ICC edits, applied no fixes, and did not select any successor task.
 
 ## Next action and recommendation
 

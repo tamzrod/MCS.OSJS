@@ -40,7 +40,56 @@ REPORT-WRITE AUTHORITY: JR replaces ONLY `## JR TEST REPORT — UMIG-003-V` belo
 
 ## JR TEST REPORT — UMIG-003-V
 
-PENDING — rendered VERIFY has NOT RUN; only this report section is authorized for JR's factual test evidence. No outcome is predetermined.
+VERDICT: **PASS** — real-browser rendered VERIFY executed 2026-09-19 by OpenHands/JR under `operation cwal.md`. Every gating item was observed first-hand in a real browser through real mouse/keyboard interaction. This PASS covers rendered fixture behavior and shell isolation only; it does NOT cover backend integration, Docker acceptance, donor pixel-parity, or the unrun dormant contract/model unit tests.
+
+### Preconditions / task state
+- New disposable checkout `/tmp/jr-umig-003-v` (clone of `tamzrod/MCS.OSJS`), NOT the operator deployment.
+- `git rev-parse HEAD` = `1d4cd826f32f6fb9f0972d8dd4278dc6dd0567ea` (current `origin/main`).
+- `git status --porcelain` before setup = empty (tracked-clean); final before report = empty.
+- `node --version` = `v16.20.2`, `npm --version` = `8.19.4` (Node 16 requirement `>=10 <17` satisfied; Node 16 installed sandbox-locally under `/tmp/jr-node16`, outside repo).
+- `git merge-base --is-ancestor b002c9f852456b3447ae0bef41ae4f69eb3073e1 HEAD` → exit 0; `... fede1715fadd5900da12fd9630793e3514117caf HEAD` → exit 0.
+- Task files: `workflow/active_work/umig-003-v-renderer-scope.md` = SOLE ACTIVE (PENDING/NOT RUN); archived `umig-003-t-renderer-build.md` = COMPLETE/PASS; UMIG-004 remains QUEUED. No selection conflict.
+- Safe setup: port 18209 verified free before start; fresh `TEST_DATA_DIR=/tmp/jr-umig-003-v-data-iDgLlk` (`mktemp -d`, outside repo) used for `OSJS_DATA_DIR`; fresh browser context/session (zero restored windows); `npm install --no-audit --no-fund` in disposable checkout only (954 packages, exit 0, no tracked file changes); no Docker/user data/operator services touched; no backend service started.
+
+### Commands and observed results
+1. `cd OSJS && npm run build:local-packages` → exit **0** — 5 local packages built once incl. `MCSModbusToolkit`.
+2. `cd OSJS && npm run package:discover` → exit **0** — `mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]`, 7 discovered.
+3. `cd OSJS && npm run build` → exit **0** — `osjs.js` 118 KiB, `vendors~osjs.js` 488 KiB.
+4. `OSJS_DATA_DIR="$TEST_DATA_DIR" PORT=18209 npm run serve` → listening on `http://0.0.0.0:18209`; `GET http://127.0.0.1:18209/healthz` → **HTTP 200** body `{"status":"ok","shell":"neutral"}`.
+5. Real browser: Chromium **152.0.7977.82** (Playwright-driven, viewport 1280x800), new context.
+
+### Baseline and launch (single real click)
+- Before launch, zero windows: `pre_window_count` = **0**; desktop rendered (body `rgb(60,110,166)`), taskbar present (`rgb(192,192,192)`), clock advancing (`00:04:28`).
+- Start menu opened by real click; verified BOTH legacy entries present: `Modbus Simulator` and `Modbus Replicator` (plus `MCS Modbus Toolkit`).
+- Menu closed, then **exactly one** real mouse click on the `MCS Modbus Toolkit` entry launched **exactly one** window: `window_count` = **1**, `data-id` = `MCSModbusToolkitWindow`, title = `MCS Modbus Toolkit`, window controls `[minimize, maximize, close]`, taskbar entry `MCS Modbus Toolkit` present. ShadowRoot open = true. No second window.
+- Header text: `MCS Modbus Toolkit | Memory + Replicator — fixture preview | MMA2 UNKNOWN | Replicator UNKNOWN`.
+
+### Tab-by-tab rendered verification (real clicks)
+- **Initial Memory**: Memory tab `aria-selected=true`; exactly **1** `.panel.active` (`panel-simulator`, `display:flex`); other two `display:none`. Visible: `Fixture Sim-PLC-1` (`Port 5020 / Unit 1 / FIXTURE`), rows **FC1, FC2, FC3, FC4**; `MMA2:UNKNOWN` / `Simulation:UNKNOWN`; notice `FIXTURE ONLY — Memory definitions are examples. No load, save, apply or polling occurs.` All text inputs `readOnly=true`, all buttons disabled (incl. `Save & Apply`, `Discard`, `Add/Duplicate/Delete`), all selects disabled.
+- **Replicator** (real click): Replicator tab `aria-selected=true`, exactly 1 active panel. Visible: `Fixture Rep-PLC-1`, endpoint `192.0.2.1:502`, `Destination` port `5021`, `Pull Blocks` row with **FC3 selected** (`selectedText="FC3"`, disabled), `Destination ownership: UNKNOWN`, notice `FIXTURE ONLY — Replicator configuration and COMMS are not connected or tested.` COMMS groups `SOURCE (Network, TCP, Modbus)` and `DESTINATION (MMA2)`: all four LEDs `data-state=UNKNOWN`, disabled, rendered **neutral gray** (`::before` background `rgb(136,136,136)`), NOT green. All text inputs readOnly; edit/Save & Apply buttons disabled.
+- **Diagnostics** (real click): Diagnostics tab `aria-selected=true`, exactly 1 active panel. Visible: `Simulator service: UNKNOWN`, `Runtime mode: UNAVAILABLE`, `Binary folder: UNAVAILABLE`, `Data folder: UNAVAILABLE`, notice `FIXTURE ONLY — no Windows services, Docker controls or live diagnostic endpoints are connected.`, log `No runtime logs: fixture preview only.` Both `Start runtimes` and `Stop runtimes` disabled.
+- **Back to Memory**: `aria-selected=true`, active panel = `panel-simulator` again, exactly 1 active. Panel switching correct.
+- No clipping/overlap: window-content scroll size 956x607 == client 956x607; zero overflowing required elements. No forced clicks on disabled controls; no runtime requests sent.
+
+### Shell isolation
+- Desktop body `rgb(60,110,166)`/`Roboto`, taskbar `rgb(192,192,192)`/height 33.31px/border `rgb(255,255,255) 1px`, menu label `Tahoma… 13px`, window header `rgb(255,255,255)`/28.59px, window title white/700/13px — **identical before and after** all tab interactions. No donor `.tab`/`button`/`html,body` leakage into shell (Toolkit CSS is scoped inside the ShadowRoot).
+- Minimize via real window chrome → `data-minimized="true"`; restored via taskbar click → `data-minimized="false"`, Memory tab state preserved. Clock advanced across the session (`00:04:28` → `00:04:39` → `00:04:46`). Start menu reopened after launch: both legacy apps still listed; Toolkit window count stayed 1.
+
+### Errors / network
+- `page_errors`: none. `console_errors`: 4 resource 404s only.
+- 404s: `/sounds/FreedesktopSounds/service-login.mp3`, `/apps/MCSModbusToolkit/icon.svg`, `/apps/ModbusReplicator/icon.png`, `/apps/ModbusSimulator/icon.png` — pre-existing icon/sound assets, non-gating observations; they do not affect required Toolkit rendering (window content and all tabs rendered).
+- Post-launch network requests: **0**; no non-static requests; no backend/simulator/replicator/MMA2 endpoint calls (server log shows only boot package loads and static assets).
+
+### Cleanup
+- Stopped only the test server (PIDs 1660/1671/1672); port 18209 free again (connection refused, curl exit 7). Disposable `TEST_DATA_DIR` removed; its untracked scratch pointer file was also removed. Final `git status --porcelain` = empty (tracked-clean).
+- Evidence retained outside the checkout: screenshots `/tmp/jr-shots/*.png` (15 files incl. `01-desktop-baseline`, `02-startmenu-open`, `03-after-single-click-launch`, `04-tab-memory`, `05-tab-replicator`, `06-tab-diagnostics`, `07-tab-memory-again`, `08-startmenu-after`, `09-minimized`, `10-restored`); structured results `/tmp/jr-verify-results.json` and `/tmp/jr-verify-out.txt`; server log `/tmp/jr-umig-003-v-server.log`.
+- Screenshot content was additionally validated by pixel analysis: baseline desktop is dominated by `(60,110,166)` + taskbar `(192,192,192)`; Toolkit tab views are non-blank and materially distinct (memory-vs-replicator and memory-vs-diagnostics diff bounding boxes ~1104x668 px); minimized view returns to the bare desktop composition. Pixel diff between tabs matches the observed panel switching.
+
+### Expected vs observed
+All gating expectations met: one window from one Start-menu click starting from zero, three working tabs with correct fixture values and UNKNOWN/UNAVAILABLE states, neutral (non-green) COMMS, disabled unsafe actions, no backend requests, no shell CSS leakage, working desktop/taskbar/clock/window controls, legacy apps preserved, tracked-clean checkout, safe cleanup.
+
+### Unexpected behavior
+- Only the four documented static-asset 404s above (no console page errors). No product-level failure observed in scope. JR made no product/workflow/ICC edits and selects no successor.
 
 ## Next action and recommendation
 

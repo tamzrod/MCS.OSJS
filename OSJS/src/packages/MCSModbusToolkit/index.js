@@ -8,9 +8,10 @@ import {createMemoryEditor} from './memory-editor';
 import {createReplicatorContract} from './replicator-contract';
 import {createReplicatorTransport} from './replicator-transport';
 import {createReplicatorEditor} from './replicator-editor';
+import {createDiagnosticsEditor} from './diagnostics-editor';
 
-// One OS.js Toolkit window. Memory and Replicator use independent transports;
-// Diagnostics remains fixture-only. No legacy application imports.
+// One OS.js Toolkit window. Diagnostics reads only the existing canonical
+// Memory/Replicator contracts; no third socket, service-control API or fixture.
 const register = (core, args, options, metadata) => {
   const proc = core.make('osjs/application', {args, options, metadata});
   const win = proc.createWindow({
@@ -26,10 +27,12 @@ const register = (core, args, options, metadata) => {
   let toolkit = null;
   let editor = null;
   let replicatorEditor = null;
+  let diagnosticsEditor = null;
 
   win.on('destroy', () => {
     if (editor) { editor.destroy(); editor = null; }
     if (replicatorEditor) { replicatorEditor.destroy(); replicatorEditor = null; }
+    if (diagnosticsEditor) { diagnosticsEditor.destroy(); diagnosticsEditor = null; }
     memoryTransport.close();
     replicatorTransport.close();
     if (toolkit) { toolkit.destroy(); toolkit = null; }
@@ -40,12 +43,15 @@ const register = (core, args, options, metadata) => {
     const shadow = toolkit.element.shadowRoot;
     const memoryRoot = shadow.getElementById('simulator-root');
     const replicatorRoot = shadow.getElementById('replicator-root');
-    // Never show fixture definitions if canonical load fails or is unavailable.
+    const diagnosticsRoot = shadow.getElementById('panel-diagnostics');
+    // No fixture fallback even when a canonical load or status fails.
     memoryRoot.replaceChildren();
     replicatorRoot.replaceChildren();
-    shadow.querySelector('.subtitle').textContent = 'Memory + Replicator runtime / Diagnostics preview';
+    diagnosticsRoot.replaceChildren();
+    shadow.querySelector('.subtitle').textContent = 'Memory + Replicator / read-only Diagnostics';
     editor = createMemoryEditor(document, memoryRoot, memory);
     replicatorEditor = createReplicatorEditor(document, replicatorRoot, replicator);
+    diagnosticsEditor = createDiagnosticsEditor(document, diagnosticsRoot, memory, replicator);
     $content.appendChild(toolkit.element);
   });
 

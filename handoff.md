@@ -46,7 +46,61 @@ REPORT-WRITE AUTHORITY: JR may replace ONLY the following `## JR TEST REPORT —
 
 ## JR TEST REPORT — UMIG-005-T
 
-PENDING — Replicator source-only checkpoint reviewed, focused test files authored but NOT RUN. No build, real browser, actual Go runtime or deployment verification executed for this checkpoint.
+**VERDICT: PASS** — all 9 Node test files and all 3 build/discovery commands exited 0; all required source/artifact inspections met expectation. UNIT/BUILD only. No live GUI, deployed Replicator, COMMS probe, Docker health or production safety is inferred.
+
+### Preconditions / repository state
+- Checkout: `origin/main` of `https://github.com/tamzrod/MCS.OSJS.git`, HEAD `f28d5f6b9d46d280ce6486f72de0afaec927ffe4` = `origin/main` = `origin/HEAD` (`UMIG-005: archive source-only Replicator integration and activate independent adapter UNIT/BUILD test`).
+- `git status --porcelain` at start: empty (tracked-clean). Final `git status --porcelain` after all 12 commands: empty (tracked-clean). No tracked mutation from test/build; `.gitignore` covers `node_modules/`, `dist/`, `packages.json`, `*.log`.
+- Initial clone was shallow (`git rev-parse --is-shallow-repository` → `true`, ancestor unavailable). Allowed read-only `git fetch --unshallow origin` performed; no reset/clean.
+- `git merge-base --is-ancestor 11bea98391b4953ca2356385bf2ffd7164bb657c HEAD` → exit 0.
+- Task state: `workflow/active_work/umig-005-t-replicator-adapter.md` = exactly one `ACTIVE` task (UMIG-005-T, TEST NOT RUN/NO PASS); `umig-005-connect-replicator-tab.md` absent from active_work and present as `workflow/archive/umig-005-connect-replicator-tab.md` (COMPLETE); `umig-005-v-replicator-runtime.md` = `QUEUED`, `Previous: UMIG-005-T`. Handoff and active_work agree.
+- Environment: sandbox default was Node v22.23.2 / npm 10.9.8, outside project `engines` `>=10 <17`. Per CWAL §3, sandbox-local Node v16.20.2 / npm 8.19.4 installed at `~/.local/node-v16.20.2-linux-x64` (prepended to PATH for the test session); no repo files touched. `OSJS/node_modules` absent → `cd OSJS && npm install --no-audit --no-fund` in the disposable checkout: exit 0, "added 954 packages in 18s", no tracked mutation. No Go service, socket, Docker, production data or external endpoint contacted.
+
+### Commands — raw exit results (run from `OSJS/`, in packet order, Node v16.20.2)
+| # | Command | Exit | Output (fixture case lines) |
+|---|---------|------|------------------------------|
+| 1 | `node tests/toolkit-replicator-contract.test.js` | 0 | protocol and injected transport: checked / load, direct status, suggest/inspect, apply snapshot, envelopes: checked / invalid requests cannot reach transport: checked / runtime/transport failures and malformed replies fail closed: checked / `UMIG-CF-002 Replicator contract cases complete` |
+| 2 | `node tests/toolkit-replicator-errors.test.js` | 0 | single apply, ownership collision, missing device and Go destination inspection: checked / `UMIG-005 Toolkit Replicator typed-error cases complete` |
+| 3 | `node tests/toolkit-replicator-adapter.test.js` | 0 | canonical defaults, legacy pull block normalization and copy isolation / source, FC1–FC4 block/range/gap/cadence and case-insensitive duplicate validation / direct runtime status, per-block errors and fail-closed unavailable/unknown / complete |
+| 4 | `node tests/toolkit-replicator-transport.test.js` | 0 | correlated replies, duplicate rejection, full envelope and namespace / timeout, disposal and send-after-close / complete |
+| 5 | `node tests/toolkit-replicator-relay.test.js` | 0 | authentication, request ID and per-service allowlists / separate Toolkit Unix sockets, v1 envelopes, one apply and direct per-block status / correlated Replicator-only runtime unavailable without Memory cross-routing / complete |
+| 6 | `node tests/toolkit-memory-contract.test.js` | 0 | version+injected transport; load/status/snapshot/unique IDs/envelope; invalid not reaching transport; runtime+transport failures; wrong correlation/missing data fail closed / `UMIG-CF-001 … complete` |
+| 7 | `node tests/toolkit-memory-adapter.test.js` | 0 | provider envelope + stale reply ignored; explicit apply snapshot/canonical result/IDLE; typed failures/unavailable/teardown; None/Random round-trip; unknown/wrong-device/unavailable mapping / `UMIG-004 … complete` |
+| 8 | `node tests/toolkit-memory-relay.test.js` | 0 | authenticated session + v1 ID + allowlist; preserved v1 framing/envelope on isolated Unix socket; correlated explicit unavailable / `UMIG-004 … complete` |
+| 9 | `node tests/toolkit-fixtures.test.js` | 0 | fixture UNKNOWN constant; runtime/COMMS/diagnostics fail closed; Memory and Replicator example shapes; snapshots not mutable across windows / `UMIG-003 … complete` |
+| 10 | `npm run build:local-packages` | 0 | built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme; Toolkit child emitted `main.js` 46 KiB, `main.css` 121 bytes, webpack 4.47.0 |
+| 11 | `npm run package:discover` | 0 | `✔ 7 package(s) discovered`; includes `- mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]` |
+| 12 | `npm run build` | 0 | webpack osjs bundle built (`osjs.js` 118 KiB, `vendors~osjs.js` 488 KiB, `index.html` etc.); no errors |
+
+No required contradiction occurred, so execution did not stop early; no retries were used to force a pass.
+
+### Required assertions observed
+- Authenticated relay: relay test line 30–35 asserts unauthenticated `{_osjs_client:false}` → `INVALID_REQUEST`; non-allowlisted Replicator op `restart` and empty `request_id` → `INVALID_REQUEST`; Memory-namespaced ID `memory-test` requesting `suggest` → `INVALID_REQUEST`.
+- Allowlisted separate sockets: with `OSJS_DATA_DIR` set to a `fs.mkdtempSync` root, fake servers bound to `run/modbus-replicator.sock` and `run/modbus-simulator.sock`; assertions confirm Replicator requests reached only the Replicator socket (`repReceived === requests`) and the Memory request reached only the Simulator socket (`memoryReceived === [memory]`). Both sockets removed server-side; whole temp root removed in `finally`; `OSJS_DATA_DIR` restored. No deployed Docker volume contacted.
+- Correlated v1 envelopes: all four Replicator replies asserted `version===1 && ok===true` with `request_id` echoing `mcs-replicator-*`; error path returns `ok:false`, echoed `request_id: 'mcs-replicator-down'`, `error.code === 'RUNTIME_UNAVAILABLE'` after the Replicator server closed.
+- One apply request: errors test asserts `calls.filter(c=>c.operation==='apply').length === 1` and call order `['apply','status','suggest']`.
+- Typed errors: `APPLY_FAILED` ("owned by another producer") and `STATUS_FAILED` ("not found"), asserted by `code` and message regex; `suggest({inspect:true,…})` maps `owner: 'simulator'`, `status: 'IN USE'`.
+- Source/Pull Block validation: adapter test covers endpoint/unit, FC1–FC4, uint16 start/count and range `start+count<=65536`, positive uint32 scan rate, gap rejection for same-FC blocks and case-insensitive unique names; also legacy `pull_block` → `pull_blocks` migration and copy isolation.
+- Truthful per-block status: adapter `displayStatus` maps `status.source_status` + `blocks[]` with `last_error`; invalid/stale/error → `UNKNOWN`/`UNAVAILABLE`, never a fabricated healthy value.
+- No fabricated COMMS health: editor sets the four Network/TCP/Modbus/MMA2 LEDs `data-state="UNKNOWN"`, `disabled`, `aria-label`/`title` stating no direct probe, with comment "COMMS layers not directly measured; no green inferred from source polling".
+- Memory regression: memory contract/adapter/relay tests all exit 0 with the same case lines as previously accepted.
+
+### Source / artifact inspection
+- `src/packages/MCSModbusToolkit/metadata.json` (read): `type: application`, `name: MCSModbusToolkit`, `server: "server.js"`, `files: ["main.js","main.css"]`.
+- Discovery metadata is emitted at `OSJS/dist/metadata.json` (a JSON array), not `src/packages/MCSModbusToolkit/dist/metadata.json` — packet wrote "(if emitted)"; the Toolkit entry there is identical to source metadata, `server: "server.js"`. `OSJS/packages.json` (array) lists all 7 packages including `src/packages/MCSModbusToolkit`.
+- Built artifacts exist and are nonempty: `src/packages/MCSModbusToolkit/dist/main.js` 47134 bytes, `dist/main.css` 121 bytes (`main.js.map` 126495, `main.css.map` 532).
+- Import graph: `index.js` imports `osjs`, `./metadata.json`, `./toolkit-renderer`, `./memory-contract`, `./memory-transport`, `./memory-editor`, `./replicator-contract`, `./replicator-transport`, `./replicator-editor`; `replicator-editor.js` requires `./replicator-adapter`; `server.js` requires only `net`/`path`; `toolkit-renderer.js` requires its own `renderer.css` and `./fixtures`. Memory's own editor/transport remain imported and shared with its unchanged contract. Diagnostics remains fixture-only (`diagnostics-model.js` exists but has no requirer in the Toolkit sources).
+- Forbidden imports: `grep -rni "ModbusReplicator\|ModbusSimulator\|electron\|diagnostics-model"` over Toolkit `*.js` matches only two provenance comments in `toolkit-renderer.js` ("one-time visual adaptation of electron/renderer at 1c971b9", "No Electron host, OS.js backend, network, file, or persistence calls here"). Emitted `dist/main.js` contains zero occurrences of `ModbusReplicator`, `ModbusSimulator`, `electron` or `diagnostics-model`; the source map `sources` list is exactly the Toolkit's own modules + `external "OSjs"`, with no legacy package module. Comments/asset strings distinguished from executed imports.
+- Relay surface: `server.js` exposes one authenticated OS.js `onmessage` provider (`ws._osjs_client`, `version===1`, non-empty string `request_id`, object payload); service selected by `request_id.startsWith('mcs-replicator-')`; `REPLICATOR_OPS = {load,apply,status,suggest}`, `MEMORY_OPS = {load,apply,status}`; socket basenames exactly `modbus-replicator.sock` / `modbus-simulator.sock` under `$OSJS_DATA_DIR/run`; `VERSION=1`, `MAX_MESSAGE=1024*1024`, 4-byte big-endian `writeUInt32BE`/`readUInt32BE` framing with size/count bounds and 25 s socket timeout; failures return correlated `RUNTIME_UNAVAILABLE`. No `http`/`express`/`createServer` route in the Toolkit server (only the string "No … HTTP endpoint" in a comment); no direct config write — apply is delegated to the Go `apply` operation.
+
+### Diff bounds
+`git diff --name-status 8d5926b511f7dab99e7c8639110851f8dea36a54..HEAD` → 13 paths, all authorized: 5 modified/added Toolkit sources (`index.js`, `server.js` modified; `replicator-adapter.js`, `replicator-editor.js`, `replicator-transport.js` added), 4 Toolkit Replicator tests added, plus `handoff.md`, the UMIG-005 archive add + active-work delete/move and `umig-005-t-replicator-adapter.md`. No Go, MMA2, production Compose, legacy-package or ICC changes.
+
+### Unexpected behavior
+- None blocking. Two benign notes: (1) discovery metadata lands at `OSJS/dist/metadata.json` rather than a package-local `dist/metadata.json`, consistent with the packet's "(if emitted)" wording; (2) sandbox default Node (v22) is outside the project engine range, so a sandbox-local Node 16 was used per CWAL §3 — the build/tests all ran cleanly on it.
+
+### Scope honesty
+This proves the CODE checkpoint's unit/build/relay/adapter assertions and static import/build surface only. It does NOT prove live Replicator GUI, a functioning deployed Replicator, real COMMS probes, Docker health, production safety or Go runtime behavior — those remain for UMIG-005-V with a separately accepted disposable target. No source fix, cleanup, archive, promotion or successor action was performed by JR.
 
 ## Next action and recommendation
 

@@ -1,24 +1,25 @@
 # UMIG-004-V — VERIFY: Live Memory Behavior
 
-Status: ACTIVE — UNIT/BUILD predecessor PASS reviewed; isolation BLUEPRINT PREPARED but external target UNVERIFIED; live VERIFY NOT RUN / NOT PASS.
-Stage / owner: VERIFY / OpenHands/JR via `operation cwal.md`; environment source and evidence review / ChatGPT
-Previous: UMIG-004-T (COMPLETE, `workflow/archive/umig-004-t-memory-adapter.md`)
-Next: UMIG-005 (QUEUED; advance only after actual live VERIFY PASS reviewed by ChatGPT)
+Status: ACTIVE — corrected sandbox-local Docker TARGET PREFLIGHT READY reviewed at JR report `37dc61f533c8e7221610c8bf5858ddbe01790312`; executable live VERIFY packet published, NOT RUN / NOT PASS.
+Stage / owner: VERIFY / OpenHands/JR via `operation cwal.md`; evidence review and advancement / ChatGPT
+Previous: UMIG-004-T (COMPLETE/PASS, `workflow/archive/umig-004-t-memory-adapter.md`)
+Next: UMIG-005 (QUEUED; promote only after real independent live VERIFY PASS reviewed by ChatGPT)
 
-## Outcome
-Independently observe Toolkit Memory's canonical load, explicit apply and selected-device status against real Simulator and MMA2 in a safely disposable environment; verify persisted None/Random semantics, truthful errors and bounded cleanup.
+## Single outcome
+Directly verify Toolkit Memory canonical load, explicit Save & Apply, persisted None/Random configuration, selected-device status and unavailable/recovery in a genuinely disposable Simulator/MMA2/OS.js environment with real browser evidence.
 
-## Prepared prerequisite — not yet satisfied
-Human authorized creation of a separate disposable Simulator/MMA2/OS.js test environment. ChatGPT committed `deploy/verify/compose.yaml` and `deploy/verify/README.md` (source-only UMIG-004-E documented in `workflow/archive/umig-004-e-disposable-target.md`). The test-only Compose definition has project-scoped data, no container names/production mounts/host networking, internal MMA2 network, Simulator sharing only that test MMA2's namespace, OS.js on a distinct bridge with a loopback-only UI port. This definition has NOT been executed or validated by Docker on a known isolated host. Operator's running stack and `osjs-data` remain forbidden test targets; running a second Compose project on the operator Docker daemon is NOT isolation.
+## Accepted target and packet
+ChatGPT reviewed the corrected JR preflight at `37dc61f` and its commit-only handoff diff. An idle daemon was a preparation issue, not a missing engine; newly started daemon inside the existing disposable OpenHands sandbox had zero containers/volumes and no production resources, test-only port free, and resolved Compose config valid. A separate VM is not required. If sandbox is recycled, reconfirm its independently sandbox-local fresh daemon and zero pre-existing resources before test. No access to operator's Docker daemon. Test-only `deploy/verify/compose.yaml` now seeds explicit `devices: []` and provides MMA2 supervisor test-volume write permissions; these additions need fresh read-only Compose config inspection before `up` and have NOT been executed/verified yet.
 
-## Current JR packet and stop condition
-Execute ONLY the current `## JR TEST TASK — CURRENT: UMIG-004-V TARGET PREFLIGHT ONLY` in `handoff.md`. On a separately owned disposable Linux VM/sandbox, record real host/daemon identity and test ownership, nonmutating Compose config, resolved ports/network/volumes and absence of existing project resources. No `docker compose up`, dependency install, backend/socket or browser access, configuration writes or cleanup until ChatGPT reviews preflight and publishes a separate executable packet. No demonstrably distinct Docker host, missing daemon, contested project resources or port = BLOCKED, not PASS. Do not run JR merely to repeat a known missing-host blocker.
+Current full authority: ONLY `## JR TEST TASK — CURRENT: UMIG-004-V LIVE VERIFY` in `handoff.md`, with exact host/project checks, safe build/start, direct Chromium UI actions, synthetic port 15020, snapshot checks, stop/recover behavior, project-owned teardown, evidence and report-only permissions. On a product discrepancy return FAIL; if isolation or an indispensable observation cannot be established return BLOCKED, never substitute unit/build results. On any failure perform only verified owned-resource cleanup.
 
-## Acceptance once a safe target is independently verified
-On that exact documented disposable host and only after a new JR packet, record clean browser GUI canonical load; intentional test-only change and manual Save & Apply, runtime acknowledgement and persisted reload; selected-device status and None/Random/error/unavailable handling, screenshots/logs, test config bytes and isolated resource cleanup. Test synthetic port 15020/unit 1 only; do not contact customer devices. No target = BLOCKED.
+## Acceptance
+1. Actual isolated OS.js Memory loads the canonical seeded empty document (never fixture-as-live); a synthetic `VERIFY-SIM-1` on private port 15020/unit 1 is created only by explicit Save & Apply, acknowledged by real Simulator/MMA2 and retained after reload.
+2. Real GUI shows runtime-derived selected status and persists FC3 None=0 / Random positive / None=0 across explicit edits and reload; missing runtime yields UNAVAILABLE/errors and recovery, not falsely healthy or fixture config.
+3. Record direct browser screenshots, actual response/config/status evidence, sandbox daemon/project/volume scope, startup/cleanup and tracked repository status. No operator data or production service touched.
 
-## Non-scope and dependencies
-No production/user data, live volume/socket, operator Docker context, external Modbus endpoint, Replicator work, source fixes or legacy cutover. Prerequisite UMIG-004-T PASS is met; independent host verification and executable test instructions remain outstanding. Never use `docker compose down -v`.
+## Non-scope
+No production/customer config, host Modbus port, external IP/endpoint, changes to real operator Compose, Replicator/Diagnostics integration, Electron, ICC or legacy UI retirement. The preflight READY and former unit/build PASS are not this task's VERIFY PASS.
 
 ## Sizing
 Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

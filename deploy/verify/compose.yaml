@@ -1,7 +1,7 @@
-# UMIG-004-E: disposable verification stack ONLY. Never combine with
-# deploy/docker-compose.yml, or run on the operator's production Docker daemon.
-# Invoke with `docker compose --project-name <unique-test-project> -f deploy/verify/compose.yaml`.
-# No explicit container names, external volumes, host-network mode or Modbus host ports.
+# UMIG-004-E: disposable verification stack ONLY. NEVER combine with
+# deploy/docker-compose.yml or use on the operator's production Docker daemon.
+# Run with a unique --project-name on a verified disposable sandbox daemon.
+# No container_name, external volumes, host networking or host Modbus ports.
 services:
   seed:
     image: alpine:3.19
@@ -13,10 +13,13 @@ services:
       - sh
       - -ec
       - |
-        # Fail closed if a supposedly fresh project reuses ANY existing data.
+        # Refuse reuse of ANY populated data volume, especially user data.
         test -z "$(ls -A /data)" || { echo 'VERIFY REFUSED: data volume is not empty' >&2; exit 1; }
-        mkdir -p /data/config/mma2
+        mkdir -p /data/config/mma2 /data/config/simulator
         printf 'listeners: []\n' > /data/config/mma2/config.yaml
+        # Explicit disposable canonical empty document: avoids Go's nil-slice
+        # JSON representation when no devices.yaml has ever existed.
+        printf 'devices: []\n' > /data/config/simulator/devices.yaml
 
   mma2:
     build:
@@ -24,6 +27,10 @@ services:
       dockerfile: Dockerfile.supervised
     restart: "no"
     init: true
+    # Test-only permission accommodation: seed/Simulator create files under
+    # /data/config/mma2 as root. MMA2 supervisor must write restart-ack there.
+    # This does NOT change the production Dockerfile or Compose configuration.
+    user: "0:0"
     depends_on:
       seed:
         condition: service_completed_successfully
@@ -43,8 +50,8 @@ services:
     depends_on:
       mma2:
         condition: service_started
-    # The Simulator's existing 127.0.0.1:<MMA2-port> readiness/raw-ingest
-    # is now local to ONLY this test MMA2; never shares the host network.
+    # Existing Simulator 127.0.0.1 readiness and Raw Ingest traffic stays
+    # within this disposable MMA2 network namespace, not the host network.
     network_mode: service:mma2
     volumes:
       - verify-data:/data

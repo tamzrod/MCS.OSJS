@@ -32,7 +32,48 @@ REPORT-WRITE AUTHORITY: Replace ONLY `## JR TEST REPORT — UMIG-004-V` with fac
 
 ## JR TEST REPORT — UMIG-004-V
 
-PENDING — environment definition authored and source-read-back only. Independent distinct-host/Compose target preflight NOT RUN; live browser/backend VERIFY NOT RUN/NOT PASS.
+Verdict: **BLOCKED** — TARGET PREFLIGHT could not establish a separately owned, disposable Docker host. No independent Docker daemon is present in this execution environment, so preflight step 1 (`docker info` server identity) and step 2 (daemon-scoped container/volume/network listing) cannot be executed and no host/daemon isolation can be proved. Per packet, "missing Docker" is an immediate BLOCKED condition without daemon-mutating actions. Live browser/backend VERIFY: **NOT RUN / NOT PASS**. A successful `docker compose config` is recorded below but is explicitly insufficient to declare the target safe.
+
+### Checkout + task state (verified)
+- HEAD: `39c2a3a5f6e4863360b161337c41a82158f98495` = `origin/main` (`tamzrod/MCS.OSJS`, branch `main`).
+- `git status --porcelain` empty at start and after all actions → tracked-clean. No tracked, product, Compose, workflow or ICC file was modified.
+- Precondition note: the initial workspace was a **1-commit grafted shallow clone** (`.git/shallow` = `39c2a3a…`, `git rev-list --count HEAD` = 1), so the mandated ancestor check could not run as-is. Resolved by the read-only transport action `git fetch --unshallow origin` (exit 0), which added no working-tree changes. No repository file was rewritten, reset or cleaned.
+- `git merge-base --is-ancestor 0eba36e61ec30254ddccb19bb8ff88ff403131cf HEAD` → **exit 0** (target commit is `UMIG-004-T: JR independent Memory adapter/relay contract TEST report — PASS`, 2026-09-19 01:19:09 +0000).
+- Task state: `workflow/active_work/umig-004-v-memory-runtime.md` = ACTIVE; `workflow/active_work/umig-005-connect-replicator-tab.md` = QUEUED (Previous = UMIG-004-V). UMIG-004-V is SOLE ACTIVE and UMIG-005 is QUEUED, as required.
+- Read as required: `deploy/verify/README.md`, this packet, `workflow/active_work/umig-004-v-memory-runtime.md`, `workflow/archive/umig-004-t-memory-adapter.md` (state), archived UMIG-004-E blueprint reference.
+
+### Step 1 — host / daemon identity: FAILED (no daemon)
+- `hostname` → `runtime-ylrnihathakoylzg-68df6b6fb9-6cgp6`
+- `uname -a` → `Linux … 6.8.0-1055-gke #61-Ubuntu SMP … x86_64 GNU/Linux` (GKE-hosted OpenHands runtime sandbox)
+- `docker context show` → `default`; `docker context ls` → only `default *` (`unix:///var/run/docker.sock`). No separate/disposable context exists.
+- `docker info --format '{{.ID}} {{.Name}} {{.DockerRootDir}}'` → **exit 1**: `failed to connect to the docker API at unix:///var/run/docker.sock … no such file or directory`. No server identity obtainable.
+- `docker compose version` → `Docker Compose version v5.5.1` (exit 0). `docker version` → client 29.8.0 (API 1.56) but server section **exit 1**, same socket error.
+- Socket absence confirmed: `/var/run/docker.sock` and `/run/docker.sock` do not exist. `DOCKER_HOST` unset. Identity `uid=10001(openhands)`.
+- Consequence: **no Docker daemon is reachable**, therefore host/daemon ownership and independence cannot be recorded, and the operator-daemon comparison the packet demands cannot be performed. This environment is the shared OpenHands runtime sandbox, not a demonstrably separately owned disposable VM with its own daemon. Ownership/provenance of this host is not established by evidence available in-session → BLOCKED.
+
+### Step 2 — daemon resource listing: NOT EXECUTABLE
+- `docker ps -a`, `docker volume ls`, `docker network ls` cannot run without a daemon (would repeat the same exit-1 socket error). Production-name absence (`mcs-osjs-shell`, `mcs-mma2`, `mcs-modbus-simulator-runtime`, `mcs-modbus-replicator-runtime`) and volume `osjs-data` absence are therefore **UNVERIFIED**, not confirmed.
+- Loopback port availability (read-only): `ss -ltn` filter for `:18219` → **no listener** (port free). This is a host-level observation only and does not substitute for daemon isolation proof.
+- No `up`/`build`/`pull`/`down`/volume removal, no service/socket request, no browser operation, no daemon-mutating action was performed.
+
+### Step 3 — nonmutating resolved Compose config: PASS (definition-only; not isolation proof)
+- Project token used: `mcsverify-1789782862-232`, invoked as `docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml config` with `MCS_VERIFY_OSJS_PORT=18219`. **Exit 0.**
+- Resolved services exactly `seed`, `mma2`, `modbus-simulator-runtime`, `osjs-shell`.
+- Build contexts correct: `mma2` → `/workspace/project/MCS.OSJS/MMA2` (`Dockerfile.supervised`); `modbus-simulator-runtime` → repo root `/workspace/project/MCS.OSJS` (`simulator/Dockerfile`); `osjs-shell` → `/workspace/project/MCS.OSJS/OSJS` (`Dockerfile`).
+- Invariants confirmed in resolved output: no `container_name`; `seed` uses `network_mode: none` with empty-volume refusal guard; `verify-runtime` network `internal: true`; `verify-ui` separate bridge; `modbus-simulator-runtime` uses `network_mode: service:mma2`; no host-network mode; no published Modbus ports (5020/15020 absent); OS.js port published only `127.0.0.1:18219 -> 18209`; single project-scoped volume `mcsverify-1789782862-232_verify-data` (no external/name override); networks project-scoped `…_verify-runtime` / `…_verify-ui`.
+- This proves only that the test-only Compose definition resolves as authored. Per packet and `deploy/verify/README.md`, it is **insufficient** to declare the target safe.
+
+### Step 4 — project resource existence check: NOT EXECUTABLE
+- `docker compose … ps -a` and label-filtered `docker ps/volume/network ls --filter com.docker.compose.project=$PROJECT` require a daemon and could not run. Zero-preexisting-resource expectation is **UNVERIFIED**.
+- `git status --porcelain` after all actions → empty (clean).
+
+### BLOCKER (exact)
+1. No Docker daemon/engine reachable in this environment (`/var/run/docker.sock` absent; `docker info`/`docker version` server exit 1).
+2. No demonstrably separate, OpenHands-owned disposable Linux host/VM with its own daemon — only the shared OpenHands runtime sandbox (`runtime-ylrnihathakoylzg-…`, GKE kernel), whose ownership/independence from the operator environment cannot be proved from in-session evidence.
+3. Therefore daemon identity, host independence, production-resource absence and zero-project-resource checks cannot be established, and no daemon isolation can be proved.
+
+### Not performed (per authorization)
+No containers started, images pulled/built, configs written, dependencies installed, browser/backend/socket contacted, volumes removed, ICC touched, or any reset/clean. Only authorized report section edited. Neither outcome claims UMIG-004-V PASS.
 
 ## Next action and recommendation
 

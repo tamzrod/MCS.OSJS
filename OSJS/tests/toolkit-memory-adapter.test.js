@@ -5,7 +5,7 @@ const assert = require('assert');
 const {EventEmitter} = require('events');
 const {createMemoryContract} = require('../src/packages/MCSModbusToolkit/memory-contract');
 const {createMemoryTransport} = require('../src/packages/MCSModbusToolkit/memory-transport');
-const {blankDevice, normalizeDocument, validateDocument, statusWord} = require('../src/packages/MCSModbusToolkit/memory-editor');
+const {blankDevice, normalizeDocument, validateDocument, statusWord, changeMode} = require('../src/packages/MCSModbusToolkit/memory-editor');
 
 const respond = (request, result) => ({version: 1, request_id: request.request_id, ok: true, result});
 const record = {devices: [blankDevice(1)]};
@@ -56,16 +56,24 @@ record.devices[0].random_runtime.fc3_interval_ms = 1250;
   const none = blankDevice(2);
   assert.deepStrictEqual(Object.values(none.random_runtime), [0, 0, 0, 0]);
   assert.strictEqual(validateDocument({devices: [none]}), null);
-  none.random_runtime.fc3_interval_ms = 1000;
+  none.random_runtime.fc3_interval_ms = 1250;
+  const remembered = new Map();
+  changeMode(none, 'fc3', 'none', remembered);
+  assert.strictEqual(none.random_runtime.fc3_interval_ms, 0);
   assert.strictEqual(validateDocument({devices: [none]}), null);
-  none.random_runtime.fc3_interval_ms = 0;
+  changeMode(none, 'fc3', 'random', remembered);
+  assert.strictEqual(none.random_runtime.fc3_interval_ms, 1250);
+  const fresh = blankDevice(4);
+  changeMode(fresh, 'fc4', 'random', new Map());
+  assert.strictEqual(fresh.random_runtime.fc4_interval_ms, 1000);
   assert.strictEqual(validateDocument({devices: [none]}), null);
   none.mma2.fc4.start = 65535;
   none.mma2.fc4.count = 2;
   assert.match(validateDocument({devices: [none]}), /16-bit/);
   assert.match(validateDocument({devices: [blankDevice(1), blankDevice(1)]}), /Duplicate/);
+  assert.strictEqual(validateDocument({devices: []}), null); // Delete-last can be committed explicitly.
   assert.deepStrictEqual(normalizeDocument(null), {devices: []});
-  console.log('None=0 and Random>0 preserved; FC range and duplicate validation: checked');
+  console.log('None/Random round-trip, fresh defaults, empty document and validation: checked');
 
   assert.strictEqual(statusWord(null, 'Sim-PLC-1', 'device_status', null), 'UNKNOWN');
   assert.strictEqual(statusWord({name: 'Other', device_status: 'RUNNING'}, 'Sim-PLC-1', 'device_status', null), 'UNKNOWN');

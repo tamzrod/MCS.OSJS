@@ -17,6 +17,8 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
+Scoped Electron Memory layout context: [electron-memory-layout](context/electron-memory-layout.md). This node tracks its own baseline and overlay; it does not refresh the unrelated workflow state below.
+
 Baseline Commit: 9775593
 Working Tree: clean
 Audited Uncommitted Overlay: none. The overlay previously recorded here is committed, and no uncommitted path differs from the audited state; the working tree is clean at the baseline commit.

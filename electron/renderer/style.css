@@ -24,8 +24,12 @@ button:disabled, input:read-only { opacity: .7; }
 #simulator-root { display: flex; flex-direction: column; gap: 4px; }
 #simulator-root > .tool-layout { flex: 1; height: auto; }
 .memory-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
-.memory-subtabs { display: flex; gap: 3px; flex-wrap: wrap; padding-bottom: 4px; border-bottom: 1px solid #999; margin-bottom: 5px; }
-.memory-subtabs button[aria-pressed="true"] { background: #eef5ff; border-style: inset; font-weight: bold; }
+.memory-subtabs { display: flex; align-items: flex-end; gap: 4px; flex-wrap: wrap; padding: 5px 4px 0; border-bottom: 1px solid #888; margin-bottom: 8px; }
+.memory-subtabs button { position: relative; padding: 6px 18px 5px 12px; border: 1px solid #888; border-bottom: 0; border-radius: 7px 14px 0 0; background: #d0d0d0; box-shadow: inset 1px 1px #fff; cursor: pointer; }
+.memory-subtabs button[aria-pressed="true"] { z-index: 1; margin-bottom: -1px; padding-top: 8px; padding-bottom: 6px; background: #f7f7f7; border-style: solid; font-weight: bold; }
+.memory-subtabs button:focus-visible { outline: 2px solid #305c9f; outline-offset: -4px; }
+.mma-dialog { width: min(640px, 90vw); max-height: 85vh; padding: 4px; border: 2px outset #eee; background: #d4d4d4; box-shadow: 4px 6px 18px #0006; }
+.mma-dialog::backdrop { background: #0005; }
 .mma-editor { flex: 1; gap: 8px; }
 .mma-editor > .memory-fields { display: grid; gap: 10px; max-width: 600px; }
 .memory-advanced { margin-bottom: 10px; }

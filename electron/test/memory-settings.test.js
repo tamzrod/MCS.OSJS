@@ -102,6 +102,24 @@ test('device drafts survive tab changes, save failure, and discard restores the 
   assert.equal(run('selectedSimulator().mma2.state_sealing.enabled'), false);
 });
 
+test('shared settings open only from Advanced Settings and close without losing drafts', () => {
+  const {root, run} = setup();
+  assert.equal(root.querySelector('#mma-settings-open'), null);
+  assert.equal(root.querySelector('dialog'), null);
+  run('memoryView.editor = "advanced"; mmaState.loaded = true; renderSimulator();');
+  root.querySelector('#mma-settings-open').events.click();
+  const dialog = root.querySelector('dialog');
+  assert.ok(dialog);
+  assert.ok(root.querySelector('#sim-runtime-mma2'));
+  run('mmaState.document.debug = {enabled:true};');
+  let prevented = false;
+  dialog.events.cancel({preventDefault: () => { prevented = true; }});
+  assert.equal(prevented, true);
+  assert.equal(root.querySelector('dialog'), null);
+  root.querySelector('#mma-settings-open').events.click();
+  assert.equal(run('mmaState.document.debug.enabled'), true);
+});
+
 test('shared Save uses MMA IPC and preserves drafts on rejection', async () => {
   const {pending, run} = setup();
   run('mmaState.loaded = true; mmaState.document = {rbe:{tcp:{listen:"127.0.0.1:9900"}}}; memoryView.section = "mma";');

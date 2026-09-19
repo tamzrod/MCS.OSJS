@@ -144,11 +144,16 @@ const renderSimulator = () => {
   simulatorState.runtimeStatus = null;
   const root = document.getElementById('simulator-root');
   root.replaceChildren();
-  const navigation = h('nav', 'memory-subtabs');
-  navigation.append(memoryTab('Devices', memoryView.section === 'devices', () => { memoryView.section = 'devices'; renderSimulator(); pollSimulator(); }),
-    memoryTab('MMA Settings', memoryView.section === 'mma', () => { memoryView.section = 'mma'; renderSimulator(); if (!mmaState.loaded && !mmaState.loading) loadMMASettings(); }));
-  root.appendChild(navigation);
+  let sharedDialog;
   if (memoryView.section === 'mma') {
+    sharedDialog = h('dialog', 'mma-dialog');
+    sharedDialog.setAttribute('aria-label', 'MMA Settings');
+    const close = () => {
+      if (mmaState.saving) return;
+      memoryView.section = 'devices'; renderSimulator();
+      document.getElementById('mma-settings-open')?.focus?.();
+    };
+    sharedDialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
     const editor = h('section', 'tool-editor mma-editor');
     const fields = h('fieldset', 'memory-fields');
     fields.disabled = mmaState.saving || !mmaState.loaded;
@@ -158,9 +163,13 @@ const renderSimulator = () => {
     save.disabled = mmaState.saving || !mmaState.loaded;
     const discard = actionButton('Discard', 'mma-discard'); discard.disabled = mmaState.saving || !mmaState.loaded;
     actions.append(save, discard);
+    const closeButton = h('button', 'tool-button', 'Close');
+    closeButton.type = 'button'; closeButton.disabled = mmaState.saving;
+    closeButton.addEventListener('click', close);
+    actions.appendChild(closeButton);
     if (!mmaState.loaded && !mmaState.loading) actions.append(actionButton('Retry load', 'mma-load'));
     editor.append(fields, actions, h('div', `tool-status${mmaState.error ? ' error' : ''}`, mmaState.loading ? 'Loading MMA settings...' : mmaState.message));
-    root.appendChild(editor); return;
+    sharedDialog.appendChild(editor);
   }
   const shell = h('fieldset', 'tool-layout memory-fields');
   shell.disabled = simulatorState.saving;
@@ -185,6 +194,16 @@ const renderSimulator = () => {
   editorTabs.append(memoryTab('Device Definition', memoryView.editor === 'definition', () => { memoryView.editor = 'definition'; renderSimulator(); pollSimulator(); }),
     memoryTab('Advanced Settings', memoryView.editor === 'advanced', () => { memoryView.editor = 'advanced'; renderSimulator(); pollSimulator(); }));
   editor.appendChild(editorTabs);
+  if (memoryView.editor === 'advanced') {
+    const sharedActions = h('div', 'editor-actions');
+    const open = h('button', 'tool-button', 'MMA Settings...');
+    open.id = 'mma-settings-open'; open.type = 'button';
+    open.addEventListener('click', () => {
+      memoryView.section = 'mma'; renderSimulator();
+      if (!mmaState.loaded && !mmaState.loading) loadMMASettings();
+    });
+    sharedActions.appendChild(open); editor.appendChild(sharedActions);
+  }
   const device = selectedSimulator();
   if (!device) {
     editor.appendChild(h('div', 'tool-empty', 'Select a device or choose Add.'));
@@ -284,6 +303,10 @@ const renderSimulator = () => {
   editor.appendChild(h('div', `tool-status${simulatorState.error ? ' error' : ''}`, simulatorState.message));
   shell.appendChild(editor);
   root.appendChild(shell);
+  if (sharedDialog) {
+    root.appendChild(sharedDialog);
+    sharedDialog.showModal?.();
+  }
 };
 
 const loadSimulator = async () => {

@@ -1,0 +1,88 @@
+name: Operation CWAL (OpenHands Cloud)
+
+# Manual only: adding/pushing this file never launches JR.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operation-cwal-cloud
+  cancel-in-progress: false
+
+jobs:
+  launch:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Submit current packet to OpenHands Cloud
+        env:
+          OPENHANDS_CLOUD_API_KEY: ${{ secrets.OPENHANDS_CLOUD_API_KEY }}
+          TARGET_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          def stop(message):
+              sys.exit(message)
+
+          key = os.environ.get('OPENHANDS_CLOUD_API_KEY', '')
+          if not key:
+              stop('Missing GitHub Actions secret OPENHANDS_CLOUD_API_KEY; no OpenHands request sent.')
+
+          handoff = Path('handoff.md').read_text(encoding='utf-8')
+          packets = re.findall(r'^## JR TEST TASK — CURRENT: .+$', handoff, re.MULTILINE)
+          reports = list(re.finditer(r'^## JR TEST REPORT — .+$', handoff, re.MULTILINE))
+          active = [str(path) for path in Path('workflow/active_work').glob('*.md')
+                    if re.search(r'^Status:\s*ACTIVE\b', path.read_text(encoding='utf-8'), re.MULTILINE)]
+          if len(packets) != 1 or len(reports) != 1 or len(active) != 1:
+              stop('No unambiguous current JR packet, pending report, and sole ACTIVE task; no request sent.')
+          if not handoff[reports[0].end():].strip().startswith('Pending'):
+              stop('Current JR report is not pending; refusing a duplicate launch.')
+
+          payload = {
+              'title': 'MCS.OSJS — OPERATION CWAL',
+              'selected_repository': os.environ['TARGET_REPOSITORY'],
+              'selected_branch': 'main',
+              'initial_message': {
+                  'role': 'user',
+                  'content': [{'type': 'text', 'text': 'operation cwal'}],
+                  'run': True,
+              },
+          }
+          request = urllib.request.Request(
+              'https://app.all-hands.dev/api/v1/app-conversations',
+              data=json.dumps(payload).encode('utf-8'),
+              headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'},
+              method='POST',
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  result = json.load(response)
+          except urllib.error.HTTPError as exc:
+              stop(f'OpenHands Cloud rejected launch: HTTP {exc.code}; no JR PASS inferred.')
+          except urllib.error.URLError as exc:
+              stop(f'OpenHands Cloud could not be reached: {exc.reason}; check Cloud before retrying.')
+
+          conversation_id = result.get('app_conversation_id')
+          start_task_id = result.get('id')
+          if conversation_id:
+              print('OpenHands conversation: https://app.all-hands.dev/conversations/' + str(conversation_id))
+          elif start_task_id:
+              print('OpenHands asynchronous start task ID: ' + str(start_task_id))
+              print('Check OpenHands Cloud for the conversation; submission is NOT test completion.')
+          else:
+              stop('OpenHands replied without a recognized conversation/start-task ID; check Cloud before retrying.')
+          print('Submitted command: operation cwal')
+          PY

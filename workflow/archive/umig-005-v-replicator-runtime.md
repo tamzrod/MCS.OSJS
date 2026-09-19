@@ -1,0 +1,17 @@
+# UMIG-005-V — VERIFY: Live Replicator Behavior
+
+Status: COMPLETE — reviewed 2026-09-19; core live behavior PASS accepted with one explicit unverified window-reopen observation.
+Stage / owner: VERIFY / OpenHands JR; evidence adjudication / ChatGPT
+Previous: UMIG-005-T (archived COMPLETE/PASS)
+Next: UMIG-006 (activated CODE)
+
+## Authoritative evidence and disposition
+JR reported live PASS at `handoff.md` commit `1a04664e5fdc21e3bd323a97a4f12f3f9d39abdd`; GitHub compare `d3e3d9e..1a04664` confirmed ONLY authorized `handoff.md` changed (77 additions, one deletion). JR used fresh sandbox-local Docker daemon and unique `mcsverify-rep-005-20260919` project; five-service Compose build/start, health and sockets passed. Real-browser and test-only canonical YAML/owners/logs directly showed empty non-fixture baseline; synthetic Memory source 15020/1; real destination inspection denying Simulator-owned 15020/1; Replicator 15021/1 apply/persistence with both owners preserved; FC3 polling RUNNING/OK and advancing last_poll; truthful connection-refused ERROR at private 15999 and OK recovery; four COMMS LEDs UNKNOWN; explicit Replicator and Memory deletion releasing reservations and restoring baseline hashes. Scoped `down --remove-orphans` removed only five owned containers/two networks, without -v, retaining named volume `mcsverify-rep-005-20260919_verify-data`. Production untouched. All of these are reported observations, not independently rerun by the reviewer.
+
+## Explicit evidence limitation — DO NOT silently claim exact packet PASS
+The step-8 instruction required the canonical device to survive **actual Toolkit window close and relaunch from OS.js Start menu**. JR's report describes switching tabs and re-selecting, plus persisted YAML; the available browser trace also shows tab switching, not closing/reopening the Toolkit window. Canonical backend persistence and tab revisit WERE observed; actual window-reopen/reload lifecycle was NOT independently evidenced. Accordingly reviewer accepts the observed core live Replicator behavior as a scoped PASS with this gap disclosed, NOT an assertion that every literal step or real window-reopen check passed. The mandatory missing check is carried into `workflow/active_work/umig-006-v-diagnostics-ui.md` for the next already-scheduled isolated browser session; before any launcher/cutover acceptance, independently close the actual Toolkit window, relaunch from OS.js Start and verify canonical Replicator reloading without auto-apply or fixture fallback. Do not substitute a tab switch or a static file read for this check. If unavailable, that later subcheck is NOT PASS.
+
+Non-blocking reported setup observations: sandbox dockerd started locally as authorized; `ss` absent and /proc/net/tcp used as authorized; `docker logs --no-color` unsupported and logs collected without flag; editor DOM re-render required fresh browser indices. No product, Go, MMA2, production Compose, legacy packages or ICC files were changed in the JR report or this workflow review.
+
+## Scope and next stage
+This is disposable Linux UI/runtime behavior, not production deployment, direct four-layer COMMS probes, Windows behavior, Diagnostics integration, pixel parity or cutover. UMIG-006 CODE only may now proceed; UMIG-006-T and UMIG-006-V remain QUEUED. No new JR instruction is authorized by this archive. Do not reuse or delete retained test volumes without separate permission.

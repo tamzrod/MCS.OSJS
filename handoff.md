@@ -38,7 +38,43 @@ REPORT-WRITE AUTHORITY: JR replaces ONLY `## JR TEST REPORT — UMIG-004-T` imme
 
 ## JR TEST REPORT — UMIG-004-T
 
-PENDING — exact independent TEST packet published. JR has not run the three focused tests or build/discovery for this stage; no PASS/FAIL is predetermined.
+VERDICT: **PASS** — independent UNIT/BUILD stage executed 2026-09-19 by OpenHands/JR under `operation cwal.md`, in a fresh disposable checkout. This PASS covers the Toolkit Memory transport/contract/relay unit behavior and OS.js build/discovery ONLY. It does NOT establish rendered Memory UI, a working live backend, safe production writes, Docker health, or legacy cutover.
+
+### Preconditions / task state
+- Fresh disposable checkout `/tmp/jr-umig-004-t` (clone of `tamzrod/MCS.OSJS`), NOT the operator deployment.
+- `git rev-parse HEAD` = `54896ff1fbdbfa4c052c993d5b9b3d6e83759ec8` (current `origin/main`).
+- `git status --porcelain` before setup = empty (tracked-clean); final before report = empty.
+- `node --version` = `v16.20.2`, `npm --version` = `8.19.4` (Node 16 `>=10 <17` satisfied; Node 16 sandbox-local at `/tmp/jr-node16`, outside repo).
+- `git merge-base --is-ancestor 508c6b031e675c696de3ff7bdb4291dd005d54ae HEAD` → exit 0.
+- Task state: `workflow/active_work/umig-004-t-memory-adapter.md` = SOLE ACTIVE (PENDING/NOT RUN); archived `umig-004-connect-memory-tab.md` = COMPLETE source-only; UMIG-004-V QUEUED. No conflict.
+- Safe setup: `npm install --no-audit --no-fund` in the disposable checkout only (954 packages, exit 0, no tracked file changes). The relay test created its own `mkdtemp` fake Unix server under `/tmp`; no Docker/shared runtime socket, MMA2, Modbus operation or real configuration was referenced.
+
+### Commands and observed results
+1. `cd OSJS && node tests/toolkit-memory-contract.test.js` → exit **0**. Cases: `version and injected transport`, `load, status, snapshot apply, unique IDs and protocol envelope`, `invalid requests do not reach transport`, `runtime errors and transport failures propagated`, `wrong correlation, missing data and wrong protocol fail closed` — all `checked`. Also ran before dependency install (pure Node, no framework).
+2. `cd OSJS && node tests/toolkit-memory-adapter.test.js` → exit **0**. Cases: `Toolkit provider envelope, correlated load, stale reply ignored`; `explicit apply snapshot, canonical result, status payload and IDLE`; `typed runtime failures, unavailable transport and teardown`; `None/Random round-trip, fresh defaults, empty document and validation`; `unknown, wrong-device, unavailable and observed status mapping` — all `checked`.
+3. `cd OSJS && node tests/toolkit-memory-relay.test.js` → exit **0**. Cases: `provider requires authenticated OS.js session, v1 ID and allowlisted operation` (unauthenticated → `INVALID_REQUEST`, `restart` not allowlisted, empty `request_id` rejected); `Toolkit-owned provider preserves v1 framing and response envelope on isolated Unix socket` (4-byte BE framing verified round-trip); `unavailable runtime returns correlated explicit error` (`RUNTIME_UNAVAILABLE` with matching `request_id` = `no-runtime`). Fake server bound only to its own `mkdtemp` path and removed in `finally`.
+4. `cd OSJS && npm run build:local-packages` → exit **0** — `built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme`.
+5. `cd OSJS && npm run package:discover` → exit **0** — `mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]`, 7 discovered.
+6. `cd OSJS && npm run build` → exit **0** — `osjs.js` 118 KiB, `vendors~osjs.js` 488 KiB, `osjs.css` 2.17 KiB, `index.html` emitted.
+
+### Artifacts, metadata, inspection (command 7)
+- Artifacts exist: `src/packages/MCSModbusToolkit/dist/main.js` = 30255 bytes, `dist/main.css` = 121 bytes (`ls` exit 0).
+- `metadata.json` contains `"server": "server.js"` in BOTH source and generated `dist/metadata.json`; `MCSModbusToolkit` discovery entry correct (`type: application`, files `main.js`,`main.css`).
+- Source runtime imports (`index.js`): `./index.scss`, `osjs`, `./metadata.json`, `./toolkit-renderer`, `./memory-contract`, `./memory-transport`, `./memory-editor`. `server.js` imports only `net`, `path`. No import of legacy `ModbusSimulator`/`ModbusReplicator`, Electron host, or dormant `replicator-contract.js`/`diagnostics-model.js`.
+- Emitted `dist/main.js` references: dormant `replicator-contract`/`diagnostics-model` = 0 matches; Electron tokens (`mcsDesktop|ipcRenderer|contextBridge`) = 0; legacy `ModbusSimulator`/`ModbusReplicator` = 0 (each grep exit 1).
+- Only Toolkit's Memory tab is live-bound: `index.js` creates transport/contract/editor for `#simulator-root` only; `toolkit-renderer.js` still renders Replicator and Diagnostics from the static fixture snapshot. `createReplicatorContract` exists in the dormant module but is not imported.
+- `server.js`: accepts only authenticated (`ws._osjs_client`) v1 `load/apply/status` (allowlist `Set`), rejects bad version/ID/operation/payload with request-correlated `INVALID_REQUEST`; maps socket errors to `RUNTIME_UNAVAILABLE`; uses `path.join(OSJS_DATA_DIR || cwd, 'run', 'modbus-simulator.sock')`; max 1 MiB, 4-byte big-endian framing. No `route`/`express`/`healthz`/`listen(` — no new HTTP endpoint (grep exit 1).
+- `memory-transport.js` retains the complete `{version,request_id,ok,result,error}` envelope (contract validates it), rejects duplicate/empty IDs, times out pending requests, and rejects on close.
+
+### Baseline diff and final status (command 8)
+- `git diff --name-only f596670527956302031e1ba4aa804386b0cfc133..HEAD` → exactly the seven expected UMIG-004 CODE toolkit paths (`index.js`, `memory-editor.js`, `memory-transport.js`, `metadata.json`, `server.js`, `tests/toolkit-memory-adapter.test.js`, `tests/toolkit-memory-relay.test.js`) plus authorized `handoff.md` and `workflow/active_work/|archive/` files. No Docker, Go/simulator, MMA2, Electron, or legacy OS.js product changes.
+- Final `git status --porcelain` = empty (tracked-clean). No leftover `/tmp/toolkit-memory-relay-*` directories (test cleaned its own `mkdtemp`).
+
+### Expected vs observed
+All gating expectations met: six commands exit 0; focused tests demonstrate correlated load/apply/status and explicit errors, session-only None/Random round-trip, deleted-last empty-document validation, authenticated allowlisted fake Unix relay and correlated unavailable error; Toolkit discovered with JS/CSS artifacts; `server.js` registered; no prohibited runtime imports in source or bundle; transport uses the shared socket path while tests use only their disposable fake; tracked status clean.
+
+### Unexpected behavior
+None. Only non-fatal npm deprecation notices. No product-level failure observed in scope. JR did not connect to any real backend, did not run additional tests, and made no product/workflow/ICC edits; no successor selected.
 
 ## Next action and recommendation
 

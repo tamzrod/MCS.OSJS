@@ -3,7 +3,7 @@
 // The donor Diagnostics surface, backed ONLY by the two existing read-only
 // Toolkit contracts. No Docker health probe, logs endpoint, Windows IPC,
 // native path discovery, service-control call or fixture fallback exists.
-const {UNKNOWN, UNAVAILABLE, mapDiagnostics} = require('./diagnostics-model');
+const {UNKNOWN, mapDiagnostics} = require('./diagnostics-model');
 const {collectDiagnostics} = require('./diagnostics-observer');
 
 const createDiagnosticsEditor = (doc, root, memory, replicator, options = {}) => {
@@ -35,6 +35,9 @@ const createDiagnosticsEditor = (doc, root, memory, replicator, options = {}) =>
     if (closed) return;
     const mapped = snapshot ? snapshot.view : mapDiagnostics();
     const shell = h('div');
+    // The original panel used a flex-column layout with a growing log pane.
+    // Keep that donor behavior inside this one ShadowRoot, not global CSS.
+    shell.style.cssText = 'display:flex; flex-direction:column; height:100%; min-height:0;';
     const controls = h('div', 'diagnostic-actions');
     ['Start runtimes', 'Stop runtimes'].forEach(label => {
       const button = h('button', 'tool-button', label);

@@ -40,7 +40,50 @@ REPORT-WRITE AUTHORITY: JR may replace ONLY `## JR TEST REPORT — UMIG-004-V` i
 
 ## JR TEST REPORT — UMIG-004-V
 
-PENDING — executable live VERIFY packet issued after corrected target preflight. No test containers started under this packet, no live browser/backend VERIFY performed, and no PASS/FAIL is predetermined.
+Verdict: **PASS** — every required live observation was directly collected from the real browser and the live test backend. One packet-command defect is disclosed under `Deviation` (step 9 restart command); the recovery observation it targeted was still directly performed. This is live VERIFY PASS only; it does not prove production, launcher cutover, Replicator backend or legacy retirement.
+
+### Isolation + startup (steps 1–4)
+- HEAD `bf489986ac6b1498ead80cf02226467244000489` = `origin/main`; `git status --porcelain` empty before and after all work (tracked-clean). `git merge-base --is-ancestor 37dc61f533c8e7221610c8bf5858ddbe01790312 HEAD` → **exit 0**.
+- Task state: `umig-004-v-memory-runtime.md` SOLE ACTIVE; `umig-004-t-memory-adapter.md` archived COMPLETE; `umig-005-connect-replicator-tab.md` QUEUED (Previous UMIG-004-V).
+- Host `runtime-ylrnihathakoylzg-68df6b6fb9-6cgp6`, uid 10001; sandbox-local daemon `85b789e1-f930-4fc0-968c-935af6ba63f5`, `DockerRootDir=/var/lib/docker`, endpoint `unix:///var/run/docker.sock`, `DOCKER_HOST` unset; Compose v5.5.1. Initially 0 containers / 0 volumes; networks `bridge,host,none`; production names and `osjs-data` absent. Port 18219 free.
+- `MCS_VERIFY_OSJS_PORT=18219 docker compose --project-name mcsverify-1789784184-232 -f deploy/verify/compose.yaml config` → exit 0: exactly seed/mma2/modbus-simulator-runtime/osjs-shell; seed empty-volume refusal + canonical `devices: []`; mma2 `user: '0:0'`; `verify-runtime internal: true`; Simulator `network_mode: service:mma2`; UI published only `127.0.0.1:18219->18209`; no container_name/privileged/host network/external volume/host Modbus port. Label-filtered container/volume/network listings → all empty (zero pre-existing resources).
+- `up -d --build` → **exit 0**. Images: osjs-shell `1c592e4eca7a`, modbus-simulator-runtime `8571d902ded4`, mma2 `8398bba01153`. `ps -a`: seed **Exited (0)**, three services Up. `curl http://127.0.0.1:18219/healthz` → **HTTP 200 `{"status":"ok","shell":"neutral"}`**. `test -S /data/run/modbus-simulator.sock` → exit 0. Startup logs clean (mma2 config validated, OS.js `WebSocket listening on ws://0.0.0.0:18209`, `Server listening`).
+
+### Baseline before any GUI mutation (steps 5–6)
+- `/data/config/simulator/devices.yaml` = `devices: []` sha `a7f10115e2af055a59d35e47e8bfa8dbdb324c2a27128f3be32ca7065db6f810`; `/data/config/mma2/config.yaml` = `listeners: []` sha `84ce1e5cb983eb306fef398a735b6fcdf37f4aa09ed7192f117d8b3764c4ba1f`.
+- Real Chromium (152.0.7977.82, sandbox-local Playwright, headless, fresh context) at `http://127.0.0.1:18219`; OS.js desktop loaded HTTP 200. Start menu → `MCS Modbus Toolkit` launched exactly **ONE** window. Memory tab (ShadowRoot) observed: `Devices` / `No devices configured. Choose Add.`; editor `Select a device or choose Add.`; runtime strip `MMA2 UNKNOWN`, `Replicator UNKNOWN`. Replicator sidebar = `Fixture Rep-PLC-1 / 192.0.2.1:502 / FC3 / FIXTURE`; Diagnostics = `FIXTURE ONLY — no Windows services...`. **No fixture value leaked into canonical Memory and no automatic apply/write**: post-load hashes still `a7f10115…` / `84ce1e5c…`.
+- Browser console: only a missing-sound warning and 404s for optional icon/sound assets (`/apps/MCSModbusToolkit/icon.svg` returned 404 while the menu still rendered its icon). No JS page errors. WebSocket `ws://127.0.0.1:18219/` connected.
+
+### Apply #1 — add VERIFY-SIM-1 (step 7)
+- Memory `Add` → local device; set Name `VERIFY-SIM-1`, Listen Port `15020`, Unit ID `1`, FC1–FC4 Start 0 Count 16, all modes None / interval 0. `Save & Apply` (clicks 1/3) → UI: **"MMA2 structural changes applied through the restart/reload path. Applied at 9/19/2026, 4:12:29 AM."**
+- Canonical `devices.yaml` sha `a83b36a6142a3df1fb400bdb78f091a6a1b2e5295e5f1b88a0651415718505ed`: device `VERIFY-SIM-1`, `port: 15020`, `unit_id: 1`, all four FC start 0/count 16, all `*_interval_ms: 0`.
+- MMA2 logs: `restart request consumed`, shutdown, reload, `ingress sim-15020-1 listening on 0.0.0.0:15020`. `owners.yaml`: `port: 15020 / unit_id: 1 / owner: simulator`.
+- Host-side listener check: `15020` **not** exposed on the host (host LISTEN = 18219, 60000, 60001 only) → synthetic listener confined to the test namespace.
+- Reload/reopen: sidebar `VERIFY-SIM-1 / Port 15020 / Unit 1`; inputs 15020/1, all ranges 0/16, all modes `none`. Selected device status from runtime evidence: **MMA2 RUNNING, Simulation IDLE** (matched MMA2 restart logs).
+
+### Apply #2 / #3 — FC3 Random then None (step 8)
+- FC3 → `random`: interval auto-set to `1000`. `Save & Apply` (2/3) → **"Random-runtime timing updated without restarting MMA2. Applied at 9/19/2026, 4:22:13 AM."** Canonical sha `ee851f19e9e34de5f79cacfbc02a0cfa0db964ca1449a52a2dcf9424c8d56b3b`: `fc3_interval_ms: 1000`, **fc1/fc2/fc4 = 0**.
+- FC3 → `none`: `Save & Apply` (3/3) → **"Random-runtime timing updated without restarting MMA2. Applied at 9/19/2026, 4:24:47 AM."** Canonical sha returned to `a83b36a6…` (all intervals 0); MMA2 listener count for `sim-15020-1` = 1. Maximum three apply clicks observed.
+- Note: on reload after apply #2 the editor correctly re-displayed FC3 = `random` with interval 1000, confirming canonical replay.
+
+### Runtime outage and recovery (step 9)
+- `docker compose ... stop modbus-simulator-runtime` → exit 0. Within one poll the selected device transitioned **MMA2 UNAVAILABLE / Simulation UNAVAILABLE** with explicit `Status unavailable: connect ENOENT /data/run/modbus-simulator.sock`, stable for 60s — **never falsely RUNNING/IDLE**.
+- Close/reopen during outage: sidebar `No canonical data available.` and `Simulator runtime unavailable: connect ENOENT /data/run/modbus-simulator.sock` — **fixture values were NOT substituted as canonical**.
+- Recovery: simulator socket restored, then canonical `VERIFY-SIM-1 / Port 15020 / Unit 1` returned with **MMA2 RUNNING / Simulation IDLE** and no alert. No Save & Apply during outage.
+
+### Deviation — packet restart command defect (test harness, not product)
+The packet's exact step-9 restart `docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml start modbus-simulator-runtime` **failed deterministically (exit 1, reproduced twice)**: Compose re-evaluated the `seed` dependency, and the now-populated `verify-data` volume correctly triggered `VERIFY REFUSED: data volume is not empty` → `service "seed" didn't complete successfully: exit 1`. The Simulator stayed `exited (0)`. I did **not** edit Compose, bypass the guard, or touch the volume; I restarted only the same disposable test container with `docker start mcsverify-1789784184-232-modbus-simulator-runtime-1` (exit 0, socket OK) and then directly observed recovery. The recovery **observation** was collected live from the real UI; only the restart *mechanism* was substituted. ChatGPT should classify this Compose/seed-coupling defect separately; it is a test-definition issue, not a Toolkit product failure.
+
+### Cleanup (mandatory)
+- Pre-cleanup ownership verified: all four containers, two networks and the volume carried `com.docker.compose.project=mcsverify-1789784184-232`; no foreign resources.
+- `docker compose ... down --remove-orphans` (**no `-v`**) → exit 0; all 4 containers and both networks removed. Post-cleanup: project containers `[]`, project networks `[]`. Retained test-only volume `mcsverify-1789784184-232_verify-data` (label `mcsverify-1789784184-232`) — **left intact, not removed**. Daemon totals: 0 containers, 1 volume. Port 18219 free again.
+- Never used `down -v`, prune, wildcard, host or production commands. Final `git status --porcelain` clean; only this report section edited.
+
+### Documented limitations
+- Partly redundant with preflight: this sandbox lacks `ss`/`netstat`/`lsof`; listener checks used `/proc/net/tcp`. Earlier preflight `ss -ltn` output was an absent-binary artifact; the port-free conclusion was here confirmed by `/proc/net/tcp`.
+- The initial missing-file `devices:null` representation is **outside** this test (fixture seeds `devices: []`); no production empty-file correctness is claimed.
+- Replicator and Diagnostics remained fixture-only and were not backend-tested. No Docker/production acceptance, launcher cutover or legacy retirement inferred.
+- Evidence: screenshots 01–53 in `/tmp/jrtest/` (desktop, menu, Toolkit baseline, edited, applied, reload-persist, selected status, FC3 random/none, outage, reopen-outage, recovered); sandbox-local tooling in `/tmp/jrvenv`.
 
 ## Next action and recommendation
 

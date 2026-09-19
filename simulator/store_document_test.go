@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -43,7 +44,7 @@ func TestSaveDocumentMultiDeviceRoundTrip(t *testing.T) {
 		t.Fatalf("device count %d != %d", len(got.Devices), len(want.Devices))
 	}
 	for i := range want.Devices {
-		if got.Devices[i] != want.Devices[i] {
+		if !reflect.DeepEqual(got.Devices[i], want.Devices[i]) {
 			t.Fatalf("device %d round-trip mismatch\nwant %#v\ngot  %#v", i, want.Devices[i], got.Devices[i])
 		}
 	}
@@ -80,7 +81,7 @@ func TestSaveDocumentRejectsInvalidDeviceWithoutReplacing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(doc.Devices) != 1 || doc.Devices[0] != good {
+	if len(doc.Devices) != 1 || !reflect.DeepEqual(doc.Devices[0], good) {
 		t.Fatal("loaded document changed after rejected multi-device save")
 	}
 }
@@ -116,7 +117,7 @@ func TestSaveDocumentAddDuplicateDeleteReshape(t *testing.T) {
 		t.Fatalf("device count %d != %d", len(got.Devices), len(want.Devices))
 	}
 	for i := range want.Devices {
-		if got.Devices[i] != want.Devices[i] {
+		if !reflect.DeepEqual(got.Devices[i], want.Devices[i]) {
 			t.Fatalf("device %d mismatch\nwant %#v\ngot  %#v", i, want.Devices[i], got.Devices[i])
 		}
 	}

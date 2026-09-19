@@ -2,6 +2,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -16,157 +17,148 @@ import (
 	"mma2/internal/config"
 	"mma2/internal/ingress"
 	"mma2/internal/notify"
+	"mma2/internal/rbe"
 	"mma2/internal/transport/modbus"
 	"mma2/internal/transport/rawingest"
 	"mma2/internal/version"
+	"mma2/pkg/configvalidate"
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--validate-stdin" {
+		data, err := io.ReadAll(io.LimitReader(os.Stdin, 4*1024*1024+1))
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(data) > 4*1024*1024 {
+			log.Fatal("configuration exceeds 4 MiB")
+		}
+		if err := configvalidate.YAML(data); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if len(os.Args) != 2 {
 		log.Fatalf("usage: mma2 <config.yaml>")
 	}
-
 	cfgPath := os.Args[1]
-
 	ext := strings.ToLower(filepath.Ext(cfgPath))
 	if ext != ".yaml" && ext != ".yml" {
 		log.Fatalf("config path must end in .yaml or .yml, got: %s", cfgPath)
 	}
-
 	log.Printf("mma2 v%s starting", version.Version)
 	log.Printf("config path: %s", cfgPath)
-
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		log.Fatalf("config load failed: %v", err)
 	}
-
 	if err := config.Validate(cfg); err != nil {
 		log.Fatalf("config validation failed: %v", err)
 	}
 
+	rbeRules, err := config.BuildRBERules(cfg)
+	if err != nil {
+		log.Fatalf("RBE validation failed: %v", err)
+	}
 	log.Println("config loaded and validated successfully")
-
 	store, err := config.BuildMemoryStore(cfg)
 	if err != nil {
 		log.Fatalf("memory build failed: %v", err)
 	}
-
 	auth := authority.New()
-
 	policies, err := config.BuildAuthorityPolicies(cfg)
 	if err != nil {
 		log.Fatalf("policy build failed: %v", err)
 	}
-
 	for mid, p := range policies {
 		auth.SetMemoryPolicy(mid, p)
 	}
-
 	log.Println("authority policies loaded")
 
-	// --------------------
-	// Notify
-	// --------------------
+	var shutdown []func()
 
 	var notifier *notify.Engine
-
-	registry, err := config.BuildNotifyRegistry(cfg)
-	if err != nil {
-		log.Fatalf("notify registry build failed: %v", err)
-	}
-
-	if registry != nil {
-
-		var adapter notify.Adapter
-
-		// Influx adapter (optional)
-		if cfg.Notify != nil && cfg.Notify.Influx != nil {
-
-			influxCfg := cfg.Notify.Influx
-
-			adapter = notify.NewInfluxAdapter(
-				influxCfg.URL,
-				influxCfg.Org,
-				influxCfg.Bucket,
-				influxCfg.Token,
-				influxCfg.Measurement,
-			)
-
-			log.Println("notify engine enabled (influx adapter)")
-		} else {
-			adapter = notify.NewStdoutAdapter()
-			log.Println("notify engine enabled (stdout adapter)")
+	if cfg.RBE == nil {
+		registry, err := config.BuildNotifyRegistry(cfg)
+		if err != nil {
+			log.Fatalf("notify registry build failed: %v", err)
 		}
-
-		notifier = notify.NewEngine(registry, adapter, 256)
-
-	} else {
-		log.Println("notify engine disabled (no rules)")
+		if registry != nil {
+			adapter := notify.NewStdoutAdapter()
+			log.Println("notify engine enabled (stdout adapter)")
+			notifier = notify.NewEngine(registry, adapter, 256)
+		} else {
+			log.Println("notify engine disabled (no rules)")
+		}
 	}
 
-	// --------------------
-	// Access Events
-	// --------------------
+	var observer *rbe.Engine
+	if cfg.RBE != nil {
+		var sinks []rbe.Sink
+		if cfg.RBE.TCP != nil {
+			ln, err := net.Listen("tcp", cfg.RBE.TCP.Listen)
+			if err != nil {
+				log.Fatalf("RBE TCP bind failed: %v", err)
+			}
+			publisher, err := rbe.NewTCPPublisher(ln, 256)
+			if err != nil {
+				_ = ln.Close()
+				log.Fatalf("RBE TCP publisher failed: %v", err)
+			}
+			sinks = append(sinks, publisher)
+			shutdown = append(shutdown, func() { _ = publisher.Close() })
+			log.Printf("RBE TCP listening on %s", cfg.RBE.TCP.Listen)
+		}
+		observer, err = rbe.NewEngine(rbeRules, &rbe.MultiSink{Sinks: sinks})
+		if err != nil {
+			log.Fatalf("RBE engine failed: %v", err)
+		}
+		log.Printf("RBE engine enabled (%d rules)", len(rbeRules))
+	}
 
 	var ae *accessevents.Engine
-
 	if cfg.AccessEvents != nil && cfg.AccessEvents.Enabled {
 		ae = accessevents.New(cfg.AccessEvents)
-
 		mux := http.NewServeMux()
 		mux.Handle(cfg.AccessEvents.Output.Path, accessevents.NewHandler(ae))
-
-		// Bind the listener before starting the goroutine so that bind errors
-		// cause a clean startup failure rather than a silent background crash.
 		ln, err := net.Listen("tcp", cfg.AccessEvents.Output.Listen)
 		if err != nil {
 			log.Fatalf("access events: failed to bind %s: %v", cfg.AccessEvents.Output.Listen, err)
 		}
-
+		shutdown = append(shutdown, func() { _ = ln.Close() })
 		go func() {
 			log.Printf("access events HTTP listening on %s", cfg.AccessEvents.Output.Listen)
 			if err := http.Serve(ln, mux); err != nil {
-				log.Fatalf("access events HTTP server failed: %v", err)
+				log.Printf("access events HTTP server stopped: %v", err)
 			}
 		}()
-
 		log.Println("access events engine started")
 	} else {
 		log.Println("access events disabled")
 	}
 
-	// --------------------
-	// Start ingress
-	// --------------------
-
 	for _, gate := range cfg.Ingress {
-
 		onModbus := func(conn net.Conn) {
-			modbus.HandleConn(conn, store, auth, notifier, ae, cfg.Debug)
+			modbus.HandleConnWithRBE(conn, store, auth, notifier, observer, ae, cfg.Debug)
 		}
-
 		onRawIngest := func(conn net.Conn) {
-			rawingest.HandleConn(conn, store, notifier)
+			rawingest.HandleConnWithRBE(conn, store, notifier, observer)
 		}
-
 		l := ingress.NewListener(gate)
-
-		go func(g ingress.Listener) {
-			if err := g.ListenAndServe(onModbus, onRawIngest); err != nil {
+		shutdown = append(shutdown, func() { _ = l.Close() })
+		go func() {
+			if err := l.ListenAndServe(onModbus, onRawIngest); err != nil {
 				log.Fatalf("ingress %s failed: %v", gate.ID, err)
 			}
-		}(*l)
+		}()
 	}
-
 	log.Println("mma2 ingress started")
 
-	// Keep an empty-but-valid configuration alive. A bare select{} is treated by
-	// the Go runtime as a deadlock when no ingress goroutines exist. Waiting on
-	// process signals preserves normal supervisor restart and shutdown behavior.
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
-	signal.Stop(stop)
-	log.Println("mma2 shutdown requested")
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	got := <-sig
+	log.Printf("mma2 shutting down (%s)", got)
+	for i := len(shutdown) - 1; i >= 0; i-- {
+		shutdown[i]()
+	}
 }

@@ -3,6 +3,7 @@ package simulator
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -29,6 +30,7 @@ func validDevice() DeviceDefinition {
 
 func TestConfigRootFromEnvRefusesInventedPath(t *testing.T) {
 	t.Setenv("OSJS_DATA_DIR", "")
+	t.Setenv("ProgramData", "")
 	if _, err := ConfigRootFromEnv(); err == nil {
 		t.Fatal("expected error when OSJS_DATA_DIR is unset")
 	}
@@ -69,7 +71,7 @@ func TestRoundTripExactValues(t *testing.T) {
 		t.Fatalf("got %d devices", len(doc.Devices))
 	}
 	got := doc.Devices[0]
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("round-trip mismatch\nwant %#v\ngot  %#v", want, got)
 	}
 }
@@ -114,7 +116,7 @@ func TestInvalidInputsDoNotReplaceLastValid(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if doc.Devices[0] != want {
+			if !reflect.DeepEqual(doc.Devices[0], want) {
 				t.Fatalf("loaded definition changed after rejected %s", tc.name)
 			}
 		})

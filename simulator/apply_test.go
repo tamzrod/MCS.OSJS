@@ -3,6 +3,7 @@ package simulator
 import (
 	"errors"
 	"net"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -164,7 +165,7 @@ func TestApplyRouterStructuralTimingAndRejectedPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if active.Devices[0] != timing.Devices[0] {
+	if !reflect.DeepEqual(active.Devices[0], timing.Devices[0]) {
 		t.Fatalf("rejected apply replaced active state: %+v", active.Devices[0])
 	}
 	if recorder.structural != 2 || recorder.timing != 1 {

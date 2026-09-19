@@ -92,6 +92,7 @@ const simulatorBlankDevice = sequence => ({
   name: `Sim-PLC-${sequence}`,
   enabled: true,
   mma2: {
+    ...window.mcsMemoryUI.defaults(),
     port: 5020,
     unit_id: 1,
     fc1: {start: 0, count: 16},
@@ -123,13 +124,46 @@ const validateSimulator = device => {
 const normalizeSimulatorDocument = value => ({devices: Array.isArray(value && value.devices) ? value.devices : []});
 const simulatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, loading: true, saving: false, message: 'Loading Memory definitions...', error: false, runtimeStatus: null};
 const selectedSimulator = () => simulatorState.selected === null ? null : simulatorState.document.devices[simulatorState.selected];
+const discardSimulator = () => {
+  simulatorState.document = clone(simulatorState.persisted);
+  simulatorState.selected = simulatorState.document.devices.length ? Math.min(simulatorState.selected || 0, simulatorState.document.devices.length - 1) : null;
+  simulatorState.message = 'Changes discarded.'; simulatorState.error = false;
+};
+const memoryView = {section: 'devices', editor: 'definition'};
+const mmaState = {document: {}, persisted: {}, loaded: false, loading: false, saving: false, message: '', error: false};
+
+const memoryTab = (label, active, callback) => {
+  const button = h('button', 'tool-button', label);
+  button.type = 'button'; button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  button.addEventListener('click', callback);
+  return button;
+};
 
 const renderSimulator = () => {
   simulatorPollVersion++;
   simulatorState.runtimeStatus = null;
   const root = document.getElementById('simulator-root');
   root.replaceChildren();
-  const shell = h('div', 'tool-layout');
+  const navigation = h('nav', 'memory-subtabs');
+  navigation.append(memoryTab('Devices', memoryView.section === 'devices', () => { memoryView.section = 'devices'; renderSimulator(); pollSimulator(); }),
+    memoryTab('MMA Settings', memoryView.section === 'mma', () => { memoryView.section = 'mma'; renderSimulator(); if (!mmaState.loaded && !mmaState.loading) loadMMASettings(); }));
+  root.appendChild(navigation);
+  if (memoryView.section === 'mma') {
+    const editor = h('section', 'tool-editor mma-editor');
+    const fields = h('fieldset', 'memory-fields');
+    fields.disabled = mmaState.saving || !mmaState.loaded;
+    window.mcsMemoryUI.mountShared(fields, mmaState.document, document);
+    const actions = h('div', 'editor-actions');
+    const save = actionButton(mmaState.saving ? 'Saving...' : 'Save & Apply', 'mma-save', 'tool-primary');
+    save.disabled = mmaState.saving || !mmaState.loaded;
+    const discard = actionButton('Discard', 'mma-discard'); discard.disabled = mmaState.saving || !mmaState.loaded;
+    actions.append(save, discard);
+    if (!mmaState.loaded && !mmaState.loading) actions.append(actionButton('Retry load', 'mma-load'));
+    editor.append(fields, actions, h('div', `tool-status${mmaState.error ? ' error' : ''}`, mmaState.loading ? 'Loading MMA settings...' : mmaState.message));
+    root.appendChild(editor); return;
+  }
+  const shell = h('fieldset', 'tool-layout memory-fields');
+  shell.disabled = simulatorState.saving;
   const sidebar = h('aside', 'tool-sidebar');
   sidebar.appendChild(h('h2', '', 'Devices'));
   const listActions = h('div', 'tool-actions');
@@ -147,7 +181,10 @@ const renderSimulator = () => {
   shell.appendChild(sidebar);
 
   const editor = h('section', 'tool-editor');
-  editor.appendChild(h('h2', '', 'Device Definition'));
+  const editorTabs = h('nav', 'memory-subtabs');
+  editorTabs.append(memoryTab('Device Definition', memoryView.editor === 'definition', () => { memoryView.editor = 'definition'; renderSimulator(); pollSimulator(); }),
+    memoryTab('Advanced Settings', memoryView.editor === 'advanced', () => { memoryView.editor = 'advanced'; renderSimulator(); pollSimulator(); }));
+  editor.appendChild(editorTabs);
   const device = selectedSimulator();
   if (!device) {
     editor.appendChild(h('div', 'tool-empty', 'Select a device or choose Add.'));
@@ -160,6 +197,7 @@ const renderSimulator = () => {
     deviceStatus.id = 'sim-runtime-device';
     runtime.append(h('span', '', 'MMA2:'), mma2Status, h('span', '', 'Simulation:'), deviceStatus);
     editor.appendChild(runtime);
+    if (memoryView.editor === 'definition') {
     const identity = h('div', 'tool-grid');
     identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; }));
     identity.append(checkboxField('Enabled', device.enabled, value => { device.enabled = value; }));
@@ -229,6 +267,12 @@ const renderSimulator = () => {
       table.appendChild(row);
     });
     editor.appendChild(table);
+    } else {
+      const advanced = h('div', 'memory-advanced');
+      window.mcsMemoryUI.mount(advanced, device.mma2, {document, devices: simulatorState.document.devices,
+        outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen});
+      editor.appendChild(advanced);
+    }
     const validation = validateSimulator(device);
     if (validation) editor.appendChild(h('div', 'tool-validation', validation));
     const actions = h('div', 'editor-actions');
@@ -281,6 +325,27 @@ const pollSimulator = async () => {
     setText('sim-runtime-mma2', 'UNAVAILABLE');
     setText('sim-runtime-device', 'UNAVAILABLE');
   }
+};
+const loadMMASettings = async () => {
+  if (mmaState.loading || mmaState.saving) return;
+  mmaState.loading = true; mmaState.error = false;
+  if (memoryView.section === 'mma') renderSimulator();
+  try {
+    const result = await window.mcsDesktop.simulatorCall('mma-load', {});
+    mmaState.document = clone(result.settings || {}); mmaState.persisted = clone(mmaState.document);
+    mmaState.loaded = true; mmaState.message = 'MMA settings loaded.';
+  } catch (error) { mmaState.error = true; mmaState.message = error.message || String(error); }
+  finally { mmaState.loading = false; renderSimulator(); }
+};
+const saveMMASettings = async () => {
+  if (!mmaState.loaded || mmaState.saving) return;
+  mmaState.saving = true; mmaState.error = false; renderSimulator();
+  try {
+    const result = await window.mcsDesktop.simulatorCall('mma-apply', {settings: clone(mmaState.document)});
+    mmaState.document = clone(result.settings || {}); mmaState.persisted = clone(mmaState.document);
+    mmaState.message = result.message || 'MMA settings saved.';
+  } catch (error) { mmaState.error = true; mmaState.message = error.message || String(error); }
+  finally { mmaState.saving = false; renderSimulator(); }
 };
 const saveSimulator = async () => {
   const validation = simulatorState.document.devices.map(validateSimulator).find(Boolean);
@@ -553,11 +618,21 @@ document.addEventListener('click', event => {
   const target = event.target.closest('[data-action]');
   if (!target) return;
   const action = target.dataset.action;
+  if (action === 'mma-save') { saveMMASettings(); return; }
+  if (action === 'mma-load') { loadMMASettings(); return; }
+  if (action === 'mma-discard') { if (!mmaState.saving) { mmaState.document = clone(mmaState.persisted); mmaState.error = false; mmaState.message = 'Changes discarded.'; renderSimulator(); } return; }
+  if (simulatorState.saving && action.startsWith('sim-')) return;
   if (action === 'sim-select') simulatorState.selected = Number(target.dataset.index);
   else if (action === 'sim-add') { simulatorState.document.devices.push(simulatorBlankDevice(simulatorState.document.devices.length + 1)); simulatorState.selected = simulatorState.document.devices.length - 1; }
-  else if (action === 'sim-duplicate' && selectedSimulator()) { const copy = clone(selectedSimulator()); copy.name = `${copy.name} (copy)`; simulatorState.document.devices.push(copy); simulatorState.selected = simulatorState.document.devices.length - 1; }
+  else if (action === 'sim-duplicate' && selectedSimulator()) {
+    const copy = clone(selectedSimulator()); copy.name = `${copy.name} (copy)`;
+    try {
+      window.mcsMemoryUI.assignCopiedIDs(copy.mma2, simulatorState.document.devices);
+      simulatorState.document.devices.push(copy); simulatorState.selected = simulatorState.document.devices.length - 1;
+    } catch (error) { simulatorState.error = true; simulatorState.message = error.message; }
+  }
   else if (action === 'sim-delete' && selectedSimulator()) { simulatorState.document.devices.splice(simulatorState.selected, 1); simulatorState.selected = simulatorState.document.devices.length ? Math.min(simulatorState.selected, simulatorState.document.devices.length - 1) : null; }
-  else if (action === 'sim-discard') { simulatorState.document = clone(simulatorState.persisted); simulatorState.selected = simulatorState.document.devices.length ? Math.min(simulatorState.selected || 0, simulatorState.document.devices.length - 1) : null; }
+  else if (action === 'sim-discard') { discardSimulator(); }
   else if (action === 'sim-save') { saveSimulator(); return; }
   else if (action === 'rep-select') { replicatorState.selected = Number(target.dataset.index); replicatorState.selectedBlock = 0; }
   else if (action === 'rep-add') { replicatorState.document.devices.push(blankReplicator(replicatorState.document.devices.length + 1)); replicatorState.selected = replicatorState.document.devices.length - 1; replicatorState.selectedBlock = 0; }
@@ -610,7 +685,13 @@ Promise.all([
   runtimePaths = paths;
   document.getElementById('bin-path').textContent = paths.bin;
   document.getElementById('data-path').textContent = paths.data;
-  document.getElementById('runtime-mode').textContent = paths.mode === 'windows-service' ? 'Windows services (NSSM)' : 'Electron child processes';
+  document.getElementById('runtime-mode').textContent = paths.mode === 'isolated-review' ? 'Isolated UI review — backend connections disabled' : paths.mode === 'windows-service' ? 'Windows services (NSSM)' : 'Electron child processes';
+  if (paths.mode === 'isolated-review') {
+    document.title = 'MCS Modbus Toolkit — Isolated UI Review';
+    document.querySelector('.subtitle').textContent = 'Isolated UI Review — private data, backends disabled';
+    document.getElementById('start-all').disabled = true;
+    document.getElementById('stop-all').disabled = true;
+  }
   if (paths.mode === 'windows-service') {
     const startButton = document.getElementById('start-all');
     const stopButton = document.getElementById('stop-all');
@@ -624,6 +705,7 @@ Promise.all([
 renderSimulator();
 renderReplicator();
 loadSimulator();
+loadMMASettings();
 loadReplicator();
 setInterval(pollSimulator, 2000);
 setInterval(pollReplicator, 2000);

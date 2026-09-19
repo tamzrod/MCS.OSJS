@@ -4,93 +4,73 @@ package config
 import "mma2/internal/accessevents"
 
 // Config is the root configuration for MMA2.
-// It describes structure only, not behavior.
 type Config struct {
-	Ingress []IngressGate `yaml:"listeners"`
-	Memory  MemoryConfig  `yaml:"memory"`
-
-	// Optional notify output configuration (adapters).
-	// Absence means notify engine has no external adapters configured.
-	Notify *NotifyOutputConfig `yaml:"notify"`
-
-	// Optional access event system configuration.
-	// Absence (or enabled: false) disables the system entirely.
+	Ingress      []IngressGate                    `yaml:"listeners"`
+	Memory       MemoryConfig                     `yaml:"memory"`
+	Notify       *NotifyOutputConfig              `yaml:"notify"` // legacy until RBE cutover
+	RBE          *RBEOutputConfig                 `yaml:"rbe"`
 	AccessEvents *accessevents.AccessEventsConfig `yaml:"access_events"`
-
-	// Debug enables verbose protocol-level logging (e.g. malformed packets).
-	// Defaults to false when the key is absent from the config file.
-	Debug bool `yaml:"debug"`
+	Debug        bool                             `yaml:"debug"`
 }
 
-// --------------------
-// Notify Output (Adapters)
-// --------------------
-
-// NotifyOutputConfig declares optional notification adapters.
-// This is separate from per-memory notify rules.
-// This config only describes output sinks.
+// Legacy write-only notification output.
+// Influx is no longer part of MMA; a leftover influx block is rejected at load.
 type NotifyOutputConfig struct {
-	Influx *NotifyInfluxConfig `yaml:"influx"`
+	Influx *yamlRejectedInflux `yaml:"influx"`
 }
 
-// NotifyInfluxConfig defines configuration for the InfluxDB adapter.
-// All fields required except Measurement.
-type NotifyInfluxConfig struct {
-	URL         string `yaml:"url"`
-	Token       string `yaml:"token"`
-	Org         string `yaml:"org"`
-	Bucket      string `yaml:"bucket"`
-	Measurement string `yaml:"measurement"`
+// yamlRejectedInflux exists only so leftover YAML keys are detected and rejected.
+type yamlRejectedInflux struct{}
+
+// RBEOutputConfig is the global RBE output. TCP is required. Influx is rejected.
+type RBEOutputConfig struct {
+	TCP    *RBETCPConfig       `yaml:"tcp"`
+	Influx *yamlRejectedInflux `yaml:"influx"`
 }
 
-// --------------------
-// Ingress
-// --------------------
-
-// IngressGate defines a TCP ingress gate.
-// It owns the listener only.
-//
-// NOTE:
-// Memory is OPTIONAL here for the new nested model.
-// The legacy global memory model is still supported.
-type IngressGate struct {
-	ID     string `yaml:"id"`
+type RBETCPConfig struct {
 	Listen string `yaml:"listen"`
+}
 
-	// Optional nested memory definitions (NEW MODEL)
+// RBERulesConfig declares independent memory-area-based rules.
+// IDs are unique globally for the one-byte TCP wire contract.
+type RBERulesConfig struct {
+	Coils          []RBERuleConfig `yaml:"coils"`
+	DiscreteInputs []RBERuleConfig `yaml:"discrete_inputs"`
+	HoldingRegs    []RBERuleConfig `yaml:"holding_registers"`
+	InputRegs      []RBERuleConfig `yaml:"input_registers"`
+}
+
+type RBERuleConfig struct {
+	ID    uint16 `yaml:"id"` // validated in 1..255 before narrowing to uint8
+	Name  string `yaml:"name"`
+	Start uint16 `yaml:"start"`
+	Count uint16 `yaml:"count"`
+}
+
+// IngressGate owns a TCP ingress listener.
+type IngressGate struct {
+	ID     string             `yaml:"id"`
+	Listen string             `yaml:"listen"`
 	Memory []MemoryDefinition `yaml:"memory"`
 }
 
-// --------------------
-// Memory (LEGACY / CANONICAL RUNTIME MODEL)
-// --------------------
-
-// MemoryConfig declares all memory layouts.
-// Memory identity is (Port, UnitID).
+// Legacy configuration shape, rejected by the canonical runtime.
 type MemoryConfig struct {
 	Memories map[string]MemoryDefinition `yaml:"memories"`
 }
 
 type MemoryDefinition struct {
-	Port   uint16 `yaml:"port"`
-	UnitID uint16 `yaml:"unit_id"`
-
-	Coils          Area `yaml:"coils"`
-	DiscreteInputs Area `yaml:"discrete_inputs"`
-	HoldingRegs    Area `yaml:"holding_registers"`
-	InputRegs      Area `yaml:"input_registers"`
-
-	// Optional notification rules (rule-centric, write-only).
-	// Presence enables notify rule configuration for this memory.
-	// Normalization/validation happens outside memorycore.
-	Notify *NotifyConfig `yaml:"notify"`
-
-	// Optional state sealing configuration.
-	// Presence = enabled.
-	StateSealing *StateSealingConfig `yaml:"state_sealing"`
-
-	// Optional per-memory authorization policy
-	Policy *MemoryPolicyConfig `yaml:"policy"`
+	Port           uint16              `yaml:"port"`
+	UnitID         uint16              `yaml:"unit_id"`
+	Coils          Area                `yaml:"coils"`
+	DiscreteInputs Area                `yaml:"discrete_inputs"`
+	HoldingRegs    Area                `yaml:"holding_registers"`
+	InputRegs      Area                `yaml:"input_registers"`
+	Notify         *NotifyConfig       `yaml:"notify"` // legacy
+	RBE            *RBERulesConfig     `yaml:"rbe"`
+	StateSealing   *StateSealingConfig `yaml:"state_sealing"`
+	Policy         *MemoryPolicyConfig `yaml:"policy"`
 }
 
 type Area struct {
@@ -98,13 +78,7 @@ type Area struct {
 	Count uint16 `yaml:"count"`
 }
 
-// --------------------
-// Notify (Rule-Centric, Write-Only)
-// --------------------
-
-// NotifyConfig declares notify rules per memory area.
-// Each entry is an independent rule.
-// Overlaps are allowed; no merging; no deduplication.
+// Legacy notification rules, retained only for old configurations.
 type NotifyConfig struct {
 	Coils          []NotifyRange `yaml:"coils"`
 	DiscreteInputs []NotifyRange `yaml:"discrete_inputs"`
@@ -112,48 +86,27 @@ type NotifyConfig struct {
 	InputRegs      []NotifyRange `yaml:"input_registers"`
 }
 
-// NotifyRange is a single notify rule for an area.
 type NotifyRange struct {
 	Start uint16  `yaml:"start"`
 	Count uint16  `yaml:"count"`
 	Name  *string `yaml:"name,omitempty"`
 }
 
-// --------------------
-// State Sealing
-// --------------------
-
-// StateSealingConfig defines where the sealing flag lives.
-// Semantics:
-//
-//	0 = sealed
-//	1 = unsealed
-//
-// Presence keeps backward-compatible behavior: if enabled is omitted,
-// state sealing is enabled and the default Modbus exception is 0x06.
+// State sealing: 0=sealed, 1=unsealed.
 type StateSealingConfig struct {
 	Enabled   *bool  `yaml:"enabled,omitempty"`
-	Area      string `yaml:"area"` // "coil" (only supported value for now)
+	Area      string `yaml:"area"`
 	Address   uint16 `yaml:"address"`
 	Exception *uint8 `yaml:"exception,omitempty"`
 }
 
-// --------------------
-// Policy
-// --------------------
-
-// MemoryPolicyConfig declares access rules scoped to a single memory definition.
-// Rules are evaluated top-down; first match wins; default deny if none match.
+// Authority remains scoped per memory.
 type MemoryPolicyConfig struct {
 	Rules []PolicyRuleConfig `yaml:"rules"`
 }
 
 type PolicyRuleConfig struct {
-	ID string `yaml:"id"`
-
-	// CIDR or bare IP strings. Bare IPs are treated as /32 (IPv4) or /128 (IPv6).
+	ID       string   `yaml:"id"`
 	SourceIP []string `yaml:"source_ip"`
-
-	// Allowed Modbus function codes for this rule.
-	AllowFC []uint8 `yaml:"allow_fc"`
+	AllowFC  []uint8  `yaml:"allow_fc"`
 }

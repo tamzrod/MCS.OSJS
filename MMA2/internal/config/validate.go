@@ -18,6 +18,9 @@ func Validate(cfg *Config) error {
 	if cfg == nil {
 		return fmt.Errorf("config is nil")
 	}
+	if err := rejectRemovedInflux(cfg); err != nil {
+		return err
+	}
 
 	// Ingress is optional in strict structural sense; validate only if present.
 	if err := validateIngress(cfg.Ingress); err != nil {

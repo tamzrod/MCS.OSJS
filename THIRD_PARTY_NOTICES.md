@@ -55,6 +55,12 @@ Update this document whenever a new third-party component is incorporated or an 
 
 ## MMA2 — deterministic Modbus memory appliance
 
+Additional bounded RBE import: `tamzrod/mma2` commit
+`84934d540b7201f96f1ab411177bc62ec6d2165c`, under the same retained Apache-2.0 license.
+Exact scope and local adaptations are recorded in `MMA2/docs/MCS_RBE_INTEGRATION.md`.
+The original harvest attribution below remains historical provenance, not a claim that
+the entire embedded component matches either donor revision.
+
 **Source:** `tamzrod/mma2` (main( — project-owned donor。
 
 

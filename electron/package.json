@@ -26,6 +26,7 @@
       "replicator-runtime.js",
       "replicator-ipc.js",
       "runtime-status.js",
+      "memory-settings.js",
       "renderer/**/*",
       "build/icon.png",
       "build/replicator-logo.svg",

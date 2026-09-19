@@ -21,6 +21,26 @@ button:disabled, input:read-only { opacity: .7; }
 .panel { display: none; height: 100%; min-height: 0; }
 .panel.active { display: flex; flex-direction: column; }
 .tool-root { flex: 1; min-height: 0; }
+#simulator-root { display: flex; flex-direction: column; gap: 4px; }
+#simulator-root > .tool-layout { flex: 1; height: auto; }
+.memory-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.memory-subtabs { display: flex; gap: 3px; flex-wrap: wrap; padding-bottom: 4px; border-bottom: 1px solid #999; margin-bottom: 5px; }
+.memory-subtabs button[aria-pressed="true"] { background: #eef5ff; border-style: inset; font-weight: bold; }
+.mma-editor { flex: 1; gap: 8px; }
+.mma-editor > .memory-fields { display: grid; gap: 10px; max-width: 600px; }
+.memory-advanced { margin-bottom: 10px; }
+.advanced-form { display: grid; gap: 8px; max-width: 660px; margin: 10px 0; }
+.advanced-check { display: flex; gap: 6px; align-items: center; }
+.advanced-check input { width: auto; }
+.rbe-rule-row { display: grid; grid-template-columns: 52px minmax(90px, 1fr) minmax(130px, 1fr) 65px 65px auto; gap: 5px; align-items: end; padding: 5px; border: 1px solid #bbb; margin: 3px 0; background: white; }
+.policy-rules { display: grid; gap: 3px; }
+.policy-rule { text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.policy-columns { display: grid; grid-template-columns: 44px minmax(80px, 1fr) minmax(130px, 2fr) 85px; gap: 6px; padding: 5px; }
+.policy-rule.selected { background: #dbe8ff; border-color: #305c9f; }
+.source-row { display: flex; align-items: end; gap: 5px; }
+.source-row > label { flex: 1; }
+.function-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; border: 1px solid #aaa; }
+@media (max-width: 850px) { .rbe-rule-row { grid-template-columns: 1fr 1fr; } .function-checks { grid-template-columns: 1fr; } }
 .tool-layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 4px; height: 100%; min-height: 0; }
 .tool-sidebar, .tool-editor { min-height: 0; border: 2px inset #ddd; background: #f7f7f7; }
 .tool-sidebar { display: flex; flex-direction: column; padding: 4px; }

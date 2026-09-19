@@ -1,5 +1,0 @@
-# UMIG-EM-002-T evidence correction — NOT A SECOND ACTIVE TASK
-
-This is an adjudication note attached to the existing sole ACTIVE UMIG-EM-002-T; not a standalone task and not a promotion. At JR report commit `38857e6ba922e80e025951c60c5dc43c00dabdd4`, all four Go full-module suites were reported with exactly the required `-count=1 -timeout=90s` flags and passed. All eight focused test names were reported PASS, but the FOUR focused command lines in that report omit BOTH required flags. Thus their exact-command compliance is not evidenced; do not assert packet-complete PASS, FAIL of product, or rerun the already verified full suites.
-
-The coding agent's current `handoff.md` narrow correction packet requires only the four focused commands with the exact flags and evidence, then review of combined immutable reports. `UMIG-EM-002-B` remains Planning and needs separate human promotion. After evidence review, archive this note with UMIG-EM-002-T; never treat it as an ACTIVE task. No product/ICC/general CWAL changes.

@@ -47,4 +47,64 @@ EVIDENCE / REPORT AUTHORITY: Replace ONLY `## JR TEST REPORT — UMIG-EM-002-T F
 
 ## JR TEST REPORT — UMIG-EM-002-T FOCUSED RETEST
 
-Pending independent JR execution. Historical BLOCKED report is preserved at commit `7118a56`; no test PASS is implied.
+VERDICT: PASS (four focused Go regression commands, exact flags, Go-only unit scope)
+
+Executed 2026-09-19 by OpenHands JR in its own clean disposable checkout. No full suite re-run, no other tests, no Node/build, browser, Docker, production, customer endpoint, RBE listener, source debugging/patching, or workflow/ICC/CWAL change. No product/test/config file edited.
+
+### Exact preflight (all exit 0; `git rev-parse --is-shallow-repository` not needed — ancestry resolved on first attempt)
+
+- `git fetch origin main` — exit 0.
+- `git status --porcelain` — empty, exit 0.
+- `git rev-parse HEAD` — `7118a56c874613eaea39557d82a1aa45e11e50f4`, exit 0.
+- `git rev-parse origin/main` — `0c4b5f5e8bb102e5f19765356626fadf41433211`, exit 0.
+- `git merge-base --is-ancestor 8efc6b00ab5c4f5acdffbf5a6e55c922246a99b8 origin/main` — exit 0 (pinned product-source baseline is an ancestor of origin/main).
+- `git diff --name-only 8efc6b00ab5c4f5acdffbf5a6e55c922246a99b8 origin/main` — `.github/workflows/operation-cwal.yml` and `handoff.md` ONLY (both permitted paths), exit 0.
+- `git merge-base --is-ancestor HEAD origin/main` — exit 0.
+
+All conditions satisfied, so the packet-authorized guarded sync was applicable.
+
+### Guarded clean fast-forward (authorized, executed exactly once)
+
+- HEAD (`7118a56`) differed from origin/main (`0c4b5f5`), all checks clean.
+- `git merge --ff-only origin/main` — exit 0, `Updating 7118a56..0c4b5f5`, `handoff.md` only.
+- Post-merge `git rev-parse HEAD` = `0c4b5f5e8bb102e5f19765356626fadf41433211`; `git rev-parse origin/main` = `0c4b5f5e8bb102e5f19765356626fadf41433211` (equal); `git status --porcelain` empty. No reset, clean, cherry-pick, force, or report-transport rebase.
+
+### Toolchain
+
+- `go version` — `go version go1.26.8 linux/amd64`, exit 0 (>=1.25). Reused the already prepared sandbox-local Go under `~/.local/go`; no tracked file or system installation changed.
+
+### Exact focused commands (each recorded with BOTH required flags; stop-at-first-nonzero not triggered)
+
+- `(cd MMA2 && go test -count=1 -timeout=90s -run '^TestBuildRBERules(Valid|RejectsDuplicatesAndInvalidBounds)$' -v ./internal/config)` — exit 0.
+  - `=== RUN   TestBuildRBERulesValid`
+  - `--- PASS: TestBuildRBERulesValid (0.00s)`
+  - `=== RUN   TestBuildRBERulesRejectsDuplicatesAndInvalidBounds`
+  - `--- PASS: TestBuildRBERulesRejectsDuplicatesAndInvalidBounds (0.00s)` (subtests `zero_ID`, `over_255`, `out_of_area`, `zero_count`, `duplicate_global_ID`, `port_collision`, `legacy_mixed` all `--- PASS`)
+  - `PASS` / `ok  mma2/internal/config  0.004s`
+- `(cd mma2composer && go test -count=1 -timeout=90s -run '^TestCommitRestoresConfigWhenOwnersReplaceFails$' -v .)` — exit 0.
+  - `=== RUN   TestCommitRestoresConfigWhenOwnersReplaceFails`
+  - `--- PASS: TestCommitRestoresConfigWhenOwnersReplaceFails (0.00s)`
+  - `PASS` / `ok  github.com/tamzrod/MCS.OSJS/mma2composer  0.006s`
+- `(cd simulator && go test -count=1 -timeout=90s -run '^TestAdvancedSettingsRoundTripAndCompose$' -v .)` — exit 0.
+  - `=== RUN   TestAdvancedSettingsRoundTripAndCompose`
+  - `--- PASS: TestAdvancedSettingsRoundTripAndCompose (0.00s)`
+  - `PASS` / `ok  github.com/tamzrod/MCS.OSJS/simulator  0.009s`
+- `(cd replicator && go test -count=1 -timeout=90s -run '^TestComms(CycleAndStatus|SourceRefusalClearsDownstream|ExceptionAndMalformedResponse|Aggregation)$' -v .)` — exit 0.
+  - `=== RUN   TestCommsCycleAndStatus` / `--- PASS: TestCommsCycleAndStatus (0.00s)`
+  - `=== RUN   TestCommsSourceRefusalClearsDownstream` / `--- PASS: TestCommsSourceRefusalClearsDownstream (0.00s)`
+  - `=== RUN   TestCommsExceptionAndMalformedResponse` / `--- PASS: TestCommsExceptionAndMalformedResponse (0.00s)`
+  - `=== RUN   TestCommsAggregation` / `--- PASS: TestCommsAggregation (0.00s)`
+  - `PASS` / `ok  github.com/tamzrod/MCS.OSJS/replicator  0.007s`
+
+All eight required names were observed as actual verbose RUN then PASS; none was `no tests to run` and none was cached-only.
+
+### Post-test state
+
+- Final `git status --porcelain` — empty (exit 0); tracked tree unchanged by the test run.
+- HEAD = origin/main = `0c4b5f5e8bb102e5f19765356626fadf41433211`, unchanged by testing.
+- Changed tracked paths from testing: none beyond this authorized `handoff.md` report.
+
+### Unexpected behavior / deviations
+
+- No test-environment or repository anomaly. The only prerequisite action was the single authorized guarded `--ff-only` sync, and the report-transport rebase used under the previous packet was not needed or repeated here.
+- Scope not proven by this PASS: live MMA2/RBE safety, Linux configuration lock, UI LEDs, deployment, or production. Original full-suite evidence remains at `38857e6`; historical BLOCKED evidence remains at `7118a56`. ChatGPT alone adjudicates PASS/FAIL and controls task advancement.

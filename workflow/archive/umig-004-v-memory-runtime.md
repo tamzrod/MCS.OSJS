@@ -1,0 +1,18 @@
+# UMIG-004-V — VERIFY: Live Memory Behavior
+
+Status: COMPLETE — independent live Memory behavior ACCEPTED WITH DOCUMENTED TEST-PACKET DEVIATION, reviewer 2026-09-19.
+Stage / owner: VERIFY / OpenHands JR; evidence adjudication / ChatGPT
+Previous: UMIG-004-T (COMPLETE/PASS)
+Next: UMIG-005 (promote sole ACTIVE in same workflow commit)
+
+## Evidence and reviewer decision
+JR's immutable real-browser and live-backend report is `handoff.md` at commit `d230f60f231086bdba95b981555ad02bd015e677`, source/test baseline `bf489986ac6b1498ead80cf02226467244000489`. GitHub compare `bf48998..d230f60` confirmed ONLY handoff report changed, with all other handoff sections preserved. The independent test used a freshly initialized OpenHands sandbox-local daemon, a separate project-owned test volume, private MMA2 network and a loopback-only UI port; production containers, volumes and configuration were not involved. Real Chromium observed an empty canonical Memory document without fixture substitution or auto-write; three explicit Save & Apply operations created synthetic `VERIFY-SIM-1` on private port 15020/unit 1 and persisted None → FC3 Random 1000 ms → None. MMA2 structural restart and subsequent random-runtime-only classifications, ownership file, canonical hashes and reload were recorded. Selected status showed actual RUNNING/IDLE; intentional Simulator outage showed UNAVAILABLE and no fixture substitution; recovery showed persisted canonical state and RUNNING/IDLE. Project-label-checked cleanup removed only four test containers and two test networks, retaining the explicitly named test-only volume. Tracked checkout clean. These directly observed stage-specific behavioral acceptance items are accepted; this is not production/Docker deployment acceptance or missing-file `devices:null` verification.
+
+## Mandatory qualification — do not erase or relabel as an exact-packet PASS
+Original step-9 `docker compose --project-name "$PROJECT" -f deploy/verify/compose.yaml start modbus-simulator-runtime` failed exit 1 twice: Compose re-ran the one-shot seed against the populated test volume and correctly refused it. That **command FAILED**; JR used `docker start mcsverify-1789784184-232-modbus-simulator-runtime-1` instead, without prior amendment of the exact packet. The JR execution therefore deviated from its prescribed command/stop rule; it was not an all-commands-PASS run. The direct required runtime recovery observation was nonetheless captured from the same project-owned test container, its socket and the real browser, not substituted by a mock or prior unit test. Reviewer accepts the *stage-specific live behavior* based on that direct evidence, classifies the broken restart instruction as a verification-harness defect rather than a Toolkit product failure, and documents the exception explicitly; do not claim the original Compose restart mechanism works. The test-only runbook is amended in this workflow commit for future tests. No re-run of the original failing command is represented as PASS.
+
+## Boundaries
+Original UMIG-004-T independent unit/build PASS remains separate. Original legacy applications, production Compose, user configuration and `osjs-data`, Go/MMA2 product code, Electron and ICC unchanged. Replicator and Diagnostics fixture-only; UMIG-005 CODE must independently integrate and then pass its own TEST/VERIFY. The test-only volume `mcsverify-1789784184-232_verify-data` was intentionally retained, not removed or silently cleaned. No operator deployment acceptance or launcher cutover. Source-only test-runbook correction and workflow advancement are not a product retest.
+
+## Sizing
+Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

@@ -1,10 +1,10 @@
 'use strict';
 
-// UMIG-CF-003: dormant, pure Diagnostics mapping. Not imported by the UI.
-// Inputs must come from a future verified Toolkit-owned adapter, never fixtures.
+// Pure read-only Diagnostics mapping. Inputs are freshly correlated responses
+// from existing Toolkit contracts, NEVER fixture snapshots or global probes.
 const UNKNOWN = 'UNKNOWN';
 const UNAVAILABLE = 'UNAVAILABLE';
-const SIM_STATES = new Set(['RUNNING', 'WAITING', 'STOPPED', 'ERROR']);
+const SIM_STATES = new Set(['RUNNING', 'WAITING', 'STOPPED', 'ERROR', 'IDLE']);
 const SOURCE_STATES = new Set(['WAITING', 'OK', 'ERROR', 'DISABLED']);
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const state = (value, allowed) => allowed.has(value) ? value : UNKNOWN;

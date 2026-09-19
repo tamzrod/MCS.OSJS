@@ -1,16 +1,15 @@
 package main
 
 import (
-	"encoding/binary"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"syscall"
-	"unicode/utf16"
 )
 
 func resolveUser(account string) (string, error) {
@@ -26,21 +25,6 @@ func resolveUser(account string) (string, error) {
 		return "", errors.New("select an individual Windows user, not a group or service identity")
 	}
 	return sid.String()
-}
-
-func readAccount(file string) (string, error) {
-	body, err := os.ReadFile(file)
-	if err != nil {
-		return "", err
-	}
-	if len(body)%2 != 0 {
-		return "", errors.New("invalid account input")
-	}
-	units := make([]uint16, len(body)/2)
-	for index := range units {
-		units[index] = binary.LittleEndian.Uint16(body[index*2:])
-	}
-	return strings.TrimPrefix(string(utf16.Decode(units)), "\ufeff"), nil
 }
 
 func checkedConfig(config string) (string, error) {
@@ -83,6 +67,16 @@ func checkedConfig(config string) (string, error) {
 }
 
 func grantSettings(config, owner, previous string) error {
+	return grantSettingsScope(config, owner, previous, "current")
+}
+
+func grantSettingsScope(config, owner, previous, scope string) error {
+	if scope != "current" && scope != "all" {
+		return errors.New("invalid installation access scope")
+	}
+	if scope == "all" && owner != "S-1-5-32-545" {
+		return errors.New("all-users scope must target the built-in Users group")
+	}
 	sid, err := syscall.StringToSid(owner)
 	if err != nil {
 		return err
@@ -91,7 +85,7 @@ func grantSettings(config, owner, previous string) error {
 	if err != nil {
 		return err
 	}
-	if kind != 1 {
+	if scope == "current" && kind != 1 {
 		return errors.New("settings owner must be an individual Windows user")
 	}
 	if previous != "" {
@@ -126,8 +120,7 @@ func grantSettings(config, owner, previous string) error {
 
 func run() error {
 	mode := flag.String("mode", "", "")
-	accountFile := flag.String("account-file", "", "")
-	sidFile := flag.String("sid-file", "", "")
+	scope := flag.String("scope", "current", "")
 	config := flag.String("config", "", "")
 	owner := flag.String("owner", "", "")
 	previous := flag.String("previous", "", "")
@@ -136,18 +129,19 @@ func run() error {
 		return errors.New("unexpected arguments")
 	}
 	switch *mode {
-	case "resolve":
-		account, err := readAccount(*accountFile)
+	case "current-user":
+		account, err := user.Current()
 		if err != nil {
 			return err
 		}
-		resolved, err := resolveUser(account)
+		resolved, err := resolveUser(account.Username)
 		if err != nil {
 			return err
 		}
-		return os.WriteFile(*sidFile, []byte(resolved), 0600)
+		fmt.Print(resolved)
+		return nil
 	case "grant":
-		return grantSettings(*config, *owner, *previous)
+		return grantSettingsScope(*config, *owner, *previous, *scope)
 	default:
 		return errors.New("unsupported settings-access operation")
 	}

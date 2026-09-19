@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"os"
 	"os/exec"
 	"os/user"
@@ -9,7 +8,6 @@ import (
 	"strings"
 	"syscall"
 	"testing"
-	"unicode/utf16"
 )
 
 func TestResolveIndividualUser(t *testing.T) {
@@ -39,23 +37,6 @@ func TestResolveIndividualUser(t *testing.T) {
 	}
 }
 
-func TestUTF16AccountInput(t *testing.T) {
-	account := "COMPUTER\\Operator é"
-	units := utf16.Encode([]rune(account))
-	body := make([]byte, len(units)*2)
-	for index, unit := range units {
-		binary.LittleEndian.PutUint16(body[index*2:], unit)
-	}
-	file := filepath.Join(t.TempDir(), "account.txt")
-	if err := os.WriteFile(file, body, 0600); err != nil {
-		t.Fatal(err)
-	}
-	actual, err := readAccount(file)
-	if err != nil || actual != account {
-		t.Fatalf("account %q: %v", actual, err)
-	}
-}
-
 func TestSettingsScope(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("ProgramData", root)
@@ -73,6 +54,22 @@ func TestSettingsScope(t *testing.T) {
 	}
 	if err := grantSettings(target, "S-1-5-32-545", ""); err == nil {
 		t.Fatal("granted group access")
+	}
+	current, err := user.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := grantSettingsScope(target, current.Uid, "", "all"); err == nil {
+		t.Fatal("all users accepted an arbitrary principal")
+	}
+	if err := grantSettingsScope(target, current.Uid, "", "invalid"); err == nil {
+		t.Fatal("accepted an invalid scope")
+	}
+	if err := grantSettingsScope(target, "S-1-5-32-545", "", "all"); err != nil {
+		t.Fatal(err)
+	}
+	if err := grantSettingsScope(target, current.Uid, "S-1-5-32-545", "current"); err != nil {
+		t.Fatal(err)
 	}
 }
 

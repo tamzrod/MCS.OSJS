@@ -1,15 +1,18 @@
-# Windows settings owner
+# Windows installation access
 
-Interactive Setup asks for the individual Windows account that will use the app, such as COMPUTER\user or DOMAIN\user. No account is inferred from the elevated installer identity. Windows resolves the selection to a SID; nonexistent accounts, groups, and service identities are rejected.
+Setup offers two radio choices, with no account entry:
 
-Setup grants that SID Modify access only to %ProgramData%\MCS Modbus Toolkit\runtime\config, including existing settings and inherited access for future service-created files. Program Files and service-control permissions are unchanged. SYSTEM and administrators retain their existing access.
+- Current user (default): grants settings Modify access to the Windows account that launched Setup.
+- All users: grants settings Modify access to the built-in local Users group.
 
-The account and SID are stored under HKLM\Software\MCS Modbus Toolkit for upgrades and repairs. Selecting another owner removes the previous installer-managed account grant after adding the new one. Other pre-existing ACL entries are not reset. This is settings-write authorization, not a complete per-user access-control boundary for all runtime APIs.
+Both choices retain the system-wide application and backend Windows services. They control shared settings access, not separate per-user installations or private service instances. Application binaries remain protected. SYSTEM and administrators retain access.
 
-Fresh installations and older installations without a saved owner require interactive Setup. Silent upgrades reuse the saved SID; no blanket Users or Everyone grant is used. A deleted owner account must be replaced through interactive repair.
+Setup starts without elevation, captures the launch account automatically, then uses NSIS UAC elevation to configure services. The elevated instance retrieves the original account from its non-elevated parent, so entering different administrator credentials does not change Current user. If Setup is deliberately launched with Run as administrator, its launching account is that administrator.
 
-Permission or account-validation failures stop Setup. Redirected settings directories or entries are rejected. After installation, reopen the desktop normally and verify Save & Apply without Run as administrator.
+The scope and SID are saved under HKLM/Software/MCS Modbus Toolkit. Repairs and silent upgrades preserve the saved scope; changing the radio choice removes the previous installer-managed grant after adding the selected grant. Current user selected interactively refers to the current Setup launcher. Old saved individual owners remain valid until the scope is changed interactively.
 
-Build: npm run dist:win in electron (requires Go and Windows; builds the account helper before NSIS packaging).
+Only %ProgramData%/MCS Modbus Toolkit/runtime/config is modified. The helper rejects redirected paths and other target directories. The Users group is accepted only with explicit all-users scope; other groups and Everyone are rejected. Unrelated ACLs and service-control permissions are not reset. Runtime APIs retain their existing authorization.
+
+Build: npm run dist:win in electron (requires Go and Windows).
 Helper tests: go test ./... in electron/build/settings-access.
-Renderer/installer contract tests: node --test electron/test/*.test.js from the repository root.
+Installer contract tests: node --test electron/test/*.test.js from the repository root.

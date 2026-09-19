@@ -1,0 +1,79 @@
+# UMIG-004-E: disposable verification stack ONLY. Never combine with
+# deploy/docker-compose.yml, or run on the operator's production Docker daemon.
+# Invoke with `docker compose --project-name <unique-test-project> -f deploy/verify/compose.yaml`.
+# No explicit container names, external volumes, host-network mode or Modbus host ports.
+services:
+  seed:
+    image: alpine:3.19
+    restart: "no"
+    network_mode: none
+    volumes:
+      - verify-data:/data
+    command:
+      - sh
+      - -ec
+      - |
+        # Fail closed if a supposedly fresh project reuses ANY existing data.
+        test -z "$(ls -A /data)" || { echo 'VERIFY REFUSED: data volume is not empty' >&2; exit 1; }
+        mkdir -p /data/config/mma2
+        printf 'listeners: []\n' > /data/config/mma2/config.yaml
+
+  mma2:
+    build:
+      context: ../../MMA2
+      dockerfile: Dockerfile.supervised
+    restart: "no"
+    init: true
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    volumes:
+      - verify-data:/data
+    networks:
+      - verify-runtime
+
+  modbus-simulator-runtime:
+    build:
+      context: ../..
+      dockerfile: simulator/Dockerfile
+    restart: "no"
+    init: true
+    environment:
+      OSJS_DATA_DIR: /data
+    depends_on:
+      mma2:
+        condition: service_started
+    # The Simulator's existing 127.0.0.1:<MMA2-port> readiness/raw-ingest
+    # is now local to ONLY this test MMA2; never shares the host network.
+    network_mode: service:mma2
+    volumes:
+      - verify-data:/data
+
+  osjs-shell:
+    build:
+      context: ../../OSJS
+      dockerfile: Dockerfile
+    restart: "no"
+    init: true
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    environment:
+      PORT: "18209"
+      OSJS_DATA_DIR: /data
+    ports:
+      - "127.0.0.1:${MCS_VERIFY_OSJS_PORT:-18219}:18209"
+    volumes:
+      - verify-data:/data
+    networks:
+      - verify-ui
+
+networks:
+  verify-runtime:
+    driver: bridge
+    internal: true
+  verify-ui:
+    driver: bridge
+
+volumes:
+  verify-data: {}

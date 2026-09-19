@@ -1,23 +1,18 @@
-# UMIG-006-V — VERIFY: Rendered Diagnostics Safety
+# UMIG-006-V — VERIFY: Rendered Diagnostics Safety and Toolkit Reopen
 
-Status: QUEUED — wait for UMIG-006-T PASS and a separately authored exact JR packet.
-Stage / owner: VERIFY / OpenHands (JR)
-Previous: UMIG-006-T
-Next: UMIG-007
+Status: ACTIVE — promoted 2026-09-19 after independent UMIG-006-T UNIT/BUILD PASS review. LIVE VERIFY NOT RUN / NO PASS.
+Stage / owner: VERIFY / OpenHands JR; review / ChatGPT
+Previous: UMIG-006-T (COMPLETE/PASS, `workflow/archive/umig-006-t-diagnostics-fixtures.md`)
+Next: UMIG-007 (QUEUED; no advancement before reviewed live evidence)
 
 ## Primary outcome
-Observe a truthful, safe Diagnostics tab in an actual isolated OS.js window, and close the one outstanding Toolkit window-reopen evidence gap from UMIG-005-V during the same rendered session when a safe canonical Replicator test device is available.
+In a NEW disposable OpenHands Docker project, observe real Toolkit Diagnostics with canonical Memory and Replicator devices: read-only per-device statuses and errors; global service health UNKNOWN; native Windows controls disabled and paths UNAVAILABLE; no hidden writes on refresh. In the same browser session, close the actual Toolkit OS.js window via window chrome, then relaunch from Start and verify the persisted canonical Replicator device, owner, and configuration hash remain unchanged with no automatic apply. This last observation was missing from UMIG-005-V and is NOT yet PASS.
 
-## Instruction / expected / evidence
-In isolated OS.js, open Diagnostics with a reachable test runtime and one intentionally unavailable diagnostic source; inspect actual status/errors and Windows-only controls. Expected: accessible real observations, clearly UNKNOWN/UNAVAILABLE missing data, no usable unsupported native service control. Record exact actions, screenshots, logs, HEAD and target. GUI/runtime unavailable = BLOCKED; wrong product state = FAIL. The current file is QUEUED, NOT an executable JR packet.
+## Exact authority and acceptance
+Only `## JR TEST TASK — CURRENT: UMIG-006-V LIVE VERIFY` in `handoff.md` authorizes commands, browser actions, stop conditions, evidence and cleanup. Reuse existing test-only `deploy/verify/compose.yaml` on a freshly verified sandbox-local daemon with a NEW project/volume; never reuse or delete earlier retained verification volumes. Seed through the Toolkit UI ONLY: one synthetic Memory source at private 15020/1 and one Replicator at private 15021/1, FC3 from 127.0.0.1:15020. Confirm healthy Diagnostics with first canonical device explicitly identified. Real window close/relaunch must be directly seen in the browser (tab switch or file read is insufficient); confirm Go-backed reload and no config/owner/hash/apply change. Make source 127.0.0.1:15999 unavailable through a single test-only GUI apply, confirm Replicator ERROR detail while Memory remains independently observed; restore through GUI, delete only both test-owned devices and verify original three config hashes. Scoped project-label-verified `down --remove-orphans` without `-v`; retain volume.
 
-Mandatory carried-forward check from the reviewed UMIG-005-V report `1a04664e5fdc21e3bd323a97a4f12f3f9d39abdd`: the reported 'close/reopen' used tab switching/re-selection; actual Toolkit WINDOW destruction and Start-menu relaunch were not demonstrated. In this already planned browser verification, use ONLY a separately authorized disposable canonical Replicator device/runtime and exact future JR packet to capture: persisted device before close; close Toolkit window via OS.js chrome; reopen it through Start menu; verify a new Toolkit window reloads that same canonical Replicator definition from the Go runtime with correct destination, no automatic apply and no fixture fallback. Verify unchanged persisted config hash/owners across close/reopen. A tab switch, reload inferred from YAML, or mock-only fixture is NOT this check. If the target cannot safely provide it, mark this subcheck NOT VERIFIED/BLOCKED and do not certify overall migration/cutover; no separate VM prerequisite, no reuse/deletion of retained volumes. ChatGPT must author the safe commands/limits in the specific JR packet, NOT modify general `operation cwal.md`.
-
-## Non-scope
-No service starts/stops or product debugging by JR, no source fixes, full visual parity or cutover; no additional unscripted exploratory tests.
-
-## Dependencies
-UMIG-006-T PASS and current JR packet. A safe disposable real runtime is required for the reopen regression; if not available, explicit evidence gap persists.
+## Boundaries
+No production Docker, customer/LAN endpoint, host Modbus port, legacy app or Windows IPC; no service-control invocation, Docker stop/start after initial test startup, backend/Compose/source fix, ICC edit, unscripted exploration or volume removal by JR. Missing safe infrastructure after permitted sandbox-local prep = BLOCKED; contradictory product behavior = FAIL. Do not infer production service health, Windows support, live log retrieval, four-layer COMMS probes, visual parity or migration cutover from this stage.
 
 ## Sizing
-Surface 0, environment 1, behavior 0, verification 1, recovery 0 = 2.
+Surface 0, environment 1, behavior 0, verification 1, recovery 1 = 3.

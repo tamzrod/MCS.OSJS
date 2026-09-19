@@ -25,6 +25,10 @@ Var MCSInstallSimulatorState
 Var MCSInstallReplicatorState
 Var MCSStartServicesState
 Var MCSRuntimeRoot
+Var MCSSettingsAccount
+Var MCSSettingsAccountInput
+Var MCSSettingsOwner
+Var MCSPreviousSettingsOwner
 
 !macro customInit
   StrCpy $MCSMaintenanceMode "install"
@@ -34,6 +38,16 @@ Var MCSRuntimeRoot
   StrCpy $MCSInstallReplicatorState ${BST_CHECKED}
   StrCpy $MCSStartServicesState ${BST_CHECKED}
   ReadRegStr $MCSExistingInstallDir HKLM "${INSTALL_REGISTRY_KEY}" InstallLocation
+  ReadRegStr $MCSSettingsAccount HKLM "Software\MCS Modbus Toolkit" "SettingsAccount"
+  ReadRegStr $MCSPreviousSettingsOwner HKLM "Software\MCS Modbus Toolkit" "SettingsOwnerSID"
+  StrCpy $MCSSettingsOwner $MCSPreviousSettingsOwner
+  ${If} ${Silent}
+  ${AndIf} $MCSSettingsOwner == ""
+    MessageBox MB_ICONSTOP|MB_OK "A settings owner is required. Run interactive Setup first." /SD IDOK
+    Abort
+  ${EndIf}
+  InitPluginsDir
+  File /oname=$PLUGINSDIR\mcs-settings-access.exe "${BUILD_RESOURCES_DIR}\..\bin\mcs-settings-access.exe"
 
   ${If} $MCSExistingInstallDir != ""
     StrCpy $MCSMaintenanceMode "repair"
@@ -73,7 +87,50 @@ mcs_service_defaults_ready:
 
 !macro customPageAfterChangeDir
   Page custom MCSServicePageCreate MCSServicePageLeave
+  Page custom MCSSettingsPageCreate MCSSettingsPageLeave
 !macroend
+
+Function MCSSettingsPageCreate
+  nsDialogs::Create 1018
+  Pop $0
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+  ${NSD_CreateLabel} 0 0 100% 18u "Settings owner"
+  Pop $0
+  ${NSD_CreateLabel} 0 26u 100% 42u "Enter the Windows account that will use the app (COMPUTER\user or DOMAIN\user). It may differ from the administrator running Setup."
+  Pop $0
+  ${NSD_CreateText} 0 76u 100% 14u "$MCSSettingsAccount"
+  Pop $MCSSettingsAccountInput
+  ${NSD_CreateLabel} 0 104u 100% 60u "Only this user receives Modify access to shared Toolkit settings. SYSTEM and administrators retain access. Application binaries stay protected. Changing the owner removes the previous installer-managed grant."
+  Pop $0
+  nsDialogs::Show
+FunctionEnd
+
+Function MCSSettingsPageLeave
+  ${NSD_GetText} $MCSSettingsAccountInput $MCSSettingsAccount
+  ClearErrors
+  FileOpen $1 "$PLUGINSDIR\settings-account.txt" w
+  FileWriteUTF16LE $1 "$MCSSettingsAccount"
+  FileClose $1
+  IfErrors mcs_account_failed
+  nsExec::ExecToStack '"$PLUGINSDIR\mcs-settings-access.exe" -mode resolve -account-file "$PLUGINSDIR\settings-account.txt" -sid-file "$PLUGINSDIR\settings-owner.sid"'
+  Pop $0
+  Pop $2
+  ${If} $0 != 0
+    MessageBox MB_ICONSTOP|MB_OK "Account validation failed:$\r$\n$2"
+    Abort
+  ${EndIf}
+  ClearErrors
+  FileOpen $1 "$PLUGINSDIR\settings-owner.sid" r
+  FileRead $1 $MCSSettingsOwner
+  FileClose $1
+  IfErrors mcs_account_failed
+  Return
+mcs_account_failed:
+  MessageBox MB_ICONSTOP|MB_OK "Could not validate the settings owner. Setup cannot continue."
+  Abort
+FunctionEnd
 
 Function MCSMaintenancePageCreate
   nsDialogs::Create 1018
@@ -261,6 +318,10 @@ FunctionEnd
 !macroend
 
 !macro customInstall
+  ${If} $MCSSettingsOwner == ""
+    MessageBox MB_ICONSTOP|MB_OK "A settings owner is required. Run interactive Setup before using silent upgrades."
+    Abort
+  ${EndIf}
   SetShellVarContext all
   ReadEnvStr $MCSRuntimeRoot "ProgramData"
   ${If} $MCSRuntimeRoot == ""
@@ -276,6 +337,21 @@ FunctionEnd
   FileWrite $1 "{}$\r$\n"
   FileClose $1
 mma2_config_ready:
+
+  nsExec::ExecToStack '"$PLUGINSDIR\mcs-settings-access.exe" -mode grant -config "$MCSRuntimeRoot\config" -owner "$MCSSettingsOwner" -previous "$MCSPreviousSettingsOwner"'
+  Pop $0
+  Pop $2
+  ${If} $0 != 0
+    MessageBox MB_ICONSTOP|MB_OK "Settings permissions failed:$\r$\n$2"
+    Abort
+  ${EndIf}
+  ClearErrors
+  WriteRegStr HKLM "Software\MCS Modbus Toolkit" "SettingsAccount" "$MCSSettingsAccount"
+  WriteRegStr HKLM "Software\MCS Modbus Toolkit" "SettingsOwnerSID" "$MCSSettingsOwner"
+  ${If} ${Errors}
+    MessageBox MB_ICONSTOP|MB_OK "Could not save the settings owner for future upgrades."
+    Abort
+  ${EndIf}
 
   IfFileExists "$INSTDIR\resources\bin\nssm.exe" +3 0
   MessageBox MB_ICONSTOP|MB_OK "NSSM was not packaged. Place nssm.exe in electron\bin and rebuild the installer."

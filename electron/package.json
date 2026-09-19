@@ -6,7 +6,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist:win": "electron-builder --win nsis",
+    "build:settings-access": "cd build/settings-access && go build -o ../../bin/mcs-settings-access.exe .",
+    "dist:win": "npm run build:settings-access && electron-builder --win nsis",
     "pack:win": "electron-builder --win dir"
   },
   "devDependencies": {

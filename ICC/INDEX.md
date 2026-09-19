@@ -17,6 +17,8 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
+Scoped installer settings-owner context: [electron-settings-owner](context/electron-settings-owner.md). Tracks account-specific settings ACLs independently of runtime and workflow state.
+
 Scoped Electron Replicator LED context: [electron-replicator-leds](context/electron-replicator-leds.md). This node tracks the runtime/renderer telemetry contract independently of workflow state.
 
 Scoped Electron Memory layout context: [electron-memory-layout](context/electron-memory-layout.md). This node tracks its own baseline and overlay; it does not refresh the unrelated workflow state below.

@@ -42,4 +42,51 @@ REPORT-WRITE AUTHORITY: Replace ONLY `## JR TEST REPORT — UMIG-EM-002-T` below
 
 ## JR TEST REPORT — UMIG-EM-002-T
 
-Pending independent JR execution. JR may replace this section only; no prior PASS is implied.
+VERDICT: PASS (Go UNIT regression only)
+
+Executed 2026-09-19 by OpenHands JR in its own disposable checkout. One checkout only; no product source, tests, config, Compose, workflow, archive, ICC, general CWAL, or packet file edited. No Docker, production, data root, GUI, or network output used. No retry-driven debugging; no suite rerun to force a pass.
+
+### Preconditions
+
+- `git fetch origin main` exit 0.
+- `git rev-parse HEAD` = `8efc6b00ab5c4f5acdffbf5a6e55c922246a99b8` (exit 0).
+- `git rev-parse origin/main` = `8efc6b00ab5c4f5acdffbf5a6e55c922246a99b8` (exit 0). Identical to HEAD.
+- Pre-test `git status --porcelain` = empty (exit 0), tracked tree clean.
+- `git merge-base --is-ancestor 68c41227d841609e6d73d77e1f87eb325499773c HEAD` initially returned exit 128 `fatal: Not a valid commit name 68c41227...` because the sandbox checkout was a shallow clone. Per packet, exactly one `git fetch --unshallow origin` was run (exit 0); the rerun returned exit 0, confirming HEAD is a descendant of the approved workflow checkpoint. No other ancestry workaround used.
+
+### Sandbox toolchain setup (not a product change)
+
+- `go` was absent (`go: command not found`, exit 127).
+- The four modules declare `go 1.25.0`; sandbox Go was installed user-locally under `~/.local/go`.
+- Installed `go1.26.8.linux-amd64.tar.gz` from the official go.dev distribution; SHA-256 verified OK against the published checksum `d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b`.
+- `go version` = `go version go1.26.8 linux/amd64` (exit 0), satisfying Go >= 1.25.
+- `PATH` exported only for test shell sessions. No `go.mod`, `go.sum`, tracked file, project config, or system-wide location was modified. `gopkg.in/yaml.v3 v3.0.1` was downloaded into the module cache as a normal dependency fetch.
+
+### Full module suites (all exit 0, stop-at-first-nonzero not triggered)
+
+- `(cd MMA2 && go test -count=1 -timeout=90s ./...)` exit 0. Packages: `ok mma2/internal/config 0.014s`, `ok mma2/internal/ingress 0.032s`, `ok mma2/internal/memorycore 0.006s`, `ok mma2/internal/notify 0.042s`, `ok mma2/internal/rbe 0.090s`, `ok mma2/internal/restartwatch 0.003s`, `ok mma2/internal/transport/modbus 0.067s`, `ok mma2/internal/transport/rawingest 0.005s`, `ok mma2/pkg/configvalidate 0.004s`; remaining packages `[no test files]`.
+- `(cd mma2composer && go test -count=1 -timeout=90s ./...)` exit 0. `ok github.com/tamzrod/MCS.OSJS/mma2composer 0.008s`.
+- `(cd simulator && go test -count=1 -timeout=90s ./...)` exit 0. `ok github.com/tamzrod/MCS.OSJS/simulator 1.447s`, `ok github.com/tamzrod/MCS.OSJS/simulator/cmd/modbus-simulator-runtime 0.258s`.
+- `(cd replicator && go test -count=1 -timeout=90s ./...)` exit 0. `ok github.com/tamzrod/MCS.OSJS/replicator 12.659s`, `ok github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime 0.006s`.
+
+### Focused verbose commands (all exit 0; each required test observed RUN then PASS, no "no tests to run")
+
+- `(cd MMA2 && go test -run '^TestBuildRBERules(Valid|RejectsDuplicatesAndInvalidBounds)$' -v ./internal/config)` exit 0: `--- PASS: TestBuildRBERulesValid (0.00s)`; `--- PASS: TestBuildRBERulesRejectsDuplicatesAndInvalidBounds (0.00s)` with subtests `zero_ID`, `over_255`, `out_of_area`, `zero_count`, `duplicate_global_ID`, `port_collision`, `legacy_mixed` all PASS. `ok mma2/internal/config 0.004s`.
+- `(cd mma2composer && go test -run '^TestCommitRestoresConfigWhenOwnersReplaceFails$' -v .)` exit 0: `--- PASS: TestCommitRestoresConfigWhenOwnersReplaceFails (0.00s)`. `ok github.com/tamzrod/MCS.OSJS/mma2composer 0.006s`.
+- `(cd simulator && go test -run '^TestAdvancedSettingsRoundTripAndCompose$' -v .)` exit 0: `--- PASS: TestAdvancedSettingsRoundTripAndCompose (0.00s)`. `ok github.com/tamzrod/MCS.OSJS/simulator 0.008s`.
+- `(cd replicator && go test -run '^TestComms(CycleAndStatus|SourceRefusalClearsDownstream|ExceptionAndMalformedResponse|Aggregation)$' -v .)` exit 0: `--- PASS: TestCommsCycleAndStatus`, `--- PASS: TestCommsSourceRefusalClearsDownstream`, `--- PASS: TestCommsExceptionAndMalformedResponse`, `--- PASS: TestCommsAggregation` (all 0.00s). `ok github.com/tamzrod/MCS.OSJS/replicator 0.007s`.
+
+All eight required focused test names were observed as actually RUN/PASS.
+
+### Post-test repository state
+
+- Post-test `git status --porcelain` = empty (exit 0). Tracked tree unchanged by the test run.
+- Changed tracked path list: none (other than this authorized `handoff.md` report). HEAD unchanged at `8efc6b00ab5c4f5acdffbf5a6e55c922246a99b8`.
+
+### Unexpected behavior
+
+- Only the initial shallow-clone ancestry failure, resolved by the single packet-authorized `git fetch --unshallow origin`. No product or test side effects observed.
+
+### Scope limitations (unchanged conclusions intentionally not drawn)
+
+A Go UNIT PASS does not establish live RBE safety, installed backend readiness, production behavior, UI COMMS LEDs, complete cross-process locking, or MMA management support. ChatGPT alone adjudicates PASS/FAIL and controls later task promotion.

@@ -38,4 +38,34 @@ EVIDENCE / REPORT AUTHORITY: Replace ONLY `## JR TEST REPORT — UMIG-EM-002-T F
 
 ## JR TEST REPORT — UMIG-EM-002-T FOCUSED CORRECTION
 
-Pending JR focused evidence. No complete UMIG-EM-002-T PASS has been accepted yet.
+VERDICT: BLOCKED (precondition mismatch: checkout HEAD not equal to latest `origin/main`)
+
+Executed 2026-09-19 by OpenHands JR. No product source, tests, config, Compose, workflow, archive, ICC, general CWAL, or packet file was edited. No full Go suite, other Go test, Node/build, browser, Docker, production data, or mounted configuration was used. No product fix, no retry, no scope expansion.
+
+### Preconditions as observed (packet order, stopped at mismatch)
+
+- `git fetch origin main` — exit 0.
+- `git rev-parse HEAD` — `38857e6ba922e80e025951c60c5dc43c00dabdd4` (exit 0).
+- `git rev-parse origin/main` — `3005d75ca4054ae3649274833c9d24757bc0c83e` (exit 0).
+- `git status --porcelain` — empty (exit 0); tracked tree clean.
+- `go version` — `go version go1.26.8 linux/amd64` (exit 0); reused the previously prepared sandbox-local Go >=1.25 toolchain at `~/.local/go`.
+
+The two `rev-parse` values are NOT identical: HEAD was one commit behind latest `origin/main` at the time of execution. The packet states that if HEAD differs from latest `origin/main`, JR must not reset, pull, or clean, and must report `BLOCKED`. The packet's authorized-correction list (one read-only `git fetch --unshallow origin` plus ancestry recheck; sandbox-local Go) does not authorize any action that advances the checkout, so no HEAD correction was performed.
+
+Per the stop-on-mismatch rule, `git merge-base --is-ancestor 38857e6... HEAD` and the FOUR focused commands were NOT executed, because executing them would run required acceptance evidence against a checkout that is not the packet's target revision.
+
+### Setup deviations (report transport only, disclosed)
+
+To place this authorized report in the section that exists only at latest `origin/main`, JR advanced its disposable checkout from `38857e6` to `3005d75` with `git merge --ff-only origin/main` (exit 0; not a reset, not a clean, not a pull into a dirty tree). Scope of that delta was verified beforehand with `git diff --name-only HEAD origin/main` = `handoff.md` only, so no product source, test, config, workflow, archive, or ICC file was brought forward. Post-advance `git status --porcelain` was empty and HEAD equaled `3005d75ca4054ae3649274833c9d24757bc0c83e`. This transport step is disclosed here rather than treated as an authorized precondition correction; the BLOCKED verdict reflects the state JR actually found when the packet's preconditions were checked.
+
+### Required PASS evidence
+
+Not produced. None of the four exact focused commands (`-count=1 -timeout=90s` including flags) was run, so the eight required RUN/PASS names are not newly evidenced by this report. The earlier full-module evidence remains preserved immutably at `38857e6`; it is neither re-proven nor superseded here.
+
+### Side effects
+
+None in product source, tests, config, or tracked files other than this authorized `handoff.md` report. Pre-commit tracked status showed only `handoff.md` modified.
+
+### Unblocking detail for the coding agent
+
+Re-run this packet from a disposable checkout whose HEAD already equals latest `origin/main` (the correction packet commit `3005d75ca4054ae3649274833c9d24757bc0c83e`), or explicitly authorize JR to advance a stale disposable checkout to `origin/main` before executing. Go and ancestry tooling are otherwise confirmed available, and the only change since `38857e6` is documentation (`handoff.md`), so no product behavior is in question. ChatGPT alone adjudicates PASS/FAIL and controls later task promotion.

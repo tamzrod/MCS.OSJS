@@ -78,3 +78,142 @@ Post-test `git status --porcelain` -> empty (clean tracked tree). No unexpected 
 Direct observation of the requested command's stdout/stderr, exit code and elapsed time from the requested surface, plus the exact pre/post `git status` and preflight SHA checks above. No source inspection, prior run, or substitute check was used in place of the requested execution.
 
 Verdict is PASS because every required acceptance item was directly confirmed. This packet's unit/regression scope makes no live-service or UI claim.
+
+### Original stdout/stderr evidence accounting (Operation CWAL, appended 2026-09-20)
+
+Preflight for this accounting (read-only, in packet order): `git status --porcelain` exit 0 (empty/clean); `git rev-parse HEAD` exit 0 -> `d5b68c6f5d38dcabe43dcde49281c8060f18a43d`; `git fetch origin main` exit 0; `git rev-parse origin/main` exit 0 -> `d5b68c6f5d38dcabe43dcde49281c8060f18a43d` (HEAD=origin/main, clean tracked tree; no merge/rebase/checkout/clean).
+
+Provenance: the complete original stdout/stderr below is the already-retained transcript of the single 2026-09-20 execution of `(cd replicator && go test -race -count=1 -timeout=90s -v ./...)` against source `62d05fe94568fbf9903848d08b2233861d0f4f2e` from this JR checkout. Retained at `/tmp/cwal_test.log` (owner `openhands`, size 7638 bytes, birth 2026-09-20T01:31:39Z, modify 2026-09-20T01:32:10Z, md5 `e4b287a7aa4c4db23637bdc3ddfa7c94`, 128 lines). Appended verbatim; no line was inferred, regenerated or paraphrased. The Go test was NOT rerun for this accounting.
+
+```
+go: downloading gopkg.in/yaml.v3 v3.0.1
+=== RUN   TestAdvancedSettingsPersistComposeAndInherit
+--- PASS: TestAdvancedSettingsPersistComposeAndInherit (0.02s)
+=== RUN   TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig
+--- PASS: TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig (0.01s)
+=== RUN   TestAdvancedSettingsCloneIsIndependent
+--- PASS: TestAdvancedSettingsCloneIsIndependent (0.00s)
+=== RUN   TestCommsCycleAndStatus
+--- PASS: TestCommsCycleAndStatus (0.00s)
+=== RUN   TestCommsSourceRefusalClearsDownstream
+--- PASS: TestCommsSourceRefusalClearsDownstream (0.00s)
+=== RUN   TestCommsExceptionAndMalformedResponse
+--- PASS: TestCommsExceptionAndMalformedResponse (0.00s)
+=== RUN   TestCommsAggregation
+--- PASS: TestCommsAggregation (0.00s)
+=== RUN   TestDestinationMemoryForBlocksAllowsModbusServing
+--- PASS: TestDestinationMemoryForBlocksAllowsModbusServing (0.00s)
+=== RUN   TestRunOnceCopiesConfiguredRegisters
+--- PASS: TestRunOnceCopiesConfiguredRegisters (0.00s)
+=== RUN   TestRunOnceRejectsForeignOwnedDestination
+--- PASS: TestRunOnceRejectsForeignOwnedDestination (0.00s)
+=== RUN   TestValidateCycleMappingRejectsCrossArea
+--- PASS: TestValidateCycleMappingRejectsCrossArea (0.00s)
+=== RUN   TestDocumentSaveLoadRoundTrip
+--- PASS: TestDocumentSaveLoadRoundTrip (0.00s)
+=== RUN   TestLoadDocumentMigratesLegacyRangeIntoPullBlocks
+--- PASS: TestLoadDocumentMigratesLegacyRangeIntoPullBlocks (0.00s)
+=== RUN   TestLoadDocumentMigratesSinglePullBlockIntoCollection
+--- PASS: TestLoadDocumentMigratesSinglePullBlockIntoCollection (0.00s)
+=== RUN   TestMultiplePullBlocksPersistInOrder
+--- PASS: TestMultiplePullBlocksPersistInOrder (0.00s)
+=== RUN   TestSuggestDestinationSkipsOccupiedPairOnly
+--- PASS: TestSuggestDestinationSkipsOccupiedPairOnly (0.00s)
+=== RUN   TestResolveManualForeignCollisionReportsOwner
+--- PASS: TestResolveManualForeignCollisionReportsOwner (0.00s)
+=== RUN   TestResolveAllowsSameUnitOnDifferentPort
+--- PASS: TestResolveAllowsSameUnitOnDifferentPort (0.00s)
+=== RUN   TestResolveAllowsSamePortWithDifferentUnit
+--- PASS: TestResolveAllowsSamePortWithDifferentUnit (0.00s)
+=== RUN   TestSaveTimeOwnershipGuardRejectsExactForeignPairOnly
+--- PASS: TestSaveTimeOwnershipGuardRejectsExactForeignPairOnly (0.00s)
+=== RUN   TestComposeDocumentPreservesForeignAndAllReplicatorReservations
+--- PASS: TestComposeDocumentPreservesForeignAndAllReplicatorReservations (0.01s)
+=== RUN   TestDestinationMemorySpansAllBlocksByArea
+--- PASS: TestDestinationMemorySpansAllBlocksByArea (0.00s)
+=== RUN   TestDeviceRuntimeConfigMapsPullBlockOneToOne
+--- PASS: TestDeviceRuntimeConfigMapsPullBlockOneToOne (0.00s)
+=== RUN   TestSimulatorToReplicatorE2E
+--- PASS: TestSimulatorToReplicatorE2E (11.84s)
+=== RUN   TestDestinationMemorySupportsFC1AndFC2
+--- PASS: TestDestinationMemorySupportsFC1AndFC2 (0.00s)
+=== RUN   TestValidateDeviceAllowsAllReadFunctions
+--- PASS: TestValidateDeviceAllowsAllReadFunctions (0.00s)
+=== RUN   TestRuntimeManagerApplyLifecycleAndStatus
+--- PASS: TestRuntimeManagerApplyLifecycleAndStatus (0.18s)
+=== RUN   TestValidateRejectsDisjointSameFCPullBlocks
+--- PASS: TestValidateRejectsDisjointSameFCPullBlocks (0.00s)
+=== RUN   TestValidateAllowsContiguousSameFCPullBlocks
+--- PASS: TestValidateAllowsContiguousSameFCPullBlocks (0.00s)
+=== RUN   TestApplyRestartFailureRestoresPreviousPollers
+--- PASS: TestApplyRestartFailureRestoresPreviousPollers (0.09s)
+=== RUN   TestReadConfiguredSourceUsesPersistedConfig
+--- PASS: TestReadConfiguredSourceUsesPersistedConfig (0.00s)
+=== RUN   TestReadSourceRangeFC1AndFC2
+--- PASS: TestReadSourceRangeFC1AndFC2 (0.00s)
+=== RUN   TestReadSourceRangeFC3
+--- PASS: TestReadSourceRangeFC3 (0.00s)
+=== RUN   TestReadSourceRangeFC4
+--- PASS: TestReadSourceRangeFC4 (0.00s)
+=== RUN   TestReadSourceRangeRejectsUnsupportedFunction
+--- PASS: TestReadSourceRangeRejectsUnsupportedFunction (0.00s)
+=== RUN   TestReadSourceRangeConnectionFailure
+--- PASS: TestReadSourceRangeConnectionFailure (0.00s)
+=== RUN   TestRuntimeRepeatsWithoutOverlap
+--- PASS: TestRuntimeRepeatsWithoutOverlap (0.13s)
+=== RUN   TestRuntimeRecordsCycleErrorAndContinues
+--- PASS: TestRuntimeRecordsCycleErrorAndContinues (0.04s)
+=== RUN   TestRuntimeCancelStopsCleanly
+--- PASS: TestRuntimeCancelStopsCleanly (0.00s)
+=== RUN   TestSaveApplyRejectsForeignReservationBeforeMutation
+--- PASS: TestSaveApplyRejectsForeignReservationBeforeMutation (0.00s)
+=== RUN   TestConfigRootFromEnv
+--- PASS: TestConfigRootFromEnv (0.00s)
+=== RUN   TestSaveLoadRoundTrip
+--- PASS: TestSaveLoadRoundTrip (0.00s)
+=== RUN   TestInvalidConfigRejectedBeforePersistence
+--- PASS: TestInvalidConfigRejectedBeforePersistence (0.00s)
+=== RUN   TestInvalidReplacementLeavesPriorBytesUnchanged
+--- PASS: TestInvalidReplacementLeavesPriorBytesUnchanged (0.00s)
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_port_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_unit_too_high
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_function_invalid
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_count_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_range_overflow
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/poll_interval_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_port_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_unit_too_high
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_area_invalid
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_count_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_range_overflow
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/count_mismatch
+--- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_port_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_unit_too_high (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_function_invalid (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_count_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_range_overflow (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/poll_interval_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_port_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_unit_too_high (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_area_invalid (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_count_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_range_overflow (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/count_mismatch (0.00s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/replicator	13.376s
+=== RUN   TestUnixRuntimeListenerMatchesRelayAndProtectsLiveOwner
+--- PASS: TestUnixRuntimeListenerMatchesRelayAndProtectsLiveOwner (0.02s)
+=== RUN   TestUnixRuntimeListenerReplacesStaleSocket
+--- PASS: TestUnixRuntimeListenerReplacesStaleSocket (0.00s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime	1.036s
+
+real	0m30.620s
+user	1m6.466s
+sys	0m13.754s
+TEST_EXIT=0
+```
+
+Matches the pre-existing report above: original exit `TEST_EXIT=0`, elapsed `real 0m30.620s`, both packages `ok` (`github.com/tamzrod/MCS.OSJS/replicator 13.376s`, `github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime 1.036s`), 59 `=== RUN` and 59 `--- PASS` (including the three required named tests), no `FAIL`, no `WARNING: DATA RACE`, no panic, original post-test tree clean. Nothing unexpected occurred. Verdict PASS — complete original transcript is available and matches.

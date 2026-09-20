@@ -1,6 +1,6 @@
 # OSJT-007 — Hydration field presence
 
-Status: QUEUED
+Status: ACTIVE
 Stage: CODE
 Owner: Coding agent
 Previous: OSJT-006
@@ -8,6 +8,10 @@ Next: OSJT-008
 
 ## Primary outcome
 Represent omitted versus explicit null, false and empty advanced values without changing apply behavior.
+
+Current bounded repair: correct the OSJT-008 fixture in `simulator/osjs_toolkit_settings_test.go`
+under the 2026-09-21 `handoff.md` packet. This is test-fixture repair only; OSJT-008 remains
+QUEUED until the CODE checkpoint is ready for independent execution.
 
 ## Bounded scope
 simulator/device.go; simulator/advanced_projection_test.go; simulator/osjs_toolkit_settings_test.go
@@ -26,4 +30,3 @@ Before TEST/VERIFY activation, the coding agent supplies one current handoff pac
 Depends on OSJT-006; target/permissions derive from OSJT-001.
 Five dimensions (implementation/environment/behavior/verification/decision): 1/0/1/1/0 = 3.
 At most three production files plus focused tests per coding task. Split before editing if the task requires a broader change or a new architectural decision.
-

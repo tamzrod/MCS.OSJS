@@ -1,6 +1,6 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-024)
 
-Baseline commit: ee19b8a
+Baseline commit: 7e68f2a7712f7540c52df6bf3cecba7afeb0416d
 Working tree: clean
 Audited Overlay: none
 Superseded detail: SIM-018/SIM-019 below still name a Unix-domain socket at
@@ -9,6 +9,20 @@ rules. Both are superseded; see Zoom In `simulator-memory-none` for current trut
 Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, MMA2/internal/restartwatch/*, MMA2/cmd/mma2-supervisor/*, workflow/archive/rep-001-share-mma2-reservation-composer.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md
 Zoom In: simulator-memory-none
 Zoom Out: active-work
+
+## Current OSJT advanced-settings projection
+
+The Simulator device model carries advanced MMA2 policy, state-sealing, RBE, and extension values
+through JSON projection and ownership-safe shared-config composition. `advanced_settings_test.go` is
+the configuration-only reference fixture: it seeds root RBE output at `rbe.tcp.listen`, preserves
+`custom_root`, checks effective-memory projection, and rejects invalid recognized state sealing
+without changing persisted device or effective-config bytes.
+
+At this baseline `osjs_toolkit_settings_test.go` is known failing/incomplete: it omits required root
+RBE output, does not separately prove omitted/null/false/empty representations, treats unknown
+`corrupted_rbe` as malformed, looks for memory extensions at the effective root, leaves errors and
+lengths unchecked, and includes an unused `main()`. The current handoff authorizes a test-only repair
+of that file; production behavior must not change.
 
 ## Established truth (SIM-001)
 

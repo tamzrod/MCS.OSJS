@@ -1,69 +1,83 @@
-# Handoff: OpenCode repair for OSJT-008
+# JR TEST TASK — OSJT-008 Hydration field presence regression
 
-## Result and authority
+## Status and authority
 
-- Baseline: `fc755a9` on main. OSJT-008 is FAIL, not complete. Do not advance OSJT-009.
-- Human requested fixing OSJT-008 or handing the repair to OpenCode. This is the repair handoff; no product or test source was changed here.
-- Next operation: bounded CODE repair of the test fixture, not source editing during TEST. Record the repair in `workflow/active_work/` and reconcile its active status with this handoff before editing. OSJT-007 and OSJT-008 currently still say QUEUED; archive claims are not test evidence.
-- This packet supplies the repair scope and checks; no additional human packet is needed for this deterministic local repair. No live deployment, services, Docker, browser, network outputs, dependency upgrades, commit or push.
+- Sole ACTIVE task: `OSJT-008` in `workflow/active_work/osjt-008-hydration-field-presence-regression.md`.
+- Stage: TEST. Owner: independent JR under `OPERATION CWAL`.
+- Goal: independently verify the repaired advanced-projection presence fixture.
+- Source checkpoint: `7e3e4fd` (`test: repair OSJT-008 advanced projection fixture`).
+- Test-activation revision: the current checkout HEAD containing only the OSJT-007 archive,
+  OSJT-008 activation, this packet, and the required bounded ICC active-work refresh after source
+  checkpoint `7e3e4fd`.
+- No source edits, fixes, task advancement, ICC changes, report-file writes, commits, or pushes.
+  Report in chat only and STOP.
 
-## Actual failure
+## Exact target and safety boundary
 
-Windows local reproduction, Go 1.25.0, at the baseline:
+- Checkout/worktree: `/home/sysadmin/apps/MCS.OSJS-jr` on branch `temp-main`.
+- Local Ubuntu environment only; temporary Go test data and the existing Go build cache are allowed.
+- No Docker, services, browser, devices, production/operator data, dependency installation or upgrade,
+  sudo, destructive commands, or external runtime target.
+- A clean initial worktree is required. Preserve all stashes; do not apply, drop, or rewrite them.
+- Read-only remote freshness is authorized with `git ls-remote origin refs/heads/main`.
 
-```text
-cd simulator
-go test -count=1 -timeout=90s -v -run '^TestAdvancedProjectionPresence' .
-=== RUN   TestAdvancedProjectionPresence
-    osjs_toolkit_settings_test.go:42: failed to save device with advanced settings: validate complete MMA2 candidate: listeners[0].memory[0].rbe: root rbe output is required
---- FAIL: TestAdvancedProjectionPresence (0.03s)
-FAIL
-FAIL github.com/tamzrod/MCS.OSJS/simulator 1.629s
-FAIL
+## Preflight and activation gate
+
+Run each command in order and capture its complete stdout/stderr and exit code:
+
+```sh
+pwd
+git branch --show-current
+git rev-parse HEAD
+git status --short
+git merge-base --is-ancestor 7e3e4fd HEAD
+git diff --name-only 7e3e4fd..HEAD
+git rev-parse origin/main
+git ls-remote origin refs/heads/main
+go version
 ```
 
-Exit code 1. This is not Ubuntu acceptance. The previous instruction to close a verified-incomplete gate is withdrawn: incomplete or failing checks never count as PASS.
+Expected:
 
-## Repair, one step at a time
+- `pwd` is exactly `/home/sysadmin/apps/MCS.OSJS-jr` and branch is `temp-main`.
+- `git status --short` is empty.
+- The source checkpoint is an ancestor of HEAD.
+- `git diff --name-only 7e3e4fd..HEAD` contains only `handoff.md`, `ICC/INDEX.md`,
+  `ICC/context/active-work.md`, the archived and removed active OSJT-007 paths, and
+  `workflow/active_work/osjt-008-hydration-field-presence-regression.md`.
+- `origin/main` and the remote main SHA returned by `git ls-remote` both equal HEAD. Any mismatch,
+  unavailable remote query, unexpected path, or dirty checkout is BLOCKED; do not run the product test.
+- Go is available. Do not install or download anything if it is unavailable.
 
-1. Initially edit only `simulator/osjs_toolkit_settings_test.go`. The fixture enables memory RBE rules without a root output. Reuse the configuration-only fixture in `simulator/advanced_settings_test.go`, `TestAdvancedSettingsRoundTripAndCompose`:
+## Exact product test
 
-   ```go
-   cfg := EffectiveMMA2Config{Extra: map[string]interface{}{
-       "rbe": map[string]interface{}{"tcp": map[string]interface{}{"listen": "127.0.0.1:9001"}},
-       "custom_root": "keep",
-   }}
-   ```
+From `/home/sysadmin/apps/MCS.OSJS-jr/simulator`, run exactly once:
 
-   Call `composer.Commit(cfg, OwnershipDoc{})` in the test's temporary store. This is fixture data, not an actual listener. Do not enable automatic RBE output in production or weaken validation.
+```sh
+go test -count=1 -timeout=90s -v -run '^TestAdvancedProjectionPresence' .
+```
 
-2. Repair the other incorrect assertions in that same test:
-   - Replace the no-op `_ = true` nil-policy check with real separate cases for omitted, explicit null, false sealing and empty advanced values. Assert the representation/projection contract from OSJT-007 without inventing new apply behavior.
-   - Unknown `corrupted_rbe` is not a malformed recognized field. Use a genuinely invalid recognized value through validating SaveAndCompose; assert the error and unchanged device/effective file contents. The existing advanced-settings test has an invalid-sealing example.
-   - Memory extensions belong in the matching `loaded.Listeners[...].Memory[...].Extra`, not root `loaded.Extra`. Identify the correct memory before asserting.
-   - Check all marshal/load/save/read errors and collection lengths before dereferencing. Reading files alone does not establish unchanged contents.
-   - Remove the unused `main()`. Do not remove required cases, skip tests, or weaken assertions to get PASS.
+Expected: exit 0, the named test visibly runs, and it reports PASS. Zero matching tests is not PASS.
+Any nonzero exit or contradictory output is FAIL. Do not rerun or substitute another test.
 
-3. If real presence cases expose missing OSJT-007 production behavior, report the exact failing cases for a separate bounded CODE repair. Do not expand this fixture task into a production redesign. Fixing the RBE seed alone does not prove presence semantics.
+## Required post-check
 
-## Ubuntu checks and return packet
-
-Run from OpenCode's repository checkout, capturing each command's output and exit code independently:
+Return to the repository root and run even if the product test fails:
 
 ```sh
 git rev-parse HEAD
 git status --short
-go version
-cd simulator
-go test -count=1 -timeout=90s -v -run '^TestAdvancedProjectionPresence' .
-go test -count=1 -timeout=90s -v -run '^TestAdvancedSettingsRoundTripAndCompose$' .
-cd ..
 git diff --check
-git diff -- simulator/osjs_toolkit_settings_test.go
 ```
 
-- Temporary test data only; no operator installation or external runtime target needed.
-- If Go/dependencies are unavailable, report the exact environment limitation, not PASS. A later successful command must not hide an earlier failure.
-- Return source SHA, changed paths/diff, Go/OS version, full named-test output, exit codes and remaining failures. Zero matching tests is not PASS.
-- Coding-agent checks are preliminary evidence. Keep OSJT-008 incomplete until its exact check passes on the repaired revision and its required independent review is recorded. Do not archive or activate OSJT-009 early.
-- Preserve the stash named `Preserve local OSJT clarification audit before main update`; do not blindly apply its stale task statuses.
+Expected: HEAD is unchanged from preflight, status remains empty, and `git diff --check` exits 0.
+Unexpected changes are reported without cleanup.
+
+## Verdict and report
+
+- PASS only when every preflight item, the exact named test, and every post-check meet expectations.
+- FAIL when the product test contradicts its expectation; preserve that result even if a later check fails.
+- BLOCKED when freshness, environment, safety, or required evidence is unavailable.
+- Return the tested HEAD, OS/Go environment, every exact command with raw output and exit status,
+  post-state, verdict, caveats, and unexpected effects in chat only.
+- Do not write a report file, commit, push, archive OSJT-008, or activate OSJT-009.

@@ -1,7 +1,8 @@
 # Active Work
 
-Baseline commit: 7e68f2a7712f7540c52df6bf3cecba7afeb0416d
-Working tree: dirty only in `mma2composer/handoff.md`; that unrelated overlay is outside this node's dependencies.
+Baseline commit: 7e3e4fd
+Working tree: transition overlay contains only the OSJT-007 archive, OSJT-008 activation, current
+`handoff.md` JR packet, and this context update.
 Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/*.md,
 workflow/archive/electron-001-nsis-nssm-service-installer.md,
 workflow/archive/electron-002-compact-industrial-layout.md,
@@ -13,20 +14,16 @@ Zoom Out: L0-project
 
 ## Current OSJT execution state
 
-OSJT-001 through OSJT-006 are archived. OSJT-007, OSJT-008, and OSJT-009 onward are all
-`QUEUED`; no task is currently ACTIVE. The current `handoff.md` is a human-authorized bounded
-CODE repair packet for the OSJT-008 fixture failure, not a runnable JR packet. It authorizes
-reconciling active state, editing only `simulator/osjs_toolkit_settings_test.go`, and running its
-listed local Ubuntu checks. It forbids production changes, dependency upgrades, Docker, external
-runtime targets, commits, and pushes.
+OSJT-001 through OSJT-007 are archived. OSJT-008 is the sole ACTIVE task; OSJT-009 onward remain
+QUEUED. The current `handoff.md` is the exact chat-only JR TEST TASK packet for OSJT-008, pinned
+to source checkpoint `7e3e4fd` with a clean local Ubuntu target and remote-main freshness gate.
 
-The baseline failure is `TestAdvancedProjectionPresence`: its fixture supplied memory RBE rules
-without a required root RBE output. The packet also identifies incomplete presence assertions, an
-invalid malformed-config case, a wrong extension lookup location, unchecked errors/lengths, and an
-unused `main()`.
+The repaired fixture supplies the required root RBE output and directly checks omitted, null,
+false, empty, extension-projection, and invalid-save preservation cases. Both focused coding-agent
+checks passed; those checks remain preliminary until independent OSJT-008 execution.
 
-OSJT-008 remains incomplete until the exact focused check passes on the repaired revision and an
-independent review is recorded. OSJT-009 must not be activated early.
+OSJT-008 remains incomplete until its exact independent check passes and the coding agent reviews
+the returned evidence. OSJT-009 must not be activated early.
 
 ## Superseded UMIG state
 

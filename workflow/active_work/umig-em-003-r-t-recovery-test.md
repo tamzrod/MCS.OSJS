@@ -1,0 +1,6 @@
+# UMIG-EM-003-R-T — TEST: Pre/post-commit recovery regression
+
+Status: QUEUED — not executable until CODE `UMIG-EM-003-R` archived SOURCE ONLY and the coding agent activates this with exact `handoff.md` packet.
+Stage / owner: TEST / independent OpenCode JR on isolated Legion Git worktree; human-approved follow-up to targeted regression correction. Previous: UMIG-EM-003-R. Next: NONE; live `UMIG-EM-003-V` separately PLANNED and requires separate human approval.
+
+Acceptance: one source-pinned offline Go `replicator` full package race suite only (no unnecessary composer/simulator reruns), assert BOTH `TestApplyPreCommitFailureRestoresPreviousPollers`, `TestApplyPostCommitRestartFailureStopsPreviousPollers`, existing `TestManagerCommittedUnacknowledgedRestartFailsClosed` and `TestRuntimeManagerApplyLifecycleAndStatus` all show real PASS; all Replicator packages OK; preflight current GitHub main/HEAD/one ACTIVE/source-to-packet allowlist, no E2E, no installs, no host services or operator endpoints, safe post-status, exact full stdout/stderr + exits, report-only handoff commit/push after human approval. FAIL/BLOCKED are reported honestly; never rewrite source or task state. `handoff.md` sole authority; no instruction to run until activated. Go TEST is not live VERIFY.

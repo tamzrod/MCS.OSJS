@@ -10,7 +10,7 @@ Order: establish basic OS.js operation; advanced-field hydration; advanced edito
 
 ## Immediate next action
 
-Complete OSJT-001 using read-only target discovery. Record the approved disposable Linux target, source revision, provisioned toolchain, data/network boundaries and exact later commands in docs/osjs-toolkit/test-target.md. Do not start Docker, install tooling, touch operator data or execute live verification in this preparation step. If the safe target is missing, request that specific decision.
+The human confirmed OpenCode is running on Ubuntu. OpenCode executes the exact read-only inventory block in OSJT-001 from its existing checkout, returns all probe results in chat, and stops. No separate JR packet or file edit is required for this PREP task. Missing tools are recorded inventory findings, not a demand to invent or provision a sandbox. The coding agent records the report in docs/osjs-toolkit/test-target.md and checks readiness before dispatching OSJT-002. No Docker, installs, live tests or operator-data changes are authorized.
 
 ## Advancement
 

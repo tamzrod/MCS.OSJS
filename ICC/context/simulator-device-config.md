@@ -1,7 +1,7 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-024)
 
-Baseline commit: 688c1df
-Working tree overlay: OSJT-009 adds only `advanced_projection.go` and its focused test.
+Baseline commit: c289f2f3872b792c45813ac7a515f8fe90e77671
+Working tree: clean at the source checkpoint; the workflow transition does not change simulator truth.
 Superseded detail: SIM-018/SIM-019 below still name a Unix-domain socket at
 `$OSJS_DATA_DIR/run/modbus-simulator.sock`, and SIM-021A still describes the pre-None status
 rules. Both are superseded; see Zoom In `simulator-memory-none` for current truth.

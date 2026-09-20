@@ -1,6 +1,6 @@
 # OSJT-010 — Hydration projection regression
 
-Status: QUEUED
+Status: ACTIVE
 Stage: TEST
 Owner: OpenHands / independent JR under OPERATION CWAL
 Previous: OSJT-009
@@ -26,4 +26,3 @@ Before TEST/VERIFY activation, the coding agent supplies one current handoff pac
 Depends on OSJT-009; target/permissions derive from OSJT-001.
 Five dimensions (implementation/environment/behavior/verification/decision): 1/0/1/1/0 = 3.
 At most three production files plus focused tests per coding task. Split before editing if the task requires a broader change or a new architectural decision.
-

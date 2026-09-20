@@ -1,28 +1,75 @@
-# Handoff: OSJT-009 Hydration projection
+# JR TEST TASK — OSJT-010 Hydration projection regression
 
-## Current authority
+## Status and authority
 
-- Sole ACTIVE task: `OSJT-009` in `workflow/active_work/osjt-009-hydration-projection.md`.
-- Stage: CODE. Owner: coding agent.
-- Predecessor OSJT-008 independently PASSed at `644a50cc21e984b562e6add1d6bf9c600cbe1274`.
-- Goal: project omitted policy, sealing, RBE, and unknown extensions from the matching effective
-  port/unit memory while preserving explicit device values; malformed recognized projection data
-  must return an error.
+- Sole ACTIVE task: `OSJT-010` in `workflow/active_work/osjt-010-hydration-projection-regression.md`.
+- Stage: TEST. Owner: independent JR under `OPERATION CWAL`.
+- Goal: independently verify matching-memory advanced projection, explicit-value preservation,
+  unknown-extension preservation, and malformed recognized-value rejection.
+- Source checkpoint: `c289f2f3872b792c45813ac7a515f8fe90e77671`.
+- Test-activation revision: current HEAD containing only the OSJT-009 archive, OSJT-010 activation,
+  this packet, and bounded ICC active-work refresh after the source checkpoint.
+- Chat-only report. No source edits, fixes, task advancement, ICC writes, report-file writes,
+  commits, or pushes. STOP after returning the verdict and evidence.
 
-## Bounded scope and stop rule
+## Exact target and safety boundary
 
-- Authorized task paths: `simulator/advanced_projection.go`,
-  `simulator/advanced_projection_test.go`, and `simulator/osjs_toolkit_settings_test.go`.
-- No Electron, legacy removal, production/operator data, dependency upgrades, Docker, services,
-  browser, external runtime, or unrelated cleanup.
-- If integration requires editing a production file outside the task's named scope, or exposes a
-  new architecture decision, stop and report the smallest task repair/split needed before editing.
+- Checkout: `/home/sysadmin/apps/MCS.OSJS-jr`; branch: `temp-main`.
+- Local Ubuntu only; temporary Go test data and existing Go build cache are allowed.
+- No Docker, services, browser, devices, production/operator data, dependency install/upgrade,
+  sudo, destructive action, or external runtime target.
+- Clean initial worktree required. Preserve every stash without applying, dropping, or rewriting it.
+- Read-only `git ls-remote origin refs/heads/main` is authorized.
 
-## Source-only completion gate
+## Preflight
 
-- Inspect the focused diff and regression cases.
-- Run only repository-authorized formatting or compile/test checks needed to validate authored code;
-  record them as preliminary evidence, not independent TEST PASS.
-- Record changed paths and create a source checkpoint only when the bounded implementation is coherent.
-- Do not activate OSJT-010 until OSJT-009's source-only gate is satisfied and its exact successor
-  linkage is confirmed.
+Run in order, capturing complete stdout/stderr and exit status separately:
+
+```sh
+pwd
+git branch --show-current
+git rev-parse HEAD
+git status --short
+git merge-base --is-ancestor c289f2f3872b792c45813ac7a515f8fe90e77671 HEAD
+git diff --name-only c289f2f3872b792c45813ac7a515f8fe90e77671..HEAD
+git rev-parse origin/main
+git ls-remote origin refs/heads/main
+go version
+```
+
+Expected: exact checkout and branch; empty status; source checkpoint is an ancestor; activation diff
+contains only `handoff.md`, `ICC/INDEX.md`, `ICC/context/active-work.md`,
+`ICC/context/simulator-device-config.md`, the removed/archived OSJT-009 paths, and the OSJT-010
+active task; local tracking and remote main both equal HEAD; Go is available. Any mismatch,
+unexpected path, unavailable remote query, or dirty checkout is BLOCKED.
+
+## Exact product test
+
+From `/home/sysadmin/apps/MCS.OSJS-jr/simulator`, run exactly once:
+
+```sh
+go test -count=1 -timeout=90s -v -run '^TestAdvancedProjectionMerge' .
+```
+
+Expected: exit 0, named test visibly runs, all three focused subtests PASS, and package reports PASS.
+Zero matching tests is not PASS. Nonzero or contradictory output is FAIL; do not rerun or substitute.
+
+## Required post-check
+
+Return to repository root and run even after product FAIL:
+
+```sh
+git rev-parse HEAD
+git status --short
+git diff --check
+```
+
+Expected: unchanged HEAD, empty status, and exit 0 from `git diff --check`. Report unexpected changes
+without cleanup.
+
+## Verdict and report
+
+- PASS only when all preflight, product-test, and post-check expectations are directly confirmed.
+- FAIL on contradictory product evidence; BLOCKED on unavailable/unsafe/stale required evidence.
+- Return tested HEAD, OS/Go environment, exact commands with raw outputs and exits, post-state,
+  verdict, caveats, and unexpected effects in chat only.

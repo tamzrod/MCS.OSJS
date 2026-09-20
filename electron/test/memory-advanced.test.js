@@ -126,7 +126,8 @@ test('shared output edits stay separate from per-device data', () => {
   const root = new Element('div'); const settings = {};
   ui.mountShared(root, settings, document);
   const enabled = find(root, 'Enable RBE TCP output'); enabled.checked = true; enabled.events.change();
-  type(find(root, 'RBE TCP listen address'), '[::1]:9900');
+  assert.equal(settings.rbe.tcp.listen, ':9001');
+  type(find(root, 'RBE TCP listen address (IP:port)'), '[::1]:9900');
   assert.equal(settings.rbe.tcp.listen, '[::1]:9900');
   const disabled = find(root, 'Enable RBE TCP output'); disabled.checked = false; disabled.events.change();
   assert.equal(settings.rbe, null);

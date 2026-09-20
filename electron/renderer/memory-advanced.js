@@ -113,6 +113,7 @@ const memoryUI = (() => {
         const listen = options.outputListen;
         const port = listen?.match(/:(\d+)$/)?.[1];
         root.append(element('div', `RBE TCP Port: ${options.outputLoaded ? port || 'Not configured' : 'Unavailable'}`, 'runtime-row'));
+        if (options.configureOutput) root.append(button('RBE TCP Settings...', options.configureOutput));
         const actions = element('div', undefined, 'tool-actions');
         actions.append(button('Add', () => {
           const id = nextID(options.devices);
@@ -227,9 +228,9 @@ const memoryUI = (() => {
       root.replaceChildren();
       root.append(element('h2', 'MMA Settings'));
       root.append(checkbox('Enable RBE TCP output', Boolean(settings.rbe), checked => {
-        settings.rbe = checked ? {tcp: {listen: ''}} : null; draw();
+        settings.rbe = checked ? {tcp: {listen: ':9001'}} : null; draw();
       }));
-      if (settings.rbe) root.append(input('RBE TCP listen address', settings.rbe.tcp?.listen || '', value => { settings.rbe.tcp ||= {}; settings.rbe.tcp.listen = value; }));
+      if (settings.rbe) root.append(input('RBE TCP listen address (IP:port)', settings.rbe.tcp?.listen || '', value => { settings.rbe.tcp ||= {}; settings.rbe.tcp.listen = value.trim(); }));
       root.append(checkbox('Debug logging', Boolean(settings.debug), checked => { settings.debug = checked; }));
       root.append(checkbox('Access-event logging', Boolean(settings.access_events?.enabled), checked => {
         settings.access_events ||= {mode: 'rate', window: 5, key_fields: ['src_ip', 'function_code', 'action', 'status', 'port', 'unit'], include_counter: true, limits: {max_keys: 10000, ttl: 60}, output: {type: 'http_stream', listen: '', path: '/events'}};

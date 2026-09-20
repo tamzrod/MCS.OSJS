@@ -15,10 +15,43 @@ class Element {
 }
 const collect = root => [root, ...root.children.flatMap(collect)];
 
+test('Replicator RBE output settings save a user-selected port and refresh both editors', async () => {
+  const roots = {'simulator-root': new Element('div'), 'replicator-root': new Element('div')};
+  let submitted;
+  const document = {querySelectorAll: () => [], createElement: tag => new Element(tag),
+    getElementById: id => roots[id] || Object.values(roots).map(root => root.querySelector('#' + id)).find(Boolean)};
+  const context = vm.createContext({document, window: {
+    mcsMemoryUI: require('../renderer/memory-advanced'),
+    mcsComms: {create: () => new Element('div'), update: () => {}},
+    mcsDesktop: {simulatorCall: async (operation, payload) => {
+      assert.equal(operation, 'mma-apply'); submitted = payload; return payload;
+    }}
+  }});
+  const source = fs.readFileSync(path.join(__dirname, '../renderer/app.js'), 'utf8');
+  vm.runInContext(source.slice(0, source.indexOf("document.addEventListener('click'")), context);
+  const run = code => vm.runInContext(code, context);
+  run('mmaState.loaded = true; simulatorState.document.devices = [simulatorBlankDevice(1)]; simulatorState.selected = 0; memoryView.editor = "advanced"; replicatorState.document.devices = [blankReplicator(1)]; replicatorState.selected = 0; replicatorView.editor = "advanced"; renderMMAViews();');
+  const root = roots['replicator-root'];
+  collect(root).find(node => node.textContent === 'RBE TCP Settings...').events.click();
+  assert.ok(root.querySelector('dialog'));
+  assert.equal(roots['simulator-root'].querySelector('dialog'), null);
+  const toggle = collect(root).find(node => node['aria-label'] === 'Enable RBE TCP output');
+  toggle.checked = true; toggle.events.change();
+  const address = collect(root).find(node => node['aria-label'] === 'RBE TCP listen address (IP:port)');
+  assert.equal(address.value, ':9001');
+  address.value = '127.0.0.1:19432'; address.events.input();
+  await run('saveMMASettings()');
+  assert.equal(submitted.settings.rbe.tcp.listen, '127.0.0.1:19432');
+  for (const panel of Object.values(roots)) assert.ok(collect(panel).some(node => node.textContent === 'RBE TCP Port: 19432'));
+  root.querySelector('dialog').events.cancel({preventDefault() {}});
+  assert.equal(root.querySelector('dialog'), null);
+});
+
 test('Replicator folder tabs retain advanced drafts through save rejection and discard', async () => {
   const root = new Element('div');
   let submitted;
   const document = {querySelectorAll: () => [], createElement: tag => new Element(tag),
+    querySelector: selector => selector === '[data-action=rep-save]' ? collect(root).find(node => node.dataset.action === 'rep-save') : root.querySelector(selector),
     getElementById: id => id === 'replicator-root' ? root : root.querySelector('#' + id)};
   const context = vm.createContext({document, window: {
     mcsMemoryUI: require('../renderer/memory-advanced'),
@@ -37,6 +70,16 @@ test('Replicator folder tabs retain advanced drafts through save rejection and d
     assert.ok(button, title); button.events.click();
   };
   run('replicatorState.document.devices = [blankReplicator(1)]; replicatorState.persisted = clone(replicatorState.document); replicatorState.selected = 0; renderReplicator();');
+  const port = collect(root).find(node => node.tagName === 'label' && node.children[0]?.textContent === 'Port').querySelector('input');
+  const autoPort = collect(root).find(node => node.tagName === 'label' && node.children[1]?.textContent === 'Auto Port').querySelector('input');
+  assert.equal(port.readOnly, true);
+  autoPort.events.change({target: {checked: false}});
+  assert.equal(port.readOnly, false);
+  port.events.input({target: {value: '15021'}});
+  assert.equal(run('selectedReplicator().destination.port'), 15021);
+  autoPort.events.change({target: {checked: true}});
+  assert.equal(port.readOnly, true);
+  assert.equal(port, collect(root).find(node => node.tagName === 'label' && node.children[0]?.textContent === 'Port').querySelector('input'));
   click('Advanced Settings');
   assert.ok(collect(root).some(node => node.textContent === 'RBE Rules'));
   click('Access Policy');

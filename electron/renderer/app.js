@@ -140,18 +140,23 @@ const memoryTab = (label, active, callback) => {
   return button;
 };
 
-const renderSimulator = () => {
-  simulatorPollVersion++;
-  simulatorState.runtimeStatus = null;
-  const root = document.getElementById('simulator-root');
-  root.replaceChildren();
+const renderMMAViews = () => {
+  renderSimulator();
+  if (typeof renderReplicator === 'function') renderReplicator();
+};
+const openRBEOutput = section => {
+  memoryView.section = section;
+  renderMMAViews();
+  if (!mmaState.loaded && !mmaState.loading) loadMMASettings();
+};
+const renderMMADialog = (root, section) => {
   let sharedDialog;
-  if (memoryView.section === 'mma') {
+  if (memoryView.section === section) {
     sharedDialog = h('dialog', 'mma-dialog');
     sharedDialog.setAttribute('aria-label', 'MMA Settings');
     const close = () => {
       if (mmaState.saving) return;
-      memoryView.section = 'devices'; renderSimulator();
+      memoryView.section = 'devices'; renderMMAViews();
       document.getElementById('mma-settings-open')?.focus?.();
     };
     sharedDialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
@@ -172,6 +177,16 @@ const renderSimulator = () => {
     editor.append(fields, actions, h('div', `tool-status${mmaState.error ? ' error' : ''}`, mmaState.loading ? 'Loading MMA settings...' : mmaState.message));
     sharedDialog.appendChild(editor);
   }
+  if (sharedDialog) {
+    root.appendChild(sharedDialog);
+    sharedDialog.showModal?.();
+  }
+};
+const renderSimulator = () => {
+  simulatorPollVersion++;
+  simulatorState.runtimeStatus = null;
+  const root = document.getElementById('simulator-root');
+  root.replaceChildren();
   const shell = h('fieldset', 'tool-layout memory-fields');
   shell.disabled = simulatorState.saving;
   const sidebar = h('aside', 'tool-sidebar');
@@ -290,7 +305,8 @@ const renderSimulator = () => {
     } else {
       const advanced = h('div', 'memory-advanced');
       window.mcsMemoryUI.mount(advanced, device.mma2, {document, devices: advancedDevices(),
-        outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen});
+        outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen,
+        configureOutput: () => openRBEOutput('mma')});
       editor.appendChild(advanced);
     }
     const validation = validateSimulator(device);
@@ -304,10 +320,7 @@ const renderSimulator = () => {
   editor.appendChild(h('div', `tool-status${simulatorState.error ? ' error' : ''}`, simulatorState.message));
   shell.appendChild(editor);
   root.appendChild(shell);
-  if (sharedDialog) {
-    root.appendChild(sharedDialog);
-    sharedDialog.showModal?.();
-  }
+  renderMMADialog(root, 'mma');
 };
 
 const loadSimulator = async () => {
@@ -353,23 +366,23 @@ const pollSimulator = async () => {
 const loadMMASettings = async () => {
   if (mmaState.loading || mmaState.saving) return;
   mmaState.loading = true; mmaState.error = false;
-  if (memoryView.section === 'mma') renderSimulator();
+  renderMMAViews();
   try {
     const result = await window.mcsDesktop.simulatorCall('mma-load', {});
     mmaState.document = clone(result.settings || {}); mmaState.persisted = clone(mmaState.document);
     mmaState.loaded = true; mmaState.message = 'MMA settings loaded.';
   } catch (error) { mmaState.error = true; mmaState.message = error.message || String(error); }
-  finally { mmaState.loading = false; renderSimulator(); }
+  finally { mmaState.loading = false; renderMMAViews(); }
 };
 const saveMMASettings = async () => {
   if (!mmaState.loaded || mmaState.saving) return;
-  mmaState.saving = true; mmaState.error = false; renderSimulator();
+  mmaState.saving = true; mmaState.error = false; renderMMAViews();
   try {
     const result = await window.mcsDesktop.simulatorCall('mma-apply', {settings: clone(mmaState.document)});
     mmaState.document = clone(result.settings || {}); mmaState.persisted = clone(mmaState.document);
     mmaState.message = result.message || 'MMA settings saved.';
   } catch (error) { mmaState.error = true; mmaState.message = error.message || String(error); }
-  finally { mmaState.saving = false; renderSimulator(); }
+  finally { mmaState.saving = false; renderMMAViews(); }
 };
 const saveSimulator = async () => {
   const validation = simulatorState.document.devices.map(validateSimulator).find(Boolean);
@@ -495,7 +508,8 @@ const renderReplicator = () => {
     if (replicatorView.editor === 'advanced') {
       const advanced = h('div', 'memory-advanced');
       window.mcsMemoryUI.mount(advanced, window.mcsMemoryUI.replicatorParams(device), {
-        document, devices: advancedDevices(), outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen
+        document, devices: advancedDevices(), outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen,
+        configureOutput: () => openRBEOutput('rep-mma')
       });
       editor.appendChild(advanced);
     } else {
@@ -507,10 +521,12 @@ const renderReplicator = () => {
     editor.appendChild(identity);
     editor.appendChild(h('h3', '', 'Destination'));
     const destination = h('div', 'tool-grid');
-    destination.append(field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => { device.destination.port = numberValue(value); refreshReplicatorValidation(); }));
-    destination.append(checkboxField('Auto Port', device.destination.auto_port, value => { device.destination.auto_port = value; refreshReplicatorValidation(); }));
-    destination.append(field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => { device.destination.unit_id = numberValue(value); refreshReplicatorValidation(); }));
-    destination.append(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => { device.destination.auto_unit_id = value; refreshReplicatorValidation(); }));
+    const destinationPort = field('Port', device.destination.port, {min: 1, max: 65535, readOnly: device.destination.auto_port}, value => { device.destination.port = numberValue(value); refreshReplicatorValidation(); });
+    destination.append(destinationPort);
+    destination.append(checkboxField('Auto Port', device.destination.auto_port, value => { device.destination.auto_port = value; destinationPort.querySelector('input').readOnly = value; refreshReplicatorValidation(); }));
+    const destinationUnit = field('Unit ID', device.destination.unit_id, {min: 0, max: 255, readOnly: device.destination.auto_unit_id}, value => { device.destination.unit_id = numberValue(value); refreshReplicatorValidation(); });
+    destination.append(destinationUnit);
+    destination.append(checkboxField('Auto Unit ID', device.destination.auto_unit_id, value => { device.destination.auto_unit_id = value; destinationUnit.querySelector('input').readOnly = value; refreshReplicatorValidation(); }));
     editor.appendChild(destination);
     editor.appendChild(h('h3', '', 'Pull Blocks'));
     const blockActions = h('div', 'tool-actions');
@@ -568,6 +584,7 @@ const renderReplicator = () => {
   editor.appendChild(statusMessage);
   shell.appendChild(editor);
   root.appendChild(shell);
+  renderMMADialog(root, 'rep-mma');
 };
 const loadReplicator = async () => {
   replicatorState.loading = true;
@@ -658,7 +675,7 @@ document.addEventListener('click', event => {
   const action = target.dataset.action;
   if (action === 'mma-save') { saveMMASettings(); return; }
   if (action === 'mma-load') { loadMMASettings(); return; }
-  if (action === 'mma-discard') { if (!mmaState.saving) { mmaState.document = clone(mmaState.persisted); mmaState.error = false; mmaState.message = 'Changes discarded.'; renderSimulator(); } return; }
+  if (action === 'mma-discard') { if (!mmaState.saving) { mmaState.document = clone(mmaState.persisted); mmaState.error = false; mmaState.message = 'Changes discarded.'; renderMMAViews(); } return; }
   if (simulatorState.saving && action.startsWith('sim-')) return;
   if (action === 'sim-select') simulatorState.selected = Number(target.dataset.index);
   else if (action === 'sim-add') { simulatorState.document.devices.push(simulatorBlankDevice(simulatorState.document.devices.length + 1)); simulatorState.selected = simulatorState.document.devices.length - 1; }

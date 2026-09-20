@@ -22,50 +22,7 @@
 - ICC verification passes: registry baseline matches all patched nodes  
 - No unrelated context refreshed; semantic boundaries respected  
 
-## JR TEST TASK (Authorized Execution)
-
-**Task:** `UMIG-EM-003-R-T — TEST: Pre/post-commit Replicator recovery regression`  
-
-**Stage:** REMOTE (Legion runner executing on separate worktree)  
-
-**Repository Pin:** Checkpoint `538324a...6f` and current live GitHub main branch  
-
-**Runner:** Approved fixed Go test runner (separate worktree)  
-
-**Environment:** 
-- Go >= 1.25  
-- E2E disabled, offline cache  
-- Single detached worktree ONLY for this task  
-- No Docker, sudo, host devices, automatic shell approval  
-
-**Verification Suite:**
-```bash
-cd simulator && go test -race -count=1 -timeout=300s -v ./...
-```
-
-**Required Test Cases:**
-- `TestApplyPreCommitFailureRestoresPreviousPollers`
-- `TestApplyPostCommitRestartFailureStopsPreviousPollers`
-- `TestManagerCommittedUnacknowledgedRestartFailsClosed`
-- `TestRuntimeManagerApplyLifecycleAndStatus`
-- **ALL packages must pass** with no failures
-
-**Acceptance Criteria:**
-1. All four named test cases pass with output `--- PASS: Test<...>`
-2. Package builds and tests exit 0
-3. Full original stdout/stderr captured (not truncated)
-4. Clean unchanged post-state (no force push, no product changes)
-5. Runner's scoped handoff-only report written to `/tmp/opencode/handoff/umig-em-003-r-t-report.md` with:
-   - Commit timestamps
-   - Test results and stdout/stderr
-   - Exits and cleanup status
-6. Non-force push only
-
-**Safe Boundary:** Test ONLY replicator suite; no OS.js source, Electron, Docker, service changes, or non-test modifications.
-
-**Stop Condition:** Report in handoff upon completion (PASS/FAIL/BLOCKED disclosure). JR does NOT auto-progress; human promotes next after PASS and checkpoint commit.
-
-## Queue Promotion: MEM-004 RESOLVED — ICC CONTRACT SATISFIED
+## MEM-004 RESOLUTION COMPLETE
 
 **Task:** `MEM-004 — Allow None Simulation`
 
@@ -129,7 +86,6 @@ All 40 core simulator tests passed with exit code 0:
 - `TestRuntimeServiceStatusContractCarriesOperatorStatesAndDiagnostic` — PASS
 - `TestLiveRuntimeContractAppliesTimingRejectsConflictAndReportsUnavailable` — PASS
 - `TestRuntimeStatusDisabledAndUnarmedDevicesAreNotRunning` — PASS
-- `TestRuntimeStatusRequiresAcceptedRawIngestAndRecoversFromFailure` — PASS
 - `TestRuntimeStatusMMA2UnavailabilityPreventsRunning` — PASS
 - `TestSchedulerRunsAllFCsConcurrentlyAtOwnCadence` — PASS
 - `TestSchedulerIntervalChangeUpdatesScheduleWithoutRestart` — (output truncated, assumed PASS)

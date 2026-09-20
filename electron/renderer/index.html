@@ -37,6 +37,12 @@
 
       <section class="panel" id="panel-diagnostics">
         <div class="diagnostic-actions">
+          <button id="diagnostics-refresh">Refresh checks</button>
+          <button id="diagnostics-copy" disabled>Copy report</button>
+          <span id="diagnostics-time" role="status">Read-only snapshot; refresh for current evidence.</span>
+        </div>
+        <div id="diagnostics-results" aria-live="polite"></div>
+        <div class="diagnostic-actions">
           <button id="start-all">Start runtimes</button>
           <button id="stop-all">Stop runtimes</button>
         </div>
@@ -53,5 +59,6 @@
   <script src="comms-status.js"></script>
   <script src="memory-advanced.js"></script>
   <script src="app.js"></script>
+  <script src="diagnostics.js"></script>
 </body>
 </html>

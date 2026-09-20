@@ -9,6 +9,8 @@ const {callReplicatorRuntime, applyReplicatorRuntime} = require('./replicator-ru
 const {createReplicatorCall} = require('./replicator-ipc');
 const {getWindowsServiceStatus} = require('./runtime-status');
 const memorySettings = require('./memory-settings');
+const diagnostics = require('./diagnostics');
+const diagnosticSessionLogs = [];
 const reviewRoot = process.env.MCS_REVIEW_DATA_ROOT ? path.resolve(process.env.MCS_REVIEW_DATA_ROOT) : null;
 if (reviewRoot) app.setPath('userData', path.join(reviewRoot, 'electron-profile'));
 
@@ -389,6 +391,11 @@ const startProcess = spec => {
   if (!fs.existsSync(file)) return;
   fs.mkdirSync(dataRoot(), {recursive: true});
   const child = spawn(file, [], {cwd: dataRoot(), windowsHide: true, env: {...process.env, MCS_DATA_ROOT: dataRoot()}, stdio: ['ignore', 'pipe', 'pipe']});
+  for (const stream of ['stdout', 'stderr']) child[stream].on('data', data => {
+    const text = `[${new Date().toISOString()}] ${spec.key}/${stream}: ${data.toString().slice(-8192)}`;
+    diagnosticSessionLogs.push(text);
+    if (diagnosticSessionLogs.length > 200) diagnosticSessionLogs.shift();
+  });
   children.set(spec.key, child);
   child.on('exit', () => { children.delete(spec.key); void sendStatus(); });
 };
@@ -425,6 +432,13 @@ const createWindow = () => {
 };
 
 ipcMain.handle('runtime:get-status', getStatus);
+let pendingDiagnostics = null;
+ipcMain.handle('runtime:diagnostics', () => {
+  if (!pendingDiagnostics) pendingDiagnostics = (async () => diagnostics.snapshot({root: dataRoot(),
+    config: readYaml(paths().mma2Config, {listeners: []}), services: reviewRoot ? {} : await getStatus(),
+    isolated: Boolean(reviewRoot), sessionLogs: diagnosticSessionLogs.slice()}))().finally(() => { pendingDiagnostics = null; });
+  return pendingDiagnostics;
+});
 ipcMain.handle('runtime:get-paths', () => ({bin: binRoot(), data: dataRoot(), mode: reviewRoot ? 'isolated-review' : windowsServiceMode() ? 'windows-service' : 'child-process'}));
 ipcMain.handle('runtime:start-all', () => startAll());
 ipcMain.handle('runtime:stop-all', () => { const changed = stopAll(); void sendStatus(); return changed; });

@@ -1,0 +1,6 @@
+> SUPERSEDED by human backlog reset. Historical only; no executable authority or new PASS claim.
+
+# UMIG-EM-006-T — TEST: Scoped MMA relay authorization
+Status: PLANNED. Stage/owner TEST / OpenHands JR. Previous: UMIG-EM-006. Next: UMIG-EM-006-V.
+
+Outcome: independent Node contract/provider tests for authenticated read, forbidden unauthenticated/unauthorized mutation, actual server capability, operation/socket allowlists, revision propagation, one apply, typed errors, stale/invalid response and no HTTP/filesystem route. Proposed `node --test <exact-new-mma-contract-and-relay-test-paths>` then `cd OSJS && npm run build:local-packages && npm run package:discover && npm run build`; exact paths/individual command sequence populated from CODE checkpoint at activation, no placeholders in executable packet. No Docker, product edits or default allow. Exit evidence and source boundaries required. Size 0/1/0/1/1=3.

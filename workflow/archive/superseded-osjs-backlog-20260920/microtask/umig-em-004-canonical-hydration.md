@@ -1,0 +1,12 @@
+> SUPERSEDED by human backlog reset. Historical only; no executable authority or new PASS claim.
+
+# UMIG-EM-004 — CODE: Canonical advanced-field hydration
+Status: PLANNED. Stage/owner CODE / ChatGPT by existing governance; proposed OpenCode coding-trial exception requires separate explicit activation after UMIG-EM-003-V PASS. Previous: UMIG-EM-003-V. Next: UMIG-EM-004-T.
+
+Outcome: Go Simulator `load` exposes matching effective `policy`, `state_sealing`, `rbe` when absent in raw devices YAML, WITHOUT silently rewriting it. `Store.Load` currently returns only raw document; mirror Electron effective projection in Go with `(port,unit_id)` identity and explicit omitted vs false/empty handling.
+
+Acceptance: (1) legacy device loads existing effective advanced fields, preserving extensions; (2) explicit disable/empty field wins over inherited value; (3) corrupt/unmatched effective settings produce truthful bounded fallback/error, never fixture/default overwrite. Limit to Simulator read projection and Go tests; do not modify runtime apply/Windows/producer config or enable output. Source checkpoint/readback only. Size 1/0/1/1/1=4: keep error behavior bounded.
+
+## Prepared OpenCode coding trial (NOT AUTHORIZED TO EXECUTE)
+
+After the separately approved UMIG-EM-003-V independent live VERIFY passes and coding-agent review archives it, request explicit human promotion of this CODE task and one-task reassignment to OpenCode. Create a SEPARATE local coder Git worktree/branch at a human-confirmed clean source SHA, not the JR worktree. Use a separate narrow OpenCode coder profile (JR remains edit-denied); explicitly approve only needed file edits/commands, never `--auto`, blanket shell allow or production access. Draft the bounded patch exclusively in Simulator load projection and tests, preserve raw source bytes on reads, avoid output listener enabling and any MMA2 config writes. No direct push to main or self-promotion. Human/coding-agent independently reviews actual source diff and precise changes and controls merge/source checkpoint; separate independently authorized JR TEST and live VERIFY remain required. Do not mistake Qwen low-reasoning JR PASS for proof of coder correctness. If safe permissions/patch size cannot be resolved, stop and have coding agent split scope before coding.

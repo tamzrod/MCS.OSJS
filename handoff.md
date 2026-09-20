@@ -1,126 +1,35 @@
 # Handoff
 
-## Sole ACTIVE and evidence boundary
+## Current authority — 2026-09-20
 
-Human explicitly approved promotion of `UMIG-EM-002-B` on 2026-09-19. Exactly ONE ACTIVE task: `workflow/active_work/umig-em-002-b-toolkit-build.md` (TEST / OpenHands JR). The approved Electron-to-OS.js design remains in `docs/TOOLKIT_ELECTRON_MODEL_CONTRACT.md`. Predecessor `UMIG-EM-002-T` is archived COMPLETE/PASS only for Go UNIT regression, backed by immutable JR reports `38857e6` and `dc0a11c` and review `425efaac4b06289723dd0d84bee7a0e873b34a88`. Go shared manager/lock/CAS remains unimplemented design; RBE and access-event output are gated off. `UMIG-EM-002-V` disposable live VERIFY remains PLANNED and not authorized; UMIG-007 visual parity deferred. Only BLACK SHEEP WALL edits ICC; ICC workflow context is stale, repository task and this handoff are execution authority.
+Human-approved sequence: independently LIVE-VERIFY `UMIG-EM-003-V` first; only after accepted PASS and separate human promotion consider `UMIG-EM-004` OpenCode coding trial. SOLE ACTIVE: `workflow/active_work/umig-em-003-v-shared-lock.md`. Only BLACK SHEEP WALL updates ICC. OpenHands is JR and has ONE entry point: **`OPERATION CWAL`**. Do not give OpenHands an alternate directive.
 
-The Node/OS.js source checkpoint is `8b5541fcefeba8df82bea675b15bd0d03c7c6c20`. A concurrent local commit between `425efaac` and this checkpoint touched ONLY `electron/SETTINGS_PERMISSIONS.md`, `electron/build/installer.nsh`, `electron/build/settings-access/main_windows.go`, `electron/build/settings-access/main_windows_test.go`, `electron/test/installer-permissions.test.js` and `ICC/context/electron-settings-owner.md`; it did NOT modify OS.js or Go. The human-promoted task is separate from those Windows changes. No product code or tests were run by ChatGPT. This packet replaces the prior NO ACTIVE stop gate and authorizes ONLY the Node/build TEST below.
+Independent OpenHands preparation was actually completed and pushed in report-only commit `ebd835ecea7c4215b29effd62b5993cff1e8fe3c` (its parent `4b840d9d4a481b09f210dd3e279e7b2da636b2ae` is the prepared/tested source). Read the historical full preparation report with `git show ebd835e:handoff.md` if necessary; do NOT repeat that preparation, start a new sandbox/clone or restart dockerd. Its evidence: clean OpenHands checkout `/tmp/em003v-discovery-clone`, sandbox-local Docker daemon `runtime-dfpoqximlibnvfbn-89d77c974-j29f4` at `/var/lib/docker`, zero containers/volumes, verified `deploy/verify/compose.yaml` loopback-only port `18219` and internal runtime network, and exact local Unix-socket protocols. PREPARATION COMPLETE is NOT product PASS.
 
-## JR TEST TASK — CURRENT: UMIG-EM-002-B Toolkit Node/build regression
+## JR TEST TASK — CURRENT: UMIG-EM-003-V — ONE-SHOT LIVE VERIFY
 
-GOAL: independently execute the existing twelve Toolkit Node unit/fixture tests, build all local OS.js packages, discover the package manifest, and build the desktop shell on unchanged OS.js source. No Go test, simulator/replicator socket, GUI, Docker, live service, production, customer configuration, RBE/access-event listener, Windows installer test, source repair, or other task is authorized. Old Go PASS cannot substitute for these results.
+GOAL: independently verify actual concurrent synthetic Simulator and Replicator shared MMA2 config transactions and writer-lock behavior, including no lost update, preservation of both distinct owners, serialized restart-request/ack hashes, final state restoration and scoped Docker cleanup. This packet now authorizes ONE live verification attempt; JR never edits product/source, changes scope, invents replacement tests, re-runs the test or promotes a successor.
 
-TARGET / PRECONDITIONS: JR's OWN disposable `tamzrod/MCS.OSJS` checkout; NEVER an operator/production checkout or mounted data volume. From repository root, prove clean tracked status and that `origin/main` descends from source checkpoint `8b5541fcefeba8df82bea675b15bd0d03c7c6c20`. The NET changed paths from that checkpoint to fetched `origin/main` may ONLY be `handoff.md`, `planning/microtask/umig-em-002-b-toolkit-build.md`, `workflow/active_work/umig-em-002-b-toolkit-build.md`. Any different path means BLOCKED/STOP: do not retarget to a new source revision. Run, recording actual output and exit for each:
+TARGET: REUSE existing disposable OpenHands runtime/check-out, preferentially `/tmp/em003v-discovery-clone`. Use ONLY that sandbox's existing local Docker daemon and `deploy/verify/compose.yaml`. No production Compose, operator host, old project/volume, remote Docker context, public Modbus bind, other network device, installer, package install or second dockerd startup. Test-only project is FIXED `mcs-em003v-20260920-one`, volume `mcs-em003v-20260920-one_verify-data`, source/dest only private `127.0.0.1:15020` and `:15021`, OS.js UI only `127.0.0.1:18219`. The runner refuses a project collision, dirty checkout, nonempty preexisting daemon inventory, changed product source, unexpected Docker topology or environment overrides. One Docker Compose up/build permitted only through the reviewed runner, never separately or twice. Network image/dependency downloads during that sandbox-local image build are within this specific disposable test only; no host tooling install.
 
-```sh
-git fetch origin main
-git status --porcelain
-git rev-parse HEAD
-git rev-parse origin/main
-git merge-base --is-ancestor 8b5541fcefeba8df82bea675b15bd0d03c7c6c20 origin/main
-git diff --name-only 8b5541fcefeba8df82bea675b15bd0d03c7c6c20 origin/main
-git merge-base --is-ancestor HEAD origin/main
-```
+SOURCE/PACKET PIN: Product/source checkpoint `538324a472eb15ff8ef97ee66f826fa02ba9462f` (ancestor of preparation commit); independent preparation report `ebd835ecea7c4215b29effd62b5993cff1e8fe3c` must also be ancestor. Runner is EXACT `workflow/cwal/umig-em-003-v-live.py`, Git blob SHA `36a2c3a4154b5caeb0cdbf5d974abb794465cb36`. Activation HEAD is the current GitHub main commit carrying THIS packet; record its full SHA after one allowed FF and ensure clean HEAD == origin/main == live `git ls-remote`. Since source checkpoint, no changes are allowed under `simulator/`, `replicator/`, `mma2composer/`, `MMA2/`, `OSJS/` or `deploy/`. JR must not alter runner or payload.
 
-All these commands must exit 0, pre-test status must be empty, only three allowed paths may appear in diff, and HEAD must be ancestor of origin/main. If an ancestry check fails solely because `git rev-parse --is-shallow-repository` proves a shallow checkout, ONE `git fetch --unshallow origin` and recheck ONLY the failed ancestry commands are authorized; record both results. Otherwise BLOCKED; no reset/clean/rebase/cherry-pick, no product changes. If HEAD differs from origin/main after all checks PASS, run exactly ONE `git merge --ff-only origin/main`, then repeat `git rev-parse HEAD`, `git rev-parse origin/main`, `git status --porcelain`; require equal SHA and empty status before tests. If already equal, skip merge and record equal SHAs. If fast-forward fails, BLOCKED/STOP. This is a pre-test source-safe sync, not report-transport permission to rebase later.
+EXACT ACTIONS IN ORDER (under `OPERATION CWAL` only):
 
-TEST ENVIRONMENT: From `OSJS`, `node --version` must be 16.x (the established compatible Node within OSJS engine >=10 <17); `npm --version` must work. Sandbox-local/user-local Node 16/npm preparation is allowed under general CWAL if absent/incorrect, never system-global/product modification; record setup/version. Build requires local `OSJS/node_modules/.bin/webpack`. If missing, prepare dependencies in the disposable checkout with exactly ONE `(cd OSJS && npm install --no-save --package-lock=false --legacy-peer-deps)` after Node/npm readiness; use only normal dependency fetch and record exit/warnings. This may create ignored node_modules/dist, but MUST NOT edit tracked manifest, test, source, workflow, config or lock files; run `git status --porcelain` after setup and require empty. If installation cannot safely succeed, BLOCKED/STOP; do not patch dependencies, switch toolchain versions to force PASS, or invoke production. If deps already present, skip install and record it. The prior test gate's compatible Node 16.20.2/npm 8.19.4 is precedent, not a substitute for this environment evidence.
+1. From existing checkout, read `operation cwal.md`, this handoff and sole ACTIVE task; `git status --porcelain --untracked-files=all`; `git branch --show-current`; `git rev-parse HEAD`; `git rev-parse origin/main`; `git ls-remote --exit-code origin refs/heads/main`. If checkout already clean/current continue. If stale and clean on local `main`, permit EXACTLY ONE `git fetch origin main`, then `git merge-base --is-ancestor HEAD origin/main` (exit 0), then `git merge --ff-only origin/main`; reread CURRENT handoff and recheck status, HEAD, origin/main and live remote equality. No clone, reset, rebase, force, second fetch, checkout repair or skip of this gate. Dirty/diverged/detached/unavailable => BLOCKED, STOP without Docker. Verify `git merge-base --is-ancestor 538324a472eb15ff8ef97ee66f826fa02ba9462f HEAD` and `git merge-base --is-ancestor ebd835ecea7c4215b29effd62b5993cff1e8fe3c HEAD` exit 0, and `git hash-object workflow/cwal/umig-em-003-v-live.py` exactly equals `36a2c3a4154b5caeb0cdbf5d974abb794465cb36`. Record source/activation HEAD. Do NOT print credential-bearing remote URLs.
+2. Run exactly ONCE from repository root using Bash (log stored OUTSIDE Git checkout):
 
-EXACT PRODUCT COMMANDS: From repository root, run these separately in this order. Record EACH exact invocation, stdout/stderr, exit code. On first executed contradiction/nonzero STOP FAIL; do not continue/retry or investigate/fix. These files actually live in `OSJS/tests/` (NOT the obsolete Planning placeholder). Each must genuinely execute its assertions and exit 0; do not accept skipped or missing scripts.
+   ```bash
+   bash -o pipefail -c 'timeout 1500s python3 -u workflow/cwal/umig-em-003-v-live.py 2>&1 | tee /tmp/em003v-live-verify.log; code=${PIPESTATUS[0]}; printf "CWAL_RUNNER_EXIT=%s\n" "$code" | tee -a /tmp/em003v-live-verify.log; exit "$code"'
+   ```
 
-```sh
-(cd OSJS && node tests/toolkit-fixtures.test.js)
-(cd OSJS && node tests/toolkit-memory-contract.test.js)
-(cd OSJS && node tests/toolkit-memory-adapter.test.js)
-(cd OSJS && node tests/toolkit-memory-relay.test.js)
-(cd OSJS && node tests/toolkit-replicator-contract.test.js)
-(cd OSJS && node tests/toolkit-replicator-adapter.test.js)
-(cd OSJS && node tests/toolkit-replicator-errors.test.js)
-(cd OSJS && node tests/toolkit-replicator-relay.test.js)
-(cd OSJS && node tests/toolkit-replicator-transport.test.js)
-(cd OSJS && node tests/toolkit-diagnostics-model.test.js)
-(cd OSJS && node tests/toolkit-diagnostics-observer.test.js)
-(cd OSJS && node tests/toolkit-diagnostics-editor.test.js)
-(cd OSJS && npm run build:local-packages)
-(cd OSJS && npm run package:discover)
-(cd OSJS && npm run build)
-(cd OSJS && test -s src/packages/MCSModbusToolkit/dist/main.js)
-(cd OSJS && test -s src/packages/MCSModbusToolkit/dist/main.css)
-(cd OSJS && test -s packages.json)
-(cd OSJS && grep -E 'mcs-modbus-toolkit|MCSModbusToolkit' packages.json)
-(cd OSJS && test -s dist/index.html)
-(cd OSJS && wc -c src/packages/MCSModbusToolkit/dist/main.js src/packages/MCSModbusToolkit/dist/main.css packages.json dist/index.html)
-git status --porcelain
-```
+   Runner is coding-agent-authored fixed source, syntax checked prior to promotion, and contains exact request bodies and one simultaneous `apply` per producer, bounded timeouts, two distinct local destination reservations, in-container restart request/ACK observer, supervisor log checks, both saved documents, file SHA-256 baselines, one per-producer empty-document API restoration, and project-label-verified `docker compose ... down --remove-orphans` WITHOUT `-v`; retain ONLY this named test data volume. It sends no requests to other devices, public endpoints or Toolkit WebSocket. Preserve complete raw stdout/stderr, external timeout/exit and `FINAL_VERDICT`. Do not rerun on any result. Note that if Docker build network is unavailable, this is BLOCKED, not a product FAIL.
+3. POST-CHECK ALWAYS, including after FAIL/BLOCKED: `git status --porcelain --untracked-files=all`; `git rev-parse HEAD`; `git ls-remote --exit-code origin refs/heads/main`; `sudo -n docker ps -a --format '{{.ID}} {{.Names}} {{.Labels}} {{.Ports}}'`; `sudo -n docker network ls --format '{{.Name}} {{.Labels}}'`; `sudo -n docker volume ls --format '{{.Name}} {{.Labels}}'`; `sudo -n docker volume inspect mcs-em003v-20260920-one_verify-data --format '{{index .Labels "com.docker.compose.project"}}'` (missing volume is reportable if build failed before creation). Confirm no project containers/networks remain and only the precisely labelled test volume is retained; do not remove volumes, prune, use wildcards, or inspect unrelated data. If the external timeout killed the runner before its `finally` cleanup, first verify EACH project container/network/volume `com.docker.compose.project` label matches `mcs-em003v-20260920-one`, then and ONLY then one `sudo -n docker compose -f deploy/verify/compose.yaml -p mcs-em003v-20260920-one down --remove-orphans` (NO `-v`); if any label absent/ambiguous, leave resources intact and report BLOCKED/INCOMPLETE. Never invent a cleanup success.
+4. CLASSIFY the underlying one-shot test by original `FINAL_VERDICT`: PASS only if two concurrent applies both returned OK, requests overlapped, both distinct owners/config and documents survived, two ordered request/ACK SHA pairs and supervisor restarts observed, producer APIs restored exact baseline hashes, and label-scoped cleanup completed. Product contradiction => FAIL; missing sandbox/build/evidence => BLOCKED; missing post-check or required report delivery => INCOMPLETE, retaining any underlying FAIL. Runner exit 0 alone without its required observations is not independent PASS. DO NOT archive/promote.
+5. REPORT DELIVERY (specific JR exception): after test and safe post-check, run `mkdir -p workflow/cwal/reports` and `cp -- /tmp/em003v-live-verify.log workflow/cwal/reports/umig-em-003-v-live.log` if that log exists. Replace ONLY `## JR LIVE VERIFY REPORT — UMIG-EM-003-V` below with verdict, complete test command/exit, original tested HEAD, daemon/Compose project ID, concise raw evidence cross-referenced to the FULL copied log, original baseline/final hashes, cleanup/retained-volume proof, problems and evidence limitations. Keep every other handoff byte unchanged. Allow changed paths ONLY `handoff.md` and `workflow/cwal/reports/umig-em-003-v-live.log`; `git diff --check`; `git status --porcelain --untracked-files=all`; `git add -- handoff.md workflow/cwal/reports/umig-em-003-v-live.log`; `git diff --cached --name-only` must list EXACTLY those two paths. `git commit -m 'JR: EM-003-V live verification report' -- handoff.md workflow/cwal/reports/umig-em-003-v-live.log`; verify commit changed ONLY those two paths. Verify remote `git ls-remote --exit-code origin refs/heads/main` still equals original activation HEAD immediately before ONE non-force `git push origin HEAD:refs/heads/main`; verify live remote now equals the new report commit; final clean status. On stale remote/unsafe path/log missing, return full chat evidence and STOP without push. No forced push, retry or additional edits. Return report commit SHA and STOP.
 
-EXPECTED / ACCEPTANCE: All twelve named Node scripts, three repo-native build/discovery commands and six output checks (nonempty Toolkit JS, CSS, manifest, discoverable Toolkit name, desktop HTML and actual byte counts) return exit 0. Manifest/discovery output must identify the Toolkit. Tests must affirm their real fixture/contract assertions rather than a substitute syntax check. `npm` or Sass deprecation warnings alone are not failures if exact required commands exit 0; report warnings. After test, tracked tree remains clean. A failing executed assertion/build/artifact => FAIL; missing test evidence or unsafe/unavailable environment => BLOCKED. This is UNIT/BUILD only, not rendered UI, Go backend integration, deployed service, COMMS green LEDs, network exposure or production certification.
+EXPECTED OUTPUT: genuine `PASS / FAIL / BLOCKED / INCOMPLETE` for live verification only, without implying production deployment readiness. `UMIG-EM-004` remains PLANNED pending independent review, archive and separate human promotion.
 
-EVIDENCE / REPORT-WRITE AUTHORITY: Return HEAD/origin/main/preflight flags/diff/guarded ff results, Node/npm versions and dependency setup, verbatim per-command invocation/exit and relevant output for twelve scripts, three build phases and six artifact commands, warning text, pre/post tracked status, changed paths, unexpected side effects, and truthful PASS/FAIL/BLOCKED. Replace ONLY `## JR TEST REPORT — UMIG-EM-002-B` below; preserve all other sections and files. When report ready, re-fetch origin/main. If remote advanced, DO NOT rebase, merge, force-push or edit a different file for transport: report BLOCKED race in chat and retain local evidence for ChatGPT. If remote unchanged, commit/push ONLY `handoff.md`, verify HEAD=origin/main and tracked clean, and STOP. No autonomous workflow promotion, ICC/CWAL/product edits, or fabricated test completion.
+## JR LIVE VERIFY REPORT — UMIG-EM-003-V
 
-## JR TEST REPORT — UMIG-EM-002-B
-
-VERDICT: PASS (UMIG-EM-002-B Toolkit Node unit/fixture, OS.js build, discovery and artifact scope only)
-
-Executed 2026-09-19 by OpenHands JR in its own disposable checkout. No Go test, simulator/replicator socket, GUI, Docker, live service, production, customer configuration, RBE/access-event listener, Windows installer test, source repair, or other task was run. No tracked product/test/source/workflow/config/lock file was edited; the only committed change is this authorized report.
-
-### Preflight (all exit 0; no shallow unshallow needed)
-
-- `git fetch origin main` — exit 0.
-- `git status --porcelain` — empty, exit 0.
-- `git rev-parse HEAD` — `dc0a11cdedcdc47c56ac9f34ff38ae44202626cf`, exit 0.
-- `git rev-parse origin/main` — `5c5894d715e1acd4ed0e35ceda5b29bce2d1ea5b`, exit 0.
-- `git merge-base --is-ancestor 8b5541fcefeba8df82bea675b15bd0d03c7c6c20 origin/main` — exit 0.
-- `git diff --name-only 8b5541fcefeba8df82bea675b15bd0d03c7c6c20 origin/main` — `handoff.md`, `planning/microtask/umig-em-002-b-toolkit-build.md`, `workflow/active_work/umig-em-002-b-toolkit-build.md` ONLY (the three permitted paths), exit 0.
-- `git merge-base --is-ancestor HEAD origin/main` — exit 0.
-
-### Guarded clean fast-forward (authorized, executed once)
-
-- HEAD differed from origin/main, all checks clean. `git merge --ff-only origin/main` — exit 0, `Updating dc0a11c..5c5894d` (documentation/workflow/Electron paths only; no OS.js or Go source).
-- Post-merge HEAD = origin/main = `5c5894d715e1acd4ed0e35ceda5b29bce2d1ea5b`; `git status --porcelain` empty. No reset, clean, rebase, cherry-pick or force.
-
-### Environment / dependency setup (sandbox-local, non-product)
-
-- Pre-existing system Node was `v22.23.2` / npm `10.9.8`, which violates the required 16.x and the `OSJS/package.json` engine `>=10.0.0 <17`.
-- Installed Node `v16.20.2` (npm `8.19.4`) user-locally under `~/.local/node16` from the official nodejs.org distribution; SHA-256 verified OK against published `874463523f26ed528634580247f403d200ba17a31adf2de98a7b124c6eb33d87`. Reported versions used for all testing: `node --version` = `v16.20.2`, `npm --version` = `8.19.4`.
-- `OSJS/node_modules/.bin/webpack` was missing, so exactly ONE authorized dependency preparation ran: `(cd OSJS && npm install --no-save --package-lock=false --legacy-peer-deps)` — exit 0, `added 950 packages`. It emitted `EBADENGINE` warnings for newer transitive packages (jsdom, sass, node-releases, undici, chokidar, etc.) and `npm WARN deprecated` notices (glob, rimraf, html-webpack-plugin, uuid, …) plus `39 vulnerabilities`; these are warnings only and no required command failed.
-- `git status --porcelain` after setup was empty: no tracked manifest, test, source, workflow, config or lock file changed. `node_modules/`, `dist/` and generated `packages.json` are ignored artifacts.
-
-### Twelve Node Toolkit tests (each exact invocation, exit 0; real assertions observed, none skipped)
-
-- `(cd OSJS && node tests/toolkit-fixtures.test.js)` — exit 0; "fixture unknown constant: checked / runtime, COMMS and diagnostics fail closed: checked / Memory and Replicator example shapes: checked / fresh fixture snapshots cannot mutate later windows: checked / UMIG-003 fixture contract checks complete".
-- `(cd OSJS && node tests/toolkit-memory-contract.test.js)` — exit 0; 5 contract lines checked; "UMIG-CF-001 Memory contract cases complete".
-- `(cd OSJS && node tests/toolkit-memory-adapter.test.js)` — exit 0; 5 adapter lines checked; "UMIG-004 Memory adapter contract cases complete".
-- `(cd OSJS && node tests/toolkit-memory-relay.test.js)` — exit 0; 3 relay lines checked (including isolated Unix socket framing); "UMIG-004 Toolkit Memory relay cases complete".
-- `(cd OSJS && node tests/toolkit-replicator-contract.test.js)` — exit 0; 4 lines checked; "UMIG-CF-002 Replicator contract cases complete".
-- `(cd OSJS && node tests/toolkit-replicator-adapter.test.js)` — exit 0; 3 lines checked; "UMIG-005 Toolkit Replicator adapter checks complete".
-- `(cd OSJS && node tests/toolkit-replicator-errors.test.js)` — exit 0; "UMIG-005 Toolkit Replicator typed-error cases complete".
-- `(cd OSJS && node tests/toolkit-replicator-relay.test.js)` — exit 0; 3 lines checked; "UMIG-005 Toolkit Replicator relay checks complete".
-- `(cd OSJS && node tests/toolkit-replicator-transport.test.js)` — exit 0; 2 lines checked; "UMIG-005 Toolkit Replicator transport checks complete".
-- `(cd OSJS && node tests/toolkit-diagnostics-model.test.js)` — exit 0; 4 lines checked; "UMIG-CF-003 Diagnostics model cases complete".
-- `(cd OSJS && node tests/toolkit-diagnostics-observer.test.js)` — exit 0; 4 lines checked; "UMIG-006 Diagnostics observer checks complete".
-- `(cd OSJS && node tests/toolkit-diagnostics-editor.test.js)` — exit 0; 3 lines checked; "UMIG-006 Diagnostics editor checks complete".
-
-### Three repo-native build/discovery commands
-
-- `(cd OSJS && npm run build:local-packages)` — exit 0. Built 5 local packages exactly once: MCSModbusToolkit, ModbusReplicator, ModbusSimulator, NamelessClassicIcons, NamelessWorkstationTheme (webpack 4.47.0). Toolkit emitted `main.css` 121 bytes and `main.js` 52.6 KiB. Only Dart Sass `legacy-js-api` deprecation warnings.
-- `(cd OSJS && npm run package:discover)` — exit 0. `✔ 7 package(s) discovered`, including `- mcs-modbus-toolkit as MCSModbusToolkit [symlink, local]`; wrote `packages.json` and `dist/metadata.json`; finished in 162ms.
-- `(cd OSJS && npm run build)` — exit 0. Webpack desktop bundle built `osjs`/[big] entrypoint with `dist/index.html` asset; only Sass deprecation notices.
-
-### Six artifact checks (all exit 0)
-
-- `(cd OSJS && test -s src/packages/MCSModbusToolkit/dist/main.js)` — exit 0.
-- `(cd OSJS && test -s src/packages/MCSModbusToolkit/dist/main.css)` — exit 0.
-- `(cd OSJS && test -s packages.json)` — exit 0.
-- `(cd OSJS && grep -E 'mcs-modbus-toolkit|MCSModbusToolkit' packages.json)` — exit 0; matched `["src/packages/MCSModbusToolkit","src/packages/ModbusSimulator","src/packages/ModbusReplicator","src/packages/NamelessClassicIcons","src/packages/NamelessWorkstationTheme","node_modules/@osjs/gnome-icons","node_modules/@osjs/standard-theme"]`.
-- `(cd OSJS && test -s dist/index.html)` — exit 0.
-- `(cd OSJS && wc -c src/packages/MCSModbusToolkit/dist/main.js src/packages/MCSModbusToolkit/dist/main.css packages.json dist/index.html)` — exit 0; actual byte counts `53849`, `121`, `242`, `555` (total 54767).
-
-### Post-test state and race check
-
-- Final `git status --porcelain` — empty (exit 0); tracked tree remains clean after all tests/builds.
-- Report-time re-fetch: HEAD = origin/main = `5c5894d715e1acd4ed0e35ceda5b29bce2d1ea5b`, unchanged; no remote race, so the report was committed as a single `handoff.md` commit with no rebase or merge.
-
-### Notes
-
-- Warnings were expected/benign per packet (npm/Sass deprecation and EBADENGINE only); every required command exited 0.
-- Scope not proven: rendered UI, Go backend integration, deployed service, COMMS green LEDs, RBE/access-event network exposure, Windows installer, or production certification. ChatGPT alone adjudicates PASS/FAIL and controls task advancement.
+PENDING — independent OpenHands Operation CWAL has not yet executed the one-shot live packet.

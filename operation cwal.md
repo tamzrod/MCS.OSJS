@@ -1,247 +1,59 @@
 # Operation CWAL
 
-## Purpose
+## Purpose and authority
 
-Operation CWAL is the JR testing mode for MCS.OSJS.
+Operation CWAL is the independent MCS.OSJS **JR test runner**. The coding agent, not JR, selects and promotes exactly one ACTIVE TEST/VERIFY task and places its **complete, current, exact** execution packet in `handoff.md`. `workflow/active_work/` and handoff must agree. JR reads that packet, executes only its commands/actions, returns genuine evidence, writes/pushes a report only if that packet explicitly authorizes it, then STOPS. JR never fixes code, promotes work, updates ICC, selects follow-up tasks or infers product readiness from narrower tests.
 
-JR is a test runner only. The coding agent writes the current JR test packet into `handoff.md`. JR reads that packet, prepares its sandbox test environment when necessary, executes only the stated test, records evidence back into `handoff.md` when explicitly authorized, commits/pushes only that report, and stops.
-
-When the user says **Operation CWAL**, immediately follow:
+On `Operation CWAL`, perform the whole authorized lifecycle, not just its tests:
 
 ```text
-OPERATION CWAL
-→ READ handoff.md
-→ LOCATE THE CURRENT "JR TEST TASK"
-→ USE THAT TEST PACKET AS THE COMPLETE TEST AUTHORITY
-→ READ ONLY ADDITIONAL CONTEXT REQUIRED BY THAT PACKET
-→ PREPARE SANDBOX-LOCAL TEST TOOLS IF REQUIRED
-→ RUN EXACTLY THE REQUESTED TEST
-→ DO NOT FIX PRODUCT FAILURES
-→ DO NOT EXPAND TEST SCOPE
-→ CAPTURE RAW EVIDENCE
-→ IF handoff.md EXPLICITLY AUTHORIZES A REPORT UPDATE: UPDATE ONLY THE JR TEST REPORT SECTION
-→ IF AUTHORIZED: COMMIT/PUSH handoff.md ONLY
-→ REPORT PASS / FAIL / BLOCKED
-→ STOP
+READ handoff.md + identify sole ACTIVE test
+→ CHECK CURRENT SOURCE AND TEST-ACTIVATION COMMIT (as packet requires)
+→ VERIFY exact target / safety / permissions / preflight
+→ EXECUTE exact tests ONCE (stop on first prohibited or failed gate)
+→ CAPTURE raw stdout/stderr and exit status for EVERY executed command
+→ EXECUTE packet's safe POST-CHECK even if a test failed
+→ CLASSIFY PASS / FAIL / BLOCKED from required evidence
+→ WRITE exact report only if explicitly authorized
+→ COMMIT/PUSH only the report only if explicitly authorized and scope verified
+→ VERIFY delivery or report the precise transport failure
+→ RETURN verdict and evidence / report commit → STOP
 ```
 
-## 1. Test Packet Authority
+**Completion gate:** Reaching the end of a command, a short summary, a model step/turn boundary or a partial PASS is **not completion**. Do not call the task PASS, say CWAL is complete, or STOP voluntarily while the packet still requires post-check, report or authorized transport. If execution is interrupted, state `INCOMPLETE`, preserve existing evidence, identify the next unexecuted action, and NEVER rerun an already completed product test without a newly authorized packet. A fixed coding-agent-authored runner may implement preflight → tests → post-check → report → transport in one human-approved command when explicitly named and bounded by the packet; its code is part of the reviewed source checkpoint and not general permission to execute arbitrary scripts.
 
-`handoff.md` is the transport between the coding agent and JR.
+## 1. Packet validity and latest-commit gate
 
-JR does not wait for the conversation to repeat the test command when `handoff.md` already contains a current `JR TEST TASK`.
+A valid CURRENT `JR TEST TASK` states the goal, exact target and safe environment, pinned product/source checkpoint, test-activation revision/freshness method, exact commands/actions in order, expected results, raw evidence, post-check, verdict rules, report write/commit/push permissions and cleanup as relevant. An absent, incomplete, mismatched or closed packet → BLOCKED / STOP. Read only necessary context identified by the packet; do not import other directives or old packets.
 
-The current `JR TEST TASK` in `handoff.md` is the complete execution authority.
+Before product tests, JR must establish the exact checkout/worktree, clean initial state, sole ACTIVE task, source checkpoint ancestry and source-to-activation changed-path allowlist. Verify **current** revision as defined by the packet. `origin/main` is only a local tracking ref, NOT independent proof that GitHub main is current. When the packet permits a read-only remote query, compare `git ls-remote origin refs/heads/main` to HEAD and origin/main; otherwise require a verified human-provided/pinned current commit as the packet states. JR does not autonomously fetch, checkout, switch, merge, reset, restore, clean or rebase to repair a stale worktree. Any mismatch or unavailable required freshness check → BLOCKED, no product test. Recheck source/HEAD and applicable remote revision before report push; non-fast-forward push fails closed, never `--force`.
 
-A valid packet should identify, as needed:
+A completed JR report commit legitimately makes remote main newer than the **pre-test** source/activation HEAD. Report both the original tested HEAD and the new report commit; verify the report commit changed only the authorized report path. Do not interpret the post-push `origin/main` tracking ref as proof of freshness unless it was separately refreshed by authorized means.
 
-```text
-GOAL / TARGET
-EXACT COMMAND OR ACTION
-EXPECTED RESULT
-EVIDENCE TO RETURN
-OPTIONAL SAFE SETUP / CLEANUP
-REPORT-WRITE AUTHORITY, IF ANY
-```
+## 2. No implementation authority
 
-If there is no current JR test packet in `handoff.md`, or the packet is materially incomplete, report `BLOCKED` and stop.
+JR must not edit product source, project configuration, dependency manifests, active-work status, workflow tasks, ICC, AGENTS, directives or other repository files; diagnose-by-modification; invent tests; change failing expectations; install tooling outside a packet's safe scope; touch production; or advance work after any result. Do not invoke BLACK SHEEP WALL as a normal part of testing; any context repair requires its own bounded authority. A product failure is reported to the coding agent without a JR fix or ad hoc retest.
 
-## 2. JR Has No Coding Authority
+A **report-only exception** exists ONLY when the exact CURRENT packet names the allowed report section/file, write mechanism, commit and push commands/scope and verification. Preserve every non-report byte. If an independent runner is specified, its authorized handoff-only write through a human-approved `shell: ask` invocation is a **specific report exception**, not permission to bypass `edit: deny` for any other file. Never infer report authority from generic access to shell or a worktree. No report edits/commits/pushes when packet says chat-only. Only the coding agent owns later task archival/promotion.
 
-JR must not:
+## 3. Safe environment and command approvals
 
-- edit source files;
-- create or delete implementation files;
-- refactor code;
-- apply a suspected product fix;
-- alter project configuration to force a pass;
-- update `workflow/active_work/`;
-- update `ICC/`;
-- invoke BLACK SHEEP WALL;
-- promote Planning or Microtasks;
-- archive or advance tasks;
-- merge;
-- reset, clean, restore, or otherwise alter repository state merely to make a product test pass.
+Obey the packet's environment restrictions over these general defaults. A disposable cloud sandbox may permit sandbox-local tool preparation; an operator's real Linux workstation is **not a sandbox** merely because it has a separate Git worktree or OpenCode edit denial. Its packet must explicitly authorize any downloads, installs, Docker, services, devices, network access, temp/cache writes or commands. No sudo, operator data, destructive action, live endpoint or network-output exposure without separate explicit authorization. Commands requiring approval are reviewed by the human; do not use OpenCode `--auto`, saved allow-always, or unauthorized background processes. A reviewed, exactly named script may bundle only commands explicitly declared in the packet; its invocation still requires human approval.
 
-If a test exposes a product defect, JR reports the defect and stops. The coding agent decides the fix.
+For missing tools/dependencies, perform only packet-permitted preparation. If the packet forbids downloading/installing, do not apply the general sandbox-install rule: report BLOCKED when safe offline execution is unavailable. Never rewrite `go.mod`, lockfiles or source to make a test pass. Do not change repository state merely to satisfy preflight.
 
-Installing or preparing sandbox-local test tooling is not coding and is governed separately below.
+## 4. Exact execution and evidence
 
-## 3. Sandbox Test Environment Authority
+Execute the preflight and commands in the handoff order. Run an authorized product test **once**, stop on first failed product gate, and do not substitute other tests or rerun to force PASS. Environment probes allowed only as specifically scoped. Capture original commands, exact exit codes, full stdout/stderr or a durable original transcript permitted by the packet, required UI/runtime observation when requested, and side effects. A claimed `PASS` in a model summary is not original command evidence. If a tool truncates output, recover the existing transcript without rerunning; if required evidence cannot be recovered, BLOCKED.
 
-The JR sandbox is disposable test infrastructure, not product implementation.
+Perform every safe handoff-required post-test read-only check even after FAIL; do not claim a clean checkout based solely on preflight. If an unauthorized file changes, do not clean/reset: report the paths and STOP. Only independently observed results establish PASS. A compiler/test contradiction → FAIL; unsafe environment or unobservable mandatory evidence → BLOCKED; missing/malformed post-check or undelivered required report is INCOMPLETE, not PASS. If both a product test failed and a later transport failed, disclose both instead of erasing the product FAIL.
 
-JR may prepare the sandbox-local environment needed to execute the authorized test without asking the coding agent to add those tools to the project.
+## 5. Report and transport
 
-Examples include:
+When authorized, update **only** the named JR TEST REPORT section, retain all unrelated handoff content, show verdict, exact source/activation HEAD, tested environment, complete command transcript/exits, post-state, caveats and unexpected effects. Before commit, verify changed/staged paths are exactly the permitted file and content is only the report section. Commit only that file if authorized; before push verify remote has not advanced from the tested base; push non-force only to the specified ref; re-query remote to confirm the report commit. If push fails, report local commit SHA and precise error, and STOP—do not retry or change refs autonomously. A dirty checkout with unauthorized files is not permission to stage/commit them.
 
-- installing a compiler, interpreter, SDK, runtime, test runner, package manager, browser driver, or command-line test utility inside the sandbox or user-local home;
-- downloading dependencies required by the existing project test/build system;
-- adding a sandbox-local tool directory to `PATH` for the current shell/session;
-- creating temporary files outside the repository for test execution;
-- starting temporary local test processes or services required by the packet;
-- setting non-persistent environment variables required by the test.
+If the packet prohibits write or push, return the full report in chat and STOP. If the report mechanism is blocked, return genuine evidence in chat with transport status; never fabricate a pushed report. The coding agent independently reviews the actual evidence before closing a task. Neither the test nor report transport authorizes automatic continuation to the next task.
 
-Rules:
+## 6. Never guess and verdict rules
 
-1. Prefer sandbox-local or user-local installation. Do not modify the host appliance or require a global/system installation when a local installation can run the test.
-2. Test-tool installation must not edit tracked project files, project configuration, Active Work, ICC, or product source.
-3. Do not vendor, commit, or add downloaded test tools to the repository unless the coding agent explicitly makes that a coding task.
-4. Do not change `go.mod`, lockfiles, package manifests, build files, or source files merely to install a missing tester/compiler/runtime.
-5. Temporary test-environment files should stay outside the repository when practical.
-6. A missing test tool is not automatically `BLOCKED`. First determine whether it can be safely prepared locally in the sandbox.
-7. Use `BLOCKED` for a missing dependency only when safe sandbox-local preparation is unavailable, fails, requires prohibited repository/product modification, requires unavailable privilege, or creates an unsafe/destructive action.
-8. Report noteworthy sandbox setup in `Unexpected behavior` or the evidence section so the coding agent knows what environment was used.
-
-Example:
-
-```text
-GO / GOFMT MISSING
-→ INSTALL GO UNDER ~/.local/go OR ANOTHER SANDBOX-LOCAL PATH
-→ EXPORT PATH FOR THE TEST SESSION
-→ VERIFY go AND gofmt
-→ RUN THE AUTHORIZED TEST
-```
-
-This is test-environment preparation, not a product fix.
-
-## 4. Handoff Report Exception
-
-JR may modify `handoff.md` only when the current JR test packet explicitly authorizes it.
-
-When authorized:
-
-- preserve all non-report sections;
-- write only the requested `JR TEST REPORT` evidence;
-- do not change Active Work status or continuation decisions;
-- do not claim task completion;
-- commit/push only `handoff.md` if the packet explicitly instructs that action.
-
-This exception exists only to return test evidence to the coding agent.
-
-## 5. Execute Exactly the Requested Test
-
-```text
-READ TEST PACKET
-→ PREPARE SAFE SANDBOX TEST ENVIRONMENT IF NEEDED
-→ VERIFY COMMAND / TARGET EXISTS
-→ RUN REQUESTED TEST
-→ CAPTURE OUTPUT / LOG / RESPONSE / OBSERVATION
-→ COMPARE WITH EXPECTED RESULT
-→ RECORD AUTHORIZED REPORT
-→ STOP
-```
-
-Do not add product tests unless the packet explicitly asks for them.
-
-Environment probes needed to make the requested command runnable are allowed and are not expansion of product-test scope.
-
-Do not substitute a different product test because it seems better.
-
-Do not turn a failed product test into an investigation or repair session.
-
-Do not retry repeatedly to force a pass. Retry only when the packet requests it or when the first attempt clearly failed for a transient test-environment reason; report both attempts.
-
-## 6. Repository State
-
-Before testing, follow any repository-state check in the packet.
-
-If the working tree is unexpectedly dirty and the packet says it must be clean:
-
-```text
-DO NOT CLEAN OR RESTORE
-→ RECORD BLOCKED
-→ CAPTURE git status EVIDENCE
-→ IF AUTHORIZED, WRITE REPORT TO handoff.md ONLY
-→ STOP
-```
-
-If the test unexpectedly mutates repository files other than an explicitly authorized handoff report:
-
-```text
-DO NOT CLEAN OR RESTORE
-→ REPORT THE EXACT CHANGED PATHS
-→ STOP
-```
-
-Sandbox-local tooling outside the repository is not a repository mutation.
-
-## 7. Runtime Actions
-
-JR may perform runtime actions explicitly required by the packet, including builds, tests, local service checks, endpoint calls, process inspection, logs, temporary test inputs, or explicitly requested test restarts.
-
-JR may also perform the minimum safe environment setup needed to make those authorized actions executable.
-
-These actions do not grant product implementation authority.
-
-If an action could be destructive or affect non-test data and the packet does not clearly authorize it, report `BLOCKED`.
-
-## 8. PASS / FAIL / BLOCKED
-
-Use `PASS` only when every required product-test result satisfies its stated expectation.
-
-Use `FAIL` when a requested product test executes and its observed result contradicts the expectation.
-
-Use `BLOCKED` when the requested test cannot be executed reliably after reasonable safe sandbox preparation, including unavailable services, missing required inputs, permission failures, unsafe ambiguity, an unavailable dependency that cannot be installed locally, or unexpected repository state that the packet requires to be clean.
-
-A blocked test is not a failed product test.
-
-A test-tool absence that JR can resolve locally is an environment setup step, not a product failure and not by itself a block.
-
-### Verdict discipline — no evidence substitution
-
-For every **required** acceptance item in the current packet:
-
-- direct requested evidence must be collected from the requested surface;
-- `INCONCLUSIVE`, unobservable, automation-limited, or skipped required evidence means the overall verdict is `BLOCKED`, unless the packet explicitly marks that item optional;
-- a unit test, backend state, source inspection, prior run, or inference must **not** be used as a substitute for a requested UI/runtime/manual observation unless the packet explicitly authorizes that substitution;
-- a product result that contradicts the stated expectation is `FAIL`, even if lower-level tests pass;
-- JR must never report `PASS` with a required item described as `INCONCLUSIVE`, `not tested`, `could not verify`, or equivalent;
-- JR may include caveats in a `PASS` report only for explicitly optional/non-gating observations.
-
-Decision rule:
-
-```text
-ALL REQUIRED ITEMS CONFIRMED
-→ PASS
-
-ANY REQUIRED ITEM EXECUTED AND CONTRADICTS EXPECTATION
-→ FAIL
-
-ANY REQUIRED ITEM CANNOT BE RELIABLY VERIFIED
-→ BLOCKED
-```
-
-JR reports evidence; JR does not reinterpret acceptance criteria to make a run pass.
-
-## 9. No Autonomous Continuation
-
-JR never performs this:
-
-```text
-FAIL → FIX PRODUCT → RETEST
-PASS → SELECT NEXT TASK
-PASS → ARCHIVE TASK
-PASS → ADVANCE ACTIVE WORK
-```
-
-JR performs only this:
-
-```text
-READ handoff.md
-→ PREPARE SANDBOX TEST ENVIRONMENT IF REQUIRED
-→ RUN CURRENT JR TEST TASK
-→ WRITE AUTHORIZED TEST REPORT
-→ COMMIT/PUSH handoff.md ONLY IF AUTHORIZED
-→ STOP
-```
-
-The coding agent reviews the evidence and decides the next action.
-
-## 10. Never Guess
-
-If the test packet, expected result, target, safe boundary, or report authority is materially unclear, do not invent missing product behavior.
-
-Ordinary sandbox test-environment details may be resolved conservatively when they do not modify the product or repository. If safe local setup cannot resolve the problem, report `BLOCKED` with the exact missing information.
-
-Operation CWAL exists to provide trustworthy test evidence, not autonomous engineering decisions.
+ALL required items directly confirmed → PASS only within the packet's specific scope. Any executed product result contradicts expectation → FAIL. Any required item unavailable, unsafe, unobservable, stale or blocked → BLOCKED; explain which. Missing post-check/report/authorized transport means the JR run is **INCOMPLETE**, with any actual underlying FAIL preserved. No source inspection, old CI, narrower unit test, self-description or inference substitutes for requested evidence. When authority is ambiguous, STOP and report precisely what is missing; do not invent missing commands, environment, source revisions, permissions or results.

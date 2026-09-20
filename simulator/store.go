@@ -10,25 +10,18 @@ import (
 )
 
 const (
-	// RelConfigDir is the brainstorm conceptual layout under the verified
-	// host-mounted data root: <OSJS_DATA_DIR>/config/simulator
+	// RelConfigDir is the simulator-owned configuration path below the data root.
 	RelConfigDir  = "config/simulator"
 	DevicesFile   = "devices.yaml"
 	envDataDirKey = "OSJS_DATA_DIR"
 )
 
 // Store persists simulator-owned device definitions under the verified
-// host-mounted configuration root (OSJS_DATA_DIR from deploy/docker-compose.yml
-// and OSJS/src/server/config.js). It never writes into MMA2/ or OSJS package
-// source trees.
+// host-mounted configuration root. It never writes into MMA2 or OS.js source.
 type Store struct {
 	Root string // OSJS_DATA_DIR value or standalone Windows data root
 }
 
-// ConfigRootFromEnv returns the shared data root. OSJS_DATA_DIR remains the
-// authoritative deployed-stack path. The standalone Windows package has one
-// installer-owned equivalent under ProgramData, so Windows services can boot
-// without requiring NSSM-specific environment injection.
 func ConfigRootFromEnv() (string, error) {
 	root := os.Getenv(envDataDirKey)
 	if root != "" {
@@ -42,13 +35,8 @@ func ConfigRootFromEnv() (string, error) {
 	return "", fmt.Errorf("%s is unset; refusing to invent a host configuration path", envDataDirKey)
 }
 
-func (s Store) SimulatorDir() string {
-	return filepath.Join(s.Root, RelConfigDir)
-}
-
-func (s Store) DevicesPath() string {
-	return filepath.Join(s.SimulatorDir(), DevicesFile)
-}
+func (s Store) SimulatorDir() string { return filepath.Join(s.Root, RelConfigDir) }
+func (s Store) DevicesPath() string  { return filepath.Join(s.SimulatorDir(), DevicesFile) }
 
 // Load reads the last valid persisted document. Missing file is an empty document.
 func (s Store) Load() (Document, error) {
@@ -67,26 +55,23 @@ func (s Store) Load() (Document, error) {
 	return doc, nil
 }
 
-// SaveOne validates defand replaces the persisted document with that single
-// definition. Invalid input leaves the previous file bytes unchanged..
 func (s Store) SaveOne(def DeviceDefinition) error {
 	return s.SaveDocument(Document{Devices: []DeviceDefinition{def}})
 }
 
-// SaveDocument validates every device in doc and atomically replaces the
-// persisted document. This is the multi-device persistence path the approved
-// OS.js simulator window (SIM-005( uses:Add/Duplicate/Delete/edit all
-// operate on the full simulator-owned document before one atomic save. Invalid
-// input leaves the previous file bytes unchanged..
+// SaveDocument is the standalone document writer. Transaction owners call
+// replace only AFTER their own validation and while holding the outer lock;
+// reacquiring here would deadlock on Linux's non-reentrant flock.
 func (s Store) SaveDocument(doc Document) error {
 	for i := range doc.Devices {
 		if err := ValidateDevice(doc.Devices[i]); err != nil {
 			return err
 		}
 	}
-	return s.replace(doc)
+	return s.withWriterLock(func() error { return s.replace(doc) })
 }
 
+// replace is private and lock-free; callers must hold the writer lock.
 func (s Store) replace(doc Document) error {
 	if err := os.MkdirAll(s.SimulatorDir(), 0o755); err != nil {
 		return err

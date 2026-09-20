@@ -1,0 +1,8 @@
+# UMIG-EM-003-S — CODE: Simulator shared-lock transaction boundary
+
+Status: COMPLETE / SOURCE-ONLY checkpoint, 2026-09-20. NO TEST or live VERIFY PASS.
+Stage/owner: CODE / ChatGPT. Previous: UMIG-EM-003-L (archived source-only). Next: UMIG-EM-003 (QUEUED CODE at checkpoint).
+
+Simulator now uses the shared `mma2composer.WithWriterLock` at outermost apply (read prior document -> classify -> compose -> restart request/ack/readiness -> document save), on boot read/compose, and direct SaveDocument, SaveAndCompose, ComposeDocument, DeleteAndCompose and public restart writers. Non-nested internal compose, restart and document helpers prevent reacquisition. Timing-only document changes serialize persistence but do not restart or recompose MMA2; this consciously prevents stale overwrites from a concurrent structural write. Committed-but-unacknowledged restart reports an error rather than false success. A Linux busy-lock no-mutation regression source was added; it has NOT been run.
+
+Source checkpoint `b9d674759b6f1f3ea7d8e58389efb1553075875e`, plus earlier `simulator/writer_lock_test.go` at `4d088db43ce7727d2ddad99c369de035e3dca12d`. GitHub readback verified current `simulator/mma2_config.go` and `simulator/apply.go` and the shared helper; diff inventory from `ba178009..main` at `b9d6747` is limited to simulator/apply.go, simulator/mma2_config.go, simulator/restart.go, simulator/store.go, simulator/writer_lock.go, simulator/writer_lock_test.go. No build, test, Docker, user machine or deployment was run. Integration safety still depends on Replicator and JR TEST; do not claim atomic multi-file commits or full production readiness.

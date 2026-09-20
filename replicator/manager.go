@@ -84,8 +84,8 @@ func (r *managedRuntime) runCycle() {
 func (r *managedRuntime) setRunning(running bool) { r.mu.Lock(); r.state.Running = running; r.mu.Unlock() }
 func (r *managedRuntime) snapshot() RuntimeState { r.mu.RLock(); defer r.mu.RUnlock(); return r.state }
 
-// RuntimeManager owns all UI-configured Replicator poll loops. Every enabled
-// Pull Block gets a poller, while destination ownership is per device.
+// RuntimeManager owns UI-configured Replicator poll loops; each enabled Pull
+// Block gets one poller, destination reservation remains per device.
 type RuntimeManager struct {
 	store Store
 	timeout time.Duration
@@ -100,9 +100,8 @@ func NewRuntimeManager(store Store) *RuntimeManager {
 
 func (m *RuntimeManager) Boot() error {
 	var resolved Document
-	// One boot restore transaction: read persisted state, resolve owners,
-	// compose and persist together. Readiness is the existing necessary MMA2
-	// probe; polling loops do not start until after lock release.
+	// Boot load, owner resolution, compose, readiness and persisted document
+	// are one transaction. Polling loops start only after releasing the lock.
 	err := m.store.withWriterLock(func() error {
 		doc, err := m.store.LoadDocument()
 		if err != nil { return err }
@@ -119,8 +118,8 @@ func (m *RuntimeManager) Boot() error {
 }
 
 func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
-	// Reject obvious invalid/colliding edits before stopping existing pollers.
-	// These reads are advisory only: EVERY result is re-read inside the lock.
+	// Preflight prevents needless disruption; re-read all decisions inside the
+	// lock because an independent Simulator may change owners in the meantime.
 	preResolved, err := m.store.ResolveDocumentDestinations(edited)
 	if err != nil { return Document{}, false, err }
 	if err := m.store.CheckDocumentOwnership(preResolved); err != nil { return Document{}, false, err }
@@ -130,8 +129,7 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	if err != nil && len(previous.Devices) > 0 { return Document{}, false, fmt.Errorf("resolve persisted Replicator document: %w", err) }
 	structural := !sameMMA2Structure(previousResolved, preResolved)
 
-	// Stopping pollers may wait for network I/O. NEVER hold the shared lock
-	// while doing this; resume old pollers on any pre-commit failure.
+	// stopAll can wait on polling network I/O; never hold the shared lock here.
 	m.stopAll()
 	var resolved Document
 	committed := false
@@ -145,15 +143,10 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 		previousResolved, err = m.store.ResolveDocumentDestinations(current)
 		if err != nil && len(current.Devices) > 0 { return fmt.Errorf("resolve persisted Replicator document: %w", err) }
 		structural = !sameMMA2Structure(previousResolved, resolved)
-		var effectiveConfigErr error
-		var effective = struct { dummy bool }{} // no service action; real config is obtained below
-		_ = effective
-		_ = effectiveConfigErr
-		var cfgResolved Document
 		cfgResolved, effectiveCfg, composeErr := m.store.composeDocumentDestinationsLocked(resolved)
 		if composeErr != nil { return composeErr }
 		resolved = cfgResolved
-		committed = true // composer committed effective config/owners
+		committed = true // effective config and owners were committed
 		if err := m.store.requestMMA2Restart(effectiveCfg, documentDestinationPorts(resolved), m.timeout); err != nil {
 			return fmt.Errorf("MMA2 config committed but restart/ack failed; operator recovery required: %w", err)
 		}
@@ -164,7 +157,7 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 	})
 	if err != nil {
 		if committed {
-			// Do not resurrect old pollers against an unacknowledged NEW config.
+			// Do not resurrect old pollers against potentially live new config.
 			return Document{}, structural, err
 		}
 		if restoreErr := m.replaceRuntimes(previousResolved); restoreErr != nil {
@@ -172,7 +165,6 @@ func (m *RuntimeManager) Apply(edited Document) (Document, bool, error) {
 		}
 		return Document{}, structural, err
 	}
-	// Runtime starts only after the committed, acknowledged transaction unlocks.
 	if err := m.replaceRuntimes(resolved); err != nil { return Document{}, structural, err }
 	return resolved, structural, nil
 }

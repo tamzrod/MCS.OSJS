@@ -1,6 +1,6 @@
 # OSJT-009 — Hydration projection
 
-Status: QUEUED
+Status: ACTIVE
 Stage: CODE
 Owner: Coding agent
 Previous: OSJT-008
@@ -26,4 +26,3 @@ Before TEST/VERIFY activation, the coding agent supplies one current handoff pac
 Depends on OSJT-008; target/permissions derive from OSJT-001.
 Five dimensions (implementation/environment/behavior/verification/decision): 1/0/1/1/0 = 3.
 At most three production files plus focused tests per coding task. Split before editing if the task requires a broader change or a new architectural decision.
-

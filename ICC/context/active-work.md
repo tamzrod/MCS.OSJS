@@ -1,8 +1,8 @@
 # Active Work
 
-Baseline commit: 7e3e4fd
-Working tree: transition overlay contains only the OSJT-007 archive, OSJT-008 activation, current
-`handoff.md` JR packet, and this context update.
+Baseline commit: 644a50cc21e984b562e6add1d6bf9c600cbe1274
+Working tree: transition overlay contains only the OSJT-008 archive, OSJT-009 activation, current
+CODE handoff, and this context update.
 Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/*.md,
 workflow/archive/electron-001-nsis-nssm-service-installer.md,
 workflow/archive/electron-002-compact-industrial-layout.md,
@@ -14,16 +14,14 @@ Zoom Out: L0-project
 
 ## Current OSJT execution state
 
-OSJT-001 through OSJT-007 are archived. OSJT-008 is the sole ACTIVE task; OSJT-009 onward remain
-QUEUED. The current `handoff.md` is the exact chat-only JR TEST TASK packet for OSJT-008, pinned
-to source checkpoint `7e3e4fd` with a clean local Ubuntu target and remote-main freshness gate.
+OSJT-001 through OSJT-008 are archived. OSJT-009 is the sole ACTIVE CODE task; OSJT-010 onward
+remain QUEUED. The current `handoff.md` defines the bounded hydration-projection implementation and
+requires a stop if integration needs a production path outside the task's named scope.
 
-The repaired fixture supplies the required root RBE output and directly checks omitted, null,
-false, empty, extension-projection, and invalid-save preservation cases. Both focused coding-agent
-checks passed; those checks remain preliminary until independent OSJT-008 execution.
+OSJT-008 independently PASSed its exact named regression at activation HEAD `644a50c`; the checkout
+remained clean and the post-check passed. The coding agent reviewed and accepted that evidence.
 
-OSJT-008 remains incomplete until its exact independent check passes and the coding agent reviews
-the returned evidence. OSJT-009 must not be activated early.
+OSJT-009 owns the next source-only projection step. OSJT-010 must not be activated early.
 
 ## Superseded UMIG state
 

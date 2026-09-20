@@ -47,4 +47,424 @@ CODING AGENT NEXT: Fetch the actual pushed report commit, inspect full transcrip
 
 ## JR TEST REPORT — UMIG-EM-003-T
 
-PENDING — initial OpenCode attempt was incomplete and had no accepted final evidence or pushed report. The corrected full run has not yet been observed. SOURCE ONLY is not TEST PASS.
+Verdict: **FAIL**
+Reason: replicator exact suite returned 1; stopped without retry.
+UTC: 2026-09-20T03:14:36.598820+00:00
+Worktree: `/home/sysadmin/apps/MCS.OSJS-jr`; source checkpoint: `949d7a8eb328dfa66f8359ffe81cfe359b8db2b7`; test HEAD / original remote: `1f5c30856d546274e9fea7e1c9a1ef43297fdbfc`.
+Runner: `python3 workflow/cwal/umig-em-003-t.py` (one approved invocation).
+Safety: offline Go modules, MCS_RUN_E2E != 1, no Docker, sudo or operator endpoints.
+Test modules executed in order: mma2composer, simulator, replicator; unrun: none.
+Preflight and post-check stdout/stderr plus exit codes (exact commands are recorded below):
+
+### pwd: exit 0
+
+Command: `pwd -P`
+
+```text
+/home/sysadmin/apps/MCS.OSJS-jr
+```
+
+### status: exit 0
+
+Command: `git status --porcelain --untracked-files=all`
+
+```text
+(no output)
+```
+
+### HEAD: exit 0
+
+Command: `git rev-parse HEAD`
+
+```text
+1f5c30856d546274e9fea7e1c9a1ef43297fdbfc
+```
+
+### origin/main: exit 0
+
+Command: `git rev-parse origin/main`
+
+```text
+1f5c30856d546274e9fea7e1c9a1ef43297fdbfc
+```
+
+### worktrees: exit 0
+
+Command: `git worktree list --porcelain`
+
+```text
+worktree /home/sysadmin/apps/MCS.OSJS
+HEAD 1a04664e5fdc21e3bd323a97a4f12f3f9d39abdd
+branch refs/heads/main
+
+worktree /home/sysadmin/apps/MCS.OSJS-jr
+HEAD 1f5c30856d546274e9fea7e1c9a1ef43297fdbfc
+detached
+```
+
+### remote: exit 0
+
+Command: `git ls-remote --exit-code origin refs/heads/main`
+
+```text
+1f5c30856d546274e9fea7e1c9a1ef43297fdbfc	refs/heads/main
+```
+
+### source ancestor: exit 0
+
+Command: `git merge-base --is-ancestor 949d7a8eb328dfa66f8359ffe81cfe359b8db2b7 HEAD`
+
+```text
+(no output)
+```
+
+### source diff: exit 0
+
+Command: `git diff --name-only 949d7a8eb328dfa66f8359ffe81cfe359b8db2b7 HEAD`
+
+```text
+handoff.md
+operation cwal.md
+workflow/active_work/umig-em-003-shared-lock.md
+workflow/active_work/umig-em-003-t-shared-lock.md
+workflow/archive/umig-em-003-shared-lock.md
+workflow/cwal/umig-em-003-t.py
+```
+
+### system: exit 0
+
+Command: `uname -s`
+
+```text
+Linux
+```
+
+### Go: exit 0
+
+Command: `go version`
+
+```text
+go version go1.26.0 linux/amd64
+```
+
+### disk: exit 0
+
+Command: `df -Pk . /home/sysadmin /tmp`
+
+```text
+Filesystem     1024-blocks      Used Available Capacity Mounted on
+/dev/nvme0n1p2   490048472 394824604  70257264      85% /
+/dev/nvme0n1p2   490048472 394824604  70257264      85% /
+tmpfs             23817752     68628  23749124       1% /tmp
+```
+
+### TEST mma2composer: exit 0
+
+Command: `timeout 360s env GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOFLAGS=-mod=readonly go test -race -count=1 -timeout=300s -v ./...`
+
+```text
+=== RUN   TestRebuildRetainsListenerAndForeignAdvancedSettings
+--- PASS: TestRebuildRetainsListenerAndForeignAdvancedSettings (0.00s)
+=== RUN   TestProducerIdentityAndForeignCollision
+--- PASS: TestProducerIdentityAndForeignCollision (0.00s)
+=== RUN   TestFirstComeFirstSavePersistsProducer
+--- PASS: TestFirstComeFirstSavePersistsProducer (0.00s)
+=== RUN   TestDropOneReservationUsesRequestedPort
+--- PASS: TestDropOneReservationUsesRequestedPort (0.00s)
+=== RUN   TestCommitRestoresConfigWhenOwnersReplaceFails
+--- PASS: TestCommitRestoresConfigWhenOwnersReplaceFails (0.00s)
+=== RUN   TestWriterLockConcurrentForeignOwnershipConflict
+--- PASS: TestWriterLockConcurrentForeignOwnershipConflict (0.02s)
+=== RUN   TestWriterLockTimeoutAndRelease
+--- PASS: TestWriterLockTimeoutAndRelease (0.06s)
+=== RUN   TestWriterLockCrashRelease
+--- PASS: TestWriterLockCrashRelease (1.02s)
+=== RUN   TestWriterLockRejectsAmbiguousPath
+--- PASS: TestWriterLockRejectsAmbiguousPath (0.00s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/mma2composer	2.124s
+```
+
+### TEST simulator: exit 0
+
+Command: `timeout 360s env GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOFLAGS=-mod=readonly go test -race -count=1 -timeout=300s -v ./...`
+
+```text
+=== RUN   TestAdvancedSettingsRoundTripAndCompose
+--- PASS: TestAdvancedSettingsRoundTripAndCompose (0.01s)
+=== RUN   TestSchedulerApplierReadyGatePreventsArmingAndFalseHealth
+--- PASS: TestSchedulerApplierReadyGatePreventsArmingAndFalseHealth (0.03s)
+=== RUN   TestStructuralApplyAndStopDoNotControlIndependentMMA2
+--- PASS: TestStructuralApplyAndStopDoNotControlIndependentMMA2 (0.03s)
+=== RUN   TestSchedulerApplierRuntimeStatusMatchesTimingAndPoints
+--- PASS: TestSchedulerApplierRuntimeStatusMatchesTimingAndPoints (0.03s)
+=== RUN   TestApplyRouterStructuralTimingAndRejectedPaths
+--- PASS: TestApplyRouterStructuralTimingAndRejectedPaths (0.01s)
+=== RUN   TestApplyRouterRejectsInvalidBeforeConsumers
+--- PASS: TestApplyRouterRejectsInvalidBeforeConsumers (0.00s)
+=== RUN   TestBootRestoreArmsEnabledSchedulesWithoutRestartRequest
+--- PASS: TestBootRestoreArmsEnabledSchedulesWithoutRestartRequest (0.04s)
+=== RUN   TestBootRestoreSurfacesUnavailableMMA2WithoutRestart
+--- PASS: TestBootRestoreSurfacesUnavailableMMA2WithoutRestart (0.16s)
+=== RUN   TestSaveAndComposeFreeReservationPersistsOwner
+--- PASS: TestSaveAndComposeFreeReservationPersistsOwner (0.01s)
+=== RUN   TestComposeRejectsForeignCollisionUnchanged
+--- PASS: TestComposeRejectsForeignCollisionUnchanged (0.00s)
+=== RUN   TestSaveAndComposeUpdatesOwnReservationPreservesForeign
+--- PASS: TestSaveAndComposeUpdatesOwnReservationPreservesForeign (0.01s)
+=== RUN   TestDeleteAndComposeRemovesOnlyOwn
+--- PASS: TestDeleteAndComposeRemovesOnlyOwn (0.01s)
+=== RUN   TestDeleteAndComposeRejectsForeignOwned
+--- PASS: TestDeleteAndComposeRejectsForeignOwned (0.00s)
+=== RUN   TestSaveAndComposeRejectsInvalidBeforeAnyPersist
+--- PASS: TestSaveAndComposeRejectsInvalidBeforeAnyPersist (0.00s)
+=== RUN   TestComposeDocumentIncludesOnlyEnabledAndPreservesForeign
+--- PASS: TestComposeDocumentIncludesOnlyEnabledAndPreservesForeign (0.00s)
+=== RUN   TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged
+=== RUN   TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged/foreign_collision
+=== RUN   TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged/invalid_complete_candidate
+--- PASS: TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged (0.00s)
+    --- PASS: TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged/foreign_collision (0.00s)
+    --- PASS: TestComposeDocumentCollisionAndInvalidCandidateLeaveFilesUnchanged/invalid_complete_candidate (0.00s)
+=== RUN   TestEndToEndSimulatorMMA2Architecture
+    e2e_test.go:84: set MCS_RUN_E2E=1 for real MMA2 verification
+--- SKIP: TestEndToEndSimulatorMMA2Architecture (0.00s)
+=== RUN   TestNoneSimulationKeepsAllAreasAllocatedWithoutGeneration
+--- PASS: TestNoneSimulationKeepsAllAreasAllocatedWithoutGeneration (0.03s)
+=== RUN   TestMixedNoneAndRandomOnlySchedulesRandomArea
+--- PASS: TestMixedNoneAndRandomOnlySchedulesRandomArea (0.01s)
+=== RUN   TestNoneRuntimeStatusSeparatesMemoryAndGeneratorHealth
+--- PASS: TestNoneRuntimeStatusSeparatesMemoryAndGeneratorHealth (0.00s)
+=== RUN   TestDisabledNoneAndMixedWaitingStatus
+--- PASS: TestDisabledNoneAndMixedWaitingStatus (0.00s)
+=== RUN   TestRawIngestClientSendOK
+--- PASS: TestRawIngestClientSendOK (0.00s)
+=== RUN   TestRawIngestClientSendRejectsUnconfiguredFC
+--- PASS: TestRawIngestClientSendRejectsUnconfiguredFC (0.00s)
+=== RUN   TestRawIngestClientSendResponseError
+--- PASS: TestRawIngestClientSendResponseError (0.00s)
+=== RUN   TestStructuralApplyRequestsRestartAndClearsAfterReadiness
+--- PASS: TestStructuralApplyRequestsRestartAndClearsAfterReadiness (0.03s)
+=== RUN   TestStructuralApplyRejectedCommitWritesNoRestartRequest
+--- PASS: TestStructuralApplyRejectedCommitWritesNoRestartRequest (0.00s)
+=== RUN   TestStructuralApplyRestartTimeoutReportsFailureAndLeavesPendingRequest
+--- PASS: TestStructuralApplyRestartTimeoutReportsFailureAndLeavesPendingRequest (0.34s)
+=== RUN   TestWaitMMA2Ready
+--- PASS: TestWaitMMA2Ready (0.21s)
+=== RUN   TestRuntimeServiceStatusContractCarriesOperatorStatesAndDiagnostic
+--- PASS: TestRuntimeServiceStatusContractCarriesOperatorStatesAndDiagnostic (0.00s)
+=== RUN   TestRuntimeServiceStatusRequestErrorsRemainStable
+=== RUN   TestRuntimeServiceStatusRequestErrorsRemainStable/missing_name
+=== RUN   TestRuntimeServiceStatusRequestErrorsRemainStable/invalid_payload
+=== RUN   TestRuntimeServiceStatusRequestErrorsRemainStable/unknown_device
+--- PASS: TestRuntimeServiceStatusRequestErrorsRemainStable (0.00s)
+    --- PASS: TestRuntimeServiceStatusRequestErrorsRemainStable/missing_name (0.00s)
+    --- PASS: TestRuntimeServiceStatusRequestErrorsRemainStable/invalid_payload (0.00s)
+    --- PASS: TestRuntimeServiceStatusRequestErrorsRemainStable/unknown_device (0.00s)
+=== RUN   TestRuntimeServiceLoadApplyStatusAndIdempotency
+--- PASS: TestRuntimeServiceLoadApplyStatusAndIdempotency (0.00s)
+=== RUN   TestRuntimeTransportFraming
+--- PASS: TestRuntimeTransportFraming (0.01s)
+=== RUN   TestLiveRuntimeContractAppliesTimingRejectsConflictAndReportsUnavailable
+--- PASS: TestLiveRuntimeContractAppliesTimingRejectsConflictAndReportsUnavailable (0.18s)
+=== RUN   TestRuntimeStatusDisabledAndUnarmedDevicesAreNotRunning
+--- PASS: TestRuntimeStatusDisabledAndUnarmedDevicesAreNotRunning (0.00s)
+=== RUN   TestRuntimeStatusRequiresAcceptedRawIngestAndRecoversFromFailure
+--- PASS: TestRuntimeStatusRequiresAcceptedRawIngestAndRecoversFromFailure (0.20s)
+=== RUN   TestRuntimeStatusMMA2UnavailabilityPreventsRunning
+--- PASS: TestRuntimeStatusMMA2UnavailabilityPreventsRunning (0.03s)
+=== RUN   TestSchedulerRunsAllFCsConcurrentlyAtOwnCadence
+--- PASS: TestSchedulerRunsAllFCsConcurrentlyAtOwnCadence (0.13s)
+=== RUN   TestSchedulerIntervalChangeUpdatesScheduleWithoutRestart
+--- PASS: TestSchedulerIntervalChangeUpdatesScheduleWithoutRestart (0.03s)
+=== RUN   TestSaveDocumentMultiDeviceRoundTrip
+--- PASS: TestSaveDocumentMultiDeviceRoundTrip (0.00s)
+=== RUN   TestSaveDocumentRejectsInvalidDeviceWithoutReplacing
+--- PASS: TestSaveDocumentRejectsInvalidDeviceWithoutReplacing (0.00s)
+=== RUN   TestSaveDocumentAddDuplicateDeleteReshape
+--- PASS: TestSaveDocumentAddDuplicateDeleteReshape (0.00s)
+=== RUN   TestConfigRootFromEnvRefusesInventedPath
+--- PASS: TestConfigRootFromEnvRefusesInventedPath (0.00s)
+=== RUN   TestRoundTripExactValues
+--- PASS: TestRoundTripExactValues (0.00s)
+=== RUN   TestInvalidInputsDoNotReplaceLastValid
+=== RUN   TestInvalidInputsDoNotReplaceLastValid/port_0
+=== RUN   TestInvalidInputsDoNotReplaceLastValid/unit_id_256
+=== RUN   TestInvalidInputsDoNotReplaceLastValid/fc3_start+count_overflow
+=== RUN   TestInvalidInputsDoNotReplaceLastValid/empty_name
+--- PASS: TestInvalidInputsDoNotReplaceLastValid (0.00s)
+    --- PASS: TestInvalidInputsDoNotReplaceLastValid/port_0 (0.00s)
+    --- PASS: TestInvalidInputsDoNotReplaceLastValid/unit_id_256 (0.00s)
+    --- PASS: TestInvalidInputsDoNotReplaceLastValid/fc3_start+count_overflow (0.00s)
+    --- PASS: TestInvalidInputsDoNotReplaceLastValid/empty_name (0.00s)
+=== RUN   TestSimulatorComposeRejectsBusySharedWriterLock
+--- PASS: TestSimulatorComposeRejectsBusySharedWriterLock (5.01s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/simulator	7.585s
+=== RUN   TestWatchDocumentReloadsNoneSchedule
+--- PASS: TestWatchDocumentReloadsNoneSchedule (0.26s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/simulator/cmd/modbus-simulator-runtime	1.272s
+```
+
+### TEST replicator: exit 1
+
+Command: `timeout 360s env GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOFLAGS=-mod=readonly go test -race -count=1 -timeout=300s -v ./...`
+
+```text
+=== RUN   TestAdvancedSettingsPersistComposeAndInherit
+--- PASS: TestAdvancedSettingsPersistComposeAndInherit (0.01s)
+=== RUN   TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig
+--- PASS: TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig (0.01s)
+=== RUN   TestAdvancedSettingsCloneIsIndependent
+--- PASS: TestAdvancedSettingsCloneIsIndependent (0.00s)
+=== RUN   TestCommsCycleAndStatus
+--- PASS: TestCommsCycleAndStatus (0.00s)
+=== RUN   TestCommsSourceRefusalClearsDownstream
+--- PASS: TestCommsSourceRefusalClearsDownstream (0.00s)
+=== RUN   TestCommsExceptionAndMalformedResponse
+--- PASS: TestCommsExceptionAndMalformedResponse (0.00s)
+=== RUN   TestCommsAggregation
+--- PASS: TestCommsAggregation (0.00s)
+=== RUN   TestDestinationMemoryForBlocksAllowsModbusServing
+--- PASS: TestDestinationMemoryForBlocksAllowsModbusServing (0.00s)
+=== RUN   TestRunOnceCopiesConfiguredRegisters
+--- PASS: TestRunOnceCopiesConfiguredRegisters (0.00s)
+=== RUN   TestRunOnceRejectsForeignOwnedDestination
+--- PASS: TestRunOnceRejectsForeignOwnedDestination (0.00s)
+=== RUN   TestValidateCycleMappingRejectsCrossArea
+--- PASS: TestValidateCycleMappingRejectsCrossArea (0.00s)
+=== RUN   TestDocumentSaveLoadRoundTrip
+--- PASS: TestDocumentSaveLoadRoundTrip (0.00s)
+=== RUN   TestLoadDocumentMigratesLegacyRangeIntoPullBlocks
+--- PASS: TestLoadDocumentMigratesLegacyRangeIntoPullBlocks (0.00s)
+=== RUN   TestLoadDocumentMigratesSinglePullBlockIntoCollection
+--- PASS: TestLoadDocumentMigratesSinglePullBlockIntoCollection (0.00s)
+=== RUN   TestMultiplePullBlocksPersistInOrder
+--- PASS: TestMultiplePullBlocksPersistInOrder (0.00s)
+=== RUN   TestSuggestDestinationSkipsOccupiedPairOnly
+--- PASS: TestSuggestDestinationSkipsOccupiedPairOnly (0.00s)
+=== RUN   TestResolveManualForeignCollisionReportsOwner
+--- PASS: TestResolveManualForeignCollisionReportsOwner (0.00s)
+=== RUN   TestResolveAllowsSameUnitOnDifferentPort
+--- PASS: TestResolveAllowsSameUnitOnDifferentPort (0.00s)
+=== RUN   TestResolveAllowsSamePortWithDifferentUnit
+--- PASS: TestResolveAllowsSamePortWithDifferentUnit (0.00s)
+=== RUN   TestSaveTimeOwnershipGuardRejectsExactForeignPairOnly
+--- PASS: TestSaveTimeOwnershipGuardRejectsExactForeignPairOnly (0.00s)
+=== RUN   TestComposeDocumentPreservesForeignAndAllReplicatorReservations
+--- PASS: TestComposeDocumentPreservesForeignAndAllReplicatorReservations (0.01s)
+=== RUN   TestDestinationMemorySpansAllBlocksByArea
+--- PASS: TestDestinationMemorySpansAllBlocksByArea (0.00s)
+=== RUN   TestDeviceRuntimeConfigMapsPullBlockOneToOne
+--- PASS: TestDeviceRuntimeConfigMapsPullBlockOneToOne (0.00s)
+=== RUN   TestSimulatorToReplicatorE2E
+--- PASS: TestSimulatorToReplicatorE2E (4.74s)
+=== RUN   TestDestinationMemorySupportsFC1AndFC2
+--- PASS: TestDestinationMemorySupportsFC1AndFC2 (0.00s)
+=== RUN   TestValidateDeviceAllowsAllReadFunctions
+--- PASS: TestValidateDeviceAllowsAllReadFunctions (0.00s)
+=== RUN   TestRuntimeManagerApplyLifecycleAndStatus
+--- PASS: TestRuntimeManagerApplyLifecycleAndStatus (0.19s)
+=== RUN   TestValidateRejectsDisjointSameFCPullBlocks
+--- PASS: TestValidateRejectsDisjointSameFCPullBlocks (0.00s)
+=== RUN   TestValidateAllowsContiguousSameFCPullBlocks
+--- PASS: TestValidateAllowsContiguousSameFCPullBlocks (0.00s)
+=== RUN   TestApplyRestartFailureRestoresPreviousPollers
+    multiblock_regression_test.go:73: previous poller was not restored after failed apply: replicator.DeviceRuntimeStatus{Comms:map[string]string{"mma2":"UNKNOWN", "modbus":"UNKNOWN", "network":"UNKNOWN", "tcp":"UNKNOWN"}, Network:replicator.CommsObservation{State:"", Outcome:"", Endpoint:"", Error:"", ObservedAt:"", ActivityAt:"", LastSuccessAt:"", ExceptionCode:(*uint8)(nil)}, Name:"PLC-recovery", Enabled:true, Running:false, Cycles:0x0, Source:"WAITING", LastPoll:"", LastError:"", Blocks:[]replicator.BlockRuntimeStatus{replicator.BlockRuntimeStatus{CycleComms:replicator.CycleComms{Network:replicator.CommsObservation{State:"", Outcome:"", Endpoint:"", Error:"", ObservedAt:"", ActivityAt:"", LastSuccessAt:"", ExceptionCode:(*uint8)(nil)}, TCP:replicator.CommsObservation{State:"", Outcome:"", Endpoint:"", Error:"", ObservedAt:"", ActivityAt:"", LastSuccessAt:"", ExceptionCode:(*uint8)(nil)}, Modbus:replicator.CommsObservation{State:"", Outcome:"", Endpoint:"", Error:"", ObservedAt:"", ActivityAt:"", LastSuccessAt:"", ExceptionCode:(*uint8)(nil)}, MMA2:replicator.CommsObservation{State:"", Outcome:"", Endpoint:"", Error:"", ObservedAt:"", ActivityAt:"", LastSuccessAt:"", ExceptionCode:(*uint8)(nil)}}, Function:0x3, Start:0xa, Count:0x4, Index:0, Running:false, Cycles:0x0, Source:"WAITING", LastPoll:"", LastError:""}}}
+--- FAIL: TestApplyRestartFailureRestoresPreviousPollers (0.59s)
+=== RUN   TestReadConfiguredSourceUsesPersistedConfig
+--- PASS: TestReadConfiguredSourceUsesPersistedConfig (0.00s)
+=== RUN   TestReadSourceRangeFC1AndFC2
+--- PASS: TestReadSourceRangeFC1AndFC2 (0.00s)
+=== RUN   TestReadSourceRangeFC3
+--- PASS: TestReadSourceRangeFC3 (0.00s)
+=== RUN   TestReadSourceRangeFC4
+--- PASS: TestReadSourceRangeFC4 (0.00s)
+=== RUN   TestReadSourceRangeRejectsUnsupportedFunction
+--- PASS: TestReadSourceRangeRejectsUnsupportedFunction (0.00s)
+=== RUN   TestReadSourceRangeConnectionFailure
+--- PASS: TestReadSourceRangeConnectionFailure (0.00s)
+=== RUN   TestRuntimeRepeatsWithoutOverlap
+--- PASS: TestRuntimeRepeatsWithoutOverlap (0.12s)
+=== RUN   TestRuntimeRecordsCycleErrorAndContinues
+--- PASS: TestRuntimeRecordsCycleErrorAndContinues (0.04s)
+=== RUN   TestRuntimeCancelStopsCleanly
+--- PASS: TestRuntimeCancelStopsCleanly (0.01s)
+=== RUN   TestSaveApplyRejectsForeignReservationBeforeMutation
+--- PASS: TestSaveApplyRejectsForeignReservationBeforeMutation (0.00s)
+=== RUN   TestConfigRootFromEnv
+--- PASS: TestConfigRootFromEnv (0.00s)
+=== RUN   TestSaveLoadRoundTrip
+--- PASS: TestSaveLoadRoundTrip (0.00s)
+=== RUN   TestInvalidConfigRejectedBeforePersistence
+--- PASS: TestInvalidConfigRejectedBeforePersistence (0.00s)
+=== RUN   TestInvalidReplacementLeavesPriorBytesUnchanged
+--- PASS: TestInvalidReplacementLeavesPriorBytesUnchanged (0.00s)
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_port_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_unit_too_high
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_function_invalid
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_count_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_range_overflow
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/poll_interval_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_port_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_unit_too_high
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_area_invalid
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_count_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_range_overflow
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/count_mismatch
+--- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_port_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_unit_too_high (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_function_invalid (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_count_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_range_overflow (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/poll_interval_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_port_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_unit_too_high (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_area_invalid (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_count_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_range_overflow (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/count_mismatch (0.00s)
+=== RUN   TestReplicatorComposeRejectsBusySharedWriterLock
+--- PASS: TestReplicatorComposeRejectsBusySharedWriterLock (5.00s)
+=== RUN   TestManagerCommittedUnacknowledgedRestartFailsClosed
+--- PASS: TestManagerCommittedUnacknowledgedRestartFailsClosed (0.11s)
+FAIL
+FAIL	github.com/tamzrod/MCS.OSJS/replicator	10.863s
+=== RUN   TestUnixRuntimeListenerMatchesRelayAndProtectsLiveOwner
+--- PASS: TestUnixRuntimeListenerMatchesRelayAndProtectsLiveOwner (0.00s)
+=== RUN   TestUnixRuntimeListenerReplacesStaleSocket
+--- PASS: TestUnixRuntimeListenerReplacesStaleSocket (0.00s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime	1.011s
+FAIL
+```
+
+### post status: exit 0
+
+Command: `git status --porcelain --untracked-files=all`
+
+```text
+(no output)
+```
+
+### post HEAD: exit 0
+
+Command: `git rev-parse HEAD`
+
+```text
+1f5c30856d546274e9fea7e1c9a1ef43297fdbfc
+```
+
+### pre-report remote: exit 0
+
+Command: `git ls-remote --exit-code origin refs/heads/main`
+
+```text
+1f5c30856d546274e9fea7e1c9a1ef43297fdbfc	refs/heads/main
+```
+
+Scope: Go TEST only; no live VERIFY, Electron or production claim.
+JR STOP: no source edits, task advancement or further tests authorized.

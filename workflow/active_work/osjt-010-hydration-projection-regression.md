@@ -10,7 +10,7 @@ Next: OSJT-011
 Project omitted policy, sealing and RBE from the matching effective port/unit memory; preserve explicit values and unknown extensions; malformed effective configuration returns an error. (independent deterministic verification only).
 
 ## Bounded scope
-simulator/osjs_toolkit_settings_test.go
+simulator/advanced_projection_test.go
 
 Read this task and direct predecessor evidence, not the entire backlog. No Electron changes, legacy removal, production/operator data, dependency upgrades or unrelated cleanup. Do not enable network outputs or reuse the cancelled EM-003 packet.
 

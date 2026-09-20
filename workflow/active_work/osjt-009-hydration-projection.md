@@ -17,6 +17,12 @@ Read this task and direct predecessor evidence, not the entire backlog. No Elect
 ## Acceptance / exact check
 Source-only gate: inspect the focused diff and added regression cases; record changed paths and source checkpoint. Do not claim test/build/live PASS. If scope needs a new architecture decision or more than three production files, stop and split before coding.
 
+Implementation evidence: added `advanced_projection.go` and `advanced_projection_test.go` only.
+The helper matches effective memory by listener port and unit ID, hydrates only omitted advanced
+values and extensions, preserves explicit values including non-nil empty maps, and returns an error
+for malformed recognized projection values. Preliminary focused Go checks passed; this remains a
+CODE result pending the OSJT-010 independent regression.
+
 ## Evidence and advancement
 Record the source revision, changed paths (CODE only), exact checks and original outcomes. CODE source inspection is not TEST PASS; mocked tests are not live VERIFY. Stop on a failed check or missing prerequisite and report the smallest needed repair; do not expand the task.
 

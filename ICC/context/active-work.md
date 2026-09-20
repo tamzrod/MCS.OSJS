@@ -1,8 +1,8 @@
 # Active Work
 
-Baseline commit: 644a50cc21e984b562e6add1d6bf9c600cbe1274
-Working tree: transition overlay contains only the OSJT-008 archive, OSJT-009 activation, current
-CODE handoff, and this context update.
+Baseline commit: 688c1df
+Working tree: OSJT-009 implementation overlay contains only the bounded projection helper, its
+focused test, task evidence, and affected ICC updates.
 Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/*.md,
 workflow/archive/electron-001-nsis-nssm-service-installer.md,
 workflow/archive/electron-002-compact-industrial-layout.md,
@@ -22,6 +22,10 @@ OSJT-008 independently PASSed its exact named regression at activation HEAD `644
 remained clean and the post-check passed. The coding agent reviewed and accepted that evidence.
 
 OSJT-009 owns the next source-only projection step. OSJT-010 must not be activated early.
+
+The bounded helper implementation and focused regression are present in the working overlay. The
+coding-agent focused check passed; a source checkpoint is pending and no independent OSJT-010 test
+result exists yet.
 
 ## Superseded UMIG state
 

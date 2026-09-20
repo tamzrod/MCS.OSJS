@@ -29,7 +29,7 @@ Baseline Commit: 9775593
 Working Tree: clean
 Audited Uncommitted Overlay: none. The overlay previously recorded here is committed, and no uncommitted path differs from the audited state; the working tree is clean at the baseline commit.
 
-Selected-branch state: `active-work` is refreshed over tested activation HEAD `644a50c` plus the current transition overlay. OSJT-001 through OSJT-008 are archived; OSJT-009 is the sole ACTIVE CODE task and later tasks are QUEUED. `handoff.md` bounds the hydration-projection implementation and stops on any required production path outside the task scope. `simulator-device-config` records the repaired presence fixture at `7e3e4fd`. Other semantic branches retain their own recorded baselines and were not refreshed.
+Selected-branch state: `active-work` and `simulator-device-config` are refreshed over OSJT-009 activation `688c1df` plus the bounded projection-helper overlay. OSJT-001 through OSJT-008 are archived; OSJT-009 is the sole ACTIVE CODE task and later tasks are QUEUED. The helper and focused test stay within the named task scope; load integration remains deferred to its later task. Other semantic branches retain their own recorded baselines and were not refreshed.
 
 Refreshed at `9775593` over the `7029e41..9775593` delta: active-work, osjs-shell and L0-project, plus this index. Unchanged: governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, replicator, simulator-device-config, simulator-memory-none. `handoff.md` is a declared dependency of `replicator`, but the delta's handoff content is Toolkit-scoped and changes no recorded Replicator truth, so that node was not patched. No repository path outside the delta was reopened.
 

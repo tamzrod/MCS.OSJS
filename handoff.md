@@ -39,4 +39,63 @@ EVIDENCE / REPORT-WRITE AUTHORITY: Report all preflight SHAs/flags/net changed p
 
 ## JR TEST REPORT — UMIG-EM-002-R
 
-PENDING independent OpenHands JR execution. No current-Go regression PASS or live verification has been observed.
+VERDICT: PASS
+
+Executed by independent OpenHands JR on 2026-09-20 in JR's own disposable checkout (no operator/production checkout, no retained environment). UNIT/REGRESSION only; this does not prove live services, COMMS telemetry, OS.js advanced UI, listener binding, rendering or production readiness.
+
+### Preflight (exact commands, in packet order)
+
+Checkout was shallow on entry (`git rev-parse --is-shallow-repository` -> `true`), so the pinned checkpoint `c98eacef8a6af8b0786a09766a4a034e25e82ce6` was absent and one packet-permitted `git fetch --unshallow origin` (exit 0) was run; only the failed ancestry commands were rechecked. After unshallow `git rev-parse --is-shallow-repository` -> `false`.
+
+| Command | Exit | Result |
+|---|---|---|
+| `git fetch origin main` | 0 | branch main -> FETCH_HEAD |
+| `git status --porcelain` | 0 | empty (clean) |
+| `git rev-parse HEAD` | 0 | `62d05fe94568fbf9903848d08b2233861d0f4f2e` |
+| `git rev-parse origin/main` | 0 | `62d05fe94568fbf9903848d08b2233861d0f4f2e` |
+| `git merge-base --is-ancestor c98eacef... origin/main` | 0 | (initially 128 pre-unshallow; 0 after permitted unshallow) |
+| `git diff --name-only c98eacef... origin/main` | 0 | exactly the 5 expected paths (below) |
+| `git merge-base --is-ancestor HEAD origin/main` | 0 | pass |
+
+Net changed paths from pinned checkpoint to origin/main (exactly the authorized set; no other path):
+- `handoff.md`
+- `workflow/active_work/umig-em-002-b-toolkit-build.md`
+- `workflow/active_work/umig-em-002-r-current-go-regression.md`
+- `workflow/active_work/umig-em-002-v-upgraded-baseline.md`
+- `workflow/archive/umig-em-002-b-toolkit-build.md`
+
+Fast-forward action: NONE — HEAD already equalled origin/main, so merge skipped. No reset/clean/rebase/cherry-pick/force. Baseline unchanged (not silently retargeted).
+
+### Environment
+
+- `go version` -> `go version go1.25.0 linux/amd64` (satisfies Go 1.25.x or later).
+- `(cd replicator && go env GOMOD)` -> `/workspace/project/MCS.OSJS/replicator/go.mod` (this checkout).
+- `(cd replicator && test -s advanced_settings_test.go)` -> exit 0.
+- Local setup: Go was missing (`go: command not found`). Installed Go 1.25.0 sandbox-locally from `https://go.dev/dl/go1.25.0.linux-amd64.tar.gz` extracted to `~/.local/go` and put on `PATH` for the test session only. No tracked, product, go.mod, go.sum, config or system files changed; only ordinary module download `gopkg.in/yaml.v3 v3.0.1`.
+- Post-setup `git status --porcelain` before test -> empty (clean).
+
+### Product test (run exactly once)
+
+Command:
+
+```sh
+(cd replicator && go test -race -count=1 -timeout=90s -v ./...)
+git status --porcelain
+```
+
+Result: exit 0, elapsed `real 0m30.620s` (individual suites: replicator `13.376s`, cmd/modbus-replicator-runtime `1.036s`). No retry, no repair.
+
+Required assertions explicitly observed PASS:
+- `--- PASS: TestAdvancedSettingsPersistComposeAndInherit (0.02s)`
+- `--- PASS: TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig (0.01s)`
+- `--- PASS: TestAdvancedSettingsCloneIsIndependent (0.00s)`
+
+Suite summary: all packages `ok` — `github.com/tamzrod/MCS.OSJS/replicator` and `github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime`. No failed package or test; overall `PASS`. No race reports. Warnings: only the ordinary `go: downloading gopkg.in/yaml.v3 v3.0.1` dependency fetch.
+
+Post-test `git status --porcelain` -> empty (clean tracked tree). No unexpected repository mutation or side effects.
+
+### Evidence basis
+
+Direct observation of the requested command's stdout/stderr, exit code and elapsed time from the requested surface, plus the exact pre/post `git status` and preflight SHA checks above. No source inspection, prior run, or substitute check was used in place of the requested execution.
+
+Verdict is PASS because every required acceptance item was directly confirmed. This packet's unit/regression scope makes no live-service or UI claim.

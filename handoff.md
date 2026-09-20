@@ -32,4 +32,274 @@ REPORT / TRANSPORT AUTHORIZATION: The ONE human-approved fixed runner is the onl
 
 ## JR TEST REPORT — UMIG-EM-003-R-T
 
-PENDING — source-only correction is awaiting independent OpenCode JR. No test or runtime PASS claimed.
+Verdict: **PASS**
+Reason: Replicator race suite and all mandatory named tests passed.
+UTC: 2026-09-20T03:49:19.236422+00:00
+Source checkpoint: `538324a472eb15ff8ef97ee66f826fa02ba9462f`; tested activation HEAD/live main: `8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f`; worktree: `/home/sysadmin/apps/MCS.OSJS-jr`.
+Runner: `python3 workflow/cwal/umig-em-003-r-t.py` (one human-approved invocation).
+Test scope: Replicator offline Go race suite ONLY; earlier Composer/Simulator results are historical, not rerun.
+E2E disabled; test-owned ephemeral loopback fixtures only; no Docker, service or operator device action.
+Complete command transcripts (merged original stdout/stderr) and exit codes:
+
+### pwd — exit 0
+
+Command: `pwd -P`
+
+```text
+/home/sysadmin/apps/MCS.OSJS-jr
+```
+
+### initial status — exit 0
+
+Command: `git status --porcelain --untracked-files=all`
+
+```text
+(no output)
+```
+
+### HEAD — exit 0
+
+Command: `git rev-parse HEAD`
+
+```text
+8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f
+```
+
+### tracking — exit 0
+
+Command: `git rev-parse origin/main`
+
+```text
+8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f
+```
+
+### worktrees — exit 0
+
+Command: `git worktree list --porcelain`
+
+```text
+worktree /home/sysadmin/apps/MCS.OSJS
+HEAD 1a04664e5fdc21e3bd323a97a4f12f3f9d39abdd
+branch refs/heads/main
+
+worktree /home/sysadmin/apps/MCS.OSJS-jr
+HEAD 8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f
+detached
+```
+
+### live remote — exit 0
+
+Command: `git ls-remote --exit-code origin refs/heads/main`
+
+```text
+8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f	refs/heads/main
+```
+
+### source ancestor — exit 0
+
+Command: `git merge-base --is-ancestor 538324a472eb15ff8ef97ee66f826fa02ba9462f HEAD`
+
+```text
+(no output)
+```
+
+### source diff — exit 0
+
+Command: `git diff --name-only 538324a472eb15ff8ef97ee66f826fa02ba9462f HEAD`
+
+```text
+handoff.md
+workflow/active_work/umig-em-003-r-recovery-regression.md
+workflow/active_work/umig-em-003-r-t-recovery-test.md
+workflow/archive/umig-em-003-r-recovery-regression.md
+workflow/cwal/umig-em-003-r-t.py
+```
+
+### platform — exit 0
+
+Command: `uname -s`
+
+```text
+Linux
+```
+
+### Go version — exit 0
+
+Command: `go version`
+
+```text
+go version go1.26.0 linux/amd64
+```
+
+### disk — exit 0
+
+Command: `df -Pk . /home/sysadmin /tmp`
+
+```text
+Filesystem     1024-blocks      Used Available Capacity Mounted on
+/dev/nvme0n1p2   490048472 394732112  70349756      85% /
+/dev/nvme0n1p2   490048472 394732112  70349756      85% /
+tmpfs             23817752     70784  23746968       1% /tmp
+```
+
+### TEST replicator — exit 0
+
+Command: `timeout 360s env GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOFLAGS=-mod=readonly go test -race -count=1 -timeout=300s -v ./...`
+
+```text
+=== RUN   TestAdvancedSettingsPersistComposeAndInherit
+--- PASS: TestAdvancedSettingsPersistComposeAndInherit (0.01s)
+=== RUN   TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig
+--- PASS: TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig (0.01s)
+=== RUN   TestAdvancedSettingsCloneIsIndependent
+--- PASS: TestAdvancedSettingsCloneIsIndependent (0.00s)
+=== RUN   TestCommsCycleAndStatus
+--- PASS: TestCommsCycleAndStatus (0.00s)
+=== RUN   TestCommsSourceRefusalClearsDownstream
+--- PASS: TestCommsSourceRefusalClearsDownstream (0.00s)
+=== RUN   TestCommsExceptionAndMalformedResponse
+--- PASS: TestCommsExceptionAndMalformedResponse (0.00s)
+=== RUN   TestCommsAggregation
+--- PASS: TestCommsAggregation (0.00s)
+=== RUN   TestDestinationMemoryForBlocksAllowsModbusServing
+--- PASS: TestDestinationMemoryForBlocksAllowsModbusServing (0.00s)
+=== RUN   TestRunOnceCopiesConfiguredRegisters
+--- PASS: TestRunOnceCopiesConfiguredRegisters (0.00s)
+=== RUN   TestRunOnceRejectsForeignOwnedDestination
+--- PASS: TestRunOnceRejectsForeignOwnedDestination (0.00s)
+=== RUN   TestValidateCycleMappingRejectsCrossArea
+--- PASS: TestValidateCycleMappingRejectsCrossArea (0.00s)
+=== RUN   TestDocumentSaveLoadRoundTrip
+--- PASS: TestDocumentSaveLoadRoundTrip (0.00s)
+=== RUN   TestLoadDocumentMigratesLegacyRangeIntoPullBlocks
+--- PASS: TestLoadDocumentMigratesLegacyRangeIntoPullBlocks (0.00s)
+=== RUN   TestLoadDocumentMigratesSinglePullBlockIntoCollection
+--- PASS: TestLoadDocumentMigratesSinglePullBlockIntoCollection (0.00s)
+=== RUN   TestMultiplePullBlocksPersistInOrder
+--- PASS: TestMultiplePullBlocksPersistInOrder (0.00s)
+=== RUN   TestSuggestDestinationSkipsOccupiedPairOnly
+--- PASS: TestSuggestDestinationSkipsOccupiedPairOnly (0.00s)
+=== RUN   TestResolveManualForeignCollisionReportsOwner
+--- PASS: TestResolveManualForeignCollisionReportsOwner (0.00s)
+=== RUN   TestResolveAllowsSameUnitOnDifferentPort
+--- PASS: TestResolveAllowsSameUnitOnDifferentPort (0.00s)
+=== RUN   TestResolveAllowsSamePortWithDifferentUnit
+--- PASS: TestResolveAllowsSamePortWithDifferentUnit (0.00s)
+=== RUN   TestSaveTimeOwnershipGuardRejectsExactForeignPairOnly
+--- PASS: TestSaveTimeOwnershipGuardRejectsExactForeignPairOnly (0.00s)
+=== RUN   TestComposeDocumentPreservesForeignAndAllReplicatorReservations
+--- PASS: TestComposeDocumentPreservesForeignAndAllReplicatorReservations (0.01s)
+=== RUN   TestDestinationMemorySpansAllBlocksByArea
+--- PASS: TestDestinationMemorySpansAllBlocksByArea (0.00s)
+=== RUN   TestDeviceRuntimeConfigMapsPullBlockOneToOne
+--- PASS: TestDeviceRuntimeConfigMapsPullBlockOneToOne (0.00s)
+=== RUN   TestSimulatorToReplicatorE2E
+--- PASS: TestSimulatorToReplicatorE2E (4.69s)
+=== RUN   TestDestinationMemorySupportsFC1AndFC2
+--- PASS: TestDestinationMemorySupportsFC1AndFC2 (0.00s)
+=== RUN   TestValidateDeviceAllowsAllReadFunctions
+--- PASS: TestValidateDeviceAllowsAllReadFunctions (0.00s)
+=== RUN   TestRuntimeManagerApplyLifecycleAndStatus
+--- PASS: TestRuntimeManagerApplyLifecycleAndStatus (0.19s)
+=== RUN   TestValidateRejectsDisjointSameFCPullBlocks
+--- PASS: TestValidateRejectsDisjointSameFCPullBlocks (0.00s)
+=== RUN   TestValidateAllowsContiguousSameFCPullBlocks
+--- PASS: TestValidateAllowsContiguousSameFCPullBlocks (0.00s)
+=== RUN   TestApplyPreCommitFailureRestoresPreviousPollers
+--- PASS: TestApplyPreCommitFailureRestoresPreviousPollers (0.01s)
+=== RUN   TestApplyPostCommitRestartFailureStopsPreviousPollers
+--- PASS: TestApplyPostCommitRestartFailureStopsPreviousPollers (0.08s)
+=== RUN   TestReadConfiguredSourceUsesPersistedConfig
+--- PASS: TestReadConfiguredSourceUsesPersistedConfig (0.00s)
+=== RUN   TestReadSourceRangeFC1AndFC2
+--- PASS: TestReadSourceRangeFC1AndFC2 (0.00s)
+=== RUN   TestReadSourceRangeFC3
+--- PASS: TestReadSourceRangeFC3 (0.00s)
+=== RUN   TestReadSourceRangeFC4
+--- PASS: TestReadSourceRangeFC4 (0.00s)
+=== RUN   TestReadSourceRangeRejectsUnsupportedFunction
+--- PASS: TestReadSourceRangeRejectsUnsupportedFunction (0.00s)
+=== RUN   TestReadSourceRangeConnectionFailure
+--- PASS: TestReadSourceRangeConnectionFailure (0.00s)
+=== RUN   TestRuntimeRepeatsWithoutOverlap
+--- PASS: TestRuntimeRepeatsWithoutOverlap (0.10s)
+=== RUN   TestRuntimeRecordsCycleErrorAndContinues
+--- PASS: TestRuntimeRecordsCycleErrorAndContinues (0.04s)
+=== RUN   TestRuntimeCancelStopsCleanly
+--- PASS: TestRuntimeCancelStopsCleanly (0.00s)
+=== RUN   TestSaveApplyRejectsForeignReservationBeforeMutation
+--- PASS: TestSaveApplyRejectsForeignReservationBeforeMutation (0.00s)
+=== RUN   TestConfigRootFromEnv
+--- PASS: TestConfigRootFromEnv (0.00s)
+=== RUN   TestSaveLoadRoundTrip
+--- PASS: TestSaveLoadRoundTrip (0.00s)
+=== RUN   TestInvalidConfigRejectedBeforePersistence
+--- PASS: TestInvalidConfigRejectedBeforePersistence (0.00s)
+=== RUN   TestInvalidReplacementLeavesPriorBytesUnchanged
+--- PASS: TestInvalidReplacementLeavesPriorBytesUnchanged (0.00s)
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_port_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_unit_too_high
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_function_invalid
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_count_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_range_overflow
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/poll_interval_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_port_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_unit_too_high
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_area_invalid
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_count_zero
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_range_overflow
+=== RUN   TestValidateConfigRejectsInvalidRangesAndRequiredValues/count_mismatch
+--- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_port_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_unit_too_high (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_function_invalid (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_count_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/source_range_overflow (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/poll_interval_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_port_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_unit_too_high (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_area_invalid (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_count_zero (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/destination_range_overflow (0.00s)
+    --- PASS: TestValidateConfigRejectsInvalidRangesAndRequiredValues/count_mismatch (0.00s)
+=== RUN   TestReplicatorComposeRejectsBusySharedWriterLock
+--- PASS: TestReplicatorComposeRejectsBusySharedWriterLock (5.00s)
+=== RUN   TestManagerCommittedUnacknowledgedRestartFailsClosed
+--- PASS: TestManagerCommittedUnacknowledgedRestartFailsClosed (0.11s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/replicator	11.296s
+=== RUN   TestUnixRuntimeListenerMatchesRelayAndProtectsLiveOwner
+--- PASS: TestUnixRuntimeListenerMatchesRelayAndProtectsLiveOwner (0.00s)
+=== RUN   TestUnixRuntimeListenerReplacesStaleSocket
+--- PASS: TestUnixRuntimeListenerReplacesStaleSocket (0.00s)
+PASS
+ok  	github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime	1.013s
+```
+
+### post status — exit 0
+
+Command: `git status --porcelain --untracked-files=all`
+
+```text
+(no output)
+```
+
+### post HEAD — exit 0
+
+Command: `git rev-parse HEAD`
+
+```text
+8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f
+```
+
+### pre-report remote — exit 0
+
+Command: `git ls-remote --exit-code origin refs/heads/main`
+
+```text
+8ca9a4b6a6b7e28bd419ed710fbb4825da7e6b5f	refs/heads/main
+```
+
+Scope: Go TEST only; does not establish OS.js/Electron live VERIFY or production readiness.
+JR STOP: no code or task changes and no additional tests authorized.

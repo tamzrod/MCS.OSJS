@@ -24,48 +24,56 @@ type mma2Key struct {
 	unitID uint16
 }
 
-func (s Store) composer() *mma2composer.Composer {
-	return mma2composer.New(s.Root, ProducerSimulator)
-}
+func (s Store) composer() *mma2composer.Composer { return mma2composer.New(s.Root, ProducerSimulator) }
+func (s Store) MMA2ConfigDir() string            { return s.composer().ConfigDir() }
+func (s Store) EffectiveConfigPath() string      { return s.composer().EffectiveConfigPath() }
+func (s Store) OwnershipPath() string            { return s.composer().OwnershipPath() }
 
-func (s Store) MMA2ConfigDir() string       { return s.composer().ConfigDir() }
-func (s Store) EffectiveConfigPath() string { return s.composer().EffectiveConfigPath() }
-func (s Store) OwnershipPath() string       { return s.composer().OwnershipPath() }
-
+// SaveAndCompose is a legacy public entry point: lock ONCE through both shared
+// artifacts and the Simulator document. Do not call another locking Store API.
 func (s Store) SaveAndCompose(def DeviceDefinition) error {
 	if err := ValidateDevice(def); err != nil {
 		return err
 	}
-	composer := s.composer()
-	cfg, err := composer.LoadEffective()
-	if err != nil {
-		return err
-	}
-	owners, err := composer.LoadOwners()
-	if err != nil {
-		return err
-	}
-	if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil {
-		return err
-	}
-	inheritMemorySettings(&def.MMA2, cfg)
-	cfg, owners = composer.DropProducerReservations(cfg, owners)
-	if hasMMA2Areas(def.MMA2) {
-		cfg = addReservation(cfg, def.MMA2)
-		owners.Reservations = append(owners.Reservations, OwnershipEntry{Port: def.MMA2.Port, UnitID: def.MMA2.UnitID, Owner: ProducerSimulator})
-	}
-	if err := composer.Commit(cfg, owners); err != nil {
-		return err
-	}
-	return s.SaveOne(def)
+	return s.withWriterLock(func() error {
+		composer := s.composer()
+		cfg, err := composer.LoadEffective()
+		if err != nil {
+			return err
+		}
+		owners, err := composer.LoadOwners()
+		if err != nil {
+			return err
+		}
+		if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil {
+			return err
+		}
+		inheritMemorySettings(&def.MMA2, cfg)
+		cfg, owners = composer.DropProducerReservations(cfg, owners)
+		if hasMMA2Areas(def.MMA2) {
+			cfg = addReservation(cfg, def.MMA2)
+			owners.Reservations = append(owners.Reservations, OwnershipEntry{Port: def.MMA2.Port, UnitID: def.MMA2.UnitID, Owner: ProducerSimulator})
+		}
+		if err := composer.Commit(cfg, owners); err != nil {
+			return err
+		}
+		return s.replace(Document{Devices: []DeviceDefinition{def}})
+	})
 }
 
+// ComposeDocument is the public standalone entry. Live structural apply and
+// boot restoration call composeDocumentLocked under their own outer boundary.
 func (s Store) ComposeDocument(doc Document) error {
 	for i := range doc.Devices {
 		if err := ValidateDevice(doc.Devices[i]); err != nil {
 			return fmt.Errorf("device %d: %w", i, err)
 		}
 	}
+	return s.withWriterLock(func() error { return s.composeDocumentLocked(doc) })
+}
+
+// composeDocumentLocked must be called only with the shared writer lock held.
+func (s Store) composeDocumentLocked(doc Document) error {
 	composer := s.composer()
 	cfg, err := composer.LoadEffective()
 	if err != nil {
@@ -100,26 +108,34 @@ func (s Store) ComposeDocument(doc Document) error {
 }
 
 func (s Store) DeleteAndCompose(port, unitID uint16) error {
-	composer := s.composer()
-	cfg, err := composer.LoadEffective()
-	if err != nil {
-		return err
-	}
-	owners, err := composer.LoadOwners()
-	if err != nil {
-		return err
-	}
-	if err := mma2composer.Collision(port, unitID, ProducerSimulator, owners); err != nil {
-		return err
-	}
-	cfg, owners = composer.DropOneReservation(cfg, owners, port, unitID)
-	return composer.Commit(cfg, owners)
+	return s.withWriterLock(func() error {
+		composer := s.composer()
+		cfg, err := composer.LoadEffective()
+		if err != nil {
+			return err
+		}
+		owners, err := composer.LoadOwners()
+		if err != nil {
+			return err
+		}
+		if err := mma2composer.Collision(port, unitID, ProducerSimulator, owners); err != nil {
+			return err
+		}
+		cfg, owners = composer.DropOneReservation(cfg, owners, port, unitID)
+		return composer.Commit(cfg, owners)
+	})
 }
 
 func (s Store) loadEffective() (EffectiveMMA2Config, error) { return s.composer().LoadEffective() }
 func (s Store) loadOwners() (OwnershipDoc, error)           { return s.composer().LoadOwners() }
-func (s Store) saveEffective(cfg EffectiveMMA2Config) error { return s.composer().SaveEffective(cfg) }
-func (s Store) saveOwners(doc OwnershipDoc) error           { return s.composer().SaveOwners(doc) }
+func (s Store) saveEffective(cfg EffectiveMMA2Config) error {
+	return s.withWriterLock(func() error { return s.composer().SaveEffective(cfg) })
+}
+func (s Store) saveOwners(doc OwnershipDoc) error {
+	return s.withWriterLock(func() error { return s.composer().SaveOwners(doc) })
+}
+// replaceMMA2File is a lock-free INTERNAL helper used by restart-request
+// operations while their enclosing transaction already owns the writer lock.
 func (s Store) replaceMMA2File(path string, b []byte) error {
 	return s.composer().WriteFileAtomic(path, b)
 }

@@ -1,6 +1,6 @@
 # MEM-004 — Allow None Simulation
 
-Status: QUEUED
+Status: ACTIVE
 Previous: MEM-003
 Next: MEM-005
 

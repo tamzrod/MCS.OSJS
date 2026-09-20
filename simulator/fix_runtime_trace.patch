@@ -1,0 +1,23 @@
+--- a/simulator/apply.go
++++ b/simulator/apply.go
+@@ -168,6 +168,9 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
+ 		return status, nil
+ 	}
+ 	if !device.Enabled { return status, nil }
++	// DEBUG: Add trace logging if FC3IntervalMS is 0
++	if device.MMA2.FC3.Count > 0 && device.RandomRuntime.FC3IntervalMS == 0 {
++		fmt.Printf("[DEBUG RuntimeStatus %s] FC3.IntervalMS=%d (needsRandomIngest will be false)\n", name, device.MMA2.FC3.Count)
++	}
+ 	if !needsRandomIngest(device) {
+ 		status.RawIngest = "NOT REQUIRED"
+ 		status.RawError = ""
+@@ -170,6 +173,9 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
+ 		return status, nil
+ 	}
++	// DEBUG: Add trace logging for normal operation
++	if device.MMA2.FC3.Count > 0 && device.RandomRuntime.FC3IntervalMS > 0 {
++		fmt.Printf("[DEBUG RuntimeStatus %s] FC3.IntervalMS=%d (needsRandomIngest will be true)\n", name, device.MMA2.FC3.Count)
++	}
+ 	switch {
+ 	case rawError != "": status.RawIngest = "ERROR"; status.Device = "ERROR"
+ 	case status.MMA2 != "RUNNING": status.Device = "WAITING"

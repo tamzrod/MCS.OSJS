@@ -27,14 +27,12 @@ Connector: electron-memory-layout.md for the existing shared MMA Settings popup.
 
 ## Baseline / Overlay
 
-Source baseline: 8b5541f.
-Scoped overlay: Replicator destination editor and persistence, runtime capability guard, reusable preset dropdown and comma parsing.
-Unrelated workflow records remain untouched.
+Source baseline: 9775593.
+Scoped overlay: Replicator destination editor and persistence, runtime capability guard, reusable preset dropdown and comma parsing; **state sealing enforcement moved to Modbus transport layer**. Unrelated workflow records remain untouched.
 
 ## Facts
 
-Replicator has Device Definition / Advanced Settings folder tabs. The latter reuses RBE Rules, State Sealing and Access Policy.
-Advanced fields apply to destination MMA2 memory and persist in mma2_advanced. Ranges derive from Pull Blocks, not editable duplicate area fields.
+Replicator has Device Definition / Advanced Settings folder tabs. The latter reuses RBE Rules, State Sealing and Access Policy (sealing enforced at Modbus read). Advanced fields apply to destination MMA2 memory and persist in mma2_advanced. Ranges derive from Pull Blocks, not editable duplicate area fields.
 Composition inherits existing policy, RBE and sealing when omitted, respects explicit null removal, and validates the complete candidate before writing it.
 Cloned runtime documents copy nested decoded advanced values. The disk migration loader preserves the new field.
 Advanced saves require the runtime load capability mma2_advanced, preventing silent loss with older backends.

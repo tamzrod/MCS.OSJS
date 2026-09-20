@@ -2,26 +2,79 @@
 
 ## Sole ACTIVE and evidence boundary — 2026-09-20
 
-`UMIG-EM-002-R` remains the sole ACTIVE TEST task. Independent OpenHands JR reported PASS at `9f9746e0a2a3d99bc09dc27259440b316f297653` after running the requested Go regression command once with exit 0, both packages OK and the three required advanced-settings tests PASS. GitHub comparison confirms JR's report commit changed only `handoff.md`. The report records observed output summary but does not include the full stdout/stderr transcript that the previous packet required be reported. Coding-agent evidence adjudication: product results reported PASS; full evidence acceptance NOT YET ESTABLISHED. Do not represent the task as completed, invoke a new test, promote `UMIG-EM-002-V`, or request JR action informally. The sole permitted continuation is the explicit Operation CWAL evidence-accounting packet below. No product, deployment, ICC or workflow file is authorized for JR modification.
+`UMIG-EM-002-R` remains the sole ACTIVE TEST task. Independent OpenHands JR reported PASS at `9f9746e0a2a3d99bc09dc27259440b316f297653` after the requested once-only Go regression run: exit 0, both packages OK, and all three mandatory advanced-settings tests PASS. GitHub comparison shows that the JR report commit changed only `handoff.md`. The complete command stdout/stderr was required by the original report packet but the committed report contains only selected PASS lines and a result summary. Product-test PASS is reported; evidence completeness is pending. `UMIG-EM-002-V` stays QUEUED and is not runnable. The next JR action is authorized ONLY by Operation CWAL and the exact packet below. ICC may be updated only by BLACK SHEEP WALL. No product changes or live/deployment actions are authorized.
 
-## JR TEST TASK — CURRENT: UMIG-EM-002-R evidence accounting (Operation CWAL)
+## JR TEST TASK — CURRENT: UMIG-EM-002-R original-output evidence accounting (Operation CWAL)
 
-GOAL: account for the full stdout/stderr requirement of the already executed, exactly-once current Go regression run without running any test again. This is an evidence-only continuation of the ACTIVE regression task, not new product verification. The original command was `(cd replicator && go test -race -count=1 -timeout=90s -v ./...)` executed on 2026-09-20 against `62d05fe94568fbf9903848d08b2233861d0f4f2e`; report commit `9f9746e0a2a3d99bc09dc27259440b316f297653` holds the JR-observed summary.
+GOAL: account for full stdout/stderr from the original, already-executed Go regression without rerunning the test. This is continuation within the existing sole ACTIVE TEST task, not fresh verification or a request outside Operation CWAL.
 
-TARGET AND SAFETY: JR's own disposable checkout or retained JR execution transcript, NEVER the Legion/operator/production checkout or customer services. Read `AGENTS.md`, `operation cwal.md` and this current packet. Run only non-mutating preflight `git status --porcelain`, `git rev-parse HEAD`, `git fetch origin main`, `git rev-parse origin/main`; require clean tracked state and HEAD=origin/main before any report modification. If absent/dirty/diverged, BLOCKED; no reset, clean, merge, rebase, checkout or replay. Do not rerun the Go suite, any other product test, install tools, start Docker or services, inspect another project or fabricate a transcript.
+TARGET/SAFE BOUNDARY: JR's own disposable checkout and any already-retained output of its 2026-09-20 run of `(cd replicator && go test -race -count=1 -timeout=90s -v ./...)` against source `62d05fe94568fbf9903848d08b2233861d0f4f2e`. Never use the operator/Legion/production checkout, customer data or another project. Read `AGENTS.md`, `operation cwal.md`, and this packet. Read-only preflight, in order: `git status --porcelain`; `git rev-parse HEAD`; `git fetch origin main`; `git rev-parse origin/main`. Require clean tracked status and HEAD=origin/main before modifying the report. On any discrepancy, BLOCKED/STOP; no reset, clean, merge, rebase, checkout or retry. No Go/test rerun, tools installation, Docker, services, product/source/ICC/workflow edits or speculative reconstruction.
 
-EXACT ACTION: Check whether the exact original run's full stdout and stderr were retained in JR's accessible prior command output or an existing captured transcript. If genuinely available, append the verbatim original stdout/stderr with its original exit=0 and 30.620s elapsed time to the existing `## JR TEST REPORT — UMIG-EM-002-R` section only, preserving every earlier report assertion and all other handoff sections. If the full output was not retained, append the precise statement `Full stdout/stderr from original run unavailable; only the committed observed summary and required PASS lines remain. No test rerun performed.` and report BLOCKED (evidence only). Do not infer, reproduce from source, re-execute, or substitute invented output. In either case, identify what was actually available and its provenance. Preserve the original JR product-test PASS observation as historical fact; distinguish evidence-complete from evidence-BLOCKED.
+EXACT ACTION: Check only JR's existing command execution transcript or already-retained output from that precise original run. If its complete original stdout/stderr is available, append it verbatim at the end of the current `## JR TEST REPORT — UMIG-EM-002-R` section together with provenance; preserve the entire earlier report unchanged. Do not infer or regenerate lines. If complete original output is unavailable, append only `Full original stdout/stderr unavailable. Original recorded PASS summary remains; evidence requirement BLOCKED. The test was not rerun.` and state why. Do not substitute a new run.
 
-EXPECTED / EVIDENCE: full original transcript, if available, must show the required three named PASS lines, all packages OK, no failed tests or race reports, original exit=0 and post-test clean status already recorded. Otherwise clearly mark evidence BLOCKED without changing the original observed product results. Return exact read-only preflight outputs, transcript provenance or unavailability, whether test rerun was avoided, any changes and verdict PASS (evidence complete) or BLOCKED (transcript unavailable/unsafe state).
+EXPECTED / EVIDENCE: preflight commands and exits; provenance and verbatim original stdout/stderr, or explicit unavailability; original exit 0, elapsed real 30.620s, both packages OK, three required named test PASS lines, no race/failure and original clean post-test tree remain from the committed original report. Verdict PASS only if complete original transcript actually available and matches; otherwise BLOCKED for evidence. Report whether anything unexpected occurred; explicitly state test not rerun.
 
-REPORT-WRITE AUTHORITY: change ONLY the report section in `handoff.md`; preserve the prior report and packet/history. Before transport re-fetch `origin/main`; if it advanced, report BLOCKED race in chat and do not merge or push. Otherwise commit/push ONLY `handoff.md`, verify HEAD=origin/main and tracked tree clean, then STOP. No task-state advancement. The coding agent alone reviews the report and, if evidence sufficient, separately prepares a new formal Operation CWAL packet for the queued disposable VERIFY gate.
+REPORT-WRITE AUTHORITY: Edit ONLY the report section below by APPENDING evidence accounting after the existing original report; do not delete, truncate, paraphrase or modify any prior report text or other handoff section. Before commit, re-fetch origin/main; if remote advanced, BLOCKED race/STOP, no merge/rebase/force. If unchanged, commit/push ONLY `handoff.md`, verify HEAD=origin/main and clean tracked tree, STOP. Never advance task state. The coding agent reviews this formal CWAL evidence and prepares any subsequent VERIFY packet separately.
 
 ## JR TEST REPORT — UMIG-EM-002-R
 
-VERDICT: PASS (original independent product run; evidence-accounting continuation pending).
+VERDICT: PASS
 
-Executed by independent OpenHands JR on 2026-09-20 in its own disposable checkout. Preflight: checkout initially shallow; permitted one `git fetch --unshallow origin` exit 0, ancestry rechecked exit 0, HEAD=origin/main=`62d05fe94568fbf9903848d08b2233861d0f4f2e`, clean tree, net diff exactly five authorized workflow/handoff paths from checkpoint `c98eacef8a6af8b0786a09766a4a034e25e82ce6`. Go absent initially; sandbox-local Go 1.25.0 under `~/.local/go`, `GOMOD=/workspace/project/MCS.OSJS/replicator/go.mod`; `advanced_settings_test.go` present; post-setup tree clean.
+Executed by independent OpenHands JR on 2026-09-20 in JR's own disposable checkout (no operator/production checkout, no retained environment). UNIT/REGRESSION only; this does not prove live services, COMMS telemetry, OS.js advanced UI, listener binding, rendering or production readiness.
 
-Original exact product command, run once: `(cd replicator && go test -race -count=1 -timeout=90s -v ./...)`; exit 0; elapsed real 30.620s. The report directly observed `--- PASS: TestAdvancedSettingsPersistComposeAndInherit (0.02s)`, `--- PASS: TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig (0.01s)`, and `--- PASS: TestAdvancedSettingsCloneIsIndependent (0.00s)`. Package summaries: `github.com/tamzrod/MCS.OSJS/replicator` OK (13.376s) and `github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime` OK (1.036s), no races or failures, ordinary `gopkg.in/yaml.v3 v3.0.1` download only. `git status --porcelain` after test empty. JR committed/pushed only `handoff.md` at `9f9746e0a2a3d99bc09dc27259440b316f297653`; original complete report remains immutable in that commit's `handoff.md`.
+### Preflight (exact commands, in packet order)
 
-EVIDENCE ACCOUNTING: PENDING Operation CWAL continuation. The committed report above provides observed result summaries and selected PASS lines but does not reproduce the full original stdout/stderr required by the original packet. Do not infer transcript contents or claim the evidence criterion is fulfilled until JR supplies the original transcript through this packet; if unavailable, JR reports BLOCKED evidence.
+Checkout was shallow on entry (`git rev-parse --is-shallow-repository` -> `true`), so the pinned checkpoint `c98eacef8a6af8b0786a09766a4a034e25e82ce6` was absent and one packet-permitted `git fetch --unshallow origin` (exit 0) was run; only the failed ancestry commands were rechecked. After unshallow `git rev-parse --is-shallow-repository` -> `false`.
+
+| Command | Exit | Result |
+|---|---|---|
+| `git fetch origin main` | 0 | branch main -> FETCH_HEAD |
+| `git status --porcelain` | 0 | empty (clean) |
+| `git rev-parse HEAD` | 0 | `62d05fe94568fbf9903848d08b2233861d0f4f2e` |
+| `git rev-parse origin/main` | 0 | `62d05fe94568fbf9903848d08b2233861d0f4f2e` |
+| `git merge-base --is-ancestor c98eacef... origin/main` | 0 | (initially 128 pre-unshallow; 0 after permitted unshallow) |
+| `git diff --name-only c98eacef... origin/main` | 0 | exactly the 5 expected paths (below) |
+| `git merge-base --is-ancestor HEAD origin/main` | 0 | pass |
+
+Net changed paths from pinned checkpoint to origin/main (exactly the authorized set; no other path):
+- `handoff.md`
+- `workflow/active_work/umig-em-002-b-toolkit-build.md`
+- `workflow/active_work/umig-em-002-r-current-go-regression.md`
+- `workflow/active_work/umig-em-002-v-upgraded-baseline.md`
+- `workflow/archive/umig-em-002-b-toolkit-build.md`
+
+Fast-forward action: NONE — HEAD already equalled origin/main, so merge skipped. No reset/clean/rebase/cherry-pick/force. Baseline unchanged (not silently retargeted).
+
+### Environment
+
+- `go version` -> `go version go1.25.0 linux/amd64` (satisfies Go 1.25.x or later).
+- `(cd replicator && go env GOMOD)` -> `/workspace/project/MCS.OSJS/replicator/go.mod` (this checkout).
+- `(cd replicator && test -s advanced_settings_test.go)` -> exit 0.
+- Local setup: Go was missing (`go: command not found`). Installed Go 1.25.0 sandbox-locally from `https://go.dev/dl/go1.25.0.linux-amd64.tar.gz` extracted to `~/.local/go` and put on `PATH` for the test session only. No tracked, product, go.mod, go.sum, config or system files changed; only ordinary module download `gopkg.in/yaml.v3 v3.0.1`.
+- Post-setup `git status --porcelain` before test -> empty (clean).
+
+### Product test (run exactly once)
+
+Command:
+
+```sh
+(cd replicator && go test -race -count=1 -timeout=90s -v ./...)
+git status --porcelain
+```
+
+Result: exit 0, elapsed `real 0m30.620s` (individual suites: replicator `13.376s`, cmd/modbus-replicator-runtime `1.036s`). No retry, no repair.
+
+Required assertions explicitly observed PASS:
+- `--- PASS: TestAdvancedSettingsPersistComposeAndInherit (0.02s)`
+- `--- PASS: TestInvalidAdvancedSettingsDoNotReplaceEffectiveConfig (0.01s)`
+- `--- PASS: TestAdvancedSettingsCloneIsIndependent (0.00s)`
+
+Suite summary: all packages `ok` — `github.com/tamzrod/MCS.OSJS/replicator` and `github.com/tamzrod/MCS.OSJS/replicator/cmd/modbus-replicator-runtime`. No failed package or test; overall `PASS`. No race reports. Warnings: only the ordinary `go: downloading gopkg.in/yaml.v3 v3.0.1` dependency fetch.
+
+Post-test `git status --porcelain` -> empty (clean tracked tree). No unexpected repository mutation or side effects.
+
+### Evidence basis
+
+Direct observation of the requested command's stdout/stderr, exit code and elapsed time from the requested surface, plus the exact pre/post `git status` and preflight SHA checks above. No source inspection, prior run, or substitute check was used in place of the requested execution.
+
+Verdict is PASS because every required acceptance item was directly confirmed. This packet's unit/regression scope makes no live-service or UI claim.

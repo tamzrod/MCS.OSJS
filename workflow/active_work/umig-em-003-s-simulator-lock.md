@@ -1,8 +1,8 @@
 # UMIG-EM-003-S — CODE: Simulator shared-lock transaction boundary
 
-Status: QUEUED — human-approved split of UMIG-EM-003 on 2026-09-20; not executable while UMIG-EM-003-L is ACTIVE.
+Status: ACTIVE — authorized successor after `UMIG-EM-003-L` source-only completion and archive on 2026-09-20. Source implementation underway; NO independent test PASS.
 Stage / owner: CODE / ChatGPT.
-Previous: UMIG-EM-003-L.
+Previous: UMIG-EM-003-L (archived COMPLETE / SOURCE ONLY, no TEST PASS).
 Next: UMIG-EM-003 (QUEUED CODE: Replicator integration and audit).
 
 ## Primary outcome
@@ -13,4 +13,4 @@ Ensure all relevant Linux Simulator configuration writers acquire the `mma2compo
 2. Maintain effective config/owner, Simulator device document and restart semantics; distinguish committed but unacknowledged restart from success (no invented rollback/green). No host/production operations, new network endpoints, or broad composer redesign.
 3. Read back precise changed paths, create focused regression cases for independent JR's future TEST, record source checkpoint and scope limits without claiming TEST or VERIFY PASS.
 
-Non-scope: Replicator wiring, shared manager/UI, Electron, installed configuration and Docker. If direct legacy callers cannot be protected without nested locking or a new API contract, stop and rescope rather than claiming complete coverage. Dependencies: archived L lock primitive; `simulator/mma2_config.go`, `simulator/apply.go`, `simulator/store.go`, `simulator/restart.go` and applicable runtime callers. Sizing 2/0/1/1/1=5, tightly coupled one Simulator transaction. ICC is only edited by BLACK SHEEP WALL.
+Non-scope: Replicator wiring, shared manager/UI, Electron, installed configuration and Docker. If direct legacy callers cannot be protected without nested locking or a new API contract, stop and rescope rather than claiming complete coverage. Dependencies: archived L lock primitive; `simulator/mma2_config.go`, `simulator/apply.go`, `simulator/store.go`, `simulator/restart.go` and applicable runtime callers. Sizing 2/0/1/1/1=5, tightly coupled one Simulator transaction. ICC is stale and only BLACK SHEEP WALL may edit it.

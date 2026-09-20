@@ -458,6 +458,11 @@ const validateReplicator = device => {
 };
 const replicatorState = {document: {devices: []}, persisted: {devices: []}, selected: null, selectedBlock: 0, loading: true, saving: false, message: 'Loading Replicator definitions...', error: false, runtimeError: '', runtimeStatus: null};
 const selectedReplicator = () => replicatorState.selected === null ? null : replicatorState.document.devices[replicatorState.selected];
+const replicatorSavedNames = new WeakMap();
+const replaceReplicatorDraft = documentValue => {
+  replicatorState.document = clone(documentValue);
+  for (const device of replicatorState.document.devices) replicatorSavedNames.set(device, device.name);
+};
 const replicatorView = {editor: 'definition'};
 
 const refreshReplicatorValidation = () => {
@@ -514,7 +519,7 @@ const renderReplicator = () => {
       editor.appendChild(advanced);
     } else {
     const identity = h('div', 'tool-grid');
-    identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; refreshReplicatorValidation(); }));
+    identity.append(field('Name', device.name, {type: 'text'}, value => { device.name = value; refreshReplicatorValidation(); pollReplicator(); }));
     identity.append(checkboxField('Enabled', device.enabled, value => { device.enabled = value; refreshReplicatorValidation(); }));
     identity.append(field('Endpoint', device.endpoint, {type: 'text', placeholder: '192.168.1.20:502'}, value => { device.endpoint = value; refreshReplicatorValidation(); }));
     identity.append(field('Source Unit ID', device.unit_id, {min: 0, max: 255}, value => { device.unit_id = numberValue(value); refreshReplicatorValidation(); }));
@@ -594,7 +599,7 @@ const loadReplicator = async () => {
   try {
     const result = await window.mcsDesktop.replicatorCall('load', {});
     const documentValue = normalizeRepDocument(result.document);
-    replicatorState.document = clone(documentValue);
+    replaceReplicatorDraft(documentValue);
     replicatorState.persisted = clone(documentValue);
     replicatorState.selected = documentValue.devices.length ? 0 : null;
     replicatorState.message = documentValue.devices.length ? 'Canonical Replicator definitions loaded.' : 'No devices configured. Choose Add to begin.';
@@ -610,6 +615,19 @@ const loadReplicator = async () => {
 const pollReplicator = async () => {
   const device = selectedReplicator();
   if (!device || replicatorState.saving) return;
+  if (replicatorSavedNames.get(device) !== device.name) {
+    ++replicatorPollVersion;
+    replicatorState.runtimeStatus = null;
+    replicatorState.runtimeError = '';
+    const message = 'Unsaved device name — Save & Apply before checking runtime status.';
+    window.mcsComms.update(document.getElementById('rep-comms'), null, device.name, message);
+    const statusMessage = document.getElementById('rep-status-message');
+    if (statusMessage) {
+      statusMessage.textContent = replicatorState.error ? replicatorState.message : message;
+      statusMessage.classList.toggle('error', replicatorState.error);
+    }
+    return;
+  }
   const name = device.name;
   const version = ++replicatorPollVersion;
   const stillSelected = () => version === replicatorPollVersion && selectedReplicator() === device && device.name === name && !replicatorState.saving;
@@ -654,7 +672,7 @@ const saveReplicator = async () => {
   try {
     const result = await window.mcsDesktop.replicatorCall('apply', {document: clone(replicatorState.document)});
     const documentValue = normalizeRepDocument(result.document);
-    replicatorState.document = clone(documentValue);
+    replaceReplicatorDraft(documentValue);
     replicatorState.persisted = clone(documentValue);
     replicatorState.message = `${result.message || 'Replicator settings applied.'} ${result.completed_at ? `Completed at ${formatTime(result.completed_at)}.` : ''}`;
     replicatorState.error = false;
@@ -708,7 +726,7 @@ document.addEventListener('click', event => {
     if (index !== null && index >= 0 && index < blocks.length) blocks.splice(index, 1);
     replicatorState.selectedBlock = blocks.length ? Math.min(index, blocks.length - 1) : null;
   }
-  else if (action === 'rep-discard') { replicatorState.document = clone(replicatorState.persisted); replicatorState.selected = replicatorState.document.devices.length ? Math.min(replicatorState.selected || 0, replicatorState.document.devices.length - 1) : null; replicatorState.selectedBlock = 0; }
+  else if (action === 'rep-discard') { replaceReplicatorDraft(replicatorState.persisted); replicatorState.selected = replicatorState.document.devices.length ? Math.min(replicatorState.selected || 0, replicatorState.document.devices.length - 1) : null; replicatorState.selectedBlock = 0; replicatorState.error = false; replicatorState.message = 'Changes discarded.'; }
   else if (action === 'rep-save') { saveReplicator(); return; }
   renderSimulator();
   renderReplicator();

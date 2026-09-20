@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 class Element {
-  constructor(tag) { this.tagName = tag; this.children = []; this.dataset = {}; this.events = {}; }
+  constructor(tag) { this.tagName = tag; this.children = []; this.dataset = {}; this.events = {}; this.classList = {toggle() {}, add() {}}; }
   append(...children) { this.children.push(...children); }
   appendChild(child) { this.append(child); return child; }
   replaceChildren() { this.children = []; }
@@ -14,6 +14,51 @@ class Element {
   querySelector(selector) { return collect(this).find(node => node !== this && (node.tagName === selector || '#' + node.id === selector)) || null; }
 }
 const collect = root => [root, ...root.children.flatMap(collect)];
+
+test('rename drafts do not poll unknown names; save, reload, rejection and discard retain identity', async () => {
+  const root = new Element('div');
+  const queried = [];
+  let stored;
+  let rejectSave = false;
+  const document = {querySelectorAll: () => [], createElement: tag => new Element(tag),
+    querySelector: () => null, getElementById: id => id === 'replicator-root' ? root : root.querySelector('#' + id)};
+  const context = vm.createContext({document, window: {
+    mcsMemoryUI: require('../renderer/memory-advanced'),
+    mcsComms: {create: () => new Element('div'), update: () => {}},
+    mcsDesktop: {replicatorCall: async (operation, payload) => {
+      if (operation === 'status') { queried.push(payload.name); return {name: payload.name}; }
+      if (operation === 'load') return {document: stored};
+      if (rejectSave) throw new Error('duplicate name');
+      stored = JSON.parse(JSON.stringify(payload.document)); return {document: stored};
+    }}
+  }});
+  const source = fs.readFileSync(path.join(__dirname, '../renderer/app.js'), 'utf8');
+  vm.runInContext(source.slice(0, source.indexOf("document.addEventListener('click'")), context);
+  const run = code => vm.runInContext(code, context);
+  run('replaceReplicatorDraft({devices:[blankReplicator(1)]}); replicatorState.persisted = clone(replicatorState.document); replicatorState.selected = 0; renderReplicator();');
+  await run('pollReplicator()');
+  assert.deepEqual(queried, ['Rep-PLC-1']);
+  const nameInput = collect(root).find(node => node.tagName === 'label' && node.children[0]?.textContent === 'Name').querySelector('input');
+  nameInput.events.input({target: {value: 'renamed'}});
+  await run('pollReplicator()');
+  assert.equal(queried.length, 1);
+  assert.ok(collect(root).includes(nameInput));
+  assert.ok(root.querySelector('#rep-status-message').textContent.includes('Unsaved'));
+  await run('saveReplicator()');
+  assert.equal(stored.devices[0].name, 'renamed');
+  assert.equal(queried.at(-1), 'renamed');
+  await run('loadReplicator()');
+  assert.equal(run('selectedReplicator().name'), 'renamed');
+  rejectSave = true;
+  run('selectedReplicator().name = "duplicate"');
+  await run('saveReplicator()');
+  assert.equal(run('selectedReplicator().name'), 'duplicate');
+  assert.ok(root.querySelector('#rep-status-message').textContent.includes('duplicate name'));
+  assert.equal(queried.includes('duplicate'), false);
+  run('replaceReplicatorDraft(replicatorState.persisted); renderReplicator();');
+  await run('pollReplicator()');
+  assert.equal(queried.at(-1), 'renamed');
+});
 
 test('Replicator RBE output settings save a user-selected port and refresh both editors', async () => {
   const roots = {'simulator-root': new Element('div'), 'replicator-root': new Element('div')};

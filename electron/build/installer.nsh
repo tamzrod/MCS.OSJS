@@ -329,6 +329,12 @@ FunctionEnd
   ; NSSM reads these values from the service Parameters key at each start.
   WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "Application" "$INSTDIR\resources\bin\${executable}"
   WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppDirectory" "$MCSRuntimeRoot"
+  CreateDirectory "$MCSRuntimeRoot\logs"
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppStdout" "$MCSRuntimeRoot\logs\${service}.stdout.log"
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppStderr" "$MCSRuntimeRoot\logs\${service}.stderr.log"
+  WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppRotateFiles" 1
+  WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppRotateOnline" 1
+  WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppRotateBytes" 1048576
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppParameters"
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppEnvironment"
   DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Services\${service}\Parameters" "AppEnvironmentExtra"

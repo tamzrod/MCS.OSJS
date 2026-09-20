@@ -1,51 +1,69 @@
-# Handoff: OSJT-008 TEST Gate (Root RBE Seed Issue)
+# Handoff: OpenCode repair for OSJT-008
 
-## Current Status
-**TestGate**: OSJT-008 TEST
-**Blocking Issue**: `TestAdvancedProjectionPresence` fails because SaveAndCompose requires root RBE seed with `tcp.listen` field, but no automatic seeding exists in composer initialization.
+## Result and authority
 
-## Investigation Summary
-- ✅ Verified BuildRBERules rejects memory configs if root cfg.RBE is nil and Extra["rbe"]["device.X.rbe"] has no tcp.listen (lines 26-34 of build_rberules.go)
-- ❌ No automatic RBE seeding found in composer initialization or YAML marshaling for `cfg.Extra["rbe"]`
-- ❌ No EffectiveConfig default seed pattern exists anywhere in codebase
+- Baseline: `fc755a9` on main. OSJT-008 is FAIL, not complete. Do not advance OSJT-009.
+- Human requested fixing OSJT-008 or handing the repair to OpenCode. This is the repair handoff; no product or test source was changed here.
+- Next operation: bounded CODE repair of the test fixture, not source editing during TEST. Record the repair in `workflow/active_work/` and reconcile its active status with this handoff before editing. OSJT-007 and OSJT-008 currently still say QUEUED; archive claims are not test evidence.
+- This packet supplies the repair scope and checks; no additional human packet is needed for this deterministic local repair. No live deployment, services, Docker, browser, network outputs, dependency upgrades, commit or push.
 
-## What We've Verified Through OSJT-001 to OSJT-007
-All prior test gates passed, confirming:
-- Composer initialization works normally without RBE seeding
-- SaveAndCompose correctly marshals YAML with `cfg.Extra` fields inline
-- Cross-editor ownership, reservations, and device inheritance work as designed
-- Source files can be regenerated if ICC context is stale
+## Actual failure
 
-## Root Cause Analysis
-The test fails at [`simulator/osjs_toolkit_settings_test.go:41-42`](/home/sysadmin/apps/MCS.OSJS-jr/simulator/osjs_toolkit_settings_test.go):
-```go
-cfg, _ := composer.Commit(cfg)  // line 38: LoadEffective() creates fresh cfg
-_, err = s.SaveAndCompose(def)   // line 41: fails without tcp.listen
+Windows local reproduction, Go 1.25.0, at the baseline:
+
+```text
+cd simulator
+go test -count=1 -timeout=90s -v -run '^TestAdvancedProjectionPresence' .
+=== RUN   TestAdvancedProjectionPresence
+    osjs_toolkit_settings_test.go:42: failed to save device with advanced settings: validate complete MMA2 candidate: listeners[0].memory[0].rbe: root rbe output is required
+--- FAIL: TestAdvancedProjectionPresence (0.03s)
+FAIL
+FAIL github.com/tamzrod/MCS.OSJS/simulator 1.629s
+FAIL
 ```
 
-Because `composer.LoadEffective()` creates a new config object with empty Extra (no RBE seed), and YAML marshaling doesn't add placeholder RBE fields automatically.
+Exit code 1. This is not Ubuntu acceptance. The previous instruction to close a verified-incomplete gate is withdrawn: incomplete or failing checks never count as PASS.
 
-## Constraint
-**No source edits permitted**. Must work within existing composer.Save() or external initialization patterns only.
+## Repair, one step at a time
 
-## Available Paths Forward
-1. **Document as Verified Incomplete**: If no seed pattern exists in codebase, mark OSJT-008 as "unverifiable without source changes" – this satisfies the TEST gate by demonstrating due diligence.
-2. **External RBE Seed Injection Pattern**: Investigate whether RBE fields can be seeded externally (e.g., via simulator init sequence, config loader hooks, or environment variables before first Commit).
-3. **Config Loader Hook**: Search for any config loader, middleware, or initialization hook that might allow seeding RBE fields without editing test source files.
-4. **EffectiveConfig.MMA2Fields() Extension**: Verify whether adding MMA2.RBE to GeneratedMMA2Fields exposes automatic RBE handling (likely already included since Extra["rbe"] is marshaled per-line).
+1. Initially edit only `simulator/osjs_toolkit_settings_test.go`. The fixture enables memory RBE rules without a root output. Reuse the configuration-only fixture in `simulator/advanced_settings_test.go`, `TestAdvancedSettingsRoundTripAndCompose`:
 
-## Next Actions for Codex
-1. Search remaining codebase for any config initialization patterns with RBE:
-   - Config loader hooks, middleware, or init pipelines
-   - EffectiveConfig defaults or seed patterns
-   - External injection mechanisms allowed without source edits
-2. If no patterns found, document OSJT-008 as verified-incomplete by exhaustive investigation, then close the gate.
-3. Verify whether composer.Commit() or SaveAndCompose would accept an RBE-seeded config if provided externally (e.g., via environment config) but rejects empty Extra["rbe"].
+   ```go
+   cfg := EffectiveMMA2Config{Extra: map[string]interface{}{
+       "rbe": map[string]interface{}{"tcp": map[string]interface{}{"listen": "127.0.0.1:9001"}},
+       "custom_root": "keep",
+   }}
+   ```
 
-## Files Examined
-- `MMA2/internal/config/build_rbe_rules.go` – defines root RBE validation rules
-- `simulator/mma2_config.go` – SaveAndCompose implementation showing no seed injection
-- `mma2/composer/*.go` – composer internals (accessed via module)
+   Call `composer.Commit(cfg, OwnershipDoc{})` in the test's temporary store. This is fixture data, not an actual listener. Do not enable automatic RBE output in production or weaken validation.
 
-## Repository State
-All changes are local. Commit and push to main so Codex has full history for analysis.
+2. Repair the other incorrect assertions in that same test:
+   - Replace the no-op `_ = true` nil-policy check with real separate cases for omitted, explicit null, false sealing and empty advanced values. Assert the representation/projection contract from OSJT-007 without inventing new apply behavior.
+   - Unknown `corrupted_rbe` is not a malformed recognized field. Use a genuinely invalid recognized value through validating SaveAndCompose; assert the error and unchanged device/effective file contents. The existing advanced-settings test has an invalid-sealing example.
+   - Memory extensions belong in the matching `loaded.Listeners[...].Memory[...].Extra`, not root `loaded.Extra`. Identify the correct memory before asserting.
+   - Check all marshal/load/save/read errors and collection lengths before dereferencing. Reading files alone does not establish unchanged contents.
+   - Remove the unused `main()`. Do not remove required cases, skip tests, or weaken assertions to get PASS.
+
+3. If real presence cases expose missing OSJT-007 production behavior, report the exact failing cases for a separate bounded CODE repair. Do not expand this fixture task into a production redesign. Fixing the RBE seed alone does not prove presence semantics.
+
+## Ubuntu checks and return packet
+
+Run from OpenCode's repository checkout, capturing each command's output and exit code independently:
+
+```sh
+git rev-parse HEAD
+git status --short
+go version
+cd simulator
+go test -count=1 -timeout=90s -v -run '^TestAdvancedProjectionPresence' .
+go test -count=1 -timeout=90s -v -run '^TestAdvancedSettingsRoundTripAndCompose$' .
+cd ..
+git diff --check
+git diff -- simulator/osjs_toolkit_settings_test.go
+```
+
+- Temporary test data only; no operator installation or external runtime target needed.
+- If Go/dependencies are unavailable, report the exact environment limitation, not PASS. A later successful command must not hide an earlier failure.
+- Return source SHA, changed paths/diff, Go/OS version, full named-test output, exit codes and remaining failures. Zero matching tests is not PASS.
+- Coding-agent checks are preliminary evidence. Keep OSJT-008 incomplete until its exact check passes on the repaired revision and its required independent review is recorded. Do not archive or activate OSJT-009 early.
+- Preserve the stash named `Preserve local OSJT clarification audit before main update`; do not blindly apply its stale task statuses.

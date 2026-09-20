@@ -24,4 +24,53 @@ NEXT (not authorized now): coding agent reviews the pushed preparation evidence 
 
 ## JR PREPARATION REPORT — UMIG-EM-003-V
 
-PENDING — OpenHands Operation CWAL has not executed this current packet.
+VERDICT: PREPARATION COMPLETE
+
+Executed by independent OpenHands JR under `OPERATION CWAL` (preparation gate only; NOT live VERIFY, NOT a product PASS). Preflight steps 1–6 of `workflow/cwal/umig-em-003-v-sandbox-preflight.md` were run exactly once in the existing disposable checkout `/tmp/em003v-discovery-clone`. No application container was started, no synthetic apply was sent, no source edited, no install performed.
+
+### Step 1 — source freshness (one authorized fast-forward)
+
+| Command | Exit | Result |
+|---|---|---|
+| `pwd -P` | 0 | `/tmp/em003v-discovery-clone` |
+| `git status --porcelain --untracked-files=all` (before) | 0 | empty (clean) |
+| `git branch --show-current` | 0 | `main` |
+| `git rev-parse HEAD` (before) | 0 | `f58033e02db80b8af50cf05558d1415314986ebf` (stale) |
+| `git rev-parse origin/main` | 0 | `4b840d9d4a481b09f210dd3e279e7b2da636b2ae` |
+| `git ls-remote --exit-code origin refs/heads/main` | 0 | `4b840d9d…` |
+| `git merge-base --is-ancestor HEAD origin/main` | 0 | pass (fast-forward safe) |
+
+Authorized `git merge --ff-only origin/main` -> exit 0 (`f58033e..4b840d9`, 3 files). Post-check: `git status --porcelain --untracked-files=all` empty; `HEAD` = `origin/main` = live `git ls-remote` = `4b840d9d4a481b09f210dd3e279e7b2da636b2ae`; `git merge-base --is-ancestor 538324a472eb15ff8ef97ee66f826fa02ba9462f HEAD` exit 0. Sole ACTIVE task confirmed `UMIG-EM-003-V`; current CWAL packet reread after fast-forward. No reset/rebase/clean/force/second fetch.
+
+### Step 2 — sandbox / daemon provenance
+
+- `uname -s` -> `Linux`; `docker context show` -> `default`; `docker context ls` -> only `default` -> `unix:///var/run/docker.sock`. `env | grep -E '^(DOCKER_HOST|DOCKER_CONTEXT|COMPOSE_PROJECT_NAME|MCS_VERIFY_OSJS_PORT)='` -> empty (exit 1); no remote/operator host indicated.
+- Client present (Docker Engine 29.8.0, API 1.56), but daemon was initially absent (`docker version`/`docker info` exit 1; no socket, no `dockerd`/`containerd`, `/tmp/mcs-em003v-dockerd.pid` absent) — matching the prior known state.
+- Exactly ONE bounded sandbox-local startup was run, verbatim: guard `test ! -S /var/run/docker.sock && ! pgrep -x dockerd && test ! -e /tmp/mcs-em003v-dockerd.pid && sudo -n sh -c 'nohup dockerd > /tmp/mcs-em003v-dockerd.log 2>&1 < /dev/null & echo $! > /tmp/mcs-em003v-dockerd.pid'` -> exit 0, PID `717`. Then `timeout 90s sh -c 'until sudo -n docker version >/dev/null 2>&1; do sleep 2; done'` -> exit 0.
+- `sudo -n docker version` -> Server Docker Engine 29.8.0 (containerd v2.3.5, runc 1.5.1). `sudo -n docker info --format '{{.Name}} {{.DockerRootDir}}'` -> `runtime-dfpoqximlibnvfbn-89d77c974-j29f4 /var/lib/docker` (daemon name equals this sandbox hostname; local root `/var/lib/docker`) — proven sandbox-local. `sudo docker compose version` -> `v5.5.1`. No second startup attempt.
+
+### Step 3 — verify-only rendered topology
+
+- `sudo -n docker compose -f deploy/verify/compose.yaml -p mcs-em003v-discovery config` -> exit 0 (rendered above).
+- Topology confirmed: 5 services `seed`/`mma2`/`modbus-simulator-runtime`/`modbus-replicator-runtime`/`osjs-shell`; project-scoped named volume `mcs-em003v-discovery_verify-data`; seed refuses any nonempty volume and writes `listeners: []` + `devices: []` + `devices: []`; `mma2` on `internal: true` `verify-runtime`; BOTH Go runtimes `network_mode: service:mma2`; `osjs-shell` only published `127.0.0.1:18219:18209` on `verify-ui`; no fixed `container_name`, no privileged mode, no host networking, no operator/bind mounts or external volumes, no public Modbus/RBE/access-event port.
+- Port occupancy: `ss` not installed (exit 127); read-only fallback `cat /proc/net/tcp`/`tcp6` shows loopback `127.0.0.1:18219` (0x472B) FREE. No `compose up/build/down` executed.
+
+### Step 4 — read-only inventory
+
+- `sudo -n docker ps -a` -> empty. `sudo -n docker network ls` -> only default `bridge`/`host`/`none`. `sudo -n docker volume ls` -> empty. `sudo -n docker compose … ps -a` -> empty. No collisions; discovery project `mcs-em003v-discovery` distinct from the later executable project name. No volume contents inspected; nothing deleted/reused.
+
+### Step 5 — local apply/restart interfaces (source-read only)
+
+- Sockets: Simulator `<OSJS_DATA_DIR>/run/modbus-simulator.sock` (`simulator/runtime_transport_unix.go: const RuntimeSocketRelPath = "run/modbus-simulator.sock"`); Replicator `<OSJS_DATA_DIR>/run/modbus-replicator.sock` (`replicator/runtime_socket_unix.go`). In this stack `OSJS_DATA_DIR=/data`, shared `verify-data`.
+- Framing (both runtimes): 4-byte big-endian uint32 length + JSON body, one request per connection. Simulator: `simulator/runtime_server.go` `handleRuntimeConn`/`writeRuntimeResponse`, `maxRuntimeMessage = 1<<20`, 30s conn deadline. Replicator: `replicator/cmd/modbus-replicator-runtime/main.go` (`binary.BigEndian.Uint32` header, `HandleRuntimeRequest`). Toolkit relay `OSJS/src/packages/MCSModbusToolkit/server.js` uses the same 4-byte BE framing, `MAX_MESSAGE = 1<<20`, 25s timeout.
+- Request envelope: `{version:1, request_id:"<non-empty>", operation, payload}`; response `{version, request_id, ok, result, error{code,message}}`. Simulator operations `load`/`apply`/`status` (`payload.document` for apply; `payload.name` for status). Replicator operations `load`/`suggest`/`status`/`apply` (`replicator/runtime_api.go`; `apply` payload `{document:…}`).
+- Toolkit relay routing: OS.js WebSocket provider; `request_id` prefixed `mcs-replicator-` -> Replicator socket, otherwise Simulator socket (`server.js`). It is not a plain HTTP endpoint. Hence a bounded synthetic parallel test must speak the Unix socket protocol directly (or drive the relay through OS.js auth).
+- Shared lock primitive: `mma2composer.WithWriterLock(root, DefaultWriterLockTimeout=5s, action)` on the fixed file `<OSJS_DATA_DIR>/config/mma2/.writer.lock` (Linux kernel advisory flock, non-reentrant); both `simulator/writer_lock.go` and `replicator/writer_lock.go` delegate to it. Replicator `RuntimeManager.Apply` (`replicator/manager.go:120`) and Simulator `applyStructuralLocked` (`simulator/apply.go:83`) acquire it once at the outer transaction.
+- MMA2 restart/ack: Simulator structural apply writes `config/mma2/restart-request.yaml` (fields `requested_at`, `reason`, `config_sha256`, `ports`) after config commit, awaits `config/mma2/restart-ack` equal to the request `config_sha256` within `DefaultRestartReadyTimeout=20s` (`simulator/restart.go`), then waits TCP readiness on each composed `127.0.0.1:<port>`. Deterministic ack = comparing ack bytes to the config SHA.
+- Uncertainties for the later packet: (a) the Toolkit relay is an authenticated OS.js WebSocket provider, not a direct socket client — choose raw Unix-socket requests or authenticated relay; (b) MMA2 ingress binds `0.0.0.0:<port>` inside the container only (no host publish); (c) confirm `MAX_MESSAGE`/deadline parity between relay and runtimes across the shared volume. These must be pinned by the coding agent's later live packet.
+
+### Step 6 — safe post-check / side effects
+
+- Final `git status --porcelain --untracked-files=all` empty; `git rev-parse HEAD` = `4b840d9d…`; live `git ls-remote --exit-code origin refs/heads/main` = `4b840d9d…` (unchanged). Only side effect: sandbox-local daemon started, PID `717`, log `/tmp/mcs-em003v-dockerd.log`; `docker ps -a` and `docker volume ls` still empty (no app containers/volumes created).
+
+Report commit: see pushed SHA below (transport section). This preparation establishes `source clean/current`, sandbox-local daemon, verify-only topology, clean inventory, free loopback port `18219`, and the local apply/restart interfaces. It does NOT establish `UMIG-EM-003-V PASS`.

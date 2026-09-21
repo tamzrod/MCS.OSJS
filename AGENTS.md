@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Identity bootstrap
+
+First question: **Who are you?** Establish the actual agent/runtime identity, then read `workflow/IDENTITY_MAP.md`. For OpenCode coding work, load `workflow/adapters/opencode.md`. An unknown identity must ask the operator and STOP before mutation. Identity does not authorize a task. Platform adapters never override the shared directive or active-task permissions.
+
 ## Purpose
 
 Bootstrap/router for MCS.OSJS agents. Keep this file small. Detailed behavior belongs in directive, workflow, and tool files.
@@ -16,13 +20,13 @@ Resolve these commands before any generic repository workflow:
 When invoked:
 
 ```text
-IDENTIFY DIRECTIVE
+IDENTITY → IDENTITY MAP → IDENTIFY DIRECTIVE
 → READ ITS FILE
 → FOLLOW ITS OWN SCOPE / READ / WRITE / STOP RULES
 → NEVER GUESS
 ```
 
-Do not import behavior from another directive unless the active directive explicitly calls it.
+Do not import behavior from another directive unless the active directive explicitly calls it. `OPERATION CWAL` remains independent JR testing; the OpenCode coding adapter is not permission to turn a JR TEST packet into a CODE task.
 
 ## Generic Repository Work
 

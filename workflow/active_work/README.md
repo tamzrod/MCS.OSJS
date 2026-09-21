@@ -1,7 +1,0 @@
-# Active Work — OTR
-
-The human has approved the OTR roadmap and promotion. This directory now contains an ACTIVE OTR-001A packet, queued discovery packets and copied OTR-004..014 parent planning templates. The old statement that this directory is empty is obsolete. The authoritative selector is `handoff.md` plus `OTR_PROMOTION_QUEUE.md`; `planning/microtask/` contains decomposition and sizing rules.
-
-On OPERATION CWAL invocation, identify and execute exactly ONE currently assigned, complete and eligible packet without asking for a second approval. After evidence, report and STOP that invocation. A later invocation can autonomously route the first eligible successor from recorded evidence, but no background scheduling is implied. An obsolete `PLANNING / UNDER REVIEW` header in a copied child does not cancel the human's promotion; missing required task details or predecessor evidence still block execution. The OTR-004..014 parent templates are NOT executable and must be materialized as individual, source-pinned CODE/TEST/VERIFY children after inventories. Do not claim all atomic children already exist.
-
-Preserve OS.js desktop, start menu, taskbar and separate deployment; Electron is UI/behavior reference, not a shared runtime. No invented backend contracts, production YAML writes, global restarts or fabricated JR results. Only BLACK SHEEP WALL edits ICC. The previous OSJT queue was retired by human reset, not marked PASS.

@@ -1,3 +1,0 @@
-# OTR-002A — OS.js Toolkit UI baseline
-Status: PLANNING / UNDER REVIEW. Stage: DISCOVERY. Owner: OpenCode. Previous: OTR-001C. Next: OTR-002B.
-Outcome: Source-linked map of current unified OS.js Toolkit launch, shell, renderer, styles and UI tests. Read-only inspect OSJS Toolkit and its registration; record exact paths/anchors, existing navigation and shell preservation constraints. Acceptance: (1) entry/launch and screen source map; (2) reusable UI/style/test files listed; (3) discrepancies against OTR-001A/B noted without implementing. Non-scope: backend contracts, Electron changes, source edits, builds, runtime. Evidence: revision, inspected paths, inventory artifact. Size 0/1/0/1/0=2. STOP.

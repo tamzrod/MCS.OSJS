@@ -1,0 +1,26 @@
+# MCS Modbus Simulator Devices Configuration
+# Supports both MMA2 (Modbus Master API) and Modbus Memory devices
+# See: https://goat.fyi/modbus-simulator/configuration.md
+
+services:
+  # MMA2 device - Modbus Master API endpoint on port 5020
+  Sim-PLC-1:
+    type: mmatest
+    unit_id: 1
+    rtu_port: 5020
+    fc1_interval_ms: 100
+    fc2_interval_ms: 100
+    fc3_interval_ms: 100
+    fc4_interval_ms: 100
+    random_runtime: true
+    
+  # Modbus Memory device - enables memory contract operations via socket transport
+  Sim-PLC-2:
+    type: modbus-memory
+    port: 18209
+    unit_id: 1
+    runtime: true
+    fc1_interval_ms: 50
+    fc2_interval_ms: 50
+    fc3_interval_ms: 50
+    fc4_interval_ms: 50

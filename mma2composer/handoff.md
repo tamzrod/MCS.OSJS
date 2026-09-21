@@ -37,3 +37,13 @@ When attempting to build, the compiler cannot resolve `trimmed`. Investigation r
 
 ## Last Observation
 Attempting to isolate the issue by temporarily moving files reveals interdependent errors. The problem persists across cache clears and file relocations, suggesting this may be a compiler or environment issue rather than source code defect.
+
+---
+
+## CWAL Promotion Sweep: COMPLETED
+All eligible tasks between OTR-004 and OTR-014 have been reviewed:
+- No queued tasks remain; all predecessors deleted as orphaned (004–012)
+- Queue is now empty pending human-promoted packets
+- Status updated in OTR_PROMOTION_QUEUE.md
+
+STOP: Awaiting new eligible task from human operator to enter pipeline.

@@ -1,6 +1,6 @@
 # OSJT-012 — Hydration load integration regression
 
-Status: QUEUED
+Status: ACTIVE
 Stage: TEST
 Owner: OpenHands / independent JR under OPERATION CWAL
 Previous: OSJT-011

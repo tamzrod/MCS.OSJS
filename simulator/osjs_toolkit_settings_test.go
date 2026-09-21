@@ -9,6 +9,74 @@ import (
 	"github.com/tamzrod/MCS.OSJS/mma2composer"
 )
 
+// TestAdvancedProjectionLoad regression test for hydration load integration.
+// This test verifies that canonical load projection can be connected under existing locks
+// without recursive locking or disk writes, ensuring read-only operation works correctly.
+func TestAdvancedProjectionLoad(t *testing.T) {
+	store := Store{Root: t.TempDir()}
+	candidate := validDevice()
+	candidate.MMA2.Policy = &mma2composer.Policy{{ID: "load", SourceIP: []string{"0.0.0.0/0", "::/0"}, AllowFC: []uint8{1, 2, 3}}}
+	candidate.MMA2.Extra = map[string]interface{}{"custom_load_setting": "read_only_ok"}
+	candidate.MMA2.StateSealing = map[string]interface{}{"enabled": true, "area": "load", "address": 1}
+	candidate.MMA2.RBE = map[string]interface{}{"coils": []interface{}{map[string]interface{}{"id": 99, "name": "loaded", "start": 0, "count": 2}}}
+
+	encoded, err := json.Marshal(candidate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var loaded DeviceDefinition
+	if err := json.Unmarshal(encoded, &loaded); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(loaded, candidate) {
+		t.Fatalf("load projection altered device: %s", encoded)
+	}
+
+	config := store.EffectiveConfigPath()
+	deviceFile := store.DevicesPath()
+
+	if err := store.SaveAndCompose(candidate); err != nil {
+		t.Fatalf("failed to save candidate before load projection: %v", err)
+	}
+	saveBefore, _ := os.ReadFile(config)
+	loadBefore, _ := os.ReadFile(deviceFile)
+
+	if len(saveBefore) == 0 || len(loadBefore) == 0 {
+		t.Fatal("saved files are empty")
+	}
+
+	// Simulate a load projection by reading and unmarshaling
+	loadedConfigFromDisk []byte
+	loadedDeviceFromDisk []byte
+	loadedConfigFromDisk, _ = os.ReadFile(config)
+	loadedDeviceFromDisk, _ = os.ReadFile(deviceFile)
+
+	if len(loadedConfigFromDisk) == 0 || len(loadedDeviceFromDisk) == 0 {
+		t.Fatal("could not read loaded files")
+	}
+
+	confirmDevice := DeviceDefinition{}
+	if err := json.Unmarshal(loadedDeviceFromDisk, &confirmDevice); err != nil {
+		t.Fatal(err)
+	}
+	if confirmDevice.MMA2.Policy.Rules[0].ID != "read" {
+		t.Fatalf("load projection lost read policy: %v", confirmDevice.MMA2.Policy)
+	}
+
+	store.Load() // This is the canonical load under lock
+
+	configAfter, _ := os.ReadFile(config)
+	deviceAfter, _ := os.ReadFile(deviceFile)
+
+	if !reflect.DeepEqual(configAfter, saveBefore) {
+		t.Fatal("load projection changed effective config")
+	}
+	if !reflect.DeepEqual(deviceAfter, loadBefore) {
+		t.Fatal("load projection changed device document")
+	}
+}
+
 // TestAdvancedProjectionPresence verifies that omitted versus explicit null, false, and empty
 // advanced values are represented without changing apply behavior.
 func TestAdvancedProjectionPresence(t *testing.T) {

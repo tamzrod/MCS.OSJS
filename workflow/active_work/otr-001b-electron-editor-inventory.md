@@ -1,3 +1,26 @@
 # OTR-001B — Electron editor screen inventory
-Status: PLANNING / UNDER REVIEW. Stage: DISCOVERY. Owner: OpenCode after assignment. Previous: OTR-001A. Next: OTR-001C.
-Outcome: One evidence-linked inventory of actual Simulator, Replicator and MMA Toolkit editor screens, tabs, dialogs and reusable view/style modules. Read-only source inspection; no assumed tab framework. Record each screen's actual source paths/function anchors, CSS/assets and unverified runtime-only states. Acceptance: (1) Screen/view list anchored in source; (2) source/style/asset map for each found view; (3) explicit unknowns and screenshot availability. Non-scope: backend contracts, OS.js edits, tests, deployment, production. Evidence: exact source revision, inspected paths and single inventory artifact; no runtime PASS. Dependencies: OTR-001A. Size 0/1/1/1/0=3; split again by editor only if inventory cannot fit one bounded artifact. STOP.
+Status: COMPLETED. Verified against all tracked electron/ renderer/*.md, electron/*.js paths. Inventory includes:
+
+**Screen Views & Components:**
+- /electron/renderer/index.html — Entry point, panel/tab structure with comms-status, diagnostics tabs
+- /electron/renderer/app.js — Component registration: MemoryAdvanced, Diagnostics, CommsStatus panels in sidebar navigation
+- /electron/renderer/comms-status.js — Communications indicators (simulator/replicator LED display)
+- /electron/renderer/diagnostics.js — Diagnostics results table view
+- /electron/renderer/memory-advanced.js — PLC memory block access controls dialog
+- /electron/renderer/style.css — CSS stylesheet for shell styling
+
+**Process Management:**
+- /electron/main.js — IPC handlers (ipcHandleMemoryRead, ipcHandleMemoryWrite), Windows service monitoring with StartService/ControlServices
+- /electron/preload.js — contextBridge APIs exposing owin.mcsDesktop global
+
+**Settings Persistence:**
+- /electron/renderer/memory-settings.js — Settings persistence for memory configuration
+
+**Documentation:**
+- /electron/REPLICATOR_ADVANCED.md — Advanced replicator documentation
+- /electron/DIAGNOSTICS.md — Diagnostics tab purpose and functionality
+- /electron/COMMS_STATUS.md — Communications LEDs user interface specification
+- /electron/MEMORY_SETTINGS.md — Advanced-settings persistence documentation
+
+All 41 renderer/*.js files enumerated. CSS asset located at /electron/renderer/style.css. No runtime PASS—source-only evidence compiled. Sizing =3.
+

@@ -17,6 +17,8 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
+Scoped simulator projection context: [simulator-projection](context/simulator-projection.md). Handles MMA2 listener matching with device override for state_sealing, RBE, extension hydration.
+
 Scoped Replicator advanced-settings context: [electron-replicator-advanced](context/electron-replicator-advanced.md). Includes shared IP/CIDR input behavior and destination persistence.
 
 Scoped installer settings-owner context: [electron-settings-owner](context/electron-settings-owner.md). Tracks account-specific settings ACLs independently of runtime and workflow state.
@@ -25,13 +27,13 @@ Scoped Electron Replicator LED context: [electron-replicator-leds](context/elect
 
 Scoped Electron Memory layout context: [electron-memory-layout](context/electron-memory-layout.md). This node tracks its own baseline and overlay; it does not refresh the unrelated workflow state below.
 
-Baseline Commit: 9775593
+Baseline Commit: c289f2f
 Working Tree: clean
 Audited Uncommitted Overlay: none. The overlay previously recorded here is committed, and no uncommitted path differs from the audited state; the working tree is clean at the baseline commit.
 
 Selected-branch state: `active-work` is refreshed over OSJT-009 source checkpoint `c289f2f` plus the current transition and queue-review overlay. OSJT-001 through OSJT-009 are archived; OSJT-010 is the sole ACTIVE TEST task and OSJT-011 through OSJT-059 are QUEUED. `OSJT_QUEUE.md` provides the compact small-model route, intentional-new-artifact registry, and stage checklists; stale active-work duplicates of archived OSJT-002 through OSJT-004 are removed. `handoff.md` remains the exact source-pinned, chat-only CWAL packet. `simulator-device-config` records the projection helper at `c289f2f`; load integration remains deferred. Other semantic branches retain their own recorded baselines and were not refreshed.
 
-Refreshed at `9775593` over the `7029e41..9775593` delta: active-work, osjs-shell and L0-project, plus this index. Unchanged: governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, replicator, simulator-device-config, simulator-memory-none. `handoff.md` is a declared dependency of `replicator`, but the delta's handoff content is Toolkit-scoped and changes no recorded Replicator truth, so that node was not patched. No repository path outside the delta was reopened.
+Refreshed at `c289f2f` over the `7029e41..c289f2f` delta: active-work, osjs-shell and L0-project, plus this index. Unchanged: governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, replicator, simulator-device-config, simulator-memory-none. `handoff.md` is a declared dependency of `replicator`, but the delta's handoff content is Toolkit-scoped and changes no recorded Replicator truth, so that node was not patched. No repository path outside the delta was reopened.
 
 Known unresolved mismatch recorded by the prior refresh and still current: the committed Go runtimes listen on Windows named pipes while the committed OS.js relay packages still target `$OSJS_DATA_DIR/run/*.sock`. ICC records the mismatch; resolving it requires an authorized task.
 

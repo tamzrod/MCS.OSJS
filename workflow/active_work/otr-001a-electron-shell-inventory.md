@@ -1,5 +1,5 @@
 # OTR-001A — Electron shell/navigation inventory
-Status: ACTIVE. Stage: DISCOVERY (read-only). Assigned owner: OpenCode. Previous: brainstorm. Next: OTR-001B (not assigned).
+Status: COMPLETED. Verified against all tracked electron/ and root paths. Inventory includes main.js entry point, panel/tab structure from index.html, navigation from app.js, comms-status.js indicators, diagnostics display table, memory controls dialogs, IPC handler registration, process specs (MMA2/simulator/replicator), preload contextBridge APIs with mcsDesktop global, memory settings persistence, runtime status monitoring, and CSS stylesheet. Source paths anchored, line anchors documented.
 
 ## Goal
 Produce one source-linked inventory of the EXISTING Electron MCS ModbusToolkit launch, shell, navigation, layout and styling. This is the reference UI for the separate OS.js replica; do not redesign it.

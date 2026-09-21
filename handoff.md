@@ -1,7 +1,7 @@
-# Handoff — planning reset
+# Handoff — OS.js Toolkit Electron replica
 
-Status: NO ACTIVE TASK. On 2026-09-21 the human explicitly retired all previous `workflow/active_work/` tasks to start fresh microtask planning. Previous OSJT queue, activation, claimed results and successor instructions are historical only; do not execute them or treat them as PASS.
+Status: ONE ACTIVE TASK — OTR-001A. Assigned to OpenCode, read-only DISCOVERY. Task packet: `workflow/active_work/otr-001a-electron-shell-inventory.md`. This active-work placement and the user's explicit promotion authorize its written scope; do not request another approval. Start only this task after updating local repository context safely. If the local worktree has old OSJT uncommitted changes, preserve them; do not clean/reset/restore/stash or attempt OSJT reconciliation. The OTR-001A packet explicitly permits read-only inspection with unrelated dirty paths and requires STOP if its Electron source is modified.
 
-Next authorized activity: draft and review a new sequence of small microtasks using the existing Electron Toolkit UI and behavior as reference, preserving a separate OS.js deployment. Focus on actual YAML load, edit, validation, save, restart of the affected MMA/replicator service, and applied-state verification with safe boundaries. Planning is not CODE authorization. Do not create or promote an ACTIVE task until reviewed.
+Goal: inventory actual Electron Toolkit shell/navigation/layout as reference for a same-UI, same-concept OS.js replica with different backend and separate deployment. Execute exactly the commands/actions and chat-only evidence requirements in OTR-001A. No code edits, builds, service actions, ICC edits, commit or push. Return report and STOP. Do not automatically begin OTR-001B.
 
-OpenCode / JR: no execution packet is assigned. STOP rather than revive OSJT-013 or infer a successor. ICC is maintained only by BLACK SHEEP WALL.
+Planning: `planning/microtask/otr-001*` through `otr-003*` contain candidate discovery/map children; `otr-004` through `otr-014` remain parent templates needing evidence-driven executable splitting. Their presence does not authorize execution. Old OSJT queue/activation and stale ICC state are historical, not task authority. ICC refresh is BLACK SHEEP WALL only. No JR test packet is assigned.

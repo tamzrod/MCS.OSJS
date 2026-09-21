@@ -1,10 +1,20 @@
 # Operation CWAL
 
-## Purpose and authority
+## Entry-point routing — mandatory
 
-Operation CWAL is the independent MCS.OSJS **JR test runner**. The coding agent, not JR, selects and promotes exactly one ACTIVE TEST/VERIFY task and places its **complete, current, exact** execution packet in `handoff.md`. `workflow/active_work/` and handoff must agree. JR reads that packet, executes only its commands/actions, returns genuine evidence, writes/pushes a report only if that packet explicitly authorizes it, then STOPS. JR never fixes code, promotes work, updates ICC, selects follow-up tasks or infers product readiness from narrower tests.
+"Operation CWAL" invokes the workflow; it does not automatically assign JR identity. First identify the executing agent and the one explicitly authorized ACTIVE task from the current task and handoff. Never interpret a queued successor, stale local edit, or a claimed PASS without independent evidence as authority to advance.
 
-On `Operation CWAL`, perform the whole authorized lifecycle, not just its tests:
+- OpenCode assigned ACTIVE CODE: follow `workflow/adapters/opencode.md` for bounded implementation, targeted self-tests, in-scope fixes and retests, evidence, then STOP. Do not apply the JR-only execution restrictions below to CODE work.
+- OpenHands / independent JR assigned ACTIVE TEST/VERIFY: follow the JR lifecycle below, using the complete current packet. JR does not implement or self-authorize a test.
+- Missing or conflicting identity, task, owner or handoff: report the exact blocker once and STOP. Do not select a different task, rewrite workflow files or perform speculative reconciliation.
+
+An OpenCode self-test is not an independent JR PASS. Neither agent may archive, promote or start a successor or update ICC; ICC changes belong to BLACK SHEEP WALL under separate authorization. Routine Git archaeology, backups, conflict resolution, reset and worktree repair are not implicit tasks. For a genuine workspace blocker, report the precise issue once and STOP; destructive cleanup requires explicit authorization. These routing rules do not grant new file, shell, network, commit or push permissions.
+
+## Purpose and authority — JR only
+
+For an explicitly assigned independent JR TEST/VERIFY task, Operation CWAL is the MCS.OSJS **JR test runner**. The coding agent, not JR, selects and promotes exactly one ACTIVE TEST/VERIFY task and places its **complete, current, exact** execution packet in `handoff.md`. `workflow/active_work/` and handoff must agree. JR reads that packet, executes only its commands/actions, returns genuine evidence, writes/pushes a report only if that packet explicitly authorizes it, then STOPS. JR never fixes code, promotes work, updates ICC, selects follow-up tasks or infers product readiness from narrower tests.
+
+When routed to JR, perform the whole authorized lifecycle, not just its tests:
 
 ```text
 READ handoff.md + identify sole ACTIVE test

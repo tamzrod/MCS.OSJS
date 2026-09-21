@@ -104,6 +104,16 @@ button:disabled, input:read-only { opacity: .7; }
 .tool-status { margin-top: auto; padding: 5px 6px; border: 1px solid #999; background: #eaf4ff; color: #12395c; }
 .tool-status.error { border-color: #8b0000; background: #ffe3e3; color: #7d0000; }
 .diagnostic-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+#panel-diagnostics { overflow: auto; padding: 6px; gap: 8px; }
+#panel-diagnostics > * { flex-shrink: 0; }
+.diagnostics-section { margin-bottom: 10px; padding: 10px; border: 1px solid #999; background: #f7f7f7; }
+.diagnostics-section h2 { margin: 0 0 8px; font-size: 14px; }
+.diagnostics-section li { margin-bottom: 6px; }
+.diagnostics-section table { width: 100%; border-collapse: collapse; }
+.diagnostics-section th, .diagnostics-section td { text-align: left; padding: 6px; border: 1px solid #bbb; white-space: pre-wrap; overflow-wrap: anywhere; }
+.diagnostics-section th { background: #ddd; }
+.diagnostics-section select, .diagnostics-section input { width: min(300px, 100%); margin: 0 8px 8px 0; }
+.diagnostics-log { max-height: 320px; overflow: auto; background: #111; color: #eee; padding: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .diagnostic-actions button { padding: 6px 10px; border: 2px outset #eee; background: #c0c0c0; cursor: pointer; }
 .paths { display: grid; gap: 3px; margin-bottom: 10px; padding: 8px; border: 1px solid #999; background: #eee; word-break: break-all; }
 #log { flex: 1; min-height: 0; margin: 0; padding: 10px; overflow: auto; color: #e8e8e8; background: #111; border: 2px inset #555; font: 12px Consolas, monospace; white-space: pre-wrap; }

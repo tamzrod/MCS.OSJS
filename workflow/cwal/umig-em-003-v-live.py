@@ -141,9 +141,12 @@ def safe_down(created):
         return
     # Fail closed: never remove anything whose project label is absent or unexpected.
     for typ, name in [('volume',PROJECT+'_verify-data'),('network',PROJECT+'_verify-runtime'),('network',PROJECT+'_verify-ui')]:
-        label=d(typ,'inspect',name,'--format','{{index .Labels "com.docker.compose.project"}}',ok=(0,1))
-        if label:
-            check(label==PROJECT,'refuse cleanup of unowned '+typ+' '+name)
+        names=d(typ,'ls','--format','{{.Name}}').splitlines()
+        if name not in names:
+            stamp('cleanup_resource_absent',kind=typ,name=name)
+            continue
+        label=d(typ,'inspect',name,'--format','{{index .Labels "com.docker.compose.project"}}')
+        check(label==PROJECT,'refuse cleanup of unowned '+typ+' '+name)
     ids=dc('ps','-aq').split()
     for ident in ids:
         label=d('inspect',ident,'--format','{{index .Config.Labels "com.docker.compose.project"}}')
@@ -154,6 +157,26 @@ def safe_down(created):
     check(volume==PROJECT,'retained volume not correctly labelled')
     check(not dc('ps','-aq'),'project containers remain after down')
     stamp('cleanup_complete',retained_volume=PROJECT+'_verify-data')
+    return PROJECT+'_verify-data'
+
+
+def finalize(created, container, status, reason):
+    retained_volume=None
+    try:
+        if container:
+            stamp('final_snapshot',snapshot={p:None if o is None else o['sha256'] for p,o in snap(container,'final_before_down').items()})
+    except Exception as error:
+        stamp('final_snapshot_failure',error=str(error))
+        reason+='; final snapshot failure: '+str(error)
+        if status=='PASS':status='INCOMPLETE'
+    try:
+        retained_volume=safe_down(created)
+    except Exception as error:
+        stamp('cleanup_failure',error=str(error))
+        reason+='; cleanup failure: '+str(error)
+        if status=='PASS':status='INCOMPLETE'
+    stamp('FINAL_VERDICT',verdict=status,reason=reason,project=PROJECT,retained_volume=retained_volume)
+    return status, reason
 
 
 def main():
@@ -270,14 +293,7 @@ def main():
     except (Gate,Exception) as e:
         status='BLOCKED';reason=str(e);stamp('failure',kind='environment_or_evidence',reason=reason)
     finally:
-        try:
-            if container:
-                stamp('final_snapshot',snapshot={p:None if o is None else o['sha256'] for p,o in snap(container,'final_before_down').items()})
-            safe_down(created)
-        except Exception as e:
-            stamp('cleanup_failure',error=str(e));reason+='; cleanup failure: '+str(e)
-            if status=='PASS':status='INCOMPLETE'
-        stamp('FINAL_VERDICT',verdict=status,reason=reason,project=PROJECT,retained_volume=PROJECT+'_verify-data' if created else None)
+        status, reason=finalize(created, container, status, reason)
     return 0 if status=='PASS' else 1
 
 if __name__=='__main__':

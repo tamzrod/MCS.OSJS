@@ -1,25 +1,7 @@
-# Active Work
+# Active Work — OTR
 
-This directory contains only human-promoted tasks. Planning and Brainstorm do not authorize execution.
+The human has approved the OTR roadmap and promotion. This directory now contains an ACTIVE OTR-001A packet, queued discovery packets and copied OTR-004..014 parent planning templates. The old statement that this directory is empty is obsolete. The authoritative selector is `handoff.md` plus `OTR_PROMOTION_QUEUE.md`; `planning/microtask/` contains decomposition and sizing rules.
 
-## Execution states and authority
+On OPERATION CWAL invocation, identify and execute exactly ONE currently assigned, complete and eligible packet without asking for a second approval. After evidence, report and STOP that invocation. A later invocation can autonomously route the first eligible successor from recorded evidence, but no background scheduling is implied. An obsolete `PLANNING / UNDER REVIEW` header in a copied child does not cancel the human's promotion; missing required task details or predecessor evidence still block execution. The OTR-004..014 parent templates are NOT executable and must be materialized as individual, source-pinned CODE/TEST/VERIFY children after inventories. Do not claim all atomic children already exist.
 
-Executable task files have `ACTIVE` or `QUEUED`; completed/retired tasks belong in `workflow/archive/`. Exactly one ACTIVE means execute only that task; zero or multiple ACTIVE means stop. Never infer a task from numbering, handoff, dependencies or Planning. This directory selects the task, and `handoff.md` must agree. A conflict means stop.
-
-## Stage ownership
-
-UMIG CODE tasks: ChatGPT coding agent owns product changes, source readback, source checkpoint, test packets and workflow advancement. UMIG TEST/VERIFY tasks: OpenHands normally acts as JR and follows `operation cwal.md`; JR runs only the current test packet and returns raw evidence, never edits product files, modifies task state or fixes bugs. **One-task human exception (2026-09-20): `UMIG-EM-003-T` may use experimental OpenCode V2 JR in a separate Legion worktree ONLY after that task is ACTIVE with an exact local-only Go test packet. This is not a general JR replacement and does not permit Docker, operator data/services, sudo or automatic shell approval.** The coding agent reads actual independent JR evidence before deciding PASS/completion. A source-only checkpoint is not proof of a test or runtime acceptance. FAIL/BLOCKED stops automatic advancement; fix only within an explicitly authorized coding task.
-
-## Ordered authorized work
-
-A human may promote an ordered sequence; its first task is ACTIVE and later tasks QUEUED. Each queued task names `Previous`; each non-final task names `Next`.
-
-After the ACTIVE task meets its *own stage-specific* gate: coding agent archives it, follows its explicit Next, checks the named successor exists as QUEUED and links back via Previous, changes only that successor to ACTIVE, synchronizes handoff, and commits/pushes this state together. JR never performs advancement. If Next is absent, stop. If the successor is missing, in Planning, not QUEUED, or has mismatched Previous, stop for human promotion/repair; never infer it.
-
-When a TEST/VERIFY task becomes ACTIVE, coding agent must put one unambiguous `JR TEST TASK` packet in `handoff.md` with the exact commands/actions, expected result, evidence and safe boundary before invoking the explicitly authorized JR. Tester reports PASS/FAIL/BLOCKED but coding agent controls closure. No destructive tests on user data without an explicit safe setup/backup and permission.
-
-## ICC context rule
-
-Read relevant current ICC via the prescribed workflow. If stale/missing, request a bounded BLACK SHEEP WALL refresh. Only BLACK SHEEP WALL modifies ICC. Staleness does not authorize tester scope expansion, cross-branch browsing or unverified completion.
-
-Do not store future backlog, brainstorm or speculative work here.
+Preserve OS.js desktop, start menu, taskbar and separate deployment; Electron is UI/behavior reference, not a shared runtime. No invented backend contracts, production YAML writes, global restarts or fabricated JR results. Only BLACK SHEEP WALL edits ICC. The previous OSJT queue was retired by human reset, not marked PASS.

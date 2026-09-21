@@ -2,6 +2,7 @@ const {contextBridge, ipcRenderer} = require('electron');
 
 contextBridge.exposeInMainWorld('mcsDesktop', {
   getRuntimeStatus: () => ipcRenderer.invoke('runtime:get-status'),
+  getDiagnostics: () => ipcRenderer.invoke('runtime:diagnostics'),
   getRuntimePaths: () => ipcRenderer.invoke('runtime:get-paths'),
   startAll: () => ipcRenderer.invoke('runtime:start-all'),
   stopAll: () => ipcRenderer.invoke('runtime:stop-all'),

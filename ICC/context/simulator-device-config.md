@@ -1,14 +1,31 @@
 # Simulator Device Config + Local Runtime Integration (SIM-001 → SIM-024)
 
-Baseline commit: ee19b8a
-Working tree: clean
-Audited Overlay: none
+Baseline commit: c289f2f3872b792c45813ac7a515f8fe90e77671
+Working tree: clean at the source checkpoint; the workflow transition does not change simulator truth.
 Superseded detail: SIM-018/SIM-019 below still name a Unix-domain socket at
 `$OSJS_DATA_DIR/run/modbus-simulator.sock`, and SIM-021A still describes the pre-None status
 rules. Both are superseded; see Zoom In `simulator-memory-none` for current truth.
 Source dependencies: docs/SIMULATOR_RUNTIME_INTEGRATION.md, MMA2/pkg/configvalidate/validate.go, simulator/*, deploy/docker-compose.yml, OSJS/src/server/*, OSJS/src/packages/ModbusSimulator/, MMA2/internal/restartwatch/*, MMA2/cmd/mma2-supervisor/*, workflow/archive/rep-001-share-mma2-reservation-composer.md, workflow/archive/sim-001-simulator-device-config.md through workflow/archive/sim-024-wire-mma2-restart-request-to-runtime.md
 Zoom In: simulator-memory-none
 Zoom Out: active-work
+
+## Current OSJT advanced-settings projection
+
+The Simulator device model carries advanced MMA2 policy, state-sealing, RBE, and extension values
+through JSON projection and ownership-safe shared-config composition. `advanced_settings_test.go` is
+the configuration-only reference fixture: it seeds root RBE output at `rbe.tcp.listen`, preserves
+`custom_root`, checks effective-memory projection, and rejects invalid recognized state sealing
+without changing persisted device or effective-config bytes.
+
+The repaired `osjs_toolkit_settings_test.go` supplies the required root RBE output, separately proves
+omitted/null/false/empty representation, finds extensions on the matching effective memory, checks
+errors and lengths, and proves invalid recognized state sealing leaves persisted bytes unchanged.
+OSJT-008 independently PASSed that regression at `644a50c`.
+
+OSJT-009 adds a bounded projection helper that selects the effective memory by listener port and
+unit ID, fills only omitted policy/state-sealing/RBE/unknown-extension values, preserves explicit
+values including non-nil empty maps, and rejects malformed recognized inherited values. Integration
+into a load path remains outside this step and belongs to the later OSJT load-integration task.
 
 ## Established truth (SIM-001)
 

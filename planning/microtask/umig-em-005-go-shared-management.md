@@ -1,6 +1,0 @@
-# UMIG-EM-005 — CODE: Go shared MMA management protocol
-Status: PLANNED; human approval of exact backend/security contract required. Stage/owner CODE / ChatGPT. Previous: UMIG-EM-004-V. Next: UMIG-EM-005-T.
-
-Outcome: implement Go-side version-1 `mma-load`/`mma-apply` scoped to root whitelist `rbe`, `access_events`, `debug`, CAS expected SHA revision and shared writer lock. Keep service local Unix socket; do not wire browser or add HTTP. Only root mutation, never a device apply/owners update; deny RBE or access-event network enablement absent separately approved scope.
-
-Acceptance: (1) malformed/unknown/unsafe fields, stale revision and bad validation mutate NOTHING; (2) successful changed apply preserves all foreign/root/listener extras and owners and requires restart ack before success; (3) post-commit ack failure returns explicit RECOVERY_REQUIRED without unproven rollback or fake success. Must expose typed error envelope; adopt existing 1 MiB v1 framing. Implement Go endpoint/composer with focused tests, no production. Source readback/diff only; break further if scope exceeds microtask rules. Size 2/1/1/1/1=6 (requires bounded split before promotion if >3 independent implementation outcomes).

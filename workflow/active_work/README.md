@@ -23,3 +23,10 @@ When a TEST/VERIFY task becomes ACTIVE, coding agent must put one unambiguous `J
 Read relevant current ICC via the prescribed workflow. If stale/missing, request a bounded BLACK SHEEP WALL refresh. Only BLACK SHEEP WALL modifies ICC. Staleness does not authorize tester scope expansion, cross-branch browsing or unverified completion.
 
 Do not store future backlog, brainstorm or speculative work here.
+
+## OSJT execution map
+
+For the active OS.js Toolkit sequence, read `OSJT_QUEUE.md` after this file and before opening an
+individual task. The queue map is a routing aid: the individual ACTIVE task and matching
+`handoff.md` remain execution authority. If the map, task, or handoff disagree, stop and reconcile
+them before editing or testing.

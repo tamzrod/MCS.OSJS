@@ -1,6 +1,6 @@
 # OSJT-010 — Hydration projection regression
 
-Status: QUEUED
+Status: ACTIVE
 Stage: TEST
 Owner: OpenHands / independent JR under OPERATION CWAL
 Previous: OSJT-009
@@ -10,7 +10,7 @@ Next: OSJT-011
 Project omitted policy, sealing and RBE from the matching effective port/unit memory; preserve explicit values and unknown extensions; malformed effective configuration returns an error. (independent deterministic verification only).
 
 ## Bounded scope
-simulator/osjs_toolkit_settings_test.go
+simulator/advanced_projection_test.go
 
 Read this task and direct predecessor evidence, not the entire backlog. No Electron changes, legacy removal, production/operator data, dependency upgrades or unrelated cleanup. Do not enable network outputs or reuse the cancelled EM-003 packet.
 
@@ -26,4 +26,3 @@ Before TEST/VERIFY activation, the coding agent supplies one current handoff pac
 Depends on OSJT-009; target/permissions derive from OSJT-001.
 Five dimensions (implementation/environment/behavior/verification/decision): 1/0/1/1/0 = 3.
 At most three production files plus focused tests per coding task. Split before editing if the task requires a broader change or a new architectural decision.
-

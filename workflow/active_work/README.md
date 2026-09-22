@@ -12,6 +12,11 @@ Exactly one task is ACTIVE. That task is named in root `handoff.md`.
 4. Write only the files the packet lists.
 5. STOP. Do not choose another task.
 
+Completion means the packet's exact evidence and workflow-state paths were scope-checked, committed,
+pushed non-force to `origin/opencode`, and confirmed by a remote SHA query. Chat output or a local
+commit alone is INCOMPLETE. A successful packet may activate its named successor in the same commit,
+but must STOP before executing that successor.
+
 `Status: NOT EXECUTABLE` means do not run that file.
 
 Do not delete this directory. Do not move packets to archive unless the packet says to archive itself after evidence.

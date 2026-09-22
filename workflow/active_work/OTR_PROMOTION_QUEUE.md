@@ -30,6 +30,10 @@ Do not use:
 Reason: invented target paths. Real Toolkit lives in `OSJS/src/packages/MCSModbusToolkit/`.
 
 ## Selection rule
-If handoff Current task exists and its packet file exists, run that packet.
-Else run the first ACTIVE or first QUEUED discovery packet that has predecessor evidence on disk under `workflow/active_work/evidence/`.
-If neither exists, STOP and report the missing file name.
+Run only the task named Current task in root `handoff.md`, and only when its packet exists and says
+`Status: ACTIVE`. Never fall back to the first QUEUED or numerically next task. A missing packet,
+status mismatch, or `NONE` means STOP and report the exact mismatch.
+
+On successful completion, the current packet may atomically mark itself COMPLETE and its named
+successor ACTIVE, commit/push that workflow state with its evidence, verify delivery, and STOP. The
+successor runs only in a later invocation.

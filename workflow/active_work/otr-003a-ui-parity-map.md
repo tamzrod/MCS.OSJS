@@ -16,7 +16,9 @@ One table mapping Electron renderer UI files to existing OS.js Toolkit files. No
 ## Allowed writes
 - `workflow/active_work/evidence/otr-003a-map.md`
 - `handoff.md` Current task after COMPLETE
-- `workflow/active_work/OTR_PROMOTION_QUEUE.md` 003A line only
+- `workflow/active_work/OTR_PROMOTION_QUEUE.md` 003A/003B lines only
+- this file Status line only
+- `workflow/active_work/otr-003b-backend-contract-map.md` Status line only
 
 ## Exact files to read
 Electron (do not edit):
@@ -38,13 +40,22 @@ OS.js (do not edit):
 Ignore `*.bak` files.
 
 ## Numbered steps
-1. Confirm branch `opencode` and record HEAD.
+1. Confirm branch `opencode`; record HEAD; require empty status; require `origin/opencode` and
+   `git ls-remote origin refs/heads/opencode` both equal HEAD.
 2. Read listed files only.
 3. Write a markdown table with columns: Electron path | OS.js path | copy/adapt/reimplement/gap | notes with line anchors.
 4. List the three tabs on each side. Do not invent a fourth tab.
 5. Propose the next CODE slice as exactly one file: `OSJS/src/packages/MCSModbusToolkit/toolkit-renderer.js` for shell/nav only. Do not implement it.
 6. Verdict MAP COMPLETE or BLOCKED.
-7. STOP.
+7. On COMPLETE, set handoff to OTR-003B, mark 003A COMPLETE and 003B ACTIVE in queue/task status
+   lines, but do not execute 003B.
+8. Verify only the five allowed paths changed; run diff checks; stage only those paths; commit
+   `OTR-003A: record UI parity map`.
+9. Confirm remote `opencode` still equals the pre-task HEAD, push `git push origin HEAD:opencode`,
+   verify the new remote SHA, report it, and STOP.
+
+A BLOCKED report may be committed/pushed alone as `OTR-003A: record blocked UI parity map` without
+status advancement. Failed delivery is INCOMPLETE.
 
 ## Forbidden targets
 Never write `OSJS/packages/toolkit/app/views/`. That path does not exist.

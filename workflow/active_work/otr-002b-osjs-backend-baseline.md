@@ -16,7 +16,9 @@ Inventory existing OS.js Toolkit backend methods and sockets from source. Do not
 ## Allowed files to write
 - `workflow/active_work/evidence/otr-002b-report.md`
 - `handoff.md` Current task only, after the report exists
-- `workflow/active_work/OTR_PROMOTION_QUEUE.md` 002B checkbox only
+- `workflow/active_work/OTR_PROMOTION_QUEUE.md` 002B/003A lines only
+- this file Status line only
+- `workflow/active_work/otr-003a-ui-parity-map.md` Status line only
 
 ## Forbidden
 Product edits. Service calls. Production YAML. ICC. Archive deletion. Starting OTR-003A in this invocation.
@@ -34,8 +36,9 @@ Product edits. Service calls. Production YAML. ICC. Archive deletion. Starting O
 If a file is missing, record MISSING and continue to the next listed file. Do not add unlisted files except one `git ls-files OSJS/src/packages/MCSModbusToolkit` listing if needed to confirm names.
 
 ## Numbered steps
-1. Confirm branch is `opencode`.
-2. Record HEAD.
+1. Confirm branch is `opencode`; record HEAD and require empty `git status --short`.
+2. Run `git rev-parse origin/opencode` and `git ls-remote origin refs/heads/opencode`; both must
+   equal HEAD or the task is BLOCKED before source reads.
 3. Read the listed files.
 4. Write the report with headings:
    - HEAD
@@ -47,7 +50,14 @@ If a file is missing, record MISSING and continue to the next listed file. Do no
    - Verdict: SOURCE INVENTORY COMPLETE or BLOCKED
 5. Use exact identifiers from source. Do not write `/OSJS/packages/toolkit/`.
 6. Update handoff to OTR-003A only after COMPLETE.
-7. STOP.
+7. Mark 002B COMPLETE and 003A ACTIVE in task files and queue. Do not execute 003A.
+8. Verify only the five allowed paths changed; run `git diff --check`; stage only those paths and
+   verify staged names/check. Commit `OTR-002B: record OS.js backend baseline`.
+9. Confirm remote `opencode` still equals the pre-task HEAD, push `git push origin HEAD:opencode`,
+   verify remote equals the new commit, report both SHAs, and STOP.
+
+A BLOCKED report may be committed/pushed alone as `OTR-002B: record blocked backend baseline`;
+statuses must not advance. Failed delivery is INCOMPLETE.
 
 ## Acceptance (max 3)
 1. Allowed methods are listed with file anchors.

@@ -1,26 +1,8 @@
-# Active Work — OTR
+# Active work — reset
 
-Goal: deliver the familiar Electron Toolkit user workflows in the unified OS.js Toolkit without
-duplicating working implementation or importing the Electron runtime.
+No active work is authorized. Root handoff.md is NONE; OTR_PROMOTION_QUEUE.md is retired. Existing packets and evidence are historical and must not be executed, deleted, or treated as proof of completion without verification.
 
-Root `handoff.md` and `OTR_PROMOTION_QUEUE.md` are the only routing authorities.
+## Execution rule
+Read AGENTS.md, operation cwal.md, and handoff.md. If handoff says NONE, report NO ACTIVE TASK and STOP. Otherwise execute exactly the explicitly named ACTIVE packet once, within its allowlist; record evidence and terminal result, then STOP. Do not activate or execute a successor in the same invocation. FAIL/BLOCKED also STOP; no independent-task fallback.
 
-## OpenCode loop
-
-```text
-ACTIVE task → execute exact packet → record COMPLETE / FAIL / BLOCKED
-→ update dependencies and queue → run next eligible task
-→ repeat until no eligible task remains → exhaustion summary
-```
-
-- COMPLETE activates a dependency-satisfied successor immediately.
-- FAIL/BLOCKED never disappears: preserve its evidence and mark dependent work SKIPPED-BLOCKED.
-- Continue with independent eligible work instead of stopping the whole invocation.
-- QUEUED is not runnable until its dependencies are COMPLETE.
-- SUPERSEDED / NOT EXECUTABLE is never runnable and cannot create children.
-- Commit/push is optional unless explicitly requested.
-- No product task may edit ICC; BLACK SHEEP WALL owns ICC.
-
-Each task remains atomic: finish its evidence and state before moving to another. Never fabricate a
-PASS, broaden file scope, retry to force success, or perform destructive/live actions without exact
-authority.
+Fresh planning must inspect existing product code and validate prior evidence, create small dependency-ordered packets, obtain human approval, and activate only one packet explicitly. Product work cannot edit ICC; BLACK SHEEP WALL owns ICC. Never fabricate PASS or expand scope.

@@ -5,8 +5,8 @@
 
 const SHORTCUTS = [
   {
-    name: 'ModbusReplicator',
-    label: 'Modbus Replicator',
+    name: 'MCSModbusToolkit',
+    label: 'MCS Modbus Toolkit',
     icon: '/icons/NamelessClassicIcons/icons/application-x-executable.svg'
   }
 ];

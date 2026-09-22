@@ -23,7 +23,10 @@ module.exports = {
           {loader: 'sass-loader', options: {sourceMap: true}}
         ]
       },
-      {test: /\.js$/, exclude: /node_modules/, use: {loader: 'babel-loader'}}
+      {test: /\.js$/, exclude: /node_modules/, use: {
+        loader: 'babel-loader',
+        options: {presets: [['@babel/preset-env', {targets: {chrome: '70'}}]]}
+      }}
     ]
   }
 };

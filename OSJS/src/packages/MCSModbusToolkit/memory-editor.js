@@ -1,5 +1,7 @@
 'use strict';
 
+const advanced = require('./advanced-editor');
+
 // Toolkit-only Memory editor. The Simulator load/apply response is the sole
 // canonical document; the Toolkit's visual fixtures are never used as data.
 const FC = [['fc1', 'Coils (FC1)'], ['fc2', 'Discrete Inputs (FC2)'],
@@ -60,7 +62,9 @@ const changeMode = (device, fc, mode, remembered) => {
   }
 };
 
-const createMemoryEditor = (doc, root, memory) => {
+const createMemoryEditor = (doc, root, memory, options = {}) => {
+  let section = 'Device Definition';
+  let receivedAt = 0;
   let documentValue = null;
   let persisted = null;
   let selected = null;
@@ -102,10 +106,13 @@ const createMemoryEditor = (doc, root, memory) => {
   };
   const patchStatus = () => {
     const name = appliedName();
+    const fresh = Date.now() - receivedAt < 6000;
+    const currentStatus = fresh ? status : null;
     const mma2 = root.querySelector('[data-memory-status="mma2"]');
     const simulation = root.querySelector('[data-memory-status="simulation"]');
-    if (mma2) mma2.textContent = name ? statusWord(status, name, 'mma2_status', statusError) : 'UNKNOWN';
-    if (simulation) simulation.textContent = name ? statusWord(status, name, 'device_status', statusError) : 'UNKNOWN';
+    if (mma2) mma2.textContent = name ? statusWord(currentStatus, name, 'mma2_status', statusError) : 'UNKNOWN';
+    if (simulation) simulation.textContent = name ? statusWord(currentStatus, name, 'device_status', statusError) : 'UNKNOWN';
+    if (options.onStatus) options.onStatus(name ? statusWord(currentStatus, name, 'mma2_status', statusError) : 'UNKNOWN');
     const diagnostic = root.querySelector('[data-memory-status-error]');
     if (diagnostic) diagnostic.textContent = name && statusError ? `Status unavailable: ${statusError}` : '';
   };
@@ -121,6 +128,7 @@ const createMemoryEditor = (doc, root, memory) => {
       if (closed || saving || token !== generation || appliedName() !== name) return;
       const observed = result && result.status;
       status = observed && observed.name === name ? observed : null;
+      receivedAt = Date.now();
       statusError = status ? null : 'Simulator returned an unmatched device status';
       patchStatus();
     }).catch(error => {
@@ -191,7 +199,7 @@ const createMemoryEditor = (doc, root, memory) => {
       documentValue ? 'No devices configured. Choose Add.' : 'No canonical data available.'));
     sidebar.appendChild(list);
     const editor = h('section', 'tool-editor');
-    editor.appendChild(h('h2', '', 'Device Definition'));
+    editor.appendChild(advanced.tabs(doc, section, saving, value => { section = value; render(); }));
     const device = selectedDevice();
     if (device) {
       const runtime = h('div', 'runtime-row');
@@ -199,48 +207,52 @@ const createMemoryEditor = (doc, root, memory) => {
       runtime.children[1].dataset.memoryStatus = 'mma2';
       runtime.children[3].dataset.memoryStatus = 'simulation';
       editor.appendChild(runtime);
-      const identity = h('div', 'tool-grid');
-      identity.append(field('Name', device.name, value => { device.name = value; }, {type: 'text', reselectPoll: true}),
-        checkbox('Enabled', device.enabled, value => { device.enabled = value; }),
-        field('Listen Port', device.mma2.port, value => { device.mma2.port = value; }, {min: 1, max: 65535}),
-        field('Unit ID', device.mma2.unit_id, value => { device.mma2.unit_id = value; }, {min: 0, max: 255}));
-      editor.appendChild(identity);
-      const table = h('div', 'fc-table memory-fc-table');
-      const header = h('div', 'fc-row fc-header');
-      ['Area', 'Start', 'Count', 'Simulation', 'Interval (ms)', 'Address Range']
-        .forEach(label => header.appendChild(h('span', '', label)));
-      table.appendChild(header);
-      FC.forEach(([key, label]) => {
-        const area = device.mma2[key];
-        const intervalKey = `${key}_interval_ms`;
-        const row = h('div', 'fc-row');
-        const range = h('span', 'range-cell');
-        const updateRange = () => { range.textContent = integer(area.start, 0, 65535) && integer(area.count, 0, 65535) ?
-          (area.count ? `${area.start}-${area.start + area.count - 1}` : 'Unused') : 'Invalid'; };
-        const mode = h('span', 'sim-mode-cell');
-        const select = h('select');
-        select.setAttribute('aria-label', `${label} simulation`);
-        select.disabled = saving;
-        [['none', 'None'], ['random', 'Random']].forEach(([value, title]) => {
-          const option = h('option', '', title); option.value = value; select.appendChild(option);
+      if (section === 'Advanced Settings') {
+        advanced.mount(doc, editor, device.mma2, documentValue.devices, saving);
+      } else {
+        const identity = h('div', 'tool-grid');
+        identity.append(field('Name', device.name, value => { device.name = value; }, {type: 'text', reselectPoll: true}),
+          checkbox('Enabled', device.enabled, value => { device.enabled = value; }),
+          field('Listen Port', device.mma2.port, value => { device.mma2.port = value; }, {min: 1, max: 65535}),
+          field('Unit ID', device.mma2.unit_id, value => { device.mma2.unit_id = value; }, {min: 0, max: 255}));
+        editor.appendChild(identity);
+        const table = h('div', 'fc-table memory-fc-table');
+        const header = h('div', 'fc-row fc-header');
+        ['Area', 'Start', 'Count', 'Simulation', 'Interval (ms)', 'Address Range']
+          .forEach(label => header.appendChild(h('span', '', label)));
+        table.appendChild(header);
+        FC.forEach(([key, label]) => {
+          const area = device.mma2[key];
+          const intervalKey = `${key}_interval_ms`;
+          const row = h('div', 'fc-row');
+          const range = h('span', 'range-cell');
+          const updateRange = () => { range.textContent = integer(area.start, 0, 65535) && integer(area.count, 0, 65535) ?
+            (area.count ? `${area.start}-${area.start + area.count - 1}` : 'Unused') : 'Invalid'; };
+          const mode = h('span', 'sim-mode-cell');
+          const select = h('select');
+          select.setAttribute('aria-label', `${label} simulation`);
+          select.disabled = saving;
+          [['none', 'None'], ['random', 'Random']].forEach(([value, title]) => {
+            const option = h('option', '', title); option.value = value; select.appendChild(option);
+          });
+          select.value = device.random_runtime[intervalKey] > 0 ? 'random' : 'none';
+          select.addEventListener('change', () => {
+            changeMode(device, key, select.value, rememberedFor(device));
+            render();
+          });
+          mode.appendChild(select);
+          row.append(h('strong', '', label),
+            field('Start', area.start, value => { area.start = value; updateRange(); }, {className: 'cell-field', min: 0, max: 65535}),
+            field('Count', area.count, value => { area.count = value; updateRange(); }, {className: 'cell-field', min: 0, max: 65535}),
+            mode, field('Interval', device.random_runtime[intervalKey], value => {
+              device.random_runtime[intervalKey] = value;
+              if (integer(value, 1, 4294967295)) rememberedFor(device).set(intervalKey, value);
+              select.value = value > 0 ? 'random' : 'none';
+            }, {className: 'cell-field', min: 0, max: 4294967295}), range);
+          updateRange(); table.appendChild(row);
         });
-        select.value = device.random_runtime[intervalKey] > 0 ? 'random' : 'none';
-        select.addEventListener('change', () => {
-          changeMode(device, key, select.value, rememberedFor(device));
-          render();
-        });
-        mode.appendChild(select);
-        row.append(h('strong', '', label),
-          field('Start', area.start, value => { area.start = value; updateRange(); }, {className: 'cell-field', min: 0, max: 65535}),
-          field('Count', area.count, value => { area.count = value; updateRange(); }, {className: 'cell-field', min: 0, max: 65535}),
-          mode, field('Interval', device.random_runtime[intervalKey], value => {
-            device.random_runtime[intervalKey] = value;
-            if (integer(value, 1, 4294967295)) rememberedFor(device).set(intervalKey, value);
-            select.value = value > 0 ? 'random' : 'none';
-          }, {className: 'cell-field', min: 0, max: 4294967295}), range);
-        updateRange(); table.appendChild(row);
-      });
-      editor.appendChild(table);
+        editor.appendChild(table);
+      }
     } else {
       editor.appendChild(h('div', 'tool-empty', loading ? 'Loading canonical definitions...' : 'Select a device or choose Add.'));
     }
@@ -336,10 +348,11 @@ const createMemoryEditor = (doc, root, memory) => {
     render(); restartPolling();
   };
   root.addEventListener('click', onClick);
+  const staleTimer = setInterval(patchStatus, 1000);
   render();
   load();
   return {destroy: () => {
-    closed = true; stopPolling(); root.removeEventListener('click', onClick);
+    closed = true; clearInterval(staleTimer); stopPolling(); root.removeEventListener('click', onClick);
   }};
 };
 

@@ -17,6 +17,8 @@ The baseline commit identifies the committed repository state represented by ICC
 
 ## Registry
 
+Scoped grok Toolkit editor/status context: [osjs-toolkit-advanced-status](context/osjs-toolkit-advanced-status.md). Own baseline and overlay; shared MMA root editing and live Ubuntu acceptance remain unavailable/unverified.
+
 Scoped simulator projection context: [simulator-projection](context/simulator-projection.md). Handles MMA2 listener matching with device override for state_sealing, RBE, extension hydration.
 
 Scoped Replicator advanced-settings context: [electron-replicator-advanced](context/electron-replicator-advanced.md). Includes shared IP/CIDR input behavior and destination persistence.

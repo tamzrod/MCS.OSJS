@@ -49,8 +49,15 @@ const register = (core, args, options, metadata) => {
     replicatorRoot.replaceChildren();
     diagnosticsRoot.replaceChildren();
     shadow.querySelector('.subtitle').textContent = 'Memory + Replicator / read-only Diagnostics';
-    editor = createMemoryEditor(document, memoryRoot, memory);
-    replicatorEditor = createReplicatorEditor(document, replicatorRoot, replicator);
+    const indicators = shadow.querySelectorAll('.runtime-strip b');
+    const patchIndicator = (index, value) => {
+      const indicator = indicators[index];
+      indicator.textContent = value;
+      indicator.className = value === 'RUNNING' ? 'status-ok' : value === 'STOPPED' || value === 'ERROR' ? 'status-stop' : 'status-unknown';
+      indicator.title = 'Latest selected-device runtime observation, not a host service probe';
+    };
+    editor = createMemoryEditor(document, memoryRoot, memory, {onStatus: value => patchIndicator(0, value)});
+    replicatorEditor = createReplicatorEditor(document, replicatorRoot, replicator, {onStatus: value => patchIndicator(1, value)});
     diagnosticsEditor = createDiagnosticsEditor(document, diagnosticsRoot, memory, replicator);
     $content.appendChild(toolkit.element);
   });

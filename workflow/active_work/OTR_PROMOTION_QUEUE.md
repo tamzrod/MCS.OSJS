@@ -9,8 +9,8 @@ Human-approved roadmap. One task per invocation. STOP after the ACTIVE packet.
 001C COMPLETE-UNTRUSTED — Electron IPC list exists in `workflow/archive/otr-001c-electron-backend-boundary-inventory.md`. Do not rerun. Do not treat as a full contract map.
 002A COMPLETE — OS.js Toolkit UI baseline discovered and written to evidence/otr-002a-report.md ✅
 002B INACTIVE — OS.js Toolkit backend inventory complete, written to evidence/otr-002b-report.md for next invocation ✅
-003A QUEUED — UI source-to-target map. Packet: `otr-003a-ui-parity-map.md`. After 002A.
-003B QUEUED — Backend contract map. Packet: `otr-003b-backend-contract-map.md`. After 002B and 003A.
+003A ACTIVE — UI source-to-target map. Packet: `otr-003a-ui-parity-map.md`. After 002A.
+003B BLOCKED — Pending 003A activation. Packet: `otr-003b-backend-contract-map.md`. After 002B and 003A.
 004  NOT EXECUTABLE parent — `otr-004-toolkit-shell-replica.md`
 005  NOT EXECUTABLE parent — `otr-005-simulator-editor-ui.md`
 006  NOT EXECUTABLE parent — `otr-006-replicator-editor-ui.md`

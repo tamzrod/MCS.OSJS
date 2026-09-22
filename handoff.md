@@ -3,10 +3,12 @@
 ## Autonomous routing authority
 Human approved the OTR roadmap. OPERATION CWAL selects exactly ONE task. Read this file, then `workflow/active_work/OTR_PROMOTION_QUEUE.md`, then the packet named below. Execute that packet only. Report evidence. STOP. Do not ask the human what to do. Do not run a second task in the same invocation.
 
-## Current task (ACTIVE)
-OTR-002A — OpenCode, read-only DISCOVERY.
-Packet: `workflow/active_work/otr-002a-osjs-ui-baseline.md`
-Do that packet now.
+## Current task (COMPLETE)
+OTR-002A — UI Frontend baseline discovered and written to evidence/otr-002a-report.md. ✅
+OTR-002B — Backend inventory complete, written to evidence/otr-002b-report.md. Inactive until next invocation.
+
+### Next Action
+Stop. Do not activate OTR-002B in this invocation.
 
 ## Do not treat these as done
 `workflow/archive/otr-002b-baseline-inventory.md` and `workflow/archive/otr-003a-ui-parity-map-inventory.md` are INVALID. They invent paths that do not exist (`OSJS/packages/toolkit/app/views/`). Ignore them. Do not archive or delete active_work.

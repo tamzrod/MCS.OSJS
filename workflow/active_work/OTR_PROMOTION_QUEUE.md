@@ -7,8 +7,8 @@ Human-approved roadmap. One task per invocation. STOP after the ACTIVE packet.
 001A COMPLETE — Electron shell inventory. Archive: `workflow/archive/otr-001a-electron-shell-inventory.md`
 001B COMPLETE — Electron editor inventory. Archive: `workflow/archive/otr-001b-electron-editor-inventory.md`
 001C COMPLETE-UNTRUSTED — Electron IPC list exists in `workflow/archive/otr-001c-electron-backend-boundary-inventory.md`. Do not rerun. Do not treat as a full contract map.
-002A ACTIVE — OS.js Toolkit UI baseline. Packet: `otr-002a-osjs-ui-baseline.md`
-002B QUEUED — OS.js Toolkit backend baseline. Packet: `otr-002b-osjs-backend-baseline.md`. After 002A report exists.
+002A COMPLETE — OS.js Toolkit UI baseline discovered and written to evidence/otr-002a-report.md ✅
+002B INACTIVE — OS.js Toolkit backend inventory complete, written to evidence/otr-002b-report.md for next invocation ✅
 003A QUEUED — UI source-to-target map. Packet: `otr-003a-ui-parity-map.md`. After 002A.
 003B QUEUED — Backend contract map. Packet: `otr-003b-backend-contract-map.md`. After 002B and 003A.
 004  NOT EXECUTABLE parent — `otr-004-toolkit-shell-replica.md`

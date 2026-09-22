@@ -1,6 +1,6 @@
 # OTR-002A — OS.js Toolkit UI baseline
 
-Status: ACTIVE
+Status: COMPLETE
 Stage: DISCOVERY
 Owner: OpenCode
 Previous: OTR-001C

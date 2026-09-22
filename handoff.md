@@ -1,13 +1,13 @@
 # Handoff — MCS.OSJS
 
 ## Current queue
-FMT-001–FMT-008 — HUMAN APPROVED FOR PROMOTION AND CONTINUOUS DEPENDENCY-AWARE PROCESSING. Queue manifest: `workflow/active_work/FMT_PROMOTION_QUEUE.md`. This authorization does not make all packets simultaneously ACTIVE. The CWAL runner selects one eligible packet at a time, checkpoints it ACTIVE, executes, records its outcome, and rescans until no eligible work remains.
+APPROVED / ACTIVE QUEUE: `workflow/active_work/FMT_PROMOTION_QUEUE.md` — FMT-001–FMT-008. Human approved promotion and continuous dependency-aware processing. This authorizes selection of eligible packets within this queue only; no new tasks or broader permissions.
 
 ## Current task
-NONE — no packet is executing at this checkpoint. On Operation CWAL invocation, use the approved FMT queue selection procedure; NONE here means no in-flight task, not cancellation of the approved queue. If queue manifest or packets are absent/inconsistent, report BLOCKED and STOP without falling back to historical OTR.
+QUEUE SELECTION — no packet currently executing. This is NOT `NONE` and is not a retired queue. On Operation CWAL invocation validate the manifest and all eight packet headers, select one eligible task, checkpoint exactly that packet ACTIVE in packet/queue/handoff, execute within its authority, record outcome, and rescan. Never mark all eight ACTIVE simultaneously. If manifest or packet integrity fails, BLOCKED/STOP without fallback to historical OTR.
 
 ## Historical boundary
-Old OTR packets, archives and reports are non-executable and not evidence of completion. Preserve them; never select them. Invalid OTR-002B and OTR-003A archives remain invalid. Do not edit ICC except through BLACK SHEEP WALL.
+Old OTR queue, packets, archives and evidence are non-executable and do not prove completion. Preserve evidence; invalid OTR-002B and OTR-003A archives remain invalid. ICC edits require BLACK SHEEP WALL authority.
 
 ## Execution boundary
-One packet at a time; continue through eligible independent packets after a terminal result, respecting blockers and agent roles. Never bypass a prerequisite, fabricate PASS, retry FAIL/BLOCKED in the same invocation, or exceed packet permissions. No merge, force push or main push without separate authority.
+One task at a time; continue through eligible independent tasks after each outcome. Enforce prerequisites, role handoffs and exact packet delivery. Do not fabricate PASS, retry FAIL/BLOCKED in the same invocation, or perform unauthorized production actions, merge, force push or main push. FMT-005 requires separately supplied exact test command/environment before execution.

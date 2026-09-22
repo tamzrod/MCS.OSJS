@@ -1,39 +1,47 @@
 # Microtask Rules
 
-## ICC-First Context Rule
+## Context and authority
+Before repository-dependent planning, read `ICC/INDEX.md` and relevant valid context; verify against actual Git source. Stale ICC requires a separately authorized bounded BLACK SHEEP WALL refresh; only BLACK SHEEP WALL edits ICC. Planning is not execution authority. Human approval is required to promote a task into a fresh executable queue. Historical OTR packets and retired queues remain non-executable.
 
-Before repository-dependent task planning, read `ICC/INDEX.md`. Use valid relevant context; if stale, request a bounded refresh from BLACK SHEEP WALL. Only BLACK SHEEP WALL edits ICC; Git source remains authoritative. Never claim stale ICC is synchronized.
+## Core rule
+One microtask = one primary outcome = one detailed task file. Keep tasks small, independently verifiable, and reuse source-verified existing work rather than recreating it. Never infer completion from an old report or status alone.
 
-## Core Rule
+## Required task format
+Every new task packet must contain these exact, prominent fields:
 
-One task = one primary outcome. One task = one detailed task file. Planning does not authorize execution; human promotion moves a task into `workflow/active_work/` and synchronizes `handoff.md`.
+Task ID: <unique stable ID>
+Task Name: <one specific outcome>
+Blocker Task: NONE | <comma-separated exact Task IDs>
+Status: PENDING | READY | ACTIVE | COMPLETE | FAIL | BLOCKED
+Assigned Agent: <explicit agent and role>
+Stage: DISCOVERY | DESIGN | CODE | TEST | VERIFY
 
-## Execution roles and separate gates (2026-09-18 human decision)
+Then include:
+- Objective: one measurable result.
+- Scope: exact read paths, exact permitted write paths, and forbidden/out-of-scope actions.
+- Execution: bounded steps; exact commands/actions for TEST/VERIFY.
+- Acceptance Criteria: at most three independently testable outcomes and explicit expected results.
+- Evidence: exact report path, required raw observations, source/commit reference and handoff requirements.
+- Completion and delivery: verdict rules, permitted status edits, exact commit/push/ref and remote verification when required; otherwise explicitly state no commit/push authority.
+- Sizing: five-dimension score and rationale.
 
-For MCS Modbus Toolkit UMIG work, ChatGPT is the coding agent; OpenHands is the independent JR test runner. Do not imply OpenHands was called or executed unless its actual report exists. Keep three distinct task files when a feature needs all three stages:
+Do not use Previous/Next as routing or dependency fields. Task ID is an identifier, not an execution order. Every Blocker Task ID must resolve to a real task; no circular dependencies, self-dependencies or references to historical/retired tasks as executable blockers. When previously completed work is reused, cite source and verified evidence as an input, not an invented COMPLETE task.
 
-- **CODE** (`UMIG-NNN`, existing stable ID): only source implementation and a handoff-ready source checkpoint. Owner: ChatGPT. Record exact files and commit/diff; read back changes. No build, unit-test, runtime or acceptance PASS is claimed by source inspection.
-- **TEST** (`UMIG-NNN-T`): deterministic build, package discovery, unit/fixture or static verification of the committed coding output. Owner: OpenHands acting as JR. No product source fixes, feature implementation or workflow advancement. Return raw commands, exit codes and results.
-- **VERIFY** (`UMIG-NNN-V`): independent rendered UI, live runtime, installed behavior, data-safety or deployment acceptance, in a specified safe target. Owner: OpenHands acting as JR. No product fixes or speculative substitute evidence. Return actual observations and PASS/FAIL/BLOCKED.
+## Dependency-based readiness and selection
+PENDING means not executed; waiting for blockers is PENDING, not BLOCKED. READY means all listed blocker tasks are COMPLETE with their required evidence independently verified, and the packet and other safety/authority gates are satisfied. `Blocker Task: NONE` removes task dependencies only; it does not waive approval, packet validity, environment or safety gates.
 
-If a task is inherently human approval (`UMIG-001`) or solely a verification gate (`UMIG-007`, `UMIG-007A`), keep that identity; do not manufacture coding work. Test and verify may be a single task only when there genuinely is one indivisible check, but never combine coding with either. Preserve explicit `Previous`/`Next` across stages; never auto-promote a Planning successor.
+When a human authorizes selection from a newly approved queue, inspect every PENDING task, resolve its blocker IDs and evidence, and identify all eligible READY tasks. Select exactly ONE by the lowest stable Task ID as a deterministic tie-breaker, not as a sequential dependency. Explicitly activate only that task in root `handoff.md`, its packet and the queue before execution; do not execute a merely READY task without activation. If no task is eligible, report why and STOP. If the handoff is NONE or the queue is retired, report NO ACTIVE TASK and STOP; selection does not override the reset.
 
-**Handoff:** Once CODE source is committed and inspected, the coding agent records its source-only outcome, archives/advances through authorized Active Work, and writes one explicit current `JR TEST TASK` in `handoff.md` for the active OpenHands test stage. The packet contains GOAL, EXACT COMMAND/ACTION, EXPECTED RESULT, EVIDENCE, safe setup and report-write authority. OpenHands follows `operation cwal.md`: runs only that packet, changes no product files, reports evidence, and stops. The coding agent reviews the report and alone decides verified completion and advancement. On FAIL/BLOCKED: do not mark passed or auto-advance; create/authorize a bounded coding repair when needed, then retest. Source review is never a replacement for a test, and automated tests never substitute for required actual UI/runtime verification.
+Operation CWAL executes only the explicitly handoff-named ACTIVE task and then STOPS after COMPLETE, FAIL or BLOCKED. It never selects, activates or executes a successor in the same invocation, and never falls back to another independent task on failure. Next selection/activation is a separate authorized action/invocation. A FAIL/BLOCKED prerequisite does not make dependent tasks runnable; preserve their PENDING status and report the dependency obstacle. Never fabricate PASS, alter expectations to pass or silently retry.
 
-## Preferred Size
+## Execution roles and independent gates
+Keep CODE implementation, independent TEST and live/UI VERIFY in separate tasks by default, with explicit blocker IDs between them when genuinely dependent. A coding agent may record source-only completion but cannot claim independent TEST/VERIFY PASS. Independent JR executes only its exact test packet, makes no product fixes or workflow promotion, captures raw commands/exits/observations, writes only its authorized report, verifies required delivery, and STOPS. Coding-agent review of the report is required before a dependent task becomes READY. A human-approval-only task or standalone verification task need not manufacture CODE work. Assign each task's actual agent explicitly; do not infer agent identity from the directive invocation.
 
-Score five dimensions, each 0, 1 or 2: implementation surface, environment/dependency uncertainty, behavioral surface, verification surface and decision/recovery surface. Total 0-3 is preferred; 4-5 split unless tightly coupled with one deterministic workflow; 6-7 split; 8-10 must split. Never artificially lower a score because multiple phases belong to one feature.
+## Preferred size
+Score implementation surface, environment/dependency uncertainty, behavioral surface, verification surface and decision/recovery surface, each 0–2. Total 0–3 preferred; 4–5 split unless tightly coupled in one deterministic workflow; 6–7 split; 8–10 must split. Never artificially lower a score to combine stages.
 
-## Mandatory Split Triggers
+## Mandatory split triggers
+Split for more than three independent acceptance outcomes or implementation verbs, multiple verification workflows or architecture decisions, independently verifiable sequential subtasks, donor/import/toolchain plus live behavior, unknown environment discovery plus implementation, or an early failure that changes later steps. Keep one bounded semantic branch and working set. CODE, TEST and VERIFY are distinct by default.
 
-Split for more than 3 independent acceptance outcomes, more than 3 independent implementation verbs, multiple verification workflows, multiple architecture decisions, independently verifiable sequential subtasks, donor/import/toolchain plus live behavior, unknown environment discovery plus product implementation, or an early failure forcing later steps to be reinterpreted. Coding, TEST and VERIFY stages are distinct by default, even for a small feature.
-
-For imported components: establish/code first; OpenHands build/static TEST next; OpenHands runtime/UI VERIFY last. If an integration needs separate unit and live probes, keep separate tests and verification tasks. A task must stay within one bounded semantic branch and working set; split when in doubt.
-
-## Required Task Shape
-
-Every task has one ID/title, stage and owner, one primary outcome, scope, non-scope, no more than three independently testable acceptance outcomes, a stage-appropriate evidence/handoff requirement, dependencies, Previous/Next and five-dimension sizing. TEST/VERIFY tasks must spell out exact commands or repeatable actions, expected observations and evidence. Do not allow a tester to choose its own scope from neighboring tasks. Record actual failures and environment blockers separately.
-
-## Promotion Boundary
-
-A human approves promotion into `workflow/active_work/`. An explicitly human-authorized ordered sequence may move between its already QUEUED tasks after evidence; a successor still in Planning needs separate promotion. Maintain exactly one ACTIVE. Only the coding agent manages implementation/task state; OpenHands/JR may update only the explicitly authorized handoff report. Only BLACK SHEEP WALL updates ICC.
+## Promotion boundary
+Only human-approved fresh tasks may be promoted. At most one task is ACTIVE across the queue; multiple independent tasks may be READY or PENDING. Promotion and selection do not authorize execution of more than one task per CWAL invocation. Product tasks cannot edit ICC. No destructive cleanup, live actions, merges, force pushes or main pushes without exact separate authority.

@@ -10,7 +10,7 @@ Human-approved roadmap. One task per invocation. STOP after the ACTIVE packet.
 002A COMPLETE — OS.js Toolkit UI baseline discovered and written to evidence/otr-002a-report.md ✅
 002B COMPLETE — OS.js Toolkit backend inventory complete, written to evidence/otr-002b-report.md for next invocation ✅
 003A COMPLETE — UI source-to-target map. Packet: `otr-003a-ui-parity-map.md`. After 002A.
-003B ACTIVE — Pending 003A activation. Packet: `otr-003b-backend-contract-map.md`. After 002B and 003A.
+003D READY — Ready for execution. Packet: `otr-003d-backend-contract-map.md`. After 002B and 003A [COMPLETE].
 004  NOT EXECUTABLE parent — `otr-004-toolkit-shell-replica.md`
 005  NOT EXECUTABLE parent — `otr-005-simulator-editor-ui.md`
 006  NOT EXECUTABLE parent — `otr-006-replicator-editor-ui.md`

@@ -2,15 +2,15 @@
 
 ## Identity bootstrap
 
-First question: **Who are you?** Establish the actual agent/runtime identity, then read `workflow/IDENTITY_MAP.md`. For OpenCode coding work, load `workflow/adapters/opencode.md`. An unknown identity must ask the operator and STOP before mutation. Identity does not authorize a task. Platform adapters never override the shared directive or active-task permissions.
+First question: **Who are you?** Establish actual agent/runtime identity, then read `workflow/IDENTITY_MAP.md`. For OpenCode work, load `workflow/adapters/opencode.md`. Unknown identity must ask operator and STOP before mutation. Identity does not authorize a task. Platform adapters never override the shared directive or per-task permissions.
 
 ## Purpose
 
-Bootstrap/router for MCS.OSJS agents. Keep this file small. Detailed behavior belongs in directive, workflow, and tool files.
+Bootstrap/router for MCS.OSJS agents. Keep this file small. Detailed behavior belongs in directive, workflow and tool files.
 
 ## StarCraft Directives
 
-Resolve these commands before any generic repository workflow:
+Resolve these commands before generic repository workflow:
 
 - `BLACK SHEEP WALL` → `BLACK_SHEEP_WALL.md`
 - `OPERATION CWAL` → `operation cwal.md`
@@ -26,16 +26,16 @@ IDENTITY → IDENTITY MAP → IDENTIFY DIRECTIVE
 → NEVER GUESS
 ```
 
-Do not import behavior from another directive unless the active directive explicitly calls it. `OPERATION CWAL` remains independent JR testing; the OpenCode coding adapter is not permission to turn a JR TEST packet into a CODE task.
+Do not import behavior from another directive unless the active directive explicitly calls it. `OPERATION CWAL` processes a human-approved queue continuously, one eligible task at a time, respecting dependencies and per-packet roles. OpenCode CODE/DISCOVERY/DESIGN and independent JR TEST/VERIFY are distinct identities; invocation never grants JR identity or permission to claim independent PASS.
 
 ## Generic Repository Work
 
-For repository-dependent work that is not a StarCraft directive:
+For repository-dependent work outside a StarCraft directive:
 
 ```text
 READ ICC/INDEX.md FIRST
 → USE CURRENT RELEVANT ICC CONTEXT
-→ IF STALE OR MISSING, REFRESH ONLY THE AFFECTED CONTEXT THROUGH BLACK_SHEEP_WALL.md
+→ IF STALE OR MISSING, REFRESH ONLY AFFECTED CONTEXT THROUGH BLACK_SHEEP_WALL.md
 → LOCATE AUTHORITATIVE REPOSITORY SOURCE
 → ACT WITHIN USER-AUTHORIZED SCOPE
 → VERIFY
@@ -43,62 +43,20 @@ READ ICC/INDEX.md FIRST
 
 ## Editing
 
-Use the normal repository editing tools appropriate to the task. Keep edits as small and direct as practical.
+Use normal repository editing tools appropriate to the task. Keep edits small and direct. If an authored edit is malformed: reload/restore the last known-good affected source; retry the smallest edit once; run repository-native verification; if malformed again STOP and report. Do not diagnose transport, encoding, shell or editor during the task or build repair scripts. A normal formatter/compiler error is not automatically malformed authoring; follow authoritative error location, make one local correction and rerun the smallest required gate.
 
-If an authored edit is malformed:
+## Execution guardrail and verification truth
 
-1. Reload or restore the last known-good affected source.
-2. Retry the smallest affected edit once.
-3. Run the repository-native verification for that edit.
-4. If the retry is also malformed, **STOP and report the failure.**
+Inspect actual edit result before continuing. Verification claims name the exact observed check and result. Repository-native or task-defined verification outranks generic substitutes. Never equate a generic syntax check, lint, unit test or standalone parser with a package/build/runtime gate unless repository authority explicitly defines it. A higher-fidelity failed gate invalidates earlier verification claims for that surface.
 
-Do not diagnose the cause during the task. Do not test transports, encodings, shells, editors, or byte paths. Do not build repair scripts or switch editing mechanisms to rescue malformed generated text. Do not repeatedly repair malformed output.
+## Completion integrity
 
-A normal formatter/compiler error is not automatically malformed authoring. Follow the authoritative error location, make one local correction, and rerun the smallest required gate.
+No directive may mark implementation COMPLETE or verified, archive it or release a dependent task without its required completion evidence and delivery. A checkpoint may preserve incomplete work only where explicitly allowed. CWAL may continue to an independent eligible task after a task FAIL/BLOCKED, but must not bypass a failed prerequisite.
 
-## Execution Guardrail
+## Directive composition
 
-- Inspect the actual result of an edit before continuing.
-- Verification claims must name the actual command/check observed and its result.
-- Do not build workaround chains for a simple edit.
-- If required verification cannot run, report it as unavailable rather than verified.
-
-## Verification Truth Rule
-
-A verification result proves only what that exact check establishes.
-
-- Repository-native or task-defined verification outranks generic substitutes.
-- Never call a generic syntax check, lint, unit test, raw-byte inspection, or standalone parser equivalent to a package/build/runtime gate unless repository authority explicitly defines it that way.
-- A higher-fidelity failed gate invalidates any earlier claim that the affected surface was verified.
-
-## Completion Integrity Rule
-
-No directive may mark implementation complete, archive it, advance a successor, or describe it as verified unless that directive's required completion gate has actually passed.
-
-A checkpoint may preserve incomplete or failing work only through a directive that explicitly permits incomplete checkpoints.
-
-## Directive Composition Rule
-
-A StarCraft directive ends at its own RETURN / STOP boundary.
-
-Do not invoke another StarCraft directive merely because the first directive finished. Cross-directive invocation is allowed only when:
-
-- the user explicitly invokes the other directive; or
-- the active directive explicitly delegates to it.
-
-Current delegation:
-
-- `OPERATION CWAL` → `BLACK SHEEP WALL` only for bounded stale/missing ICC context.
-- `THERE IS NO COW LEVEL` → `BLACK SHEEP WALL` only when rescue genuinely requires ICC maintenance.
-- `THE GATHERING` → none.
-- `BLACK SHEEP WALL` → return to caller.
+Do not invoke another StarCraft directive merely because the first finished. Cross-directive invocation requires explicit user invocation or active directive delegation. Current delegation: OPERATION CWAL → BLACK SHEEP WALL only for bounded stale/missing ICC context; THERE IS NO COW LEVEL → BLACK SHEEP WALL only for genuinely needed ICC maintenance; THE GATHERING → none; BLACK SHEEP WALL → return to caller. A directive ends at its own STOP boundary; CWAL's queue loop and its termination condition are defined in `operation cwal.md`.
 
 ## Authority
 
-- Repository files are authoritative.
-- `workflow/active_work/` is implementation authority.
-- Planning and Brainstorm do not authorize implementation.
-- `handoff.md` is execution continuation state.
-- `ICC/` is context, not authority.
-
-Do not store project history, troubleshooting notes, runbooks, task-specific discoveries, or duplicated directive rules in this file.
+Repository files are authoritative. `workflow/active_work/` holds promoted work; `handoff.md` and approved queue hold continuation state. Planning and Brainstorm do not authorize execution; ICC is context, not execution authority. Do not store project history, troubleshooting notes, runbooks or duplicated detailed directive rules here.

@@ -2,15 +2,28 @@
 
 ## Entry-point routing — mandatory
 
-"Operation CWAL" invokes the workflow; it does not automatically assign JR identity. Execute only the single task named `ACTIVE` in root `handoff.md` when that task file also says `Status: ACTIVE`. `QUEUED`, `NOT EXECUTABLE`, parent, planning, archived, inferred-number, and mismatched tasks are not runnable. Never select a task by numerical order or treat mere presence in `workflow/active_work/` as execution authority. A missing/mismatched ACTIVE identity or packet is BLOCKED / STOP.
+"Operation CWAL" invokes the workflow; it does not automatically assign JR identity. Root
+`handoff.md` and `workflow/active_work/OTR_PROMOTION_QUEUE.md` are the only routing authorities.
+OpenCode runs the ACTIVE task, records its result, then continues through every eligible task until
+the queue is exhausted. Legacy packet text saying STOP after success means close that task before
+the successor; it does not end the CWAL invocation.
 
-- OpenCode assigned a ready CODE/DISCOVERY/DESIGN task: follow `workflow/adapters/opencode.md` and the exact packet for bounded work, targeted checks, evidence, one allowlisted task commit, non-force push to `origin/opencode`, delivery verification, then STOP. Do not apply JR-only source-edit restrictions to authorized CODE work.
+- OpenCode assigned CODE/DISCOVERY/DESIGN work: follow `workflow/adapters/opencode.md`, execute one
+  packet at a time, and keep scheduling eligible work. Commit/push is optional unless explicitly
+  requested. Do not apply JR-only source-edit restrictions to authorized CODE work.
 - OpenHands / independent JR assigned a ready TEST/VERIFY task: follow the JR lifecycle below, using its complete current test packet. JR does not implement or self-authorize a test.
-- Missing task identity, genuinely conflicting assignments, or a missing essential execution/safety detail: report the precise blocker once and STOP. Do not select a different task, rewrite workflow files or perform speculative reconciliation. A stale queue label or redundant promotion wording alone is not a blocker when the approved task and assignment are unambiguous.
+- A task-level FAIL/BLOCKED is recorded with evidence and does not terminate OpenCode CWAL. Mark its
+  dependent tasks SKIPPED-BLOCKED, then run the next independent eligible task. Stop only when no
+  eligible task remains, an unsafe repository-wide condition prevents all work, or the queue is exhausted.
 
-**After completing the one ACTIVE task:** write its required evidence, update only packet-authorized workflow state, commit only allowlisted paths, push non-force to the packet's branch, verify the remote SHA, report, and STOP. Do not begin the successor in the same invocation.
+**After each task:** write evidence and terminal status (`COMPLETE`, `FAIL`, or `BLOCKED`), update the
+queue, activate the next dependency-satisfied task, and continue. Never hide or repeatedly retry a
+failure. At exhaustion, write one summary of completed, failed, blocked and skipped tasks.
 
-An executable packet must name exact read paths, exact write paths, forbidden paths/actions, ordered steps, acceptance, evidence, commit command/scope, push ref, and delivery check. Thin packets, invented/unverified paths, or broad directory writes/deletes are invalid. Completion transport is mandatory but grants no destructive cleanup, production access, unrelated edits, merge, force-push, or push to `main`. An OpenCode self-test is not an independent JR PASS. Archive operations—including manual file deletion, purging, repository rebasing/resetting, or any irreversible state change—are prohibited unless the exact ACTIVE packet and human authority name them. Neither agent may start a successor in the same invocation, and ICC changes require separate BLACK SHEEP WALL authority.
+An executable packet must name exact reads, writes, forbidden actions, checks and evidence. Invalid
+packets are marked BLOCKED and scheduling continues. No queue rule grants destructive cleanup,
+production access, unrelated edits, merge, force-push, or push to `main`. An OpenCode self-test is
+not independent JR PASS. ICC changes require BLACK SHEEP WALL authority.
 
 ## Purpose and authority — JR only
 

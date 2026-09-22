@@ -1,24 +1,26 @@
 # Active Work — OTR
 
-Goal: implement MCS Modbus Toolkit on OS.js. Electron under `electron/` is the UI and behavior reference only. Do not import the Electron runtime.
+Goal: deliver the familiar Electron Toolkit user workflows in the unified OS.js Toolkit without
+duplicating working implementation or importing the Electron runtime.
 
-Exactly one task is ACTIVE. That task is named in root `handoff.md`.
-`OTR_PROMOTION_QUEUE.md` is the ordered list.
+Root `handoff.md` and `OTR_PROMOTION_QUEUE.md` are the only routing authorities.
 
-## OpenCode rules (small model)
-1. Read `handoff.md`.
-2. Open only the named packet.
-3. Follow numbered steps in that packet.
-4. Write only the files the packet lists.
-5. STOP. Do not choose another task.
+## OpenCode loop
 
-Completion means the packet's exact evidence and workflow-state paths were scope-checked, committed,
-pushed non-force to `origin/opencode`, and confirmed by a remote SHA query. Chat output or a local
-commit alone is INCOMPLETE. A successful packet may activate its named successor in the same commit,
-but must STOP before executing that successor.
+```text
+ACTIVE task → execute exact packet → record COMPLETE / FAIL / BLOCKED
+→ update dependencies and queue → run next eligible task
+→ repeat until no eligible task remains → exhaustion summary
+```
 
-`Status: NOT EXECUTABLE` means do not run that file.
+- COMPLETE activates a dependency-satisfied successor immediately.
+- FAIL/BLOCKED never disappears: preserve its evidence and mark dependent work SKIPPED-BLOCKED.
+- Continue with independent eligible work instead of stopping the whole invocation.
+- QUEUED is not runnable until its dependencies are COMPLETE.
+- SUPERSEDED / NOT EXECUTABLE is never runnable and cannot create children.
+- Commit/push is optional unless explicitly requested.
+- No product task may edit ICC; BLACK SHEEP WALL owns ICC.
 
-Do not delete this directory. Do not move packets to archive unless the packet says to archive itself after evidence.
-
-Only BLACK SHEEP WALL edits ICC.
+Each task remains atomic: finish its evidence and state before moving to another. Never fabricate a
+PASS, broaden file scope, retry to force success, or perform destructive/live actions without exact
+authority.

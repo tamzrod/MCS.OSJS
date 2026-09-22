@@ -1,17 +1,32 @@
 # OpenCode adapter — persistent Ubuntu workstation / Qwen
 
-## Permanent branch and environment — mandatory
+## Environment
 
-OpenCode operates on the user's persistent workstation, NOT a disposable sandbox. Its sole authorized development branch is `opencode`. Before ANY task or edit, verify `git branch --show-current`, `git rev-parse HEAD`, `git status --short` and `git worktree list`. If current branch is not exactly `opencode`, STOP with the mismatch; never silently switch, checkout, reset, rebase, merge, clean, restore or stash to fix it. Do not implement on `main`, `osjt-*`, detached HEAD, or another agent's branch. Do not touch other worktrees. Preserve all pre-existing work; overlapping edits or an unsafe workspace => BLOCKED/STOP. Fetch/pull only when safe and explicitly requested; a pull must not overwrite local commits or dirty work. No automatic merging or conflict resolution.
+OpenCode works only on branch `opencode` in this worktree. At startup record branch, HEAD and
+`git status --short`. Preserve unrelated work. Never switch, reset, clean, restore, stash, rebase,
+merge, force-push, touch another worktree, or edit ICC. Fetch/pull only when explicitly requested.
 
-## Transport boundary
+This is a persistent workstation, not a disposable sandbox. Commit and push are not task-completion
+requirements unless the operator or exact packet explicitly requests them. Never push to `main`.
 
-The human has permanently authorized one non-force task-completion commit and push to the `opencode` branch for every executable task run through OPERATION CWAL. A task is not COMPLETE until its exact allowlisted changes and evidence are committed, `git push origin HEAD:opencode` succeeds, and `git ls-remote origin refs/heads/opencode` confirms the report commit. Never push to `main`, force-push, merge, create a PR, or include unrelated paths. A packet that says no commit, no push, local-only, or chat-only is invalid and must be repaired before execution. A BLOCKED/FAIL run may publish only its allowlisted evidence/state when the packet explicitly defines that terminal report path; it must not advance the queue. No global git reset, even for synchronization, without separate explicit approval and verified backups.
+## Continuous CWAL scheduler
 
-## CWAL routing — autonomous, one task per invocation
+1. Read `AGENTS.md`, root `operation cwal.md`, root `handoff.md`, and
+   `workflow/active_work/OTR_PROMOTION_QUEUE.md`.
+2. Run the handoff-named ACTIVE packet when its packet also says ACTIVE.
+3. Close that task with durable evidence and exactly one terminal status:
+   - COMPLETE: acceptance and required checks passed.
+   - FAIL: an executed check contradicted expectations.
+   - BLOCKED: required authority, input, environment or observable evidence was unavailable.
+4. On COMPLETE, activate its dependency-satisfied successor and execute it immediately.
+5. On FAIL/BLOCKED, preserve evidence, mark direct dependents SKIPPED-BLOCKED, then select the next
+   independent QUEUED task whose prerequisites are COMPLETE and execute it.
+6. Never retry a failed command merely to obtain PASS. Corrective CODE requires its own eligible
+   packet; unsafe or destructive recovery still requires explicit authority.
+7. Continue until no eligible tasks remain. Then set handoff to NONE and return one exhaustion
+   summary listing COMPLETE, FAIL, BLOCKED and SKIPPED-BLOCKED tasks plus evidence paths.
 
-The operator's complete prompt is `pull latest and do operation cwal`. Treat OPERATION CWAL as workflow routing, NOT automatic JR identity. Read `workflow/IDENTITY_MAP.md`, `AGENTS.md`, `operation cwal.md`, root `handoff.md` and `workflow/active_work/OTR_PROMOTION_QUEUE.md` as needed. Execute only the single task named ACTIVE by root handoff whose packet also says `Status: ACTIVE`; never fall back to a queued or numerically next task. If a packet is incomplete or evidence unavailable, report the precise blocker and STOP, never ask 'what would you like me to do?'. Parent OTR-004..014 templates are not executable children.
-
-Execute exactly ONE task per invocation: read the packet, inspect permitted sources, perform only its authorized edits/actions and targeted self-tests, capture actual evidence, write only packet-allowlisted workflow state, commit only allowlisted paths, push non-force to `origin/opencode`, verify delivery, report, and STOP. STOP is a hard per-task boundary. Do not self-trigger a second cycle or pretend chat output or an unpushed commit is persistent evidence. On FAIL/BLOCKED do not advance. No ICC edits: BLACK SHEEP WALL alone owns ICC.
-
-CODE and independent TEST/VERIFY remain separate. OpenCode must not act as OpenHands/JR or certify its own changes independently. No production YAML, services, devices, sudo, installs, downloads or other workstation side effects without exact packet authority. Preserve unrelated changes and never invent tests or completion evidence.
+Task boundaries remain strict even though the invocation continues: finish evidence/state for one
+task before opening another, use only its allowlisted files/actions, and never infer a missing API,
+test or PASS. Product YAML, services, devices, sudo, installs, downloads and live side effects need
+exact packet authority. OpenCode does not impersonate independent JR verification.

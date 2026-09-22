@@ -1,50 +1,65 @@
 # Active Work
 
-Baseline commit: c289f2f3872b792c45813ac7a515f8fe90e77671
-Working tree: transition overlay contains the OSJT-009 archive, OSJT-010 activation, current JR
-packet, and the reviewed active-work queue normalization requested for smaller-model handoff.
-Source dependencies: handoff.md, workflow/active_work/README.md, workflow/active_work/*.md,
-workflow/archive/electron-001-nsis-nssm-service-installer.md,
-workflow/archive/electron-002-compact-industrial-layout.md,
-workflow/archive/umig-002-scaffold-single-osjs-toolkit.md,
-workflow/archive/umig-002-r-toolkit-discovery-manifest.md
+Baseline commit: 71d729c34a9a1dfa8cf62f5ff367a059c7e9c8f1
+Working tree: clean at audit start.
+Source dependencies: handoff.md, operation cwal.md, workflow/adapters/opencode.md,
+workflow/active_work/README.md, workflow/active_work/OTR_PROMOTION_QUEUE.md,
+workflow/active_work/otr-*.md, workflow/archive/otr-001a-electron-shell-inventory.md,
+workflow/archive/otr-001b-electron-editor-inventory.md,
+workflow/archive/otr-001c-electron-backend-boundary-inventory.md
 Parent: L0-project
 Zoom In: replicator, simulator-device-config
 Zoom Out: L0-project
 
-## Current OSJT execution state
+## Current OTR execution state
 
-OSJT-001 through OSJT-009 are archived. OSJT-010 is the sole ACTIVE TEST task; OSJT-011 onward
-remain QUEUED. The current `handoff.md` is the exact source-pinned, chat-only CWAL packet.
+OTR-001A and OTR-001B are COMPLETE. OTR-001C is COMPLETE-UNTRUSTED because its retained
+artifact is an IPC-note summary rather than independently usable discovery evidence. OTR-002A is
+the sole ACTIVE task and `handoff.md` names its exact packet. OTR-002B, OTR-003A and OTR-003B are
+QUEUED. OTR-004 through OTR-014 are NOT EXECUTABLE parent placeholders and require evidence-based
+child packets before any product work.
 
-OSJT-008 independently PASSed its exact named regression at activation HEAD `644a50c`; the checkout
-remained clean and the post-check passed. The coding agent reviewed and accepted that evidence.
+The current CWAL route permits only the handoff-named ACTIVE packet. A successful packet must
+write its named evidence, make only its allowlisted status/handoff transition, commit, push
+non-force to `origin/opencode`, verify the remote commit, and stop. QUEUED tasks, parents, planning
+files and archives are not fallback assignments.
 
-OSJT-009 source checkpoint `c289f2f` contains the bounded projection helper and focused regression.
-The coding-agent exact prospective check passed; no independent OSJT-010 result exists yet.
+## Evidence integrity
 
-`workflow/active_work/OSJT_QUEUE.md` is the compact route for OSJT-010 through OSJT-059. It marks
-intentional new artifacts, pairs every CODE deliverable with the following exact TEST gate, and
-defines separate CODE/TEST/VERIFY stop and evidence rules. Stale active-work duplicates of archived
-OSJT-002 through OSJT-004 are removed. The per-task file and matching handoff remain authoritative.
+`workflow/archive/otr-002b-baseline-inventory.md` and
+`workflow/archive/otr-003a-ui-parity-map-inventory.md` are explicitly invalid and cannot satisfy
+gates. They refer to invented paths and were produced by the failed `db48c41` run. The recovery
+commits restored executable discovery/design packets but deliberately did not revert all product
+or directive damage from that run.
 
-## Authority and advancement
+The OTR implementation parents were drafted after the existing UMIG implementation was already
+present in this branch. Current Toolkit source already mounts live Memory, Replicator and
+Diagnostics editors through `OSJS/src/packages/MCSModbusToolkit/index.js`, with contracts,
+transports, relay allowlists, validation, load/apply/status behavior and focused tests. Therefore
+OTR-004 through OTR-012 cannot be promoted from their current descriptions without first
+reconciling them against implemented source and archived UMIG evidence; several stated outcomes
+would duplicate existing work.
 
-`workflow/active_work/README.md` now requires the coding agent to archive a task, follow its
-explicit `Next`, verify the successor exists as QUEUED with a matching `Previous`, activate only
-that successor, synchronize `handoff.md`, and commit/push that state together. OpenHands/JR never
-advances.
+## Known branch contamination
 
-`handoff.md` agrees with this directory: OSJT-010 is ACTIVE and OSJT-011 is its QUEUED successor.
-The coding agent owns CODE and advancement; the independent JR owns TEST/VERIFY execution under
-`operation cwal.md` and does not code, fix failures, promote/archive tasks, or write ICC.
+Commit `db48c41` added `simulator/devices.yaml` and the typo directive file `operation c wal.md`,
+changed handoff/directive content, deleted the original OTR queue, and created invalid completion
+artifacts. Recovery commits `eb7b6acc`, `a80ba339` and `71d729c` restored and hardened workflow
+routing, but the new YAML and typo directive file remain tracked. Their retention is not an
+acceptance decision and must be resolved explicitly before implementation uses this branch as a
+trusted product baseline.
 
-## Verification state
+## Review conclusion
 
-- OSJT-010 has no independent result yet. The coding-agent prospective run is preliminary only.
-- OSJT-011 through OSJT-059 have no completion evidence and remain non-runnable while QUEUED.
+OTR-002A and OTR-002B remain useful as current-state inventories. OTR-003A and OTR-003B are useful
+only if reframed as reconciliation maps between Electron intent, current OS.js implementation and
+verified gaps. The numbered implementation parents are roadmap topics, not an executable design.
+After discovery, planning should be regrouped around verified deltas and vertical capabilities,
+with exact source/test paths and separate TEST/VERIFY gates. Do not discard the repaired routing,
+but do not continue the implementation sequence as presently described.
 
 ## Scope note
 
-The queue review changes workflow documentation only. It does not execute OSJT-010, authorize a
-later task, enable an output, delete a legacy package, or establish any product/runtime PASS.
+This refresh records current workflow truth only. It does not execute OTR-002A, validate product
+behavior, accept or revert `db48c41`, create child packets, promote a successor, or establish any
+build/runtime/UI PASS.

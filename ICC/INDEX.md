@@ -27,17 +27,15 @@ Scoped Electron Replicator LED context: [electron-replicator-leds](context/elect
 
 Scoped Electron Memory layout context: [electron-memory-layout](context/electron-memory-layout.md). This node tracks its own baseline and overlay; it does not refresh the unrelated workflow state below.
 
-Baseline Commit: c289f2f
+Baseline Commit: 71d729c34a9a1dfa8cf62f5ff367a059c7e9c8f1
 Working Tree: clean
-Audited Uncommitted Overlay: none. The overlay previously recorded here is committed, and no uncommitted path differs from the audited state; the working tree is clean at the baseline commit.
+Audited Uncommitted Overlay: none at audit start. This bounded refresh changes only this index and `context/active-work.md`.
 
-Selected-branch state: `active-work` is refreshed over OSJT-009 source checkpoint `c289f2f` plus the current transition and queue-review overlay. OSJT-001 through OSJT-009 are archived; OSJT-010 is the sole ACTIVE TEST task and OSJT-011 through OSJT-059 are QUEUED. `OSJT_QUEUE.md` provides the compact small-model route, intentional-new-artifact registry, and stage checklists; stale active-work duplicates of archived OSJT-002 through OSJT-004 are removed. `handoff.md` remains the exact source-pinned, chat-only CWAL packet. `simulator-device-config` records the projection helper at `c289f2f`; load integration remains deferred. Other semantic branches retain their own recorded baselines and were not refreshed.
+Selected-branch state: `active-work` is refreshed at `71d729c` for the recovered OTR queue. OTR-002A is the sole ACTIVE task; OTR-002B/003A/003B are QUEUED; OTR-004 through OTR-014 are NOT EXECUTABLE parents. The current handoff and CWAL adapter require one handoff-named task, bounded writes, a non-force push to `origin/opencode`, remote verification and STOP. Existing Toolkit source predates the OTR implementation roadmap and already contains live Memory, Replicator and Diagnostics implementation, so the implementation parents require reconciliation and redesign before promotion. The failed `db48c41` run's invalid OTR-002B/003A archives remain explicitly excluded, while its added `simulator/devices.yaml` and typo `operation c wal.md` remain unresolved branch contamination. Other semantic branches retain their own recorded baselines and were not refreshed.
 
-Refreshed at `c289f2f` over the `7029e41..c289f2f` delta: active-work, osjs-shell and L0-project, plus this index. Unchanged: governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, replicator, simulator-device-config, simulator-memory-none. `handoff.md` is a declared dependency of `replicator`, but the delta's handoff content is Toolkit-scoped and changes no recorded Replicator truth, so that node was not patched. No repository path outside the delta was reopened.
+Refreshed at `71d729c` over the `c289f2f..71d729c` delta: active-work plus this index. Unchanged and not consumed as current authority: governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, osjs-shell, replicator, simulator-device-config and simulator-memory-none. Product files were inspected only to determine whether the OTR roadmap matches the implemented Toolkit; those semantic branches were not refreshed.
 
-Known unresolved mismatch recorded by the prior refresh and still current: the committed Go runtimes listen on Windows named pipes while the committed OS.js relay packages still target `$OSJS_DATA_DIR/run/*.sock`. ICC records the mismatch; resolving it requires an authorized task.
-
-ICC prerequisite status for the ACTIVE task: this refresh satisfies the bounded prerequisite that `handoff.md` required before JR execution. The refresh covers the `handoff.md`, `workflow/active_work/umig-002-t-build-discover.md`, `workflow/archive/umig-002-r-toolkit-discovery-manifest.md` and `OSJS/src/packages/MCSModbusToolkit/package.json` delta; no unrelated branch was refreshed.
+ICC prerequisite status for the ACTIVE task: current for OTR workflow routing at `71d729c`. This refresh does not execute or certify OTR-002A.
 
 | `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
 | `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md`, `the gathering.md`, `there is no cow level.md` |

@@ -1,0 +1,13 @@
+# Toolkit migration — brainstorm backlog for human review
+
+Status: BRAINSTORM ONLY; not a microtask, queue, approval, or execution authority. Source: the superseded consolidated planning/microtask/toolkit-fresh-backlog-review-20260922.md at commit f8d6fa3d. The eight candidates are materialized separately as individual planning microtask files FMT-001..FMT-008. This document records the overarching goal and conditional future scope; read only the selected task packet during execution.
+
+Goal: one independently deployed OS.js MCS Modbus Toolkit matching the actual Electron UI, navigation and configuration workflows for Simulator, Replicator and MMA memory, with genuine status/errors; retain OS.js shell, Start menu, taskbar and one Toolkit icon. Reuse verified implementation; no Electron runtime dependency. Require independent rendered and safe end-to-end verification.
+
+Observed planning concerns: OSJS/src/packages/MCSModbusToolkit/index.js already creates one Toolkit window and imports Memory, Replicator and Diagnostics; this is not proof of build/runtime parity. Existing memory/replicator contracts disagree with historical OTR reports. The OTR-002A and OTR-003A evidence needs source reconciliation, not uncritical reuse. No build, live service or screenshot verification was performed in the original planning pass.
+
+Independent discovery candidates: FMT-001 Toolkit source/claim reconciliation; FMT-002 Electron UI inventory; FMT-003 OS.js UI/launcher inventory; FMT-004 backend operation/safety inventory. Dependent candidates: FMT-005 non-destructive build baseline after 001+003; FMT-006 UI gap map after 001+002+003; FMT-007 backend gap map after 001+004; FMT-008 create only source-proven implementation packets after 005+006+007. Each candidate has its own standalone file in planning/microtask/; this summary is never an executable packet.
+
+Conditional work only after evidence: shell/navigation/assets, individual Simulator/Replicator/MMA views, per-runtime config read, validation/roundtrip, disposable safe save, supported authorized restart, independently observed status, launcher/icon. Separate CODE, TEST and VERIFY as applicable. Do not invent endpoints, view counts, production paths, test commands, permissions or completion. Final acceptance: independent rendered parity, one safe disposable runtime scenario per supported runtime with separate negative scenarios, and OS.js build/deployment verification.
+
+No activation, ICC edits, product edits, production YAML writes, live service actions, or main push authorized. Historical OTR packets remain non-executable.

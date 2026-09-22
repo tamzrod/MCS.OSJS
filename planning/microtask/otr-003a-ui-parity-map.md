@@ -1,3 +1,3 @@
 # OTR-003A — UI source-to-target parity map
-Status: PLANNING / UNDER REVIEW. Stage: DESIGN. Owner: ChatGPT or explicitly assigned OpenCode. Previous: OTR-002B. Next: OTR-003B.
-Outcome: One screen-by-screen mapping of Electron UI modules/assets to existing or proposed OS.js Toolkit targets. Scope: use OTR-001A/B and OTR-002A evidence; classify copy/adapt/reimplement, note file counts and view dependencies. Acceptance: (1) each inventoried view has evidence-linked source and target; (2) exact navigation/styles/assets and unknowns recorded; (3) propose <=3-file CODE slices without implementing. Non-scope: backend contracts, code edits, invented tabs, deployment. Evidence: mapping artifact and source revisions. Size 0/0/1/1/1=3. STOP.
+Status: PROMOTED / QUEUED. Stage: DESIGN. Owner: OpenCode. Previous: OTR-002A. Next: OTR-003B. Size 0/0/1/1/1=3.
+Executable packet: `workflow/active_work/otr-003a-ui-parity-map.md`

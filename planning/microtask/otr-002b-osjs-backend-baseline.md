@@ -1,3 +1,3 @@
 # OTR-002B — OS.js Toolkit backend baseline
-Status: PLANNING / UNDER REVIEW. Stage: DISCOVERY. Owner: OpenCode. Previous: OTR-002A. Next: OTR-003A.
-Outcome: Source-linked read-only inventory of existing OS.js/Linux configuration read, validation, save, restart, status interfaces and permission boundaries for Simulator, Replicator and MMA. Acceptance: (1) list verified endpoints/functions and ownership with path anchors; (2) identify actual schema/config targets and permission boundaries without reading operator secrets; (3) explicitly mark absent/unverified operations. Scope: repository source only. Non-scope: service invocation, endpoint invention, production data, source edits. Evidence: revision, paths and one artifact. Size 0/1/1/1/0=3; split by runtime if inspection expands beyond one bounded artifact. STOP.
+Status: PROMOTED / QUEUED. Stage: DISCOVERY. Owner: OpenCode. Previous: OTR-002A. Next: OTR-003A. Size 0/1/1/1/0=3.
+Executable packet: `workflow/active_work/otr-002b-osjs-backend-baseline.md`

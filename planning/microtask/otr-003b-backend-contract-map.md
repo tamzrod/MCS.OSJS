@@ -1,3 +1,3 @@
-# OTR-003B — Configuration and backend contract map
-Status: PLANNING / UNDER REVIEW. Stage: DESIGN. Owner: ChatGPT or explicitly assigned OpenCode. Previous: OTR-003A. Next: OTR-004 children.
-Outcome: Map each source-verified Electron configuration operation to an existing verified OS.js/Linux contract or explicit gap, per runtime. Scope: use OTR-001C and OTR-002B evidence; record schemas, ownership, permissions, error/acknowledgement vs applied-state distinction. Acceptance: (1) read/validate/save/restart/status matrix for each runtime with exact source anchors; (2) gaps and unsupported operations explicitly identified; (3) per-runtime single-operation implementation slices proposed without fabricating APIs. Non-scope: implementation, service actions, production data. Evidence: one map artifact, source revisions and path anchors. Size 0/0/1/1/1=3; split if contracts cannot fit one bounded map. STOP.
+# OTR-003B — Backend contract map
+Status: PROMOTED / QUEUED. Stage: DESIGN. Owner: OpenCode. Previous: OTR-003A. Next: OTR-004 children. Size 0/0/1/1/1=3.
+Executable packet: `workflow/active_work/otr-003b-backend-contract-map.md`

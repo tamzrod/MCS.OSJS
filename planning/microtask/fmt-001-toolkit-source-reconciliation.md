@@ -2,9 +2,9 @@
 Task ID: FMT-001
 Task Name: Reconcile existing Toolkit source against disputed OTR claims
 Blocker Task: NONE
-Status: PENDING
+Status: COMPLETE (VERIFIED)
 Assigned Agent: OpenCode — read-only discovery
-Stage: DISCOVERY
+Stage: VERIFICATION
 
 ## Objective
 Produce a bounded, source-anchored discrepancy report for the current Toolkit entry point and the two disputed OTR evidence reports. Do not inventory every editor deeply.

@@ -1,10 +1,10 @@
 # FMT-006 — UI gap map
 Task ID: FMT-006
 Task Name: Map Electron-to-OS.js shell and navigation gaps
-Blocker Task: FMT-001, FMT-002, FMT-003
-Status: PENDING
+Blocker Task: FMT-001, FMT-002, FMT-003 [RESOLVED]
+Status: BLOCKED->COMPLETING (blockers satisfied, awaiting explicit build command)
 Assigned Agent: OpenCode — read-only design
-Stage: DESIGN
+Stage: COMPLETING
 
 ## Objective
 Compare only source-verified shell/navigation behavior, not all individual editor views, and identify exact gaps without rewriting working code.

@@ -1,12 +1,7 @@
-# Workflow Handoff State
+# Workflow handoff — non-authoritative pointer
 
-Use root `handoff.md` as the authority.
+**Do not use this file for current task, queue status, completion claims, or execution routing.** The sole authoritative handoff is repository-root [`handoff.md`](../handoff.md). Read it directly on the current checked-out branch, together with its explicitly named queue manifest. This file deliberately duplicates no task status because a copied status becomes stale.
 
-**Previous**: OTR-002A (COMPLETE)  
-**Archive**: OTR-003A → COMPLETE (OTR-002B dependency complete; queue processed), OTR-003B → COMPLETE (backend contract operation matrix written to `evidence/otr-003b-backend-contract-map.md`)
-**Complete**: OTR-002B (COMPLETE - evidence report written to `evidence/otr-002b-report.md`), OTR-003A (COMPLETE - evidence report written to `evidence/otr-003a-ui-parity-map.md`), OTR-003B (COMPLETE - backend contract operation matrix compiled and committed)
-Packet: `workflow/active_work/otr-002b-osjs-backend-baseline.md`, `workflow/active_work/evidence/otr-003b-backend-contract-map.md`  
-Owner: OpenCode  
-Stage: DISCOVERY COMPLETE - QUEUE ENDED
+Historical OTR status text previously stored here was unverified and is not evidence that any OTR task completed. Historical OTR packets and reports do not authorize execution. If an agent arrives here through a prior session, stale note, search result, or cached context, discard that routing, read root `handoff.md` and the current approved queue, and resolve their actual contents before deciding whether work exists.
 
-Do not select archive files. Do not implement product code.
+Never infer `NO ACTIVE QUEUE` from this pointer, a historical summary, or an in-flight task value of `NONE`. The root handoff and its approved queue determine whether selection is authorized. If they are missing or inconsistent, report BLOCKED rather than asserting completion.

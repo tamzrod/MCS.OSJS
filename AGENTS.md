@@ -26,20 +26,23 @@ IDENTITY → IDENTITY MAP → IDENTIFY DIRECTIVE
 → NEVER GUESS
 ```
 
-Do not import behavior from another directive unless the active directive explicitly calls it. `OPERATION CWAL` remains independent JR testing; the OpenCode coding adapter is not permission to turn a JR TEST packet into a CODE task.
+Do not import behavior from another directive unless the active directive explicitly calls it. `workflow/ICC_CONSUMER.md` is a shared **read contract**, not an implicit cross-directive invocation; each directive's explicit read/delegation permissions still control. `OPERATION CWAL` does not assign JR identity by name alone, and an OpenCode CODE adapter cannot turn a JR TEST packet into a CODE task.
 
 ## Generic Repository Work
 
-For repository-dependent work that is not a StarCraft directive:
+For repository-dependent work that is not a StarCraft directive, use the read contract in `workflow/ICC_CONSUMER.md`:
 
 ```text
-READ ICC/INDEX.md FIRST
-→ USE CURRENT RELEVANT ICC CONTEXT
-→ IF STALE OR MISSING, REFRESH ONLY THE AFFECTED CONTEXT THROUGH BLACK_SHEEP_WALL.md
-→ LOCATE AUTHORITATIVE REPOSITORY SOURCE
-→ ACT WITHIN USER-AUTHORIZED SCOPE
-→ VERIFY
+RESOLVE AUTHORIZED QUESTION / SEMANTIC CEILING
+→ READ ICC/INDEX.md + ONLY RELEVANT ICC/manifest.json NODE METADATA
+→ VERIFY THIS NODE'S BASELINE / OVERLAY / VALIDITY FOR THIS CHECKOUT
+→ CURRENT + NO RELEVANT DELTA? REUSE MINIMUM ICC CONTEXT
+→ STALE / UNVERIFIED / MISSING? BOUNDED BLACK SHEEP WALL ONLY IF AUTHORIZED;
+  OTHERWISE USE TASK-PERMITTED AUTHORITATIVE SOURCE OR REPORT PRECISE BLOCKER
+→ ACT ONLY WITHIN ORIGINAL AUTHORIZED TASK → VERIFY → STOP
 ```
+
+A remote snapshot or historic index baseline is not local validity. ICC is navigation, not task authority, independent TEST evidence or a mandatory global refresh. Never read all nodes because migration marked them unverified. For StarCraft invocations follow their explicit exception in `workflow/ICC_CONSUMER.md` and their own directive; TEST/VERIFY and THE GATHERING never inherit generic ICC maintenance authorization.
 
 ## Editing
 
@@ -88,7 +91,7 @@ Do not invoke another StarCraft directive merely because the first directive fin
 
 Current delegation:
 
-- `OPERATION CWAL` → `BLACK SHEEP WALL` only for bounded stale/missing ICC context.
+- `OPERATION CWAL` → `BLACK SHEEP WALL` only for an explicitly authorized bounded CODE/DISCOVERY context refresh, not an independent JR test's routine preparation.
 - `THERE IS NO COW LEVEL` → `BLACK SHEEP WALL` only when rescue genuinely requires ICC maintenance.
 - `THE GATHERING` → none.
 - `BLACK SHEEP WALL` → return to caller.

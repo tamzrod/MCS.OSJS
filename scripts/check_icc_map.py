@@ -20,9 +20,8 @@ def name_of(raw: str) -> str:
     link = re.search(r"\[([^]]+)\]\([^)]+\)", raw)
     if link:
         return link.group(1).strip()
-    if raw.lower().startswith(('none', '—', '-')):
-        return 'none'
-    return re.split(r"[,;\s]", raw, maxsplit=1)[0].strip('`')
+    token = re.split(r"[,;\s]", raw, maxsplit=1)[0].strip('`')
+    return 'none' if token.lower() in ('none', '—', '-') else token
 
 
 def check(root: Path) -> list[str]:
@@ -64,7 +63,7 @@ def check(root: Path) -> list[str]:
             errors.append(f'{name}: no Parent/Zoom Out declaration')
         elif name_of(declared.group(1)) != parent:
             errors.append(f'{name}: file parent {name_of(declared.group(1))} != index parent {parent}')
-        # Only inspect explicit Markdown targets in ICC, not repository source dependencies.
+        # Check explicit Markdown targets only; never inventory or read product source.
         for target in LINK.findall(text):
             target = target.partition('#')[0]
             if not target or '://' in target or target.startswith('mailto:'):

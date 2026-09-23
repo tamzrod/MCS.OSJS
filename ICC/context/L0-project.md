@@ -1,74 +1,24 @@
-# L0 Project Context
+# L0 — MCS.OSJS project
 
-Baseline commit: ee19b8a
-Working tree: clean
-Source dependencies: README.md, PROJECT_IDENTITY.md, handoff.md
 Parent: none
-Zoom In: governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work
 Zoom Out: none
+Zoom In: [governance](governance.md), [donor-licensing](donor-licensing.md), [network-exposure](network-exposure.md), [planning-workflow](planning-workflow.md), [osjs-shell](osjs-shell.md), [simulator-device-config](simulator-device-config.md), [replicator](replicator.md), [electron-memory-layout](electron-memory-layout.md), [electron-replicator-advanced](electron-replicator-advanced.md), [electron-replicator-leds](electron-replicator-leds.md), [electron-settings-owner](electron-settings-owner.md), [active-work](active-work.md)
+Source dependencies: `README.md`, `PROJECT_IDENTITY.md`, `handoff.md`, `OSJS/src/packages/MCSModbusToolkit/index.js`.
 
-## Identity
+## Identity and boundaries
 
-MCS.OSJS = Modbus Consolidation System; standalone repo/lineage rebuilt around an OS.js application shell
-and proven Modbus runtime components. Planned as single-container appliance: OS.js presentation, Orchestrator
-lifecycle/control authority, Modbus Replicator acquisition, MMA2 deterministic Modbus memory appliance. It is NOT part of Nameless SCADA, but reuses proven generic parts from it( and may later be migrated into it after proving standalone-first.
+MCS.OSJS is the standalone OS.js-based Modbus Consolidation System. The OS.js desktop hosts the Toolkit; MMA2, Simulator and Replicator are distinct runtimes. The Electron Toolkit is a separate deployment target. Consult authoritative source for deployment-specific implementation details rather than generalizing Windows transports or paths to OS.js.
 
-## Construction Strategy
+## Verified remote snapshot, not a runtime acceptance
 
-Staged: scaffold -> donor inventory(Nameless SCADA, then Modbus Replicator stack( -> program architecture+rewiring -> UI plan -> microtasks -> promotion -> Operation CWAL execution -> verify appliance. Completed so far:  scaffolding, Nameless SCADA donor inventory + OS.js shell harvest (executed,head of sim/MMA2 work(; Modbus Replicator stack inventory and remaining architecture/UI stages proceed through planning+workflow.
+Observed `main` HEAD: `45cd3d2d81831306c6943f844e49b7deccbfc5ad` (2026-09-23 review). Local worktree and uncommitted overlay were not inspected. At this committed snapshot, `OSJS/src/packages/MCSModbusToolkit/index.js` registers one Toolkit window and mounts Memory, Replicator, Diagnostics and shared-settings UI/contract components. It is **not** the historical placeholder described by the superseded ICC snapshot. This source inspection proves module wiring exists, not that live Linux/Docker operation passes.
 
-## Development Model
+The committed `handoff.md` names OTR-001A as the current read-only task for that main snapshot and describes the OTR successor sequence. Read [active-work](active-work.md) for the scoped summary and the actual handoff/packet for task authority. A different branch or subsequent checkout may have different task state.
 
-Brainstorm -> microtask -> promotion -> CWAL -> verified change. Context maintenance via BLACK SHEEP WALL and ICC. One task = one primary outcome. Reuse proven machinery, but preserve explicit boundaries; no component gains authority merely for convenience. Standalone-first:  stabilize the standalone appliance before any optional Nameless SCADA migration.
+## Navigation and evidence
 
+For desktop and Toolkit integration, zoom into [osjs-shell](osjs-shell.md). For task routing, use [active-work](active-work.md); workflow status does not determine product architecture. Follow other children only when the requested question requires them. ICC caches verified findings; Git and task packets remain authoritative. Do not infer any product TEST/VERIFY PASS, OS.js cutover, deployment readiness, or successor activation from this node.
 
+## Refresh rule
 
-## Authority Boundaries
-
-Project identity document defines identity/direction only:  no implementation authority, no settled architecture. Detailed architecture, donor selection, rewiring, UI behavior, and execution scope established via planning + workflow docs. Repository files are authoritative; conversation memory is not a substitute.
-
-## Current Execution State (handoff)
-
-Handoff status: a new staged UI migration is in progress and is now the human priority. The
-2026-09-18 direction is a staged OS.js replacement with a single `MCS Modbus Toolkit`: preserve the
-OS.js desktop, Start menu, taskbar and clock; end with exactly one Toolkit desktop icon; remove legacy
-UI packages only after verified replacement and cutover. MMA2, the Go services, shared memory, user
-configuration and the Windows Electron app are explicitly NOT decommissioned by this migration.
-
-Role split recorded in `handoff.md`: ChatGPT owns CODE, source changes, source checkpoints and task
-advancement; OpenHands is JR for the separate TEST and VERIFY stages under `operation cwal.md`, does
-not code, fix failures, promote/archive tasks, or write ICC. Only BLACK SHEEP WALL updates ICC.
-
-Current position: CODE `UMIG-002` is archived as a source-only checkpoint (placeholder
-`MCSModbusToolkit` package); `UMIG-002-T` (Toolkit build and discovery TEST) is the sole ACTIVE task
-and is now in **retest-pending** state with no PASS. The first run FAILed at `752a541`: both
-commands exited 0 and Toolkit assets existed, but OS.js discovery omitted the package. Human
-authorized bounded repair `UMIG-002-R`, which added the missing local-package manifest
-`OSJS/src/packages/MCSModbusToolkit/package.json` at `cd67e15` and is archived as a source-only
-checkpoint. JR retest `JR TEST TASK` packet is current in `handoff.md` with no result yet;
-`UMIG-002-V` (rendered window VERIFY) remains QUEUED. No donor SHA is approved, no Electron
-renderer has been copied, no launcher switch happened, and no legacy OS.js app has been deleted.
-Detail in Zoom In `active-work`; planning inventory in `planning-workflow`.
-
-Historical baseline still relevant where untouched: MMA2-001/002 and SIM-001 through SIM-024 are
-completed and verified, with SIM-017's real-MMA2 capstone at `57c8714` and predecessors archived at
-`6069fef`; SIM-009 was superseded and SIM-022 retired. Lineage detail is now stale and lives outside
-this node's scope; use Zoom In `simulator-device-config` when Simulator truth is actually required.
-
-## Component Boundaries (starting hypotheses until revised by repository authority)
-
-- OS.js:  presentation/desktop shell — runnable base shell exists at OSJS/ (neutral, no SCADA backend coupling(.
-- Orchestrator:  lifecycle/control authority — not yet implemented.
-- Modbus Replicator:  acquisition/replication — runtime exists in `replicator/`; its workflow records are queued/archived rather than complete.
-- MMA2: deterministic Modbus memory appliance — imported, built, runtime-smoke-tested, and activated for simulator-owned configuration and raw ingest.
-- Simulator (new program): OS.js Modbus device simulator using MMA2 as memory/runtime engine — complete through SIM-024, plus None mode and a Windows named-pipe runtime transport; not part of the base four-component identity.
-- Windows Electron Toolkit: standalone desktop deployment target in `electron/`, not part of the OS.js desktop; its installer and live COMMS acceptance remain unverified.
-
-## Unresolved / Open
-
-- Orchestrator/Replicator architecture, internal transport, and persistence model remain planning-stage questions.
-- MMA2 Modbus TCP port numbers remain architecture-task decisions governed by the network directive.
-- The internal runtime transport is committed as a Windows named pipe, but the OS.js relay packages still target a Unix socket; which side changes is unresolved.
-- The staged Toolkit migration is mid-flight: only the UMIG-002 placeholder exists, its first
-  build/discovery test FAILed on package discovery, and the source-only manifest repair has not
-  yet been retested.
+If a source dependency changes after this snapshot, refresh only the facts affected by that delta. No whole-project rescan merely because HEAD advanced. Preserve an older verified node as historical/possibly stale until its specific dependencies are checked. Bootstrap is not a default fallback.

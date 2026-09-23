@@ -1,54 +1,19 @@
-# Replicator Authorized Work
+# Replicator — runtime and transport
 
-Baseline commit: ee19b8a
-Working tree: clean; the previously audited Electron overlay is now committed, so no
-uncommitted Replicator overlay exists.
-Source dependencies: handoff.md, workflow/active_work/rep-block-002-independent-block-pollers.md, workflow/active_work/rep-block-003-tabbed-block-editor.md, workflow/archive/rep-*.md, replicator/runtime_api.go, replicator/cmd/modbus-replicator-runtime/main.go, replicator/go.mod
+Parent: [L0-project](L0-project.md)
+Zoom Out: [L0-project](L0-project.md)
 Zoom In: none
-Zoom Out: active-work
+Connectors: [osjs-shell](osjs-shell.md) (Toolkit relay), [simulator-device-config](simulator-device-config.md) (shared MMA2 reservation). These are navigation hints, not automatic imports.
+Source dependencies: `replicator/runtime_api.go`, `replicator/cmd/modbus-replicator-runtime/main.go`, `replicator/go.mod`, `OSJS/src/packages/ModbusReplicator/server.js`, `OSJS/src/packages/MCSModbusToolkit/replicator-contract.js`, `OSJS/src/packages/MCSModbusToolkit/replicator-transport.js`, `electron/replicator-runtime.js`.
 
-## Current boundary
+## Scoped historical facts
 
-The original REP-002 through REP-006 implementation sequence is archived. Current authorized
-Replicator work remains queued, with no active predecessor:
+The earlier audited Windows runtime transition recorded `replicator/runtime_api.go` returning `\\\\.\\pipe\\mcs-modbus-replicator` and `main.go` listening via `go-winio`. The older OS.js `ModbusReplicator/server.js` still targeted `$OSJS_DATA_DIR/run/modbus-replicator.sock` at that time. This documented a **historical transport mismatch**, not a license to assume it remains unresolved after later Toolkit changes or to copy Windows pipes into Linux Docker. Check the smallest affected source files in the current branch before designing a fix.
 
-- REP-BLOCK-002: multi-block persistence, independent pollers, mixed FC1-FC4 replication,
-  external destination serving, and end-to-end operational status. The record says
-  implementation exists but JR retest is pending.
-- REP-BLOCK-003: classic Device/Pull Blocks folder tabs and compact spreadsheet rows. It
-  depends on REP-BLOCK-002 and awaits rendered retest. Its sizing totals 5, which the current
-  rules allow only as a tightly coupled single workflow.
+Replicator handles data acquisition/replication and shares MMA2 reservation constraints with Simulator. The current OS.js Toolkit source wires Replicator contracts, transport and editor from its single window; this is source wiring, not proof of a live backend connection.
 
-Neither Replicator record is ACTIVE, and neither declares `Previous`/`Next` links.
+## Task and verification separation
 
-## Committed Replicator runtime truth (7b26c4b)
+Historical REP-BLOCK and RLED task claims from the old node are not product architecture and are omitted here. Current task status must come from `handoff.md` and canonical workflow packets, summarized only in [active-work](active-work.md). No test, Linux build, Windows installer acceptance or deployment PASS is inferred from this node.
 
-- `replicator/runtime_api.go` no longer derives a Unix-socket path.
-  `RuntimeSocketPath` ignores its root argument and returns the fixed Windows named pipe
-  `\\.\pipe\mcs-modbus-replicator`.
-- `replicator/cmd/modbus-replicator-runtime/main.go` listens with `winio.ListenPipe` using
-  security descriptor `D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GRGW;;;AU)`. The previous directory
-  creation, stale-socket removal and `os.Chmod 0o666` calls were removed.
-- `replicator/go.mod` adds `github.com/Microsoft/go-winio v0.6.2` and indirect
-  `golang.org/x/sys v0.10.0`. There is no `//go:build windows` constraint; Linux buildability of
-  this package after the pipe change was not verified here and is recorded as unverified.
-- The Electron client `electron/replicator-runtime.js` matches the pipe
-  (`\\.\pipe\mcs-modbus-replicator`) and is consistent with the Go runtime. The OS.js package
-  `OSJS/src/packages/ModbusReplicator/server.js` still resolves
-  `$OSJS_DATA_DIR/run/modbus-replicator.sock`, so that relay no longer reaches the runtime.
-  This node records the mismatch; it does not resolve it.
-
-## Relevant adjacent Windows chain
-
-The Replicator-facing Windows work is broader than the REP-BLOCK pair. RREC-001, RREC-002 and
-RREC-003 are recorded COMPLETE in `workflow/active_work/`, covering the explicit ProgramData
-runtime root, routing Electron load/apply/status through the live runtime transaction, and
-truthful service/runtime errors. RLED-001 and RLED-002 are archived as completed. RREC-004
-(installed-package proof) and RLED-003 through RLED-011 are QUEUED and PAUSED by the human
-switch to the OS.js Toolkit migration; no Windows installer or COMMS-LED acceptance is
-established.
-
-## Workflow integrity observation
-
-REP-BLOCK-002 declares sizing behavior 3, above the 0-2 range `planning/microtask/rules.md`
-allows; it totals 8 and is oversized under the current rules.
+The historical runtime facts above were cached at `ee19b8a`; the Toolkit import/wiring was inspected in remote `main` at `45cd3d2d81831306c6943f844e49b7deccbfc5ad`. Other dependencies and the local uncommitted overlay were **not** re-audited. Delta-check those exact dependencies before consuming detailed transport claims.

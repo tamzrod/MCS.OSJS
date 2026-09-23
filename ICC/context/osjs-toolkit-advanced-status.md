@@ -1,36 +1,25 @@
-# OS.js Toolkit advanced editor and COMMS
+# OS.js Toolkit — advanced editor and communications status
+
+Parent: [osjs-shell](osjs-shell.md)
+Zoom Out: [osjs-shell](osjs-shell.md)
+Zoom In: none
+Connector: [osjs-shared-mma-settings](osjs-shared-mma-settings.md) for shared root configuration; follow only if required.
 
 ## Semantic boundary
 
-Scoped BLACK SHEEP WALL refresh for the human-authorized grok UI repair.
-Parent / Zoom Out: INDEX.md. No children. This supersedes stale shell-context
-claims only for advanced editor and status rendering; no unrelated context refreshed.
+Toolkit advanced-settings editor and rendered communications status only. This node does not own runtime process lifecycle, a third diagnostics transport, operator acceptance, or task state.
 
-## Established facts
+## Established facts from scoped grok UI repair
 
-- Both canonical editors render Device Definition / Advanced Settings folder tabs.
-- Empty validation/runtime warning containers are hidden; actual warnings remain visible. Covered by DOM computed-style regressions.
-- Advanced settings use the locally ported browser-only Electron editor for RBE, sealing and policy.
-- Memory drafts use mma2; Replicator drafts use mma2_advanced and require the backend capability.
-- Existing apply/discard paths preserve edits on failure and restore persisted snapshots on discard.
-- Replicator LEDs consume comms telemetry, not inferred aggregate success. Missing or stale evidence stays UNKNOWN.
-- Poll generations reject stale identities; six-second observation expiry clears stale status. Timers are disposed on destroy.
-- Header indicators show selected-device observations, not global service health.
-- Shared MMA root editing is implemented; see osjs-shared-mma-settings.md for its independent API/transaction context. Output requires explicit enable/save.
-- Production package build passes after package-local Babel transpilation; DOM checks pass with mocked transports.
-- Live Ubuntu/operator acceptance remains unverified. The scoped CODE task does not advance OSJT/OTR gates.
+- Both canonical editors render Device Definition / Advanced Settings tabs; empty warning containers are hidden and actual warnings remain visible.
+- Browser-only advanced editor handles RBE, state sealing and policy; Memory drafts use `mma2`, Replicator advanced drafts use `mma2_advanced` and require backend capability.
+- Existing apply/discard paths preserve drafts on failure and restore persisted snapshots on discard.
+- Replicator LEDs consume actual communications observations, not aggregate success. Missing or stale evidence remains UNKNOWN; poll generations reject stale device identity and timers are disposed on destroy.
+- Header indicators describe selected-device observations, not host service health. Shared root editor and RBE settings live in the linked shared-settings node.
+- Historical local production package build and mocked DOM checks passed; live Ubuntu/operator acceptance was not verified. These are not a fresh PASS for another checkout.
 
-## Baseline and source dependencies
+## Source dependencies and state
 
-Baseline commit: 0b7ee17.
-Working tree: dirty. Audited uncommitted overlay below uses git blob hashes.
+`OSJS/src/packages/MCSModbusToolkit/index.js`, `memory-editor.js`, `replicator-editor.js`, `advanced-editor.js`, `memory-advanced.js`, `comms-status.js`, `renderer.css`, `webpack.config.js`, `OSJS/tests/toolkit-ui-parity.test.js`.
 
-- OSJS/src/packages/MCSModbusToolkit/index.js: 53da4ae4196879f55b3014ca3e9cfe1ef5d946b9
-- OSJS/src/packages/MCSModbusToolkit/memory-editor.js: 9d6161c85da90de95cb41e68ecd1791e2fb3a7d2
-- OSJS/src/packages/MCSModbusToolkit/replicator-editor.js: 26b2ccaf7d464f3b39d94248c62cd67137eb8485
-- OSJS/src/packages/MCSModbusToolkit/advanced-editor.js: 08669b5c877a7beec1d7078b21fc2b2fa6a1609c
-- OSJS/src/packages/MCSModbusToolkit/memory-advanced.js: 83e54f4406e80c7f476d901037e99e00e3f7ac79
-- OSJS/src/packages/MCSModbusToolkit/comms-status.js: 2f072c6799f2bb2b327aa6e031c06ad7202ad1c6
-- OSJS/src/packages/MCSModbusToolkit/renderer.css: b6ea1f7f403ee066d463caca3293b28c4802a3d2
-- OSJS/src/packages/MCSModbusToolkit/webpack.config.js: 233071d7c2c0be8654e6622bfd1a9711898c2823
-- OSJS/tests/toolkit-ui-parity.test.js: 309f0cc50b2d2496136641dfa329d6259c50c138
+Historical scoped source baseline: `0b7ee17` with audited uncommitted fingerprints in the prior version of this document (recoverable in Git history). The local overlay is not visible to this remote review; no assumption of clean state. On current checkout, compare the above dependencies with the historical audited source/fingerprints and refresh only changed files before treating these details as current. The entry-point wiring was separately observed at remote `main` `45cd3d2d81831306c6943f844e49b7deccbfc5ad`.

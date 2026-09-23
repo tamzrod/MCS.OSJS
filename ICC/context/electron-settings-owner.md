@@ -2,8 +2,8 @@
 
 ## Boundary
 
-Owns the Windows installer settings-access setup, not runtime API authorization or service-control security.
-Parent / Zoom Out: INDEX.md. No children or required cross-tree connectors.
+Owns Windows installer settings-access setup, not runtime API authorization or service-control security.
+Parent / Zoom Out: [L0-project](L0-project.md). No children or required cross-tree connectors.
 
 ## Source Dependencies
 
@@ -18,25 +18,13 @@ Parent / Zoom Out: INDEX.md. No children or required cross-tree connectors.
 ## Baseline / Overlay
 
 Source baseline: 449cfda.
-Scoped overlay: Current user / All users radio selection, automatic launch-account capture, updated helper scope checks and tests.
-Other ICC nodes and workflow records retain their existing state.
+Scoped historical overlay: Current user / All users radio selection, automatic launch-account capture, updated helper scope checks and tests. This routing-only update does not re-audit current source or local overlay.
 
 ## Facts
 
-Setup offers Current user / All users without account entry. Current user is captured before NSIS UAC elevation and retrieved from the outer instance.
-The two choices control settings access; the application and backend services remain system-wide.
-Only explicit All users scope accepts the built-in Users group. Current user still requires an individual user SID.
-It grants Modify only on ProgramData/MCS Modbus Toolkit/runtime/config and descendants.
-The helper checks the exact settings path and rejects reparse points before calling icacls without a shell.
-SYSTEM, administrators, binaries, service permissions and unrelated pre-existing ACL entries are not reset.
-The scope/SID are retained in HKLM/Software/MCS Modbus Toolkit for repairs and upgrades.
-Changing scope removes the prior installer-managed grant after granting the new principal.
-New setup defaults to Current user; silent upgrades reuse the saved scope and SID.
-The distribution build compiles the Windows Go helper before packaging NSIS.
-This is not a complete per-user security boundary for runtime APIs.
+Setup offers Current user / All users without account entry. Current user is captured before NSIS UAC elevation and retrieved from the outer instance. Both choices control settings access; app and backend services stay system-wide. Only explicit All users scope accepts the built-in Users group, while Current user requires an individual user SID.
+The helper grants Modify only on ProgramData/MCS Modbus Toolkit/runtime/config and descendants, checks the exact path, and rejects reparse points before invoking icacls without a shell. SYSTEM, administrators, binaries, service permissions and unrelated pre-existing ACL entries are not reset. Scope/SID persist in HKLM/Software/MCS Modbus Toolkit for repairs and upgrades. Changing scope removes the former installer-managed grant after granting the new principal. Setup defaults to Current user; silent upgrades reuse the saved scope/SID. Distribution packaging builds the Windows helper before NSIS. This is not a complete per-user runtime API security boundary.
 
-## Verification Boundary
+## Historical Verification Boundary
 
-Helper tests exercise user/group lookup and settings-only ACL operations in temporary directories.
-Node tests check installer source wiring, not interactive Setup behavior.
-NSIS packaging is the required installer compilation gate; human distribution acceptance remains separate.
+Helper tests exercised temporary settings-only ACL operations and Node tests checked installer wiring, not interactive Setup. NSIS compilation and human distribution acceptance remain separate; no test was executed by this ICC routing edit.

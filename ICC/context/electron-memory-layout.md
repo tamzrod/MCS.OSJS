@@ -3,7 +3,7 @@
 ## Boundary
 
 Owns the standalone Electron Memory editor layout, not OS.js or workflow execution state.
-Parent / Zoom Out: INDEX.md. No children or cross-tree connectors.
+Parent / Zoom Out: [L0-project](L0-project.md). No children or cross-tree connectors.
 
 ## Source Dependencies
 
@@ -26,4 +26,4 @@ Renderer tests use a fake DOM and do not prove visual acceptance.
 Source baseline: dcc6f0d.
 Audited overlay: the app.js modal and style.css folder-strip changes and popup regression test in memory-settings.test.js.
 This node is scoped to that overlay; unrelated ICC branches retain their existing baselines.
-Verification: node --test electron/test/*.test.js passed 31 tests; human visual acceptance remains pending.
+Verification recorded historically: node --test electron/test/*.test.js passed 31 tests; human visual acceptance remains pending. This routing-only edit does not rerun tests or certify another branch's source/overlay.

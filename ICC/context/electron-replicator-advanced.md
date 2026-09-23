@@ -3,8 +3,8 @@
 ## Boundary
 
 Owns Replicator destination advanced settings and the shared Electron IP/CIDR editor.
-Parent / Zoom Out: INDEX.md. No children.
-Connector: electron-memory-layout.md for the existing shared MMA Settings popup.
+Parent / Zoom Out: [L0-project](L0-project.md). No children.
+Connector: [electron-memory-layout](electron-memory-layout.md) for the existing shared MMA Settings popup; not an automatic context import.
 
 ## Source Dependencies
 
@@ -28,8 +28,7 @@ Connector: electron-memory-layout.md for the existing shared MMA Settings popup.
 ## Baseline / Overlay
 
 Source baseline: 8b5541f.
-Scoped overlay: Replicator destination editor and persistence, runtime capability guard, reusable preset dropdown and comma parsing.
-Unrelated workflow records remain untouched.
+Scoped overlay: Replicator destination editor and persistence, runtime capability guard, reusable preset dropdown and comma parsing. This routing-only edit does not certify current checkout source or overlay.
 
 ## Facts
 
@@ -42,8 +41,6 @@ RBE ID allocation and duplication consider loaded devices from both editors.
 The IP/CIDR dropdown uses an independent native preset select, not a filtered datalist. Input accepts comma-separated trimmed values, ignoring empty comma segments.
 Shared global RBE output remains in Memory / Advanced Settings / MMA Settings.
 
-## Verification
+## Historical Verification
 
-node --test electron/test/*.test.js passed 38 tests.
-go test -race -count=1 -timeout=90s ./... in replicator passed.
-These tests do not establish human visual acceptance or deployment to installed services.
+node --test electron/test/*.test.js passed 38 tests; go test -race -count=1 -timeout=90s ./... in replicator passed. These historical tests do not establish human visual acceptance, installed services or a fresh test of this branch.

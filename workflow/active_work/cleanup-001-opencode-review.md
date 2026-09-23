@@ -60,9 +60,9 @@ Run:
 
 ```bash
 test -z "$(git ls-tree -r --name-only HEAD -- deploy/pretest)"
-! git grep -nE '(^|[^[:alnum:]_-])modbus-sim([^[:alnum:]_-]|$)|dnp3-sim' -- .
-! git grep -nE '@osjs/calculator-application|accessories-calculator' -- .
-! git grep -nE 'TestAppApplication|Test Application' -- ':(exclude)THIRD_PARTY_NOTICES.md'
+! git grep -nE '(^|[^[:alnum:]_-])modbus-sim([^[:alnum:]_-]|$)|dnp3-sim' -- deploy
+! git grep -nE '@osjs/calculator-application|accessories-calculator|CalculatorApplication' -- OSJS package.json
+! git grep -nE 'TestAppApplication|Test Application' -- OSJS package.json
 git grep -nE 'DEFAULT_ARRANGE_DELAY|defaultArrangeTimer|defaultArrangePending|autoArrange\(core\)|writePositions\(core, positions\)' -- OSJS/src/client/providers/nameless-desktop-icons.js
 ```
 

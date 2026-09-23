@@ -1,7 +1,7 @@
 # Planning Workflow
 
-Baseline commit: ee19b8a
-Working tree: clean; no planning/workflow overlay remains uncommitted.
+Baseline commit: 5a89194e4acc710032c00a26bb5d2a1a095eacd1
+Working tree: clean outside this ICC maintenance pass; no planning/workflow overlay remains uncommitted.
 Source dependencies: planning/README.md, planning/Brainstorm/README.md, planning/microtask/README.md, planning/microtask/rules.md, workflow/active_work/README.md
 Parent: L0-project
 Zoom In: brainstorm-topics
@@ -15,31 +15,18 @@ contains independently sized task records; promotion moves a human-approved task
 
 ## Current inventory
 
-- Brainstorm contains no topic files; only its README remains.
-- Microtask now holds the staged OS.js Toolkit replacement series `UMIG-001` and
-  `UMIG-003` through `UMIG-009` with their `-T` (TEST) and `-V` (VERIFY) stages, 23 files plus
-  README and rules. All are PLANNED/BLOCKED pending human promotion. `UMIG-001` is the human
-  donor-approval gate and `UMIG-007`/`UMIG-007A` are verification-only; neither manufactures
-  coding work.
-- The earlier Simulator, MMA2 and Replicator planning records were removed or
-  promoted/archived by `ee19b8a` and remain absent.
+- Brainstorm retains its README plus one live topic, `osjs-toolkit-electron-replica.md` (OS.js Toolkit as an Electron-Toolkit replica; BRAINSTORM/REVIEW ONLY, promoting no microtask).
+- `planning/microtask/` holds the OTR series that succeeded the retired UMIG planning backlog: `otr-001`/`001a`/`001b`/`001c`, `otr-002`/`002a`/`002b`, `otr-003`/`003a`/`003b`, the `otr-004`..`otr-014` parent templates, plus `otr-remaining-atomic-decomposition.md`, `otr-sizing-and-decomposition-review.md` and `rules.md` — 25 Markdown files including the README. The earlier UMIG planning records no longer live under `planning/`; they were archived under `workflow/archive/`. All `planning/microtask/` items remain non-executable until human promotion.
+- OTR-004..014 are parent topics, not executable children; they must be materialized as source-pinned atomic children after inventories.
 
 ## Rules that matter for current review
 
 - One microtask has one primary outcome and one detailed task file.
 - Scores use five dimensions, each restricted to 0-2.
-- More than three independent acceptance outcomes, multiple verification workflows, or a total
-  of 6+ require splitting.
-- Coding, TEST and VERIFY are distinct by default, even for a small feature; only coding and
-  either test stage are never combined.
-- Planning never grants execution authority; only `workflow/active_work/` does.
+- More than three independent acceptance outcomes, multiple verification workflows, or a total of 6+ require splitting.
+- Coding, TEST and VERIFY are distinct by default, even for a small feature.
+- Planning never grants execution authority; only promotion into `workflow/active_work/` does. `rules.md` now also routes its ICC-first rule through `workflow/ICC_CONSUMER.md` with per-node baseline/overlay/validity rather than an index-wide snapshot, and equally states that a migrated `unverified` node does not justify a global audit.
 
 ## Current planning-to-active relationship
 
-Only `UMIG-002` (CODE) and `UMIG-002-T`/`UMIG-002-V` have moved out of Planning: UMIG-002 is
-archived as a source-only checkpoint and UMIG-002-T is the sole ACTIVE task. Every other UMIG
-record stays in Planning, including `UMIG-001` donor approval and `UMIG-003` onward; no donor SHA
-is approved and no renderer copy, launcher switch or legacy-package retirement is authorized.
-
-`planning/microtask/README.md` and `rules.md` were both updated by this delta to add the TEST/VERIFY
-stage split, stage ownership and the ICC-first rule restated for the Toolkit work.
+`workflow/active_work/README.md` records that the human approved the OTR roadmap and promotion and that this directory now contains the ACTIVE OTR-001A packet, queued discovery packets and copied OTR-004..014 parent planning templates. The authoritative selector is `handoff.md` plus `workflow/active_work/OTR_PROMOTION_QUEUE.md`; this node does not resolve task assignment. The former UMIG-002/UMIG-002-T assertion previously cached here is superseded and must not be restated as current.

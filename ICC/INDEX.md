@@ -4,7 +4,7 @@
 
 ## Snapshot and migration safety
 
-The metadata was migrated from existing ICC Markdown **without repository rediscovery**. The reviewed remote `main` snapshot is `45cd3d2d81831306c6943f844e49b7deccbfc5ad`, not an assertion about any local checkout. Local uncommitted overlay is unknown. Historical baseline notes in node Markdown are provenance only: the new manifest marks migrated nodes `unverified` with `baseline: null` and `overlay: unknown` until each required node receives its own bounded verification. Do not blanket-refresh these nodes, invent local cleanliness, or treat the snapshot HEAD as proof of any node's validity.
+The metadata was migrated from existing ICC Markdown **without repository rediscovery**. Historical baseline notes in node Markdown are provenance only: the manifest marks migrated nodes `unverified` with `baseline: null` and `overlay: unknown` until each required node receives its own bounded verification. Do not blanket-refresh these nodes, invent local cleanliness, or treat the snapshot HEAD as proof of any node's validity. The `snapshot` block records the checkout observed for the current maintenance pass (`5a89194e4acc710032c00a26bb5d2a1a095eacd1`, overlay clean at observation); only `governance`, `planning-workflow` and `brainstorm-topics` have been verified against it and set `current`, while every other node remains `unverified`. That pass left only ICC maintenance uncommitted, which is excluded from source dependency matching, so no declared source path is modified.
 
 ## Registry — mirror of manifest.json
 

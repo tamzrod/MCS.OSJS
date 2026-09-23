@@ -2,7 +2,7 @@
 
 Parent: none
 Zoom Out: none
-Zoom In: [governance](governance.md), [donor-licensing](donor-licensing.md), [network-exposure](network-exposure.md), [planning-workflow](planning-workflow.md), [osjs-shell](osjs-shell.md), [active-work](active-work.md)
+Zoom In: [governance](governance.md), [donor-licensing](donor-licensing.md), [network-exposure](network-exposure.md), [planning-workflow](planning-workflow.md), [osjs-shell](osjs-shell.md), [simulator-device-config](simulator-device-config.md), [replicator](replicator.md), [electron-memory-layout](electron-memory-layout.md), [electron-replicator-advanced](electron-replicator-advanced.md), [electron-replicator-leds](electron-replicator-leds.md), [electron-settings-owner](electron-settings-owner.md), [active-work](active-work.md)
 Source dependencies: `README.md`, `PROJECT_IDENTITY.md`, `handoff.md`, `OSJS/src/packages/MCSModbusToolkit/index.js`.
 
 ## Identity and boundaries

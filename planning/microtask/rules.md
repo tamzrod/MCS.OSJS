@@ -2,7 +2,7 @@
 
 ## ICC-First Context Rule
 
-Before repository-dependent task planning, read `ICC/INDEX.md`. Use valid relevant context; if stale, request a bounded refresh from BLACK SHEEP WALL. Only BLACK SHEEP WALL edits ICC; Git source remains authoritative. Never claim stale ICC is synchronized.
+Before repository-dependent task planning, select the task's semantic boundary and follow `workflow/ICC_CONSUMER.md`: read `ICC/INDEX.md`, the relevant node in `ICC/manifest.json`, and the minimum context. Validate per-node baseline/overlay/validity, not an index-wide snapshot. REUSE current unchanged context; for stale, unverified or missing territory request only an authorized bounded BLACK SHEEP WALL UPDATE/REVEAL, or use task-permitted authoritative source with an explicit caveat/report the precise blocker. Only BLACK SHEEP WALL edits ICC; Git source remains authoritative. A migrated unverified node is not current, but does not justify a global audit or automatically block task sizing.
 
 ## Core Rule
 

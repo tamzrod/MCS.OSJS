@@ -1,16 +1,16 @@
 # ICC format v1 — map, knowledge, validity
 
-This file specifies the **format**, not repository facts or workflow authorization. Only BLACK SHEEP WALL writes ICC. Git source and an authorized task take precedence over ICC. The mode-selection and return contract are in `BLACK_SHEEP_WALL.md`.
+This specifies the **format**, not repository facts or workflow authorization. Only BLACK SHEEP WALL writes ICC. Git source and an authorized task take precedence over ICC. Mode selection and the short return contract are in `BLACK_SHEEP_WALL.md`.
 
 ## Three logical layers, one small on-disk model
 
-1. **Map:** `ICC/manifest.json` is the canonical machine-readable registry: `schema_version`, `root`, `snapshot`, and `nodes[]`. Each node has a unique `id`, Markdown `file`, `parent` (string or null), `children[]`, `connectors[]` (`target`, `relation`), and repository-relative `sources[]`.
-2. **Knowledge:** `ICC/context/<id>.md` contains only the boundary, compact established facts/contracts, unresolved questions and links to actual source/evidence. Its legacy parent/zoom header remains readable, but the manifest is authoritative for structural metadata. Do not duplicate Git source, task timelines or the entire parent in a child.
-3. **Validity:** Each manifest node has `state` with `baseline` (full 40-hex commit SHA or null), `overlay` (`unknown`, `clean`, or `audited`), `validity` (`unverified`, `partial`, `stale`, or `current`), and `fingerprints` only for an `audited` overlay. Fingerprints are repository-relative path to deterministic full SHA hash. This is *per-node*; no global HEAD claims all nodes current.
+1. **Map:** `ICC/manifest.json` is canonical machine-readable routing: `schema_version`, `root`, `snapshot`, `nodes[]`. Each node has a unique `id`, Markdown `file`, `parent` (string or null), `children[]`, `connectors[]` (`target`, `relation`), and repository-relative `sources[]`.
+2. **Knowledge:** `ICC/context/<id>.md` contains boundaries, compact established facts/contracts, unresolved questions and source/evidence links. Its legacy parent/zoom/source headers remain readable; the manifest is authoritative for structural metadata once reconciled. Do not duplicate source, task histories or entire parents.
+3. **Validity:** Each node's `state` has `baseline` (full 40-hex SHA or null), `overlay` (`unknown`, `clean`, `audited`), `validity` (`unverified`, `partial`, `stale`, `current`), and `fingerprints` only for `audited` overlays. Fingerprints map repository-relative paths to deterministic full hashes. This is per-node; the index-level HEAD certifies nothing globally.
 
-`ICC/INDEX.md` is a compact, human-readable routing mirror of `manifest.json`, **not an independent status source or a task log**. Keep its registry table synchronized when changing map topology. The structural checker compares it against the manifest. Its prose may summarize provenance but does not certify validity.
+`ICC/INDEX.md` is the concise human routing mirror of the manifest, **not an independent status source or task log**. The checker enforces registry-table parity. The current index snapshot describes provenance, not node validity.
 
-### Example metadata (illustrative; not an actual project node)
+### Example metadata (illustrative, not an actual project node)
 
 ```json
 {
@@ -24,24 +24,26 @@ This file specifies the **format**, not repository facts or workflow authorizati
 }
 ```
 
-Valid connector relations: `contract`, `dependency`, `data-flow`, `ownership`. A connector is not parentage or permission to traverse another branch. All source paths are relative to the repository root. `directory/**` means all descendants; more precise file lists are preferred. Do not record an unverified guessed path as fact.
+Connector relations: `contract`, `dependency`, `data-flow`, `ownership`. Connectors are not parentage or cross-boundary permission. Source paths are repository-relative; `directory/**` means all descendants; prefer precise actual files. Never guess a nonexistent path.
 
-## Migration rule
+## Safe one-time metadata migration
 
-All existing ICC node identities, Markdown knowledge files and index rows were migrated into the v1 manifest **without re-inventorying the repository**. This migration does not prove historic baselines or local worktree state. Therefore migrated nodes initially have `baseline: null`, `overlay: unknown`, `validity: unverified`. Prior Markdown baseline notes are historic provenance, **not an implicit current-state claim**. The first operation needing a node performs only bounded verification of that node's declared dependencies, checks the actual local branch/HEAD/overlay, and then records a verified full SHA and fingerprints (or clean overlay). Do not audit all nodes just to clear `unverified`. An unknown local overlay must never be rewritten to `clean` based on a GitHub-only snapshot.
+All 18 existing node identities, Markdown knowledge files and index routing rows were migrated to the v1 manifest **without repository rediscovery**. Historical baseline notes are provenance, NOT current certification; GitHub remote review could not determine the local overlay. Thus **every migrated node begins with** `baseline: null`, `overlay: unknown`, `validity: unverified`. Do not audit every node simply to clear that label or assume a remote branch has a clean local working tree.
 
-When an existing node lacks sufficient knowledge for a question, verify only its relevant source scope; when a required semantic node is absent, reveal only bounded new territory. Unrelated nodes retain state unchanged.
+**Crucial dependency-coverage rule:** Migrated manifest `sources[]` are candidate routing seeds, **not guaranteed complete source coverage**. A node can reference additional dependencies in its existing Markdown header or semantic boundary. On the *first request for that node only*, compare its candidate source list with its existing Markdown source-dependency declarations, resolve missing/renamed source paths in the smallest relevant scope, and update that node's manifest `sources[]` to cover all **material** dependencies. Do not mark it `current` until source coverage, node facts, actual checkout HEAD, and audited overlay are verified together. If coverage cannot be established, retain `partial`/`unverified`; never allow a subset of source paths to produce a false REUSE. This is bounded reconciliation, not permission to scout the whole repository.
 
-## Write/finalization protocol
+After successful verification, record a full baseline SHA and deterministic fingerprints (or a verified clean overlay). Verify only a requested node or node intersecting a genuine source delta. Unrelated nodes stay unchanged. Missing required territory is revealed narrowly without restarting bootstrap.
 
-For any affected node: (1) establish branch/HEAD and changed dependency paths, (2) stage only the smallest knowledge or map changes, (3) re-read each written node and verify its claims against inspected sources, (4) update its manifest validity **only after verification**, (5) mirror topology changes in `INDEX.md`, (6) run the read-only checker, and (7) publish the coherent batch in one Git commit if explicitly authorized. If interrupted or a check fails, leave impacted state `stale`/`unverified`, do not advance baseline and report the failure. The tool must never silently change a current node to claim success.
+## Coherent write/finalization protocol
 
-A changed source fact can update the knowledge layer without changing map topology; a new verified connector can update the map without rereading unrelated source; changing only validity must not rewrite knowledge. No scheduled trigger or auto-commit is implemented by this format.
+For an affected node: (1) observe branch, HEAD and overlay; (2) establish its bounded actual source coverage; (3) stage only necessary knowledge/map changes; (4) re-read written nodes and check claims against inspected source; (5) update manifest validity only **after** verification; (6) mirror changed topology in `INDEX.md`; (7) run the read-only checker; (8) publish one coherent Git commit **only if authorized**. Interruption/failure leaves impacted state stale or unverified; never advance baseline or claim completion. The checker validates syntax and relationships, not semantic truth.
 
-## Checker and tests
+A fact change may affect knowledge without topology; a connector change may affect the map without unrelated source reads; a validity change must not rewrite knowledge. No trigger, scheduler, auto-commit or service operation is implemented here.
 
-`python3 scripts/check_icc_map.py` verifies JSON schema, unique IDs/files, reciprocal parent/children, reachability/cycles, connectors, source-path syntax, plausible state claims, index parity and links. It **does not verify that node facts match product source, that the remote branch equals the local HEAD, or that any hash was audited**. That semantic proof belongs to a bounded BLACK SHEEP WALL operation.
+## Checker and deterministic tests
 
-`python3 scripts/test_icc_process.py` runs deterministic offline scenarios for REUSE, UPDATE on a changed file, REVEAL of a bounded missing node, stale-node verification, unknown-overlay safety, and malformed metadata. Tests use isolated temporary fixtures; no product or operator data is touched.
+`python3 scripts/check_icc_map.py` checks schema, IDs/paths, reciprocal tree, cycles, connectors, source-path syntax, plausible state claims, index parity and links. It does **not** establish that declared sources are complete, facts match source, HEAD equals the local checkout, or hashes were really audited. Those are Black Sheep Wall responsibilities.
 
-Optional efficiency counters belong in an operation's short response: nodes read/written, source paths inspected, and reason for any expansion. Do not maintain an append-only log or require metrics collection for a cache hit.
+`python3 scripts/test_icc_process.py` tests unchanged REUSE, one changed-file UPDATE, missing bounded-node REVEAL, stale-node revalidation, unknown-overlay safety and broken schema on isolated fixtures. They do not prove the full repository ICC or live application.
+
+Optional efficiency counters in the short response: nodes read/written, source paths inspected and reason for expansion. No append-only activity log or mandatory metrics work on cache hits.

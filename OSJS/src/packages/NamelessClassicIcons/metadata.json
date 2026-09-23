@@ -9,7 +9,6 @@
   },
   "icon": "start-here",
   "icons": {
-    "accessories-calculator": "svg",
     "accessories-text-editor": "svg",
     "application-x-addon": "svg",
     "application-x-executable": "svg",

@@ -85,6 +85,8 @@ func (s *RuntimeService) Handle(req RuntimeRequest) RuntimeResponse {
 
 	var response RuntimeResponse
 	switch req.Operation {
+	case "mma-load", "mma-apply":
+		response = s.handleSharedMMA(req, base)
 	case "load":
 		doc, err := s.store.Load()
 		if err != nil {

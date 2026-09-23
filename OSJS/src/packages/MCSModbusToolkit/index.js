@@ -9,6 +9,7 @@ import {createReplicatorContract} from './replicator-contract';
 import {createReplicatorTransport} from './replicator-transport';
 import {createReplicatorEditor} from './replicator-editor';
 import {createDiagnosticsEditor} from './diagnostics-editor';
+import {createSharedSettings} from './shared-settings';
 
 // One OS.js Toolkit window. Diagnostics reads only the existing canonical
 // Memory/Replicator contracts; no third socket, service-control API or fixture.
@@ -28,8 +29,10 @@ const register = (core, args, options, metadata) => {
   let editor = null;
   let replicatorEditor = null;
   let diagnosticsEditor = null;
+  let sharedSettings = null;
 
   win.on('destroy', () => {
+    if (sharedSettings) { sharedSettings.destroy(); sharedSettings = null; }
     if (editor) { editor.destroy(); editor = null; }
     if (replicatorEditor) { replicatorEditor.destroy(); replicatorEditor = null; }
     if (diagnosticsEditor) { diagnosticsEditor.destroy(); diagnosticsEditor = null; }
@@ -49,10 +52,19 @@ const register = (core, args, options, metadata) => {
     replicatorRoot.replaceChildren();
     diagnosticsRoot.replaceChildren();
     shadow.querySelector('.subtitle').textContent = 'Memory + Replicator / read-only Diagnostics';
-    editor = createMemoryEditor(document, memoryRoot, memory);
-    replicatorEditor = createReplicatorEditor(document, replicatorRoot, replicator);
+    const indicators = shadow.querySelectorAll('.runtime-strip b');
+    const patchIndicator = (index, value) => {
+      const indicator = indicators[index];
+      indicator.textContent = value;
+      indicator.className = value === 'RUNNING' ? 'status-ok' : value === 'STOPPED' || value === 'ERROR' ? 'status-stop' : 'status-unknown';
+      indicator.title = 'Latest selected-device runtime observation, not a host service probe';
+    };
+    sharedSettings = createSharedSettings(document, shadow, memory);
+    editor = createMemoryEditor(document, memoryRoot, memory, {shared: sharedSettings, onStatus: value => patchIndicator(0, value)});
+    replicatorEditor = createReplicatorEditor(document, replicatorRoot, replicator, {shared: sharedSettings, onStatus: value => patchIndicator(1, value)});
     diagnosticsEditor = createDiagnosticsEditor(document, diagnosticsRoot, memory, replicator);
     $content.appendChild(toolkit.element);
+    sharedSettings.load();
   });
 
   return proc;

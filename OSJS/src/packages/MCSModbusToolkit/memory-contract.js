@@ -34,7 +34,9 @@ const createMemoryContract = send => {
       const error = isRecord(reply.error) ? reply.error : {};
       const code = typeof error.code === 'string' && error.code ? error.code : 'RUNTIME_ERROR';
       const message = typeof error.message === 'string' && error.message ? error.message : 'Simulator runtime request failed';
-      throw new MemoryContractError(code, message);
+      const failure = new MemoryContractError(code, message);
+      failure.result = reply.result;
+      throw failure;
     }
     if (!isRecord(reply.result)) throw invalidResponse(`Simulator ${operation} response has no result`);
     if ((operation === 'load' || operation === 'apply') && (!isRecord(reply.result.document) || !Array.isArray(reply.result.document.devices))) {
@@ -43,10 +45,24 @@ const createMemoryContract = send => {
     if (operation === 'status' && !isRecord(reply.result.status)) {
       throw invalidResponse('Simulator status response has no status');
     }
+    if ((operation === 'mma-load' || operation === 'mma-apply') &&
+        (!isRecord(reply.result.settings) || !/^[a-f0-9]{64}$/.test(reply.result.revision))) {
+      throw invalidResponse('Shared MMA response requires settings and a revision');
+    }
+    if (operation === 'mma-apply' && (reply.result.committed !== true || reply.result.restart_acknowledged !== true)) {
+      throw invalidResponse('Shared MMA apply was not acknowledged');
+    }
     return reply.result;
   };
 
   return Object.freeze({
+    loadShared: () => request('mma-load', {}),
+    applyShared: (revision, settings) => {
+      if (!/^[a-f0-9]{64}$/.test(revision) || !isRecord(settings)) {
+        return Promise.reject(new MemoryContractError('INVALID_REQUEST', 'Shared settings and revision are required'));
+      }
+      return request('mma-apply', {revision, settings: JSON.parse(JSON.stringify(settings))});
+    },
     load: () => request('load', {}),
     apply: document => {
       if (!isRecord(document) || !Array.isArray(document.devices)) {

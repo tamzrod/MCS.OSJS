@@ -69,8 +69,6 @@ const validateDocument = document => {
   }
   return null;
 };
-// A status result describes source polls, not individual network/TCP/Modbus
-// probe layers or MMA2 health. Those four LEDs must remain UNKNOWN.
 const displayStatus = (status, selectedName, error) => {
   const unavailable = Boolean(error);
   const valid = !unavailable && status && status.name === selectedName &&

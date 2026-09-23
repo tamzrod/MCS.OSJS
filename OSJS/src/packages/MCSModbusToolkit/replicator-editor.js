@@ -1,10 +1,16 @@
 'use strict';
 
+const advanced = require('./advanced-editor');
+const comms = require('./comms-status');
+
 // Toolkit-owned canonical Replicator editor. Fixtures are never passed in;
 // a failed load leaves the tab explicitly unavailable rather than editable.
 const {copy, blankBlock, blankDevice, normalizeDocument, validateDocument, displayStatus} = require('./replicator-adapter');
 const FALLBACK = 'UNKNOWN';
-const createReplicatorEditor = (doc, root, replicator) => {
+const createReplicatorEditor = (doc, root, replicator, options = {}) => {
+  let section = 'Device Definition';
+  let advancedSupported = false;
+  let receivedAt = 0;
   let documentValue = null;
   let persisted = null;
   let suggestion = null;
@@ -56,7 +62,11 @@ const createReplicatorEditor = (doc, root, replicator) => {
   };
   const patchStatus = () => {
     const name = appliedName();
-    const observed = displayStatus(name ? status : null, name, name ? statusError : null);
+    const fresh = Date.now() - receivedAt < 6000;
+    const observed = displayStatus(name && fresh ? status : null, name, name ? statusError : null);
+    comms.update(root.querySelector('#rep-comms'), name && fresh && device().enabled ? status : null,
+      name, statusError ? statusError.message || String(statusError) : 'Status is stale, unavailable or belongs to an unsaved device');
+    if (options.onStatus) options.onStatus(observed.replicator);
     const rep = root.querySelector('[data-replicator-status="runtime"]');
     const source = root.querySelector('[data-replicator-status="source"]');
     const error = root.querySelector('[data-replicator-status="error"]');
@@ -81,7 +91,7 @@ const createReplicatorEditor = (doc, root, replicator) => {
     if (closed || loading || saving || token !== generation || !name) return;
     Promise.resolve(replicator.status(name)).then(value => {
       if (closed || token !== generation || appliedName() !== name) return;
-      status = value; statusError = null; patchStatus();
+      status = value; receivedAt = Date.now(); statusError = null; patchStatus();
     }).catch(error => {
       if (closed || token !== generation || appliedName() !== name) return;
       status = null; statusError = error; patchStatus();
@@ -139,19 +149,10 @@ const createReplicatorEditor = (doc, root, replicator) => {
       documentValue ? 'No devices configured. Choose Add.' : 'No canonical data available.'));
     side.appendChild(list);
     const editor = h('section', 'tool-editor');
-    editor.appendChild(h('h2', '', 'Device Definition'));
+    editor.appendChild(advanced.tabs(doc, section, saving, value => { section = value; render(); }));
     const current = device();
     if (current) {
-      const com = h('div', 'comms-strip');
-      com.setAttribute('aria-label', 'COMMS layers not directly measured; no green inferred from source polling');
-      ['Network', 'TCP', 'Modbus', 'MMA2'].forEach(label => {
-        const item = h('div', 'comms-item');
-        item.appendChild(h('span', 'comms-label', label));
-        const led = h('button', 'comms-led'); led.type = 'button'; led.disabled = true;
-        led.dataset.state = 'UNKNOWN'; led.setAttribute('aria-label', `${label}: UNKNOWN (no direct probe)`);
-        led.title = `${label}: UNKNOWN — Replicator backend exposes aggregate/per-block source status, not this COMMS layer`;
-        item.appendChild(led); com.appendChild(item);
-      });
+      const com = comms.create(doc);
       editor.appendChild(com);
       const runtime = h('div', 'runtime-row');
       runtime.append(h('span', '', 'Replicator:'), h('strong', '', FALLBACK), h('span', '', 'Source:'), h('strong', '', FALLBACK));
@@ -160,47 +161,53 @@ const createReplicatorEditor = (doc, root, replicator) => {
       editor.appendChild(runtime);
       const statusLine = h('div', 'tool-validation'); statusLine.dataset.replicatorStatus = 'error';
       editor.appendChild(statusLine);
-      const identity = h('div', 'tool-grid');
-      identity.append(field('Name', current.name, value => { current.name = value; }, {type: 'text', identity: true}),
-        checkbox('Enabled', current.enabled, value => { current.enabled = value; }),
-        field('Endpoint', current.endpoint, value => { current.endpoint = value; }, {type: 'text'}),
-        field('Source Unit ID', current.unit_id, value => { current.unit_id = value; }, {min: 0, max: 255}));
-      editor.append(identity, h('h3', '', 'Destination'));
-      const d = current.destination;
-      const dest = h('div', 'tool-grid');
-      dest.append(field('Port', d.port, value => { d.port = value; }, {min: 1, max: 65535, readOnly: d.auto_port, ownership: true}),
-        checkbox('Auto Port', d.auto_port, value => { d.auto_port = value; }),
-        field('Unit ID', d.unit_id, value => { d.unit_id = value; }, {min: 0, max: 255, readOnly: d.auto_unit_id, ownership: true}),
-        checkbox('Auto Unit ID', d.auto_unit_id, value => { d.auto_unit_id = value; }));
-      editor.appendChild(dest);
-      const ownership = h('div', 'runtime-row'); ownership.appendChild(h('strong', '', 'Destination ownership:'));
-      const owner = h('span', '', 'UNKNOWN'); owner.dataset.replicatorOwnership = 'true'; ownership.appendChild(owner);
-      ownership.appendChild(button('Check ownership', 'inspect', saving || loading || !manualKey()));
-      editor.append(ownership, h('h3', '', 'Pull Blocks'));
-      const blockActions = h('div', 'tool-actions');
-      blockActions.append(button('Add Block', 'add-block', saving), button('Duplicate Block', 'duplicate-block', saving || !current.pull_blocks.length),
-        button('Delete Block', 'delete-block', saving || current.pull_blocks.length <= 1, 'tool-danger'));
-      editor.appendChild(blockActions);
-      const table = h('div', 'block-table');
-      const header = h('div', 'block-row block-header');
-      ['#', 'FC', 'Start', 'Count', 'Scan Rate (ms)', ''].forEach(title => header.appendChild(h('span', '', title)));
-      table.appendChild(header);
-      current.pull_blocks.forEach((block, index) => {
-        const row = h('div', `block-row${index === selectedBlock ? ' selected' : ''}`);
-        row.appendChild(button(String(index + 1), `block-${index}`, saving));
-        const select = h('select'); select.setAttribute('aria-label', `Pull Block ${index + 1} Function`); select.disabled = saving;
-        [1, 2, 3, 4].forEach(fc => { const option = h('option', '', `FC${fc}`); option.value = String(fc); select.appendChild(option); });
-        select.value = String(block.function);
-        select.addEventListener('change', () => { block.function = Number(select.value); patchValidation(); });
-        row.append(select, field(`Block ${index + 1} Start`, block.start, value => { block.start = value; }, {cell: true, min: 0, max: 65535}),
-          field(`Block ${index + 1} Count`, block.count, value => { block.count = value; }, {cell: true, min: 1, max: 65535}),
-          field(`Block ${index + 1} Scan Rate`, block.scan_rate_ms, value => { block.scan_rate_ms = value; }, {cell: true, min: 1, max: 4294967295}),
-          button('-', `remove-block-${index}`, saving || current.pull_blocks.length <= 1, 'tool-danger tool-row-delete'));
-        const blockStatus = h('div', 'runtime-row', `Block ${index + 1}: UNKNOWN`);
-        blockStatus.dataset.replicatorBlockStatus = String(index);
-        table.append(row, blockStatus);
-      });
-      editor.appendChild(table);
+      if (section === 'Advanced Settings') {
+        if (!advancedSupported) editor.appendChild(h('div', 'tool-validation', 'Update and restart the Replicator backend to edit advanced settings.'));
+        else advanced.mount(doc, editor, advanced.paramsFor(current),
+          documentValue.devices.map(entry => ({mma2: advanced.paramsFor(entry)})), saving, options.shared);
+      } else {
+        const identity = h('div', 'tool-grid');
+        identity.append(field('Name', current.name, value => { current.name = value; }, {type: 'text', identity: true}),
+          checkbox('Enabled', current.enabled, value => { current.enabled = value; }),
+          field('Endpoint', current.endpoint, value => { current.endpoint = value; }, {type: 'text'}),
+          field('Source Unit ID', current.unit_id, value => { current.unit_id = value; }, {min: 0, max: 255}));
+        editor.append(identity, h('h3', '', 'Destination'));
+        const d = current.destination;
+        const dest = h('div', 'tool-grid');
+        dest.append(field('Port', d.port, value => { d.port = value; }, {min: 1, max: 65535, readOnly: d.auto_port, ownership: true}),
+          checkbox('Auto Port', d.auto_port, value => { d.auto_port = value; }),
+          field('Unit ID', d.unit_id, value => { d.unit_id = value; }, {min: 0, max: 255, readOnly: d.auto_unit_id, ownership: true}),
+          checkbox('Auto Unit ID', d.auto_unit_id, value => { d.auto_unit_id = value; }));
+        editor.appendChild(dest);
+        const ownership = h('div', 'runtime-row'); ownership.appendChild(h('strong', '', 'Destination ownership:'));
+        const owner = h('span', '', 'UNKNOWN'); owner.dataset.replicatorOwnership = 'true'; ownership.appendChild(owner);
+        ownership.appendChild(button('Check ownership', 'inspect', saving || loading || !manualKey()));
+        editor.append(ownership, h('h3', '', 'Pull Blocks'));
+        const blockActions = h('div', 'tool-actions');
+        blockActions.append(button('Add Block', 'add-block', saving), button('Duplicate Block', 'duplicate-block', saving || !current.pull_blocks.length),
+          button('Delete Block', 'delete-block', saving || current.pull_blocks.length <= 1, 'tool-danger'));
+        editor.appendChild(blockActions);
+        const table = h('div', 'block-table');
+        const header = h('div', 'block-row block-header');
+        ['#', 'FC', 'Start', 'Count', 'Scan Rate (ms)', ''].forEach(title => header.appendChild(h('span', '', title)));
+        table.appendChild(header);
+        current.pull_blocks.forEach((block, index) => {
+          const row = h('div', `block-row${index === selectedBlock ? ' selected' : ''}`);
+          row.appendChild(button(String(index + 1), `block-${index}`, saving));
+          const select = h('select'); select.setAttribute('aria-label', `Pull Block ${index + 1} Function`); select.disabled = saving;
+          [1, 2, 3, 4].forEach(fc => { const option = h('option', '', `FC${fc}`); option.value = String(fc); select.appendChild(option); });
+          select.value = String(block.function);
+          select.addEventListener('change', () => { block.function = Number(select.value); patchValidation(); });
+          row.append(select, field(`Block ${index + 1} Start`, block.start, value => { block.start = value; }, {cell: true, min: 0, max: 65535}),
+            field(`Block ${index + 1} Count`, block.count, value => { block.count = value; }, {cell: true, min: 1, max: 65535}),
+            field(`Block ${index + 1} Scan Rate`, block.scan_rate_ms, value => { block.scan_rate_ms = value; }, {cell: true, min: 1, max: 4294967295}),
+            button('-', `remove-block-${index}`, saving || current.pull_blocks.length <= 1, 'tool-danger tool-row-delete'));
+          const blockStatus = h('div', 'runtime-row', `Block ${index + 1}: UNKNOWN`);
+          blockStatus.dataset.replicatorBlockStatus = String(index);
+          table.append(row, blockStatus);
+        });
+        editor.appendChild(table);
+      }
     } else editor.appendChild(h('div', 'tool-empty', loading ? 'Loading canonical definitions...' : 'Select a device or choose Add.'));
     if (documentValue) {
       const warning = h('div', 'tool-validation'); warning.dataset.replicatorValidation = 'true';
@@ -221,6 +228,7 @@ const createReplicatorEditor = (doc, root, replicator) => {
       const result = await replicator.load();
       if (closed) return;
       suggestion = result.suggestion;
+      advancedSupported = Boolean(result.capabilities && result.capabilities.mma2_advanced);
       persisted = copy(normalizeDocument(result.document)); documentValue = copy(persisted);
       selected = documentValue.devices.length ? 0 : null;
       message = documentValue.devices.length ? 'Canonical Replicator definitions loaded.' : 'No devices configured. Choose Add to begin.';
@@ -316,6 +324,8 @@ const createReplicatorEditor = (doc, root, replicator) => {
     render(); restartPolling();
   }
   render(); load();
-  return {destroy: () => { closed = true; stopPolling(); root.replaceChildren(); }};
+  const staleTimer = setInterval(patchStatus, 1000);
+  const unsubscribeShared = options.shared ? options.shared.subscribe(render) : () => {};
+  return {destroy: () => { closed = true; unsubscribeShared(); clearInterval(staleTimer); stopPolling(); root.replaceChildren(); }};
 };
 module.exports = {createReplicatorEditor};

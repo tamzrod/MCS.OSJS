@@ -1,9 +1,0 @@
-{
-  "name": "modbus-replicator",
-  "version": "0.1.0",
-  "private": true,
-  "description": "MCS.OSJS Modbus Replicator device-list/editor application.",
-  "osjs": {
-    "type": "package"
-  }
-}

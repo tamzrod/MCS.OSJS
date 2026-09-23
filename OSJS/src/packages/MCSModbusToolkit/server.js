@@ -6,7 +6,7 @@ const net = require('net');
 const path = require('path');
 const VERSION = 1;
 const MAX_MESSAGE = 1024 * 1024;
-const MEMORY_OPS = new Set(['load', 'apply', 'status']);
+const MEMORY_OPS = new Set(['load', 'apply', 'status', 'mma-load', 'mma-apply']);
 const REPLICATOR_OPS = new Set(['load', 'apply', 'status', 'suggest']);
 const runtimeSocket = service => path.join(process.env.OSJS_DATA_DIR || process.cwd(), 'run',
   service === 'replicator' ? 'modbus-replicator.sock' : 'modbus-simulator.sock');
@@ -21,7 +21,8 @@ const callRuntime = (request, service) => new Promise((resolve, reject) => {
   let buffer = Buffer.alloc(0);
   let expected = null;
   let settled = false;
-  const timeout = setTimeout(() => socket.destroy(new Error(`${service} runtime request timed out`)), 25000);
+  const timeout = setTimeout(() => socket.destroy(new Error(`${service} runtime request timed out`)),
+    request.operation === 'mma-apply' ? 35000 : 25000);
   const finish = (error, response) => {
     if (settled) return;
     settled = true;

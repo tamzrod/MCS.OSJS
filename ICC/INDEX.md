@@ -1,156 +1,65 @@
-# ICC Index
+# ICC — semantic routing map
 
-## Purpose
+ICC is a compact cache of repository truth, not execution authority. Git and the authorized task packet win on conflicts. BLACK SHEEP WALL alone writes ICC. Start here, load the smallest relevant node, stop once sufficient. Zoom is read-only navigation; delta drives maintenance. Never read the registry as a checklist.
 
-This directory is the Incremental Context Compaction (ICC) cache for MCS.OSJS. ICC stores compact semantic context derived from repository truth so operations can read context first instead of repeatedly reopening unchanged source files. ICC is also a context-zoom mechanism. An operation selects the semantic boundary required by the current authorized work, then stays inside that branch and zooms deeper only when execution requires more detail.
+## Snapshot and validity
 
-## Repository Baseline
+- Last broadly recorded historical baseline: `c289f2f` (from the previous index). **This does not certify the repository or every node at current HEAD.**
+- Remote branch reviewed for this repair: `main` at `45cd3d2d81831306c6943f844e49b7deccbfc5ad` (2026-09-23). Branch-local ICC repairs are being prepared separately; this is not an assertion about another checkout's HEAD.
+- Remote-only access cannot inspect local uncommitted changes; working-tree status and overlay are **unknown**, not `clean` or `none`. Do not reuse a remote-only snapshot to certify a local overlay.
+- [L0-project](context/L0-project.md), [osjs-shell](context/osjs-shell.md), and [active-work](context/active-work.md) contain narrowly inspected facts for the cited `main` snapshot. Other nodes retain their own recorded baselines; **check changed source dependencies before treating them as current**. Some are historical and explicitly describe superseded implementations.
+- A context is current for a checkout only if its relevant committed dependencies have no unincorporated diff from that node's audited baseline and its relevant working-tree paths match the audited fingerprints. A changed unrelated branch or unrelated file does not invalidate it. If that proof is unavailable, state `unverified/stale` and inspect the smallest relevant source scope; do not assume either validity or global invalidity.
 
-Every completed BLACK SHEEP WALL audit must record:
+## Registry: primary semantic tree
 
-- `Baseline Commit`: repository HEAD used as the committed source baseline;
-- `Working Tree`: `clean` or `dirty`;
-- `Audited Uncommitted Overlay`: changed paths incorporated into ICC, with a deterministic content hash or equivalent fingerprint;
-- context registry entries and their source dependencies.
+| Node | Parent | Direct children | Purpose |
+| --- | --- | --- | --- |
+| [L0-project](context/L0-project.md) | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, simulator-device-config, replicator, electron-memory-layout, electron-replicator-advanced, electron-replicator-leds, electron-settings-owner, active-work | System identity and boundaries |
+| [governance](context/governance.md) | L0-project | — | Directive ownership, not a copy of runtime instructions |
+| [donor-licensing](context/donor-licensing.md) | L0-project | — | Provenance and licensing |
+| [network-exposure](context/network-exposure.md) | L0-project | — | Network boundaries |
+| [planning-workflow](context/planning-workflow.md) | L0-project | brainstorm-topics | Planning contracts |
+| [brainstorm-topics](context/brainstorm-topics.md) | planning-workflow | — | Brainstorm index |
+| [osjs-shell](context/osjs-shell.md) | L0-project | osjs-toolkit-advanced-status, osjs-shared-mma-settings | OS.js desktop and Toolkit wiring |
+| [osjs-toolkit-advanced-status](context/osjs-toolkit-advanced-status.md) | osjs-shell | — | Toolkit editor and status behavior |
+| [osjs-shared-mma-settings](context/osjs-shared-mma-settings.md) | osjs-shell | — | Shared MMA settings transactions |
+| [simulator-device-config](context/simulator-device-config.md) | L0-project | simulator-memory-none, simulator-projection | Simulator architecture and configuration |
+| [simulator-memory-none](context/simulator-memory-none.md) | simulator-device-config | — | None-mode runtime specifics |
+| [simulator-projection](context/simulator-projection.md) | simulator-device-config | — | Advanced-settings inheritance |
+| [replicator](context/replicator.md) | L0-project | — | Replicator runtime and transport facts |
+| [electron-memory-layout](context/electron-memory-layout.md) | L0-project | — | Windows Memory presentation |
+| [electron-replicator-advanced](context/electron-replicator-advanced.md) | L0-project | — | Windows Replicator advanced settings |
+| [electron-replicator-leds](context/electron-replicator-leds.md) | L0-project | — | Windows telemetry display |
+| [electron-settings-owner](context/electron-settings-owner.md) | L0-project | — | Windows installer settings ownership |
+| [active-work](context/active-work.md) | L0-project | — | Workflow routing summary only |
 
-The baseline commit identifies the committed repository state represented by ICC. It does not need to equal the later commit that stores ICC files.
+Cross-tree connectors are deliberate, not parentage or permission to load a second branch: `osjs-shell` -> `simulator-device-config` (Memory/Simulator contract), `osjs-shell` -> `replicator` (Replicator contract), `osjs-shared-mma-settings` -> `osjs-toolkit-advanced-status` (shared editor wiring). No connector is an automatic import.
 
-## Registry
-
-Scoped grok Toolkit editor/status context: [osjs-toolkit-advanced-status](context/osjs-toolkit-advanced-status.md). Shared root configuration is covered by [osjs-shared-mma-settings](context/osjs-shared-mma-settings.md); live Ubuntu acceptance remains unverified.
-
-Scoped simulator projection context: [simulator-projection](context/simulator-projection.md). Handles MMA2 listener matching with device override for state_sealing, RBE, extension hydration.
-
-Scoped Replicator advanced-settings context: [electron-replicator-advanced](context/electron-replicator-advanced.md). Includes shared IP/CIDR input behavior and destination persistence.
-
-Scoped installer settings-owner context: [electron-settings-owner](context/electron-settings-owner.md). Tracks account-specific settings ACLs independently of runtime and workflow state.
-
-Scoped Electron Replicator LED context: [electron-replicator-leds](context/electron-replicator-leds.md). This node tracks the runtime/renderer telemetry contract independently of workflow state.
-
-Scoped Electron Memory layout context: [electron-memory-layout](context/electron-memory-layout.md). This node tracks its own baseline and overlay; it does not refresh the unrelated workflow state below.
-
-Baseline Commit: c289f2f
-Working Tree: clean
-Audited Uncommitted Overlay: none. The overlay previously recorded here is committed, and no uncommitted path differs from the audited state; the working tree is clean at the baseline commit.
-
-Selected-branch state: `active-work` is refreshed over OSJT-009 source checkpoint `c289f2f` plus the current transition and queue-review overlay. OSJT-001 through OSJT-009 are archived; OSJT-010 is the sole ACTIVE TEST task and OSJT-011 through OSJT-059 are QUEUED. `OSJT_QUEUE.md` provides the compact small-model route, intentional-new-artifact registry, and stage checklists; stale active-work duplicates of archived OSJT-002 through OSJT-004 are removed. `handoff.md` remains the exact source-pinned, chat-only CWAL packet. `simulator-device-config` records the projection helper at `c289f2f`; load integration remains deferred. Other semantic branches retain their own recorded baselines and were not refreshed.
-
-Refreshed at `c289f2f` over the `7029e41..c289f2f` delta: active-work, osjs-shell and L0-project, plus this index. Unchanged: governance, donor-licensing, network-exposure, planning-workflow, brainstorm-topics, replicator, simulator-device-config, simulator-memory-none. `handoff.md` is a declared dependency of `replicator`, but the delta's handoff content is Toolkit-scoped and changes no recorded Replicator truth, so that node was not patched. No repository path outside the delta was reopened.
-
-Known unresolved mismatch recorded by the prior refresh and still current: the committed Go runtimes listen on Windows named pipes while the committed OS.js relay packages still target `$OSJS_DATA_DIR/run/*.sock`. ICC records the mismatch; resolving it requires an authorized task.
-
-ICC prerequisite status for the ACTIVE task: this refresh satisfies the bounded prerequisite that `handoff.md` required before JR execution. The refresh covers the `handoff.md`, `workflow/active_work/umig-002-t-build-discover.md`, `workflow/archive/umig-002-r-toolkit-discovery-manifest.md` and `OSJS/src/packages/MCSModbusToolkit/package.json` delta; no unrelated branch was refreshed.
-
-| `context/L0-project.md` | none | governance, donor-licensing, network-exposure, planning-workflow, osjs-shell, active-work | `README.md`, `PROJECT_IDENTITY.md`, `handoff.md` |
-| `context/governance.md` | L0-project | — | `AGENTS.md`, `BLACK_SHEEP_WALL.md`, `ICC/INDEX.md`, `operation cwal.md`, `handoff.md`, `workflow/active_work/README.md`, `the gathering.md`, `there is no cow level.md` |
-| `context/donor-licensing.md` | L0-project | — | `docs/LICENSING.md`, `THIRD_PARTY_NOTICES.md`, `LICENSE` |
-| `context/network-exposure.md` | L0-project | — | `docs/NETWORK_EXPOSURE.md`, `deploy/docker-compose.yml`, `OSJS/Dockerfile`, `OSJS/src/server/config.js` |
-| `context/planning-workflow.md` | L0-project | brainstorm-topics | `planning/README.md`, `planning/Brainstorm/README.md`, `planning/microtask/README.md`, `planning/microtask/rules.md`, `planning/microtask/umig-*.md`, `workflow/active_work/README.md` |
-| `context/brainstorm-topics.md` | planning-workflow | — | `planning/Brainstorm/README.md` |
-| `context/osjs-shell.md` | L0-project | — | `OSJS/README.md`, `OSJS/package.json`, `OSJS/Dockerfile`, `OSJS/webpack.config.js`, `OSJS/scripts/build-local-packages.js`, `OSJS/src/server/config.js`, `OSJS/src/server/index.js`, `OSJS/src/server/providers/health.js`, `OSJS/src/server/providers/classic-icons.js`, `OSJS/src/client/config.js`, `OSJS/src/client/index.js`, `OSJS/src/client/index.ejs`, `OSJS/src/client/providers/nameless-app-shortcuts.js`, `OSJS/src/packages/MCSModbusToolkit/*`, `OSJS/src/packages/NamelessClassicIcons/metadata.json`, `OSJS/src/packages/NamelessWorkstationTheme/metadata.json` |
-| `context/active-work.md` | L0-project | replicator, simulator-device-config | `handoff.md`, `workflow/active_work/*.md`, `workflow/archive/electron-001-nsis-nssm-service-installer.md`, `workflow/archive/electron-002-compact-industrial-layout.md`, `workflow/archive/umig-002-scaffold-single-osjs-toolkit.md`, `workflow/archive/umig-002-r-toolkit-discovery-manifest.md` |
-| `context/simulator-device-config.md` | active-work | simulator-memory-none | `docs/SIMULATOR_RUNTIME_INTEGRATION.md`, `simulator/*`, `deploy/docker-compose.yml`, `OSJS/src/server/*`, `OSJS/src/packages/ModbusSimulator/*`, `MMA2/pkg/configvalidate/validate.go`, `MMA2/internal/restartwatch/*`, `MMA2/cmd/mma2-supervisor/*`, `workflow/archive/rep-001-share-mma2-reservation-composer.md`, `workflow/archive/sim-001-*.md` through `workflow/archive/sim-024-*.md` |
-| `context/simulator-memory-none.md` | simulator-device-config | — | `simulator/validate.go`, `simulator/apply.go`, `simulator/store.go`, `simulator/memory_none_test.go`, `simulator/runtime_server.go`, `simulator/runtime_server_test.go`, `simulator/cmd/modbus-simulator-runtime/main.go`, `simulator/cmd/modbus-simulator-runtime/main_test.go`, `simulator/go.mod`, `simulator/go.sum`, `simulator/Dockerfile`, `deploy/docker-compose.yml`, `OSJS/src/packages/ModbusSimulator/server.js` |
-| `context/replicator.md` | active-work | — | `handoff.md`, `workflow/active_work/rep-block-002-independent-block-pollers.md`, `workflow/active_work/rep-block-003-tabbed-block-editor.md`, `workflow/archive/rep-*.md`, `replicator/runtime_api.go`, `replicator/cmd/modbus-replicator-runtime/main.go`, `replicator/go.mod` |
-
-## Access Rule
-
-Repository-dependent operations use ICC first, but ICC-first does not authorize browsing all ICC context.
+## Read route
 
 ```text
-READ ICC INDEX
-→ IDENTIFY THE SEMANTIC BOUNDARY SELECTED BY THE CURRENT OPERATION / AUTHORIZED TASK
-→ LOCATE THAT CONTEXT BRANCH
-→ VALIDATE BASELINE / OVERLAY FOR THAT BRANCH
-→ CURRENT: USE THAT BRANCH
-→ NEED MORE DETAIL: ZOOM IN WITHIN THE SAME BRANCH
-→ STALE OR MISSING: BLACK SHEEP WALL REFRESHES ONLY THE AFFECTED CONTEXT
-→ ACT
+TASK / QUESTION -> INDEX -> authorized semantic boundary -> smallest useful node
+  enough? STOP
+  more? ZOOM IN / ZOOM OUT within ceiling; PAN / TRACE only when explicitly required
+  stale? BLACK SHEEP WALL refreshes affected dependencies only -> read refreshed node
 ```
 
-The current operation or authorized task determines the context boundary. Possible relevance, dependency, or future usefulness does not authorize movement into another semantic boundary. Source files are consulted when the selected ICC branch is absent, stale, insufficiently detailed, or affected by repository changes.
+The task defines the navigation ceiling. Do not browse unrelated siblings or expand permissions through a connector. Only consult authoritative repository source where context is absent, insufficient, conflicted, or source verification is required.
 
-## ICC Navigation Rule
-
-ICC navigation is branch-local.
-
-### Allowed
-
-- Stay at the context selected by the current operation or authorized task.
-- Zoom in to child context required to understand, implement, test, or verify that work.
-- Return to a parent inside the same selected semantic branch when needed to preserve local context.
-- Refresh stale or missing context only inside the affected branch.
-
-### Not Allowed
-
-- Zoom out above the semantic boundary established by the current operation or authorized task merely to search for possibly relevant information.
-- Enter sibling semantic contexts because they are registered in ICC, related by dependency, or may matter later.
-- Traverse licensing, networking, planning, architecture, deployment, or any other sibling boundary unless the current authorized work explicitly crosses into that boundary.
-- Treat the ICC registry as a checklist of contexts to read.
-
-Cross-boundary access is allowed only when the current operation or authorized task explicitly requires that other semantic boundary to complete its stated outcome or verification.
-
-## Zoom Model
+## Maintenance route and state integrity
 
 ```text
-L0 — broadest project/system view
- ↓
-L1
- ↓
-...
- ↓
-LX — as deep as required
+NO VALID MAP -> one scoped bootstrap
+VALID MAP -> compare node baseline to checkout HEAD + audited working-tree overlay
+NO RELEVANT DELTA -> no source inspection, no regenerated ICC
+RELEVANT DELTA -> inspect changed/new/deleted/renamed dependencies only
+  -> patch deepest affected node -> propagate only actual semantic changes
+MISSING BUT REQUIRED NODE -> narrowly discover only its required source territory;
+  register it; do NOT bootstrap or tour the whole repository
 ```
 
-Parent files may use `## Zoom In`; children may use `## Zoom Out`.
+For each written node, re-read and verify against inspected source before advancing its baseline or overlay state. Record full commit SHA and deterministic fingerprints for audited uncommitted paths. Do not mark an entire index or branch current on the strength of a different node's audit. Update this index only for routing/structure/connector changes or genuine index-level state changes. When source path patterns are ambiguous, resolve the smallest matching tracked paths first; record a missing path as unresolved rather than fabricating a dependency.
 
-`Zoom In` means descend to more specific context inside the selected semantic branch. `Zoom Out` is only for returning within that same branch. It must not be used to climb above the task-selected boundary and then enter a sibling branch. The selected task boundary is the navigation ceiling for that operation unless the authorized task explicitly crosses another semantic boundary.
+## Scope limits
 
-## Context File Rules
-
-- One context file = one semantic boundary.
-- Context files summarize established state, contracts, dependencies, and unresolved questions.
-- Context files do not store chat history or duplicate source files verbatim.
-- Every context declares its material repository source dependencies.
-- Every context records the baseline commit against which its committed dependencies were audited.
-- If it incorporates uncommitted dependencies, it records their audited path fingerprints or refers to the index overlay registry.
-- Known-stale context is never consumed as authoritative context.
-- Unaffected synchronized context is not recomputed.
-- Context links must support deliberate zoom navigation; they must not imply permission to traverse sibling boundaries.
-- Context files target 100–150 lines, hard max 200; split deeper detail into child context rather than duplicating source files. When a node contains several independently navigable semantic subjects, prefer child nodes over one broad context file.
-
-## Validity
-
-A context is synchronized when its committed dependencies are represented by the current ICC baseline and every relevant working-tree dependency matches the recorded audited overlay. If current HEAD differs from `Baseline Commit`, compare the baseline to HEAD and invalidate only contexts whose declared dependencies intersect the changed committed files. If current HEAD equals `Baseline Commit`, only working-tree changes that differ from the audited overlay can invalidate context. Validity and relevance are separate. A synchronized context may still be outside the semantic boundary of the current operation and therefore must not be consumed.
-
-## BLACK SHEEP WALL Lifecycle
-
-### Bootstrap
-
-When no valid semantic baseline exists:
-
-```text
-current HEAD
-→ audit all relevant repository context
-→ discover semantic boundaries
-→ compact into ICC/context/
-→ register contexts here
-→ stamp baseline commit
-→ record audited uncommitted overlay
-```
-
-### Incremental Maintenance
-
-When a baseline exists:
-
-```text
-baseline commit
-→ current HEAD
-→ committed diff if HEAD changed
-→ current uncommitted changes
-→ compare against audited overlay
-→ refresh affected context only
-→ preserve unaffected context
-```
-
-If HEAD has not changed, BLACK SHEEP WALL must inspect only new, modified, renamed, or deleted uncommitted files that differ from the last audited overlay. BLACK SHEEP WALL may maintain multiple semantic branches, but an invoking operation consumes only the branch selected by that operation. Maintaining ICC breadth does not grant operational access to unrelated branches.
+This index does not promote tasks, assign agents, approve merges, establish product tests, or certify live Ubuntu acceptance. See `BLACK_SHEEP_WALL.md` for authoritative maintenance procedure and `handoff.md`/workflow packets for execution. The OTR and OSJT prose in the old index was historical cache, not authoritative current state; task details belong in `active-work` and the actual handoff.

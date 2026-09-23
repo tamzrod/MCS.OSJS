@@ -4,10 +4,8 @@ This directory contains human-owned exploration, problem framing, alternatives, 
 
 ## ICC-First Context Rule
 
-Before repository-dependent brainstorming, read `ICC/INDEX.md` first and use synchronized relevant ICC context.
+Before repository-dependent brainstorming, resolve the question and semantic ceiling, then follow `workflow/ICC_CONSUMER.md`. Read `ICC/INDEX.md`, only the required node in `ICC/manifest.json`, and the smallest relevant Markdown context. Check that node's actual baseline/overlay/validity against this checkout; a historical index baseline, remote snapshot, or migrated `unverified` entry is not verified current.
 
-If the context is stale or missing, use BLACK SHEEP WALL to refresh only the affected semantic context. Do not rescan unchanged repository sources when the ICC baseline and working-tree overlay are current.
+REUSE current unchanged context without reopening source. If a required node is stale, unverified or missing, delegate only the bounded authorized BLACK SHEEP WALL UPDATE/REVEAL, then return to Brainstorm. If refresh is not authorized or available, use only question-permitted authoritative source with an explicit unverified caveat, or report the exact blocker. Do not inspect every migrated node, write ICC yourself, or widen the brainstorm because a connector exists.
 
-BLACK SHEEP WALL cannot authorize implementation or widen the brainstorm.
-
-Brainstorm material is not execution authority.
+BLACK SHEEP WALL cannot authorize implementation or widen the brainstorm. Brainstorm material is not execution authority.

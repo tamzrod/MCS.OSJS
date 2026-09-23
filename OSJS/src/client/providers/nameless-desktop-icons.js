@@ -16,6 +16,9 @@
 //   click-to-select and double-click-to-launch keep working untouched.
 // - Positions persist per user through the existing settings mechanism
 //   (server adapter) under nameless/desktop -> positions.
+// - Fresh profiles with no saved positions automatically get the same
+//   deterministic grid after the initial icon render settles; those positions
+//   are persisted immediately so later boots respect manual placement.
 // - Auto Arrange is registered through the stock desktop context-menu
 //   extension point (osjs/desktop.addContextMenuEntries); it clears every
 //   manual position and re-lays all entries into a deterministic
@@ -28,6 +31,7 @@ const SETTINGS_NS = 'nameless/desktop';
 const DRAG_THRESHOLD = 5;
 const CELL_W = 96;   // grid cell: stock entry is 5em wide + 1em margins
 const CELL_H = 120;  // grid cell: stock entry is 6.5em high + 1em margins
+const DEFAULT_ARRANGE_DELAY = 250; // let async VFS/package icons settle first
 
 const readPositions = (core) => {
   try {
@@ -82,11 +86,12 @@ const applyPositions = (core) => {
 // Deterministic label-sorted grid, column-first (Windows Auto Arrange).
 const autoArrange = (core) => {
   const $wrapper = wrapper();
-  if (!$wrapper) return;
+  if (!$wrapper) return Promise.resolve(false);
   const labels = Array.from($wrapper.querySelectorAll('.osjs-desktop-iconview__entry'))
     .map(entryLabel)
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
+  if (!labels.length) return Promise.resolve(false);
   const rows = Math.max(1, Math.floor($wrapper.clientHeight / CELL_H));
   const positions = {};
   labels.forEach((label, i) => {
@@ -95,7 +100,10 @@ const autoArrange = (core) => {
       y: (i % rows) * CELL_H
     };
   });
-  writePositions(core, positions).then(() => applyPositions(core));
+  return writePositions(core, positions).then(() => {
+    applyPositions(core);
+    return true;
+  });
 };
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -159,6 +167,8 @@ export default class NamelessDesktopIconsServiceProvider {
   constructor(core) {
     this.core = core;
     this.observer = null;
+    this.defaultArrangeTimer = null;
+    this.defaultArrangePending = false;
   }
 
   provides() {
@@ -177,6 +187,47 @@ export default class NamelessDesktopIconsServiceProvider {
       this.observer.disconnect();
       this.observer = null;
     }
+    if (this.defaultArrangeTimer) {
+      clearTimeout(this.defaultArrangeTimer);
+      this.defaultArrangeTimer = null;
+    }
+  }
+
+  sync_() {
+    const core = this.core;
+    installDragging(core);
+    applyPositions(core);
+
+    const $wrapper = wrapper();
+    const hasEntries = !!($wrapper && $wrapper.querySelector('.osjs-desktop-iconview__entry'));
+    const hasPositions = Object.keys(readPositions(core)).length > 0;
+
+    if (!hasEntries || hasPositions || this.defaultArrangePending) {
+      if (hasPositions && this.defaultArrangeTimer) {
+        clearTimeout(this.defaultArrangeTimer);
+        this.defaultArrangeTimer = null;
+      }
+      return;
+    }
+
+    // A fresh profile renders stock VFS icons and pinned application shortcuts
+    // asynchronously. Debounce child-list mutations so the first persisted
+    // grid is built from the complete initial icon set instead of a partial one.
+    if (this.defaultArrangeTimer) clearTimeout(this.defaultArrangeTimer);
+    this.defaultArrangeTimer = setTimeout(() => {
+      this.defaultArrangeTimer = null;
+      const $latestWrapper = wrapper();
+      if (!$latestWrapper || !$latestWrapper.querySelector('.osjs-desktop-iconview__entry')) return;
+      if (Object.keys(readPositions(core)).length > 0 || this.defaultArrangePending) {
+        applyPositions(core);
+        return;
+      }
+
+      this.defaultArrangePending = true;
+      autoArrange(core).then(() => {
+        this.defaultArrangePending = false;
+      });
+    }, DEFAULT_ARRANGE_DELAY);
   }
 
   start_() {
@@ -202,12 +253,8 @@ export default class NamelessDesktopIconsServiceProvider {
     // Watch the whole body (always present) and let the idempotent
     // install/apply pair pick the wrapper up whenever it appears or
     // changes; it also reapplies saved positions after re-renders.
-    this.observer = new MutationObserver(() => {
-      installDragging(core);
-      applyPositions(core);
-    });
+    this.observer = new MutationObserver(() => this.sync_());
     this.observer.observe(document.body, {childList: true, subtree: true});
-    installDragging(core);
-    applyPositions(core);
+    this.sync_();
   }
 }

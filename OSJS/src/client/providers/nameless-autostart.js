@@ -81,9 +81,8 @@ export default class NamelessAutoStartServiceProvider {
       win.minimize();
       return;
     }
-    // A non-maximizable window (e.g. the stock Calculator, fixed dimension)
-    // ignores maximize() — the launcher must not lie about the outcome, so it
-    // falls back to the window's normal geometry.
+    // A non-maximizable window ignores maximize() — the launcher must not lie
+    // about the outcome, so it falls back to the window's normal geometry.
     if (state === 'maximized') {
       if (win.attributes.maximizable !== false) win.maximize();
       return;

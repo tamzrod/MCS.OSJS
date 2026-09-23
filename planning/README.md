@@ -1,36 +1,21 @@
 # Planning
 
-Planning is human-owned.
-
-It contains brainstorm material and decomposed microtasks that are not yet authorized for JR execution.
+Planning is human-owned. It contains brainstorm material and decomposed microtasks that are not yet authorized for JR execution.
 
 ## ICC-First Context Rule
 
-Every repository-dependent Planning operation must know `BLACK_SHEEP_WALL.md` and read `ICC/INDEX.md` first.
+Every repository-dependent Planning operation follows `workflow/ICC_CONSUMER.md`. Resolve the requested planning question and its semantic ceiling, then read `ICC/INDEX.md`, only the relevant node metadata from `ICC/manifest.json`, and the smallest useful context. `ICC/FORMAT.md` defines validity. A historical index baseline, remote snapshot or migrated `unverified` node is not proof of local currency. Compare only that node's source dependencies with the actual checkout and audited overlay when available.
 
-If the relevant ICC context is synchronized with the current baseline commit and audited working-tree overlay, use ICC directly. If it is stale or missing, BLACK SHEEP WALL refreshes only the affected context before Planning continues.
-
-Planning must not reopen unchanged repository sources when synchronized ICC already contains the required context.
+REUSE verified-current context with no relevant delta; do not reopen unchanged source. For a required stale, unverified or missing node, request only the bounded BLACK SHEEP WALL UPDATE/REVEAL authorized by the planning operation; it returns to Planning without choosing work or widening the request. If refresh is unavailable, use only permitted authoritative source and explicitly flag unverified ICC, or report the precise blocker. Do not edit ICC yourself or audit unrelated migrated nodes.
 
 ## Flow
 
 ```text
-PLANNING OPERATION
-   ↓
-ICC FIRST
-   ↓
-CURRENT? USE CONTEXT
-STALE? BLACK SHEEP WALL REFRESHES AFFECTED ONLY
-   ↓
-BRAINSTORM
-   ↓
-MICROTASK
-   ↓
-PROMOTION
-   ↓
-workflow/active_work/
+PLANNING QUESTION → SELECT BOUNDARY → INDEX + RELEVANT MANIFEST NODE
+→ CURRENT? REUSE SMALLEST CONTEXT
+→ STALE / UNVERIFIED / MISSING? BOUNDED BLACK SHEEP WALL IF AUTHORIZED;
+  OTHERWISE TASK-PERMITTED SOURCE OR PRECISE BLOCKER
+→ BRAINSTORM → MICROTASK → HUMAN PROMOTION → workflow/active_work/
 ```
 
-Planning does not grant execution authority.
-
-Architectural questions may remain unresolved here. They must not be silently treated as decisions during execution.
+Planning does not grant execution authority. Architectural questions may remain unresolved here and must not silently become implementation decisions.

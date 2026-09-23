@@ -1,87 +1,87 @@
-# BLACK SHEEP WALL
+# BLACK SHEEP WALL — process v1
 
-## Purpose and authority
+## Purpose, ownership and stop boundary
 
-BLACK SHEEP WALL alone maintains `ICC/` as a compact, verified semantic map of repository truth. **Zoom is navigation; delta is maintenance.** Reveal an unknown area once; thereafter scout only newly required territory or source changes. Git is final source authority; ICC is not execution authority. BLACK SHEEP WALL may not select/promote work, grant permissions, change workflow state, implement product code, widen an invocation, or silently trigger another directive. After a delegated refresh, return control to the caller; direct invocation stops after maintenance.
+BLACK SHEEP WALL alone maintains `ICC/` as a compact, verified semantic map of Git repository truth. **Zoom navigates; delta maintains; reveal only required unmapped territory.** It provides knowledge, not task selection, execution permission, implementation, test acceptance or workflow advancement. A delegated call returns to its caller; direct invocation ends after maintenance. No scheduler, Git hook, background watcher or automatic task execution is installed by this directive.
 
-## Semantic model
+The machine-readable map, Markdown knowledge and per-node validity schema are specified in `ICC/FORMAT.md` and `ICC/manifest.json`. `ICC/INDEX.md` is the concise routing mirror. Git is the final source authority; a current task/handoff is the execution authority. Other directives may read ICC but may never write it.
 
-`ICC/INDEX.md` routes to a semantic tree. Each node has a semantic boundary, parent/Zoom Out, direct children/Zoom In, established facts, unresolved questions, source dependencies and audited baseline/overlay state. Parents summarize children without duplicating their detail. Semantic hierarchy follows ownership, not necessarily filesystem directories. Cross-tree connectors describe verified contracts, dependencies, runtime/data flows or ownership crossings; they are secondary navigation hints, **never automatic imports or authority to enter another branch**.
+## Deterministic entry and decision sequence
 
-### Navigation: read-only by default
-
-- **Zoom In:** read only a required child when the current node lacks detail.
-- **Zoom Out:** read a parent to understand ownership or boundaries, never above the invoking operation's navigation ceiling.
-- **Pan:** enter a sibling only when the question/task explicitly requires that concern; possible relevance is insufficient.
-- **Trace:** follow a verified explicit connector only when the question requires that dependency/contract; do not recursively load connected nodes.
+1. Resolve the **actual** checkout branch, HEAD and local working-tree overlay if accessible. Read `ICC/INDEX.md` and the relevant manifest node metadata; never assume a GitHub remote view establishes local cleanliness. A different branch does not inherit validity by name. Record an unavailable overlay as `unknown`, never `clean`.
+2. Resolve the calling operation's semantic boundary. On a direct invocation after bootstrap, identify only nodes intersecting the committed and working-tree deltas; do not visit every `unverified` node for completeness. A delegated invocation stays inside the caller's navigation and refresh ceiling, including when following connectors.
+3. Classify only the required node/territory using the routes below. The pure helper `scripts/icc_decision.py` implements the four-way routing decision given **observed** paths and per-node comparison facts; it performs no Git inspection, source reads or writes. Never invent changed paths, a baseline comparison or a clean overlay to satisfy its inputs.
 
 ```text
-QUESTION / TASK -> READ ICC/INDEX.md -> ROUTE TO RELEVANT NODE -> ENOUGH?
-  YES -> STOP GATHERING
-  NO  -> ZOOM / PAN / TRACE ONLY FOR MISSING DETAIL
-  SOURCE -> open only if ICC lacks the required fact, conflicts with source,
-            source verification is required, or bounded discovery is authorized
+NO USABLE ICC MAP?              -> BOOTSTRAP (one-time, bounded to usable semantic model)
+REQUIRED NODE DOES NOT EXIST?   -> REVEAL if source territory can be bounded; else BLOCKED
+EXISTING NODE UNVERIFIED/STALE/PARTIAL? -> UPDATE: verify only its declared dependencies
+EXISTING NODE CURRENT BUT BASELINE/OVERLAY NOT COMPARABLE? -> BLOCKED: report missing comparison
+RELEVANT COMMITTED OR WORKTREE DELTA? -> UPDATE only intersecting dependencies
+CURRENT + NO RELEVANT DELTA?    -> REUSE: no source reads and no ICC writes
 ```
 
-Stop as soon as the smallest sufficient semantic view is loaded. Do not gather unrelated context for completeness or future possibilities.
+When nothing is required outside the selected boundary, do not inspect it. If direct invocation finds no relevant source delta and no selected stale node or new territory, stop even if unrelated nodes are marked unverified. An ICC-only maintenance commit is not a product-source delta: exclude `ICC/**` and the checker from source dependency matching unless the task is governance about those exact sources. Checking Git paths/status is not a semantic repository inventory.
 
-## Bootstrap: only for a missing or genuinely unusable map
+### REUSE — cheapest successful outcome
 
-If no valid ICC baseline exists or the current semantic map is genuinely unusable, inspect only as broadly as required to construct a navigable semantic model. Build compact nodes, established connectors and index routing; record verified baseline/overlay state, re-read written nodes, verify and STOP. Once bootstrap succeeds, **normal full repository rebuilding is disabled**. An individual missing node does not by itself justify re-bootstrap.
+Return the smallest relevant current semantic node. Start with `INDEX.md`, zoom in only when its facts are insufficient, zoom out only within the caller ceiling; PAN and TRACE require an explicitly needed concern or verified connector. Never recursively load connected nodes. **Stop gathering as soon as sufficient context exists.** REUSE reads no source and rewrites no ICC; it is a complete success, not a skipped audit.
 
-## Incremental maintenance: normal mode
+### UPDATE — changed or non-current territory
+
+Compare each affected node's recorded full baseline with current HEAD and compare working-tree changes to its **audited** overlay. Compute changed/new/deleted/renamed repository paths first; intersect with declared source dependencies. Narrow path patterns to exact material files where possible. Open only changed dependencies, except that a legacy `unverified` node with no verifiable baseline may require a **one-time bounded** read of its own declared dependencies to establish a baseline. Never turn this into a repository-wide audit.
+
+Patch the deepest affected knowledge node first. Propagate to a parent only if its summary truth changes; inspect descendants/connectors only when demonstrated impact requires them. If only validity changes, do not rewrite the Markdown summary; if only topology changes, update map metadata and the index mirror, not unrelated knowledge. Record missing/ambiguous paths as unresolved rather than inventing them.
+
+### REVEAL — required territory missing, even without Git delta
+
+Locate the smallest previously unmapped semantic boundary from the actual question, parent and connector hints. Identify verified source paths, create only the required compact node and established connectors, register its parent and source ownership, and verify it. An absent node never triggers another full bootstrap. If the source boundary cannot be established, BLOCKED with the precise missing fact. Do not scout every unexplored directory.
+
+### BOOTSTRAP — exceptional
+
+Only when there is no valid semantic map, or the map is genuinely unusable, inspect broadly enough to build one navigable hierarchy. Record verified facts and source dependencies, write compact nodes, establish routing and audited state, re-read and validate before declaring success; stop. Once established, broad rebuild is disabled as normal maintenance.
+
+## ICC structure, state and navigation invariants
+
+The semantic tree is primary; connectors represent verified contract/dependency/data-flow/ownership crossings and never grant authority. Each node must declare its semantic boundary, parent, direct children, source dependencies, facts and unresolved questions. Parents summarize children instead of repeating detail. Historical task narratives and verbatim source do not belong in nodes. Split independently navigable concerns only when the current use case requires it; line count is a guardrail, not a target to fill.
+
+A node is `current` only after its relevant committed sources are verified against its **full commit SHA baseline**, and relevant uncommitted paths match a recorded clean overlay or deterministic per-path audited fingerprints. The index-level reviewed HEAD is provenance, never blanket validity. A remote-only snapshot cannot certify a local overlay. During v1 migration existing Markdown remains intact and node validity stays `unverified` until its own bounded source verification is performed. Do not promote all nodes merely because metadata is syntactically valid.
+
+## Verified update and interruption protocol
 
 ```text
-READ CURRENT CHECKOUT BRANCH + HEAD AND THE SELECTED NODE'S AUDITED STATE
--> DETERMINE COMMITTED DIFF + WORKING-TREE DELTA RELATIVE TO AUDITED OVERLAY
--> RESOLVE ONLY RELEVANT SOURCE DEPENDENCIES / CHANGED PATHS
--> NO INTERSECTION? REUSE CURRENT NODE; NO SOURCE INSPECTION OR ICC REWRITE
--> INTERSECTION? INSPECT ONLY CHANGED / NEW / DELETED / RENAMED DEPENDENCIES
--> PATCH THE DEEPEST AFFECTED NODE
--> PROPAGATE ONLY IF PARENT SEMANTIC TRUTH CHANGED
--> UPDATE INDEX ONLY IF ROUTING, STRUCTURE, CONNECTOR OR INDEX STATE CHANGED
--> RE-READ AND VERIFY AFFECTED WRITES AGAINST INSPECTED SOURCE
--> ONLY THEN ADVANCE AFFECTED BASELINE / OVERLAY
--> VERIFY AFFECTED CONTEXT ONLY -> STOP
+OBSERVE BRANCH/HEAD/OVERLAY -> SELECT BOUNDARY + MODE
+-> INSPECT SMALLEST REQUIRED SOURCE SCOPE (UPDATE/REVEAL ONLY)
+-> STAGE ONLY AFFECTED KNOWLEDGE/MAP CHANGES
+-> RE-READ WRITTEN NODES AND VERIFY CLAIMS AGAINST INSPECTED SOURCE
+-> UPDATE AFFECTED MANIFEST STATE ONLY AFTER FACT VERIFICATION
+-> MIRROR ACTUAL TOPOLOGY CHANGES IN INDEX (OTHERWISE LEAVE INDEX ALONE)
+-> RUN python3 scripts/check_icc_map.py
+-> PUBLISH AS ONE COHERENT GIT COMMIT ONLY IF SEPARATELY AUTHORIZED
+-> RETURN / STOP
 ```
 
-A direct invocation after bootstrap means this delta-driven maintenance, **not a full audit**. An unchanged HEAD still requires checking working-tree changes against the *audited* overlay, not assuming a clean tree. If both deltas are empty, do not reopen source, regenerate context or rewrite the index. A different branch/HEAD is not automatically fresh or stale: compare its relevant dependencies with each node's recorded baseline. Do not copy another branch's status or clean-tree claim into this checkout. When a connector can see remote commits but not a local working tree, record overlay as **unknown/unverified**; never invent `clean` or an overlay hash.
+The process should not publish partially synchronized file-by-file changes as a claimed completed refresh. If a write, verification or checker fails, leave the affected node stale/unverified, **do not advance its baseline/overlay**, apply `AGENTS.md` authoring-failure guardrail and stop with an exact failure. Git remains authority if source and ICC disagree. Do not perform build/runtime tests as a substitute for verifying ICC semantics, and do not present structural checker PASS as product acceptance.
 
-### Bounded missing-territory exception
-
-When the authorized question requires a semantic component never mapped in ICC, its absence can occur **without any Git delta**. This does not invalidate the rest of the map. Identify the smallest required source path/component from the request and existing parent/connector hints; discover only that territory; create one compact node (and only required children/connectors); register its verified parent/source dependencies in the index; re-read and verify the new node. Do **not** explore every unmapped folder, repeat bootstrap, or authorize additional task work. If the required territory cannot be bounded from evidence, report precisely what boundary is missing instead of guessing.
-
-### Dependency mapping precision
-
-Declare the narrowest known material source files or directory patterns for each node. A broad pattern such as `simulator/*` is permitted only if the entire scope really affects that node; otherwise enumerate the relevant exact files. Resolve a pattern against tracked paths to decide whether the delta intersects; **do not inspect unchanged matching files** merely because the pattern is broad. On a rename/deletion, update affected references and source dependencies only after verifying the move. Missing/ambiguous paths are unresolved facts, not invented source. Inspect a descendant or connector only when a changed fact demonstrably affects it.
-
-## Delegated branch refresh
-
-A caller such as CWAL supplies the selected semantic branch as both a navigation and refresh ceiling. Read its ICC context; check whether the committed/overlay delta intersects its declared dependencies; if not, return that context unchanged. If yes, inspect only changed dependencies, patch the deepest affected node and propagate only inside the selected branch as required. Ignore unrelated stale siblings. A caller's ceiling cannot be raised by Zoom Out, Pan, Trace or maintenance convenience. Return to the invoking directive without executing, completing, promoting or reinterpreting the caller's task.
-
-## ICC state and index stability
-
-ICC represents **committed truth at its audited baseline commit + an audited uncommitted working-tree overlay**. Each node records sufficient deterministic source state to detect whether its relevant dependencies changed; per-path content hashes or equivalent fingerprints are preferred for overlays. An index-level baseline does not certify every node at that HEAD: mixed-baseline nodes must be validated individually. Record full SHA when practical, actual branch/snapshot provenance and any unknown local overlay explicitly. Never advance a baseline simply because an ICC file was committed.
-
-`ICC/INDEX.md` is a stable routing/state map, not a task log or a checklist. Update it only for created/deleted/moved/renamed nodes, parent/child routing, verified connectors, or actual index-level state metadata changes. A changed fact within an existing node should not rewrite unrelated routing or index prose. Node target size is a concise semantic boundary: split independently useful concerns into children; line count is a guardrail rather than the only split trigger. Do not duplicate large source bodies, chat history or historical task narratives in ICC.
-
-## Authority, write integrity and failure
-
-If ICC conflicts with authoritative source, mark only the affected node stale, verify the smallest required source scope, and refresh only actual semantic impact; never silently settle ambiguity. Other operations may read ICC or request a bounded Black Sheep Wall refresh but must **never write `ICC/` themselves**.
-
-All writes inherit the `AGENTS.md` Execution Guardrail:
+## Exact short return contract
 
 ```text
-PATCH AFFECTED NODE -> RE-READ ACTUAL WRITTEN CONTENT
--> VERIFY REQUIRED FACTS AGAINST INSPECTED SOURCE DELTA
--> VERIFY ROUTING AND SOURCE DEPENDENCIES IF CHANGED
--> ONLY THEN MARK CURRENT / ADVANCE BASELINE OR OVERLAY
+BLACK SHEEP WALL RESULT
+MODE: REUSE | UPDATE | REVEAL | BLOCKED | BOOTSTRAP
+BOUNDARY: selected node or bounded source territory
+CHECKOUT: observed branch + HEAD; overlay known/unknown
+SOURCE DELTA: relevant paths only; "none" if proven
+NODES READ: exact affected nodes
+NODES WRITTEN: exact affected nodes or none
+VALIDITY: current | partial | stale | unverified
+CONTEXT ROUTE: INDEX -> selected node [-> required child/connector]
+UNRESOLVED: exact missing source/comparison or none
+RESULT: sufficient context | blocked (never task completion)
+STOP
 ```
 
-If a write is malformed, incomplete or cannot be verified, **do not advance baseline, mark current or propagate uncertain results**. Apply the `AGENTS.md` authoring-failure limit and STOP/report when reached. Never call a generic syntax check equivalent to an authoritative product/build gate.
+Keep normal reports short: optional counters are node reads/writes and source paths inspected. These counters belong in the current response, not a permanent task log. Never invent evidence or repeat reconnaissance just to fill report fields. If no local worktree is available, say so and return `unverified` when relevant; a remote review alone is not a full local maintenance completion.
 
-## Verification and STOP
+## Verification coverage
 
-Bootstrap verifies the semantic hierarchy, routing, source mappings, connectors and baseline. Incremental maintenance verifies only that changed paths map to the right deepest node, affected facts match source, parent propagation is warranted, index changes are structural/state-only, unaffected branches were untouched, and each written node was re-read before state advancement. A structure-only checker may validate references but must not perform discovery or write ICC.
-
-**Invariants:** one ICC writer; Git source authority; tree before connectors; navigation is read-only when context current; after bootstrap maintain only deltas or narrowly required unmapped territory; unchanged files and unaffected nodes cost no source reread; deepest node first; impact-only propagation; stable index; caller ceiling; minimum sufficient context; recorded branch/baseline/overlay truth; verified re-read before advancing state; STOP/RETURN at the invoking boundary.
+`python3 scripts/check_icc_map.py` checks metadata structure, routing consistency, cycles, links, and implausible current-state claims without reading product source or writing ICC. `python3 scripts/test_icc_process.py` tests unchanged-node REUSE, relevant-file UPDATE, bounded missing-node REVEAL, stale and unknown-overlay handling, and metadata rejection. These checks establish the **process and format only**; source semantic truth and live runtime remain separate checks. The navigation ceiling, one ICC writer, Git source authority, minimum sufficient context and verified-state-before-advance are mandatory in every mode.

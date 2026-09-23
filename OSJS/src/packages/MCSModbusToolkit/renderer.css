@@ -76,6 +76,7 @@ button:disabled, input:read-only { opacity: .7; }
 .cell-field .tool-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; }
 .range-cell { align-self: center; font-family: Consolas, monospace; }
 .tool-validation { margin-top: 6px; padding: 5px 6px; border: 1px solid #a25b00; background: #fff2cc; color: #4d3300; }
+.tool-validation:empty { display: none; }
 .tool-status { margin-top: auto; padding: 5px 6px; border: 1px solid #999; background: #eaf4ff; color: #12395c; }
 .tool-status.error { border-color: #8b0000; background: #ffe3e3; color: #7d0000; }
 .diagnostic-actions { display: flex; gap: 8px; margin-bottom: 10px; }
@@ -95,6 +96,7 @@ button:disabled, input:read-only { opacity: .7; }
 .memory-subtabs button:focus-visible { outline: 2px solid #305c9f; outline-offset: -4px; }
 .mma-dialog { width: min(640px, 90vw); max-height: 85vh; padding: 4px; border: 2px outset #eee; background: #d4d4d4; box-shadow: 4px 6px 18px #0006; }
 .mma-dialog::backdrop { background: #0005; }
+.mma-dialog fieldset { min-width: 0; border: 0; }
 .mma-editor { flex: 1; gap: 8px; }
 .mma-editor > .memory-fields { display: grid; gap: 10px; max-width: 600px; }
 .memory-advanced { margin-bottom: 10px; }

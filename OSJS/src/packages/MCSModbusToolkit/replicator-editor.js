@@ -164,7 +164,7 @@ const createReplicatorEditor = (doc, root, replicator, options = {}) => {
       if (section === 'Advanced Settings') {
         if (!advancedSupported) editor.appendChild(h('div', 'tool-validation', 'Update and restart the Replicator backend to edit advanced settings.'));
         else advanced.mount(doc, editor, advanced.paramsFor(current),
-          documentValue.devices.map(entry => ({mma2: advanced.paramsFor(entry)})), saving);
+          documentValue.devices.map(entry => ({mma2: advanced.paramsFor(entry)})), saving, options.shared);
       } else {
         const identity = h('div', 'tool-grid');
         identity.append(field('Name', current.name, value => { current.name = value; }, {type: 'text', identity: true}),
@@ -325,6 +325,7 @@ const createReplicatorEditor = (doc, root, replicator, options = {}) => {
   }
   render(); load();
   const staleTimer = setInterval(patchStatus, 1000);
-  return {destroy: () => { closed = true; clearInterval(staleTimer); stopPolling(); root.replaceChildren(); }};
+  const unsubscribeShared = options.shared ? options.shared.subscribe(render) : () => {};
+  return {destroy: () => { closed = true; unsubscribeShared(); clearInterval(staleTimer); stopPolling(); root.replaceChildren(); }};
 };
 module.exports = {createReplicatorEditor};

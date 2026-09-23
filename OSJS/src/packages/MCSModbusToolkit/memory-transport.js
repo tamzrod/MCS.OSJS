@@ -25,7 +25,7 @@ const createMemoryTransport = (proc, {setTimer = setTimeout, clearTimer = clearT
     const timer = setTimer(() => {
       pending.delete(id);
       reject(new Error('Simulator runtime request timed out'));
-    }, timeoutMs);
+    }, request.operation === 'mma-apply' ? Math.max(timeoutMs, 36000) : timeoutMs);
     pending.set(id, {resolve, reject, timer});
     try { proc.send(request); } catch (error) {
       clearTimer(timer);

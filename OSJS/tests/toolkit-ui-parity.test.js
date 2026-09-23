@@ -1,6 +1,8 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const {JSDOM} = require('jsdom');
 const {createMemoryEditor, blankDevice} = require('../src/packages/MCSModbusToolkit/memory-editor');
 const {createReplicatorEditor} = require('../src/packages/MCSModbusToolkit/replicator-editor');
@@ -39,6 +41,17 @@ const input = (root, label, value, event = 'input') => {
 (async () => {
   const dom = new JSDOM('<div id="memory"></div><div id="replicator"></div>');
   const doc = dom.window.document;
+  const style = doc.createElement('style');
+  style.textContent = fs.readFileSync(path.join(__dirname, '../src/packages/MCSModbusToolkit/renderer.css'), 'utf8');
+  doc.head.appendChild(style);
+  const hiddenEmptyWarnings = root => {
+    const warnings = [...root.querySelectorAll('.tool-validation')];
+    assert.ok(warnings.length > 0);
+    warnings.forEach(node => {
+      assert.strictEqual(node.textContent, '');
+      assert.strictEqual(dom.window.getComputedStyle(node).display, 'none');
+    });
+  };
   const root = doc.getElementById('memory');
   const device = blankDevice(1);
   Object.assign(device.mma2, defaults(), {custom_extension: {keep: true}});
@@ -56,6 +69,13 @@ const input = (root, label, value, event = 'input') => {
   }, {onStatus: value => { header = value; }});
   await settle();
   assert.strictEqual(header, 'RUNNING');
+  hiddenEmptyWarnings(root);
+  input(root, 'Name', '');
+  const validation = root.querySelector('[data-memory-validation]');
+  assert.strictEqual(validation.textContent, 'Name is required.');
+  assert.notStrictEqual(dom.window.getComputedStyle(validation).display, 'none');
+  input(root, 'Name', device.name); await settle();
+  hiddenEmptyWarnings(root);
   click(root, 'Advanced Settings');
   assert.ok(root.textContent.includes('RBE TCP Port: Unavailable'));
   click(root, 'State Sealing');
@@ -105,6 +125,7 @@ const input = (root, label, value, event = 'input') => {
   await settle();
   const state = layer => repRoot.querySelector(`#rep-comms-${layer}`).dataset.state;
   assert.strictEqual(repHeader, 'RUNNING');
+  hiddenEmptyWarnings(repRoot);
   assert.strictEqual(state('tcp'), 'OK');
   assert.strictEqual(state('modbus'), 'WARNING');
   assert.strictEqual(state('mma2'), 'ERROR');
@@ -124,7 +145,11 @@ const input = (root, label, value, event = 'input') => {
   failed = true; await poll();
   assert.strictEqual(state('tcp'), 'UNKNOWN');
   assert.strictEqual(repHeader, 'UNAVAILABLE');
+  const runtimeWarning = repRoot.querySelector('[data-replicator-status="error"]');
+  assert.ok(runtimeWarning.textContent.includes('socket unavailable'));
+  assert.notStrictEqual(dom.window.getComputedStyle(runtimeWarning).display, 'none');
   failed = false; await poll(); assert.strictEqual(state('tcp'), 'OK');
+  hiddenEmptyWarnings(repRoot);
   reported.name = 'Other'; await poll(); assert.strictEqual(state('tcp'), 'UNKNOWN');
   reported.name = 'Rep-1'; delete reported.comms; await poll();
   assert.strictEqual(state('tcp'), 'UNKNOWN');

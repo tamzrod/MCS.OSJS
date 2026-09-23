@@ -208,7 +208,7 @@ const createMemoryEditor = (doc, root, memory, options = {}) => {
       runtime.children[3].dataset.memoryStatus = 'simulation';
       editor.appendChild(runtime);
       if (section === 'Advanced Settings') {
-        advanced.mount(doc, editor, device.mma2, documentValue.devices, saving);
+        advanced.mount(doc, editor, device.mma2, documentValue.devices, saving, options.shared);
       } else {
         const identity = h('div', 'tool-grid');
         identity.append(field('Name', device.name, value => { device.name = value; }, {type: 'text', reselectPoll: true}),
@@ -349,10 +349,11 @@ const createMemoryEditor = (doc, root, memory, options = {}) => {
   };
   root.addEventListener('click', onClick);
   const staleTimer = setInterval(patchStatus, 1000);
+  const unsubscribeShared = options.shared ? options.shared.subscribe(render) : () => {};
   render();
   load();
   return {destroy: () => {
-    closed = true; clearInterval(staleTimer); stopPolling(); root.removeEventListener('click', onClick);
+    closed = true; unsubscribeShared(); clearInterval(staleTimer); stopPolling(); root.removeEventListener('click', onClick);
   }};
 };
 

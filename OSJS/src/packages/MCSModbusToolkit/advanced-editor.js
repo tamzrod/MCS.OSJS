@@ -22,10 +22,18 @@ const tabs = (doc, selected, disabled, change) => {
   }
   return strip;
 };
-const mount = (doc, editor, params, devices, disabled) => {
+const mount = (doc, editor, params, devices, disabled, shared) => {
   const fields = doc.createElement('fieldset');
   fields.className = 'memory-advanced'; fields.disabled = disabled;
-  memoryUI.mount(fields, params, {document: doc, devices, outputLoaded: false});
+  const output = shared ? shared.output() : {outputLoaded: false};
+  memoryUI.mount(fields, params, {document: doc, devices, ...output,
+    configureOutput: shared ? () => shared.open() : undefined});
+  if (shared) {
+    const open = doc.createElement('button'); open.type = 'button'; open.className = 'tool-button';
+    open.textContent = 'MMA Settings...'; open.disabled = disabled;
+    open.addEventListener('click', () => shared.open()); editor.appendChild(open);
+    editor.appendChild(fields); return;
+  }
   const note = doc.createElement('p');
   note.textContent = 'Shared RBE TCP settings are not exposed by this OS.js runtime API. Existing output configuration is preserved; enabling rules requires a configured output.';
   editor.append(fields, note);

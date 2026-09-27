@@ -52,3 +52,130 @@ Inventory must establish actual Electron paths and behaviors; do not treat candi
 ## Definition of done
 
 A user can open the unified OS.js Toolkit and see the same layout, screens, labels, tabs, interactions and configuration concepts as the reference Electron Toolkit. On supported Linux backends, equivalent load/edit/validate/save/restart/verify workflows behave consistently with genuine status/error reporting. Both applications build and deploy independently; parity is demonstrated by screen comparisons, targeted tests and safe end-to-end evidence.
+
+
+## Candidate enhancement — Docker Network CIDR Detection for Access Policy UI
+
+Status: BRAINSTORM ONLY. UI/configuration convenience; not authorized implementation.
+
+### Objective
+
+Improve the Access Policy `Source IP / CIDR` selector so the MCS Modbus Toolkit can discover Docker networks available on the host and offer their IPAM subnets as selectable source CIDRs.
+
+This capability belongs entirely to the Toolkit/application side. MMA2.0 must remain Docker-unaware and continue receiving, storing, and matching ordinary IP/CIDR values only.
+
+### Desired selector behavior
+
+Keep the normal choices available:
+
+- All IPv4
+- All IPv6
+- Localhost IPv4
+- Localhost IPv6
+- Custom
+
+When Docker discovery succeeds, insert detected network/subnet suggestions such as:
+
+- `Docker: bridge (172.17.0.0/16)`
+- `Docker: mcs_default (172.30.10.0/24)`
+- `Docker: monitoring_default (172.31.0.0/24)`
+
+The displayed network name is UI metadata only. Selecting a Docker suggestion must insert/write only its resolved CIDR, for example `172.30.10.0/24`.
+
+MMA configuration remains ordinary CIDR data:
+
+```yaml
+source_ip:
+  - 172.30.10.0/24
+```
+
+Never persist Docker network names such as `mcs_default` as access-policy source values.
+
+### Discovery requirements
+
+- Query the local Docker Engine from the Toolkit/application side using the existing host/system-operation architecture where possible.
+- Enumerate all usable Docker bridge networks.
+- Obtain each network name and each IPAM subnet/CIDR.
+- Expose multiple IPAM subnets from the same network independently.
+- Support both IPv4 and IPv6 CIDRs as reported by Docker.
+- Do not assume Docker subnets use any particular private range such as `172.x.x.x`.
+- Keep Docker discovery isolated from MMA policy/configuration semantics.
+
+### Refresh behavior
+
+Use the simplest refresh mechanism consistent with the existing UI architecture. At minimum, rediscover Docker networks when the Access Policy editor/device configuration is opened or explicitly refreshed. Do not add continuous polling unless the application already has a suitable refresh mechanism.
+
+### Failure behavior
+
+Docker discovery is optional enrichment. If Docker is absent, stopped, inaccessible, permission-denied, or network inspection fails:
+
+- Access Policy editing must continue normally.
+- All normal non-Docker source choices must remain usable.
+- Docker availability must never become a Toolkit requirement.
+- Discovery failure must not corrupt or block policy editing.
+
+### Existing configuration behavior
+
+Existing CIDR entries remain ordinary CIDRs regardless of whether they originally corresponded to a Docker network. If `172.30.10.0/24` is stored and that Docker network later disappears, preserve the value unchanged and allow it to be displayed/edited as a custom CIDR.
+
+### Security and architecture boundary
+
+```text
+Docker Engine
+    ↓
+MCS Toolkit detects networks
+    ↓
+UI presents friendly Docker network choices
+    ↓
+Explicit user selection resolves to CIDR
+    ↓
+MMA configuration stores CIDR
+    ↓
+MMA performs normal source-IP/CIDR matching
+```
+
+MMA2.0 remains completely unaware of Docker network names, container IDs, Compose projects, Docker sockets, and Docker APIs.
+
+Docker networks are suggestions only. Discovery must never automatically trust, add, or modify policy sources.
+
+### Explicit non-goals
+
+- Do not modify MMA2.0 networking behavior.
+- Do not modify MMA2.0 access-control matching.
+- Do not add Docker dependencies to MMA2.0.
+- Do not change MMA configuration format.
+- Do not store Docker network names in MMA YAML.
+- Do not automatically trust all detected Docker networks.
+- Do not automatically add Docker CIDRs to existing policies.
+- Do not change an existing policy without explicit user selection.
+- Do not redesign the Access Policy editor.
+- Do not refactor unrelated code.
+
+Existing Add source / Remove source behavior must remain intact.
+
+### Source inspection required before any implementation microtask
+
+Before promoting this idea to executable work:
+
+1. Inspect the existing Access Policy UI implementation.
+2. Locate where All IPv4 / All IPv6 / localhost / Custom choices are generated.
+3. Identify the existing application-side mechanism for host/system operations.
+4. Reuse that architecture instead of introducing a parallel Docker subsystem.
+5. Establish the smallest clean integration point that keeps discovery separate from policy/configuration logic.
+
+### Candidate validation checklist
+
+1. Open Access Policy.
+2. Existing All IPv4 / All IPv6 / Custom behavior still works.
+3. Detected Docker networks appear in the selector.
+4. Network name and CIDR are visible to the user.
+5. Selecting a Docker network inserts its CIDR.
+6. Saved MMA configuration contains only the CIDR.
+7. Reloading preserves the CIDR.
+8. Removing the Docker network does not corrupt an existing policy.
+9. Docker daemon unavailable does not break the editor.
+10. Multiple Docker networks and multiple subnets are handled correctly.
+11. IPv4 and IPv6 CIDRs are preserved without incorrect transformation.
+12. No MMA2.0 source code or access-control semantics are changed.
+
+Implementation discipline: make the smallest clean change necessary after source inspection. This brainstorm does not authorize code changes or microtask promotion.

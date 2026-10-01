@@ -200,6 +200,13 @@ func Collision(port, unitID uint16, owner string, owners OwnershipDoc) error {
 // atomically replaces each artifact. If the second replace fails,the first
 // artifact is restored byte-for-byte..
 func (c *Composer) Commit(cfg EffectiveConfig, owners OwnershipDoc) error {
+	for _, listener := range cfg.Listeners {
+		for _, memory := range listener.Memory {
+			if err := ValidateFC43(memory.Extra["fc43"]); err != nil {
+				return fmt.Errorf("memory (%d,%d): %w", ListenPort(listener.Listen), memory.UnitID, err)
+			}
+		}
+	}
 	for index := range cfg.Listeners {
 		for _, previous := range c.priorListeners {
 			if ListenPort(cfg.Listeners[index].Listen) == ListenPort(previous.Listen) {

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/tamzrod/MCS.OSJS/mma2composer"
 )
 
 func ValidateDocument(doc Document) error {
@@ -108,5 +110,12 @@ func ValidateDeviceDefinition(device DeviceDefinition) error {
 			return fmt.Errorf("pull_blocks[%d]: %w", i, err)
 		}
 	}
-	return nil
+	memory, err := destinationMemoryForBlocks(device.Destination.UnitID, blocks)
+	if err != nil {
+		return err
+	}
+	if err := applyAdvanced(&memory, device.MMA2Advanced); err != nil {
+		return err
+	}
+	return mma2composer.ValidateMemory(memory)
 }

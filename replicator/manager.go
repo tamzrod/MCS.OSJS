@@ -100,20 +100,20 @@ func NewRuntimeManager(store Store) *RuntimeManager {
 
 func (m *RuntimeManager) Boot() error {
 	var resolved Document
-	// Boot load, owner resolution, compose, readiness and persisted document
-	// are one transaction. Polling loops start only after releasing the lock.
+	// Publish desired config, ownership and resolved component state together.
+	// Readiness is a separate runtime concern and must not block config writers.
 	err := m.store.withWriterLock(func() error {
 		doc, err := m.store.LoadDocument()
 		if err != nil { return err }
 		resolved, _, err = m.store.composeDocumentDestinationsLocked(doc)
 		if err != nil { return err }
-		ports := documentDestinationPorts(resolved)
-		if len(ports) > 0 {
-			if err := waitPortsReady(ports, m.timeout); err != nil { return err }
-		}
 		return m.store.saveDocumentLocked(resolved)
 	})
 	if err != nil { return err }
+	ports := documentDestinationPorts(resolved)
+	if len(ports) > 0 {
+		if err := waitPortsReady(ports, m.timeout); err != nil { return err }
+	}
 	return m.replaceRuntimes(resolved)
 }
 

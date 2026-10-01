@@ -18,6 +18,14 @@ func projectAdvancedSettings(params *MMA2Params, cfg EffectiveMMA2Config) error 
 			}
 			for key, value := range memory.Extra {
 				switch key {
+				case "fc43":
+					if params.FC43 == nil {
+						identity, ok := value.(map[string]interface{})
+						if !ok {
+							return fmt.Errorf("project fc43 for (%d,%d): expected object", params.Port, params.UnitID)
+						}
+						params.FC43 = &identity
+					}
 				case "state_sealing":
 					if params.StateSealing != nil {
 						continue

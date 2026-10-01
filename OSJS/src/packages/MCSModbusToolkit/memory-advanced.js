@@ -1,7 +1,21 @@
 const memoryUI = (() => {
-  const presets = {'Read Only': [1, 2, 3, 4], 'Write Only': [5, 6, 15, 16], 'Read/Write': [1, 2, 3, 4, 5, 6, 15, 16]};
+  const presets = {'Read Only': [1, 2, 3, 4, 43], 'Write Only': [5, 6, 15, 16], 'Read/Write': [1, 2, 3, 4, 5, 6, 15, 16, 43]};
   const functions = {1: 'Read Coils', 2: 'Read Discrete Inputs', 3: 'Read Holding Registers', 4: 'Read Input Registers', 5: 'Write Single Coil', 6: 'Write Single Register', 15: 'Write Multiple Coils', 16: 'Write Multiple Registers'};
   const areas = {coils: 'Coils', discrete_inputs: 'Discrete Inputs', holding_registers: 'Holding Registers', input_registers: 'Input Registers'};
+  functions[43] = 'Read Device Identification';
+  const identityFields = {vendor_name: 'Vendor Name', product_code: 'Product Code', major_minor_revision: 'Major / Minor Revision'};
+  const validateIdentity = params => {
+    if (params.fc43 == null) return null;
+    if (typeof params.fc43 !== 'object' || Array.isArray(params.fc43)) return 'Device Identification: FC43 must be an object.';
+    for (const [key, label] of Object.entries(identityFields)) {
+      if (!Object.prototype.hasOwnProperty.call(params.fc43, key)) continue;
+      const value = params.fc43[key];
+      if (typeof value !== 'string' || !value.length || value.length > 244 || /[^\x00-\x7f]/.test(value)) {
+        return `Device Identification: ${label} must contain 1–244 ASCII bytes.`;
+      }
+    }
+    return null;
+  };
   const states = new WeakMap();
   const sourceAliases = {'All IPv4': '0.0.0.0/0', 'All IPv6': '::/0'};
   const splitSources = value => String(value).split(',').map(item => item.trim()).filter(Boolean).map(item => sourceAliases[item] || item);
@@ -10,7 +24,7 @@ const memoryUI = (() => {
   const replicatorParams = device => {
     device.mma2_advanced ||= {};
     const params = {};
-    for (const key of ['policy', 'rbe', 'state_sealing']) Object.defineProperty(params, key, {
+    for (const key of ['policy', 'rbe', 'state_sealing', 'fc43']) Object.defineProperty(params, key, {
       get: () => device.mma2_advanced[key], set: value => { device.mma2_advanced[key] = value; }
     });
     for (let number = 1; number <= 4; number++) {
@@ -86,11 +100,24 @@ const memoryUI = (() => {
     const draw = () => {
       root.replaceChildren();
       const tabs = element('nav', undefined, 'memory-subtabs');
-      for (const title of ['RBE Rules', 'State Sealing', 'Access Policy']) {
+      for (const title of ['RBE Rules', 'State Sealing', 'Access Policy', 'Device Identification']) {
         const tab = button(title, () => { state.tab = title; draw(); });
         tab.setAttribute('aria-pressed', state.tab === title ? 'true' : 'false'); tabs.append(tab);
       }
       root.append(tabs);
+      if (state.tab === 'Device Identification') {
+        root.append(element('h3', 'Device Identification'), element('p', 'FC43 / MEI14 – Read Device Identification. Overrides apply to this memory. Omitted fields use MMA2 defaults; changes require restart.'));
+        const form = element('div', undefined, 'advanced-form');
+        for (const [key, label] of Object.entries(identityFields)) {
+          const field = input(label, params.fc43?.[key], value => { params.fc43 ||= {}; params.fc43[key] = value; });
+          field.querySelector('input').placeholder = 'MMA2 default (omitted)';
+          form.append(field, button(`Use default for ${label}`, () => {
+            params.fc43 ||= {}; delete params.fc43[key]; draw();
+          }));
+        }
+        root.append(form, button('Use MMA2 Defaults', () => { params.fc43 = {}; draw(); }));
+        return;
+      }
       if (state.tab === 'State Sealing') {
         const seal = params.state_sealing;
         const enabled = Boolean(seal && seal.enabled !== false);
@@ -251,7 +278,7 @@ const memoryUI = (() => {
     };
     draw();
   };
-  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams};
+  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams, validateIdentity};
 })();
 if (typeof module !== 'undefined') module.exports = memoryUI;
 if (typeof window !== 'undefined') window.mcsMemoryUI = memoryUI;

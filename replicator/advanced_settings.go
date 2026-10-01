@@ -46,7 +46,7 @@ func inheritAdvanced(device *DeviceDefinition, cfg mma2composer.EffectiveConfig)
 			if err := yaml.Unmarshal(body, &saved); err != nil {
 				return err
 			}
-			for _, key := range []string{"policy", "state_sealing", "rbe"} {
+			for _, key := range []string{"policy", "state_sealing", "rbe", "fc43"} {
 				if _, explicit := device.MMA2Advanced[key]; explicit {
 					continue
 				}
@@ -65,7 +65,7 @@ func inheritAdvanced(device *DeviceDefinition, cfg mma2composer.EffectiveConfig)
 
 func applyAdvanced(memory *mma2composer.Memory, advanced map[string]interface{}) error {
 	for key := range advanced {
-		if key != "policy" && key != "state_sealing" && key != "rbe" {
+		if key != "policy" && key != "state_sealing" && key != "rbe" && key != "fc43" {
 			return fmt.Errorf("unsupported MMA2 advanced setting %q", key)
 		}
 	}
@@ -81,5 +81,15 @@ func applyAdvanced(memory *mma2composer.Memory, advanced map[string]interface{})
 		memory.Policy = settings.Policy
 	}
 	memory.Extra = settings.Extra
+	if identity, exists := memory.Extra["fc43"]; exists {
+		if err := mma2composer.ValidateFC43(identity); err != nil {
+			return err
+		}
+		if identity == nil {
+			delete(memory.Extra, "fc43")
+		} else if fields, ok := identity.(map[string]interface{}); ok && len(fields) == 0 {
+			delete(memory.Extra, "fc43")
+		}
+	}
 	return nil
 }

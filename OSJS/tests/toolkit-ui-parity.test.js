@@ -77,6 +77,13 @@ const input = (root, label, value, event = 'input') => {
   input(root, 'Name', device.name); await settle();
   hiddenEmptyWarnings(root);
   click(root, 'Advanced Settings');
+  click(root, 'Device Identification');
+  input(root, 'Product Code', '');
+  assert.ok(root.querySelector('[data-memory-action="save"]').disabled);
+  assert.ok(root.textContent.includes('Product Code must contain 1–244 ASCII bytes'));
+  click(root, 'Use MMA2 Defaults');
+  assert.ok(!root.querySelector('[data-memory-action="save"]').disabled);
+  click(root, 'RBE Rules');
   assert.ok(root.textContent.includes('RBE TCP Port: Unavailable'));
   click(root, 'State Sealing');
   input(root, 'Enable state sealing', true, 'change');
@@ -94,7 +101,7 @@ const input = (root, label, value, event = 'input') => {
   click(root, 'Device Definition'); click(root, 'Advanced Settings');
   click(root, 'Save & Apply'); await settle();
   assert.deepStrictEqual(saved.devices[0].mma2.policy.rules[0].source_ip, ['10.0.0.1', '10.0.0.0/24', '::/0']);
-  assert.deepStrictEqual(saved.devices[0].mma2.policy.rules[0].allow_fc, [1, 2, 3, 4]);
+  assert.deepStrictEqual(saved.devices[0].mma2.policy.rules[0].allow_fc, [1, 2, 3, 4, 43]);
   assert.strictEqual(saved.devices[0].mma2.state_sealing.address, 2);
   assert.deepStrictEqual(saved.devices[0].mma2.custom_extension, {keep: true});
   click(root, 'State Sealing'); input(root, 'Control address', '3');

@@ -3,6 +3,7 @@ package simulator
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tamzrod/MCS.OSJS/mma2composer"
 	"strings"
 )
 
@@ -62,7 +63,7 @@ func ValidateDevice(d DeviceDefinition) error {
 	if err := validateArea("fc4", d.MMA2.FC4, d.RandomRuntime.FC4IntervalMS); err != nil {
 		return err
 	}
-	return nil
+	return mma2composer.ValidateMemory(memoryFromMMA2Params(d.MMA2))
 }
 
 // Keep the interval parameter for existing callers. Zero is valid regardless

@@ -32,21 +32,34 @@ func (s Store) OwnershipPath() string            { return s.composer().Ownership
 // SaveAndCompose is a legacy public entry point: lock ONCE through both shared
 // artifacts and the Simulator document. Do not call another locking Store API.
 func (s Store) SaveAndCompose(def DeviceDefinition) error {
-	if err := ValidateDevice(def); err != nil { return err }
+	if err := ValidateDevice(def); err != nil {
+		return err
+	}
 	return s.withWriterLock(func() error {
 		composer := s.composer()
 		cfg, err := composer.LoadEffective()
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		owners, err := composer.LoadOwners()
-		if err != nil { return err }
-		if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil { return err }
+		if err != nil {
+			return err
+		}
+		if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil {
+			return err
+		}
 		inheritMemorySettings(&def.MMA2, cfg)
+		if err := mma2composer.ValidateMemory(memoryFromMMA2Params(def.MMA2)); err != nil {
+			return err
+		}
 		cfg, owners = composer.DropProducerReservations(cfg, owners)
 		if hasMMA2Areas(def.MMA2) {
 			cfg = addReservation(cfg, def.MMA2)
 			owners.Reservations = append(owners.Reservations, OwnershipEntry{Port: def.MMA2.Port, UnitID: def.MMA2.UnitID, Owner: ProducerSimulator})
 		}
-		if err := composer.Commit(cfg, owners); err != nil { return err }
+		if err := composer.Commit(cfg, owners); err != nil {
+			return err
+		}
 		return s.replace(Document{Devices: []DeviceDefinition{def}})
 	})
 }
@@ -67,20 +80,33 @@ func (s Store) composeDocumentLocked(doc Document) error {
 	}
 	composer := s.composer()
 	cfg, err := composer.LoadEffective()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	owners, err := composer.LoadOwners()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	for index := range doc.Devices {
 		def := &doc.Devices[index]
-		if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil { return err }
+		if err := mma2composer.Collision(def.MMA2.Port, def.MMA2.UnitID, ProducerSimulator, owners); err != nil {
+			return err
+		}
 		inheritMemorySettings(&def.MMA2, cfg)
+		if err := mma2composer.ValidateMemory(memoryFromMMA2Params(def.MMA2)); err != nil {
+			return fmt.Errorf("device %d: %w", index, err)
+		}
 	}
 	cfg, owners = composer.DropProducerReservations(cfg, owners)
 	seen := make(map[mma2Key]bool)
 	for _, def := range doc.Devices {
-		if !def.Enabled || !hasMMA2Areas(def.MMA2) { continue }
+		if !def.Enabled || !hasMMA2Areas(def.MMA2) {
+			continue
+		}
 		key := mma2Key{port: def.MMA2.Port, unitID: def.MMA2.UnitID}
-		if seen[key] { return fmt.Errorf("duplicate simulator MMA2 reservation (%d,%d)", key.port, key.unitID) }
+		if seen[key] {
+			return fmt.Errorf("duplicate simulator MMA2 reservation (%d,%d)", key.port, key.unitID)
+		}
 		seen[key] = true
 		cfg = addReservation(cfg, def.MMA2)
 		owners.Reservations = append(owners.Reservations, OwnershipEntry{Port: key.port, UnitID: key.unitID, Owner: ProducerSimulator})
@@ -92,10 +118,16 @@ func (s Store) DeleteAndCompose(port, unitID uint16) error {
 	return s.withWriterLock(func() error {
 		composer := s.composer()
 		cfg, err := composer.LoadEffective()
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		owners, err := composer.LoadOwners()
-		if err != nil { return err }
-		if err := mma2composer.Collision(port, unitID, ProducerSimulator, owners); err != nil { return err }
+		if err != nil {
+			return err
+		}
+		if err := mma2composer.Collision(port, unitID, ProducerSimulator, owners); err != nil {
+			return err
+		}
 		cfg, owners = composer.DropOneReservation(cfg, owners, port, unitID)
 		return composer.Commit(cfg, owners)
 	})
@@ -109,6 +141,7 @@ func (s Store) saveEffective(cfg EffectiveMMA2Config) error {
 func (s Store) saveOwners(doc OwnershipDoc) error {
 	return s.withWriterLock(func() error { return s.composer().SaveOwners(doc) })
 }
+
 // replaceMMA2File is a lock-free INTERNAL helper used by restart-request
 // operations while their enclosing transaction already owns the writer lock.
 func (s Store) replaceMMA2File(path string, b []byte) error {
@@ -121,38 +154,78 @@ func addReservation(cfg EffectiveMMA2Config, p MMA2Params) EffectiveMMA2Config {
 
 func memoryFromMMA2Params(p MMA2Params) MMA2Memory {
 	mem := MMA2Memory{UnitID: p.UnitID}
-	if p.FC1.Count > 0 { mem.Coils = &MMA2Area{Start: p.FC1.Start, Count: p.FC1.Count} }
-	if p.FC2.Count > 0 { mem.DiscreteInputs = &MMA2Area{Start: p.FC2.Start, Count: p.FC2.Count} }
-	if p.FC3.Count > 0 { mem.HoldingRegs = &MMA2Area{Start: p.FC3.Start, Count: p.FC3.Count} }
-	if p.FC4.Count > 0 { mem.InputRegs = &MMA2Area{Start: p.FC4.Start, Count: p.FC4.Count} }
+	if p.FC1.Count > 0 {
+		mem.Coils = &MMA2Area{Start: p.FC1.Start, Count: p.FC1.Count}
+	}
+	if p.FC2.Count > 0 {
+		mem.DiscreteInputs = &MMA2Area{Start: p.FC2.Start, Count: p.FC2.Count}
+	}
+	if p.FC3.Count > 0 {
+		mem.HoldingRegs = &MMA2Area{Start: p.FC3.Start, Count: p.FC3.Count}
+	}
+	if p.FC4.Count > 0 {
+		mem.InputRegs = &MMA2Area{Start: p.FC4.Start, Count: p.FC4.Count}
+	}
 	mem.Policy = &MMA2Policy{Rules: []MMA2PolicyRule{{
-		ID: "simulator-fc-access",
+		ID:       "simulator-fc-access",
 		SourceIP: []string{"0.0.0.0/0", "::/0", "127.0.0.1", "::1"},
-		AllowFC: []uint8{1, 2, 3, 4, 5, 6, 15, 16},
+		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16},
 	}}}
-	if p.Policy != nil { mem.Policy = p.Policy }
+	if p.Policy != nil {
+		mem.Policy = p.Policy
+	}
 	mem.Extra = make(map[string]interface{})
-	for key, value := range p.Extra { mem.Extra[key] = value }
-	if p.StateSealing != nil { mem.Extra["state_sealing"] = p.StateSealing }
-	if p.RBE != nil { mem.Extra["rbe"] = p.RBE }
+	for key, value := range p.Extra {
+		mem.Extra[key] = value
+	}
+	if p.StateSealing != nil {
+		mem.Extra["state_sealing"] = p.StateSealing
+	}
+	if p.RBE != nil {
+		mem.Extra["rbe"] = p.RBE
+	}
+	delete(mem.Extra, "fc43")
+	if p.FC43 != nil && len(*p.FC43) > 0 {
+		mem.Extra["fc43"] = *p.FC43
+	}
 	return mem
 }
 
 func inheritMemorySettings(params *MMA2Params, cfg EffectiveMMA2Config) {
 	for _, listener := range cfg.Listeners {
-		if mma2composer.ListenPort(listener.Listen) != params.Port { continue }
+		if mma2composer.ListenPort(listener.Listen) != params.Port {
+			continue
+		}
 		for _, memory := range listener.Memory {
-			if memory.UnitID != params.UnitID { continue }
-			if params.Policy == nil { params.Policy = memory.Policy }
-			if params.Extra == nil { params.Extra = make(map[string]interface{}) }
+			if memory.UnitID != params.UnitID {
+				continue
+			}
+			if params.Policy == nil {
+				params.Policy = memory.Policy
+			}
+			if params.Extra == nil {
+				params.Extra = make(map[string]interface{})
+			}
 			for key, value := range memory.Extra {
 				switch key {
+				case "fc43":
+					if params.FC43 == nil {
+						if identity, ok := value.(map[string]interface{}); ok {
+							params.FC43 = &identity
+						}
+					}
 				case "state_sealing":
-					if params.StateSealing == nil { params.StateSealing, _ = value.(map[string]interface{}) }
+					if params.StateSealing == nil {
+						params.StateSealing, _ = value.(map[string]interface{})
+					}
 				case "rbe":
-					if params.RBE == nil { params.RBE, _ = value.(map[string]interface{}) }
+					if params.RBE == nil {
+						params.RBE, _ = value.(map[string]interface{})
+					}
 				default:
-					if _, exists := params.Extra[key]; !exists { params.Extra[key] = value }
+					if _, exists := params.Extra[key]; !exists {
+						params.Extra[key] = value
+					}
 				}
 			}
 		}

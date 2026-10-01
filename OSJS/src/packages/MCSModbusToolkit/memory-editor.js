@@ -30,7 +30,7 @@ const validateDevice = device => {
       return `${label}: interval must be a nonnegative uint32 integer (0 means None).`;
     }
   }
-  return null;
+  return advanced.memoryUI.validateIdentity(device.mma2);
 };
 const validateDocument = document => {
   if (!document || !Array.isArray(document.devices)) return 'Simulator document is unavailable.';
@@ -321,6 +321,7 @@ const createMemoryEditor = (doc, root, memory, options = {}) => {
     }
   };
   const onClick = event => {
+    if (documentValue) updateValidation();
     const target = event.target.closest('[data-memory-action]');
     if (!target || target.disabled || closed || loading || saving || !documentValue) return;
     const action = target.dataset.memoryAction;
@@ -348,12 +349,15 @@ const createMemoryEditor = (doc, root, memory, options = {}) => {
     render(); restartPolling();
   };
   root.addEventListener('click', onClick);
+  root.addEventListener('input', updateValidation);
+  root.addEventListener('change', updateValidation);
   const staleTimer = setInterval(patchStatus, 1000);
   const unsubscribeShared = options.shared ? options.shared.subscribe(render) : () => {};
   render();
   load();
   return {destroy: () => {
     closed = true; unsubscribeShared(); clearInterval(staleTimer); stopPolling(); root.removeEventListener('click', onClick);
+    root.removeEventListener('input', updateValidation); root.removeEventListener('change', updateValidation);
   }};
 };
 

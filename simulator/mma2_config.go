@@ -169,7 +169,7 @@ func memoryFromMMA2Params(p MMA2Params) MMA2Memory {
 	mem.Policy = &MMA2Policy{Rules: []MMA2PolicyRule{{
 		ID:       "simulator-fc-access",
 		SourceIP: []string{"0.0.0.0/0", "::/0", "127.0.0.1", "::1"},
-		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16},
+		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16, 43},
 	}}}
 	if p.Policy != nil {
 		mem.Policy = p.Policy

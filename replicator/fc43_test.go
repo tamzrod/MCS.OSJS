@@ -65,3 +65,16 @@ func TestInvalidFC43DestinationPreservesYAML(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultDestinationPolicyAllowsFC43(t *testing.T) {
+	memory, err := destinationMemoryForBlocks(1, []PullBlock{{Function: 3, Start: 0, Count: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if memory.Policy == nil || len(memory.Policy.Rules) != 1 {
+		t.Fatal("default policy missing")
+	}
+	if !reflect.DeepEqual(memory.Policy.Rules[0].AllowFC, []uint8{1, 2, 3, 4, 5, 6, 15, 16, 43}) {
+		t.Fatalf("default policy does not allow FC43: %v", memory.Policy.Rules[0].AllowFC)
+	}
+}

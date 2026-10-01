@@ -138,7 +138,7 @@ func destinationMemoryForBlocks(unitID uint16, blocks []PullBlock) (mma2composer
 	memory.Policy = &mma2composer.Policy{Rules: []mma2composer.PolicyRule{{
 		ID:       "replicator-fc-access",
 		SourceIP: []string{"0.0.0.0/0", "::/0", "127.0.0.1", "::1"},
-		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16},
+		AllowFC:  []uint8{1, 2, 3, 4, 5, 6, 15, 16, 43},
 	}}}
 	return memory, nil
 }

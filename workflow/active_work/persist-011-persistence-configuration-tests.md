@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-010. Being present in `workflow
 0/1/0/2/1=4; exact commands must be pinned in handoff at activation.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-010 is delivered on GitHub main at `190e464f6106c3e640d21b1f9352328447464bef`. This packet is the sole current ACTIVE assignment in independent JR TEST/VERIFY mode. Execute only the exact read-only verification packet pinned in `handoff.md`, make no product fixes or new tests, report PASS/FAIL/BLOCKED/INCOMPLETE with raw evidence, and STOP.

@@ -1,8 +1,8 @@
 # PERSIST-015 — Startup Snapshot Loader
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-014
 Next: PERSIST-016
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-014. Being present in `workflow
 2/1/2/1/2=8; startup loader only.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-014 is delivered on GitHub main at `98a952a89b087f12a9b99b6bd648ce97ac44e6f2`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. If a reused workspace still has local-only PERSIST-013/PERSIST-014 transport-blocked commits, treat them as superseded duplicate history and reconcile them with bounded safe Git mechanics; do not replay them as new product work. Execute exactly PERSIST-015, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

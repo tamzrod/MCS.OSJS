@@ -4,7 +4,7 @@ Human-approved and promoted: PERSIST-001..022 on 2026-10-07.
 
 All packets in this queue are authorized Active Work for their written scope. Promotion does NOT mean simultaneous execution. Repository rule remains: exactly ONE ACTIVE/current task per OPERATION CWAL invocation, selected by `handoff.md`.
 
-Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001 is CODE COMPLETE at `faa33929429a0382a64b78bc773f0074e11cb6b1`. PERSIST-002 is CODE COMPLETE and delivered at `fe3bda9e5c863c959500514e8c6083d2514526d1`. PERSIST-003 is CODE COMPLETE and delivered at `4e8f774eb946cc9a946938e4f3a28eaa13de5c9d`. PERSIST-004 is CODE COMPLETE and delivered at `936ab24560d57cbf8aacc8180bc00a2527dcfad5`. PERSIST-005 is CODE COMPLETE and delivered at `c743174204455afa83bc92b859fd47582a7afdbc`. PERSIST-006 is CODE COMPLETE and delivered at `9ac48cb23e369fb0384b3d8f00811435d5bf7b69`. PERSIST-007 is CODE COMPLETE and delivered at `feb1e622d38cf8107a1df9ee182e5df17f95790f`. PERSIST-008 is CODE COMPLETE and delivered at `4783e0d6e1d3dbd55b29b8647a115905eb5bc285`. PERSIST-009 is CODE COMPLETE and delivered at `19057f02d94ff404b74a9f01348fc8c31235e374`. PERSIST-010 is CODE COMPLETE at `190e464f6106c3e640d21b1f9352328447464bef`, pending delivery. All PERSIST-001..010 CODE tasks are complete; PERSIST-011 is the next ACTIVE task and is an independent JR TEST/VERIFY gate, with its exact packet prepared in `handoff.md`. PERSIST-012..022 remain QUEUED and dependency-gated.
+Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 is the sole current ACTIVE task and is an independent JR TEST/VERIFY gate, with its exact packet prepared in `handoff.md`.** PERSIST-012..022 remain QUEUED and dependency-gated.
 
 Ordered persistence sequence:
 
@@ -32,7 +32,7 @@ Ordered persistence sequence:
 - [ ] PERSIST-022 — End-to-End Persistence Verification (VERIFY)
 
 ## Routing
-This queue is selected. PERSIST-001..009 have recorded CODE completion evidence and PERSIST-009 delivery is confirmed at `19057f0`. Execute PERSIST-010 now as OpenHands JR DEV. Run one packet per invocation and STOP. OpenHands JR DEV may implement assigned CODE/DISCOVERY packets but does not self-certify independent TEST/VERIFY. TEST/VERIFY requires a separate independent JR invocation with an exact current handoff packet and never fixes product source.
+This queue is selected. PERSIST-001..010 CODE delivery is confirmed through `190e464`. Execute PERSIST-011 now in independent JR TEST/VERIFY mode using the exact current packet in `handoff.md`. No product fixes or new tests; return only the verification verdict/evidence and STOP.
 
 ## Architectural invariants
 - Persistence requires State Sealing.

@@ -59,6 +59,18 @@ func DerivePersistenceRBE(memory Memory) []PersistenceRBERule {
 // is derived from that area rather than authored.
 func PersistenceRBERuleKey(rule PersistenceRBERule) string { return rule.Area }
 
+// SynchronizePersistenceRBE keeps the persistence-owned RBE projection aligned
+// with the authoritative memory layout. The returned projection is exactly the
+// layout-derived set for the current areas, so an existing rule's start/count
+// follows any area start/count change with no second edit, newly allocated
+// areas appear, and removed areas drop out. Every rule remains system-owned.
+//
+// Callers persist the returned set; they never hand-author a range. Ordinary
+// user-owned RBE rules are a separate set and are never touched here.
+func SynchronizePersistenceRBE(memory Memory) []PersistenceRBERule {
+	return DerivePersistenceRBE(memory)
+}
+
 // rejectUserOwnedRules is a fail-closed guard for the supported configuration
 // path: every persistence rule must be system-owned. A caller cannot submit
 // user-owned (editable/deletable) persistence rules.

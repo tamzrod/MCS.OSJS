@@ -1,6 +1,6 @@
 # PERSIST-011 — Persistence Configuration Tests
 
-Status: ACTIVE — independent JR TEST/VERIFY; exact packet prepared in `handoff.md`
+Status: TEST PASS — independent JR 2026-10-08
 Stage: TEST
 Owner: OpenHands / independent JR
 Previous: PERSIST-010
@@ -29,5 +29,23 @@ Requires genuine completion evidence for PERSIST-010. Being present in `workflow
 ## Sizing
 0/1/0/2/1=4; exact commands must be pinned in handoff at activation.
 
+## Independent JR result
+
+Verdict: **PASS**.
+
+Tested HEAD: `313e3be60a29fff6c967d78c0cf677b8b888ed56`
+Pinned product checkpoint: `190e464f6106c3e640d21b1f9352328447464bef`
+
+Exact ordered commands all exited 0:
+1. `cd mma2composer && go test -mod=readonly ./...`
+2. `cd simulator && go test -mod=readonly ./...`
+3. `cd replicator && go test -mod=readonly ./...`
+4. `cd OSJS && node tests/toolkit-persistence-ui.test.js`
+5. `cd OSJS && node tests/toolkit-ui-parity.test.js`
+6. `cd OSJS && node tests/toolkit-fc43.test.js`
+
+Freshness gate passed; commits after the pinned product checkpoint were workflow-only. Post-check clean; no product/test file modified by JR. No reruns or substitutions.
+
 ## CWAL
-PERSIST-010 is delivered on GitHub main at `190e464f6106c3e640d21b1f9352328447464bef`. This packet is the sole current ACTIVE assignment in independent JR TEST/VERIFY mode. Execute only the exact read-only verification packet pinned in `handoff.md`, make no product fixes or new tests, report PASS/FAIL/BLOCKED/INCOMPLETE with raw evidence, and STOP.
+
+Independent TEST/VERIFY complete with PASS. This packet is no longer ACTIVE. PERSIST-012 is the next eligible CODE packet.

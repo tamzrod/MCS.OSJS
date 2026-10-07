@@ -71,6 +71,39 @@ func SynchronizePersistenceRBE(memory Memory) []PersistenceRBERule {
 	return DerivePersistenceRBE(memory)
 }
 
+// presentPersistenceAreas returns the set of canonical area keys currently
+// present (non-nil and count > 0) in the authoritative memory layout.
+func presentPersistenceAreas(memory Memory) map[string]bool {
+	present := make(map[string]bool)
+	for _, entry := range persistenceAreas(memory) {
+		if entry.area != nil && entry.area.Count > 0 {
+			present[entry.name] = true
+		}
+	}
+	return present
+}
+
+// PruneRemovedPersistenceRBE drops the persistence RBE rule for each area no
+// longer present in the authoritative memory layout, leaving every other
+// projection (and its range) byte-for-byte unchanged. It is the removal
+// counterpart to SynchronizePersistenceRBE: removing one area removes exactly
+// its own system persistence RBE, while other persisted-area projections
+// remain. The input slice is never mutated.
+//
+// Only the persistence projection is passed here; ordinary user-owned RBE rules
+// are a separate set and are untouched. Persistence-disable behavior is not
+// expressed by this function.
+func PruneRemovedPersistenceRBE(projection []PersistenceRBERule, memory Memory) []PersistenceRBERule {
+	present := presentPersistenceAreas(memory)
+	kept := make([]PersistenceRBERule, 0, len(projection))
+	for _, rule := range projection {
+		if present[rule.Area] {
+			kept = append(kept, rule)
+		}
+	}
+	return kept
+}
+
 // rejectUserOwnedRules is a fail-closed guard for the supported configuration
 // path: every persistence rule must be system-owned. A caller cannot submit
 // user-owned (editable/deletable) persistence rules.

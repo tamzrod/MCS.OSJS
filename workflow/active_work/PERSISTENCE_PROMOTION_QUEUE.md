@@ -4,7 +4,7 @@ Human-approved and promoted: PERSIST-001..022 on 2026-10-07.
 
 All packets in this queue are authorized Active Work for their written scope. Promotion does NOT mean simultaneous execution. Repository rule remains: exactly ONE ACTIVE/current task per OPERATION CWAL invocation, selected by `handoff.md`.
 
-Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 is the sole current ACTIVE task and is an independent JR TEST/VERIFY gate, with its exact packet prepared in `handoff.md`.** PERSIST-012..022 remain QUEUED and dependency-gated.
+Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is now the sole current ACTIVE task, assigned to OpenHands JR DEV.** PERSIST-013..022 remain QUEUED and dependency-gated.
 
 Ordered persistence sequence:
 
@@ -18,8 +18,8 @@ Ordered persistence sequence:
 - [x] PERSIST-008 — User RBE Compatibility (CODE COMPLETE — `4783e0d`; independent TEST/VERIFY deferred to PERSIST-011)
 - [x] PERSIST-009 — RBE ID Collision Handling (CODE COMPLETE — `19057f0`; independent TEST/VERIFY deferred to PERSIST-011)
 - [x] PERSIST-010 — Persistence Configuration UI (CODE COMPLETE — `190e464`; independent TEST/VERIFY deferred to PERSIST-011)
-- [>] PERSIST-011 — Persistence Configuration Tests (TEST, ACTIVE — independent JR; exact packet in `handoff.md`)
-- [ ] PERSIST-012 — RBE-Triggered Snapshot Writer (CODE)
+- [x] PERSIST-011 — Persistence Configuration Tests (TEST PASS — independent JR on `313e3be`; pinned product checkpoint `190e464`)
+- [>] PERSIST-012 — RBE-Triggered Snapshot Writer (CODE, ACTIVE — OpenHands JR DEV)
 - [ ] PERSIST-013 — Snapshot File Format (CODE)
 - [ ] PERSIST-014 — Snapshot Manifest / Compatibility Metadata (CODE)
 - [ ] PERSIST-015 — Startup Snapshot Loader (CODE)
@@ -32,7 +32,7 @@ Ordered persistence sequence:
 - [ ] PERSIST-022 — End-to-End Persistence Verification (VERIFY)
 
 ## Routing
-This queue is selected. PERSIST-001..010 CODE delivery is confirmed through `190e464`. Execute PERSIST-011 now in independent JR TEST/VERIFY mode using the exact current packet in `handoff.md`. No product fixes or new tests; return only the verification verdict/evidence and STOP.
+This queue is selected. PERSIST-011 independently PASSed on tested HEAD `313e3be` against pinned product checkpoint `190e464`. Execute PERSIST-012 now as OpenHands JR DEV. Run one packet per invocation and STOP.
 
 ## Architectural invariants
 - Persistence requires State Sealing.

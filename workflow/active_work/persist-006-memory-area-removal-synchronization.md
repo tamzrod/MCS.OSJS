@@ -1,8 +1,8 @@
 # PERSIST-006 — Memory Area Removal Synchronization
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-005
 Next: PERSIST-007
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-005. Being present in `workflow
 1/0/1/1/1=4.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-005 is delivered on GitHub main at `c743174204455afa83bc92b859fd47582a7afdbc`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

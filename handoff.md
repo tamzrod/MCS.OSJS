@@ -51,50 +51,44 @@ CODE COMPLETE at `190e464f6106c3e640d21b1f9352328447464bef`, delivered on main b
 
 PERSIST-001..PERSIST-010 CODE tasks are complete. Their self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is now the PERSIST-011 gate below.
 
-## Current task — ACTIVE (independent JR TEST/VERIFY)
+## Completed independent gate
 
 **PERSIST-011 — Persistence Configuration Tests**
-Mode / owner: **independent JR (OpenHands JR TEST runner)** — NOT JR DEV
-Packet: `workflow/active_work/persist-011-persistence-configuration-tests.md`
+Independent JR TEST/VERIFY **PASS** on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`, with pinned product checkpoint `190e464f6106c3e640d21b1f9352328447464bef`.
+
+Verified once, in order:
+- `cd mma2composer && go test -mod=readonly ./...` — exit 0
+- `cd simulator && go test -mod=readonly ./...` — exit 0
+- `cd replicator && go test -mod=readonly ./...` — exit 0
+- `cd OSJS && node tests/toolkit-persistence-ui.test.js` — exit 0
+- `cd OSJS && node tests/toolkit-ui-parity.test.js` — exit 0
+- `cd OSJS && node tests/toolkit-fc43.test.js` — exit 0
+
+Freshness/post-check passed: commits after `190e464` were workflow-only, working tree clean, no product/test modification by independent JR. This PASS covers PERSIST-001..010 configuration behavior only; runtime persistence remains for PERSIST-012+.
+
+## Current task — ACTIVE
+
+**PERSIST-012 — RBE-Triggered Snapshot Writer**
+Mode / owner: **CODE / OpenHands JR DEV**
+Packet: `workflow/active_work/persist-012-rbe-triggered-snapshot-writer.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Goal: independently verify the persistence configuration behavior delivered by PERSIST-001..010 on the pinned committed source checkpoint. No product source edits, no retests to force PASS.
-
-Pinned product checkpoint: `190e464f6106c3e640d21b1f9352328447464bef` (PERSIST-010). Predecessor source commits: `faa3392` (001), `fe3bda9` (002), `4e8f774` (003), `936ab24` (004), `c743174` (005), `9ac48cb` (006), `feb1e62` (007), `4783e0d` (008), `19057f0` (009).
-
-Safe environment: disposable OpenHands sandbox. No production/customer data, no live services, no destructive cleanup. Sandbox-local toolchain preparation is permitted only as declared below.
-
-Freshness gate (before any test): verify `git rev-parse HEAD` is `190e464...` or a descendant that changes only workflow files, and `git status --short` is clean. If product/test paths under test changed after `190e464`, report BLOCKED.
-
-Changed-path allowlist under test:
-- `mma2composer/composer.go`, `mma2composer/memory_validation.go`, `mma2composer/persistence_rbe.go`
-- `mma2composer/persistence_sealing_validation_test.go`, `mma2composer/persistence_rbe_*_test.go`
-- `simulator/device.go`, `simulator/mma2_config.go`, `simulator/persistence_config_schema_test.go`
-- `OSJS/src/packages/MCSModbusToolkit/memory-advanced.js`, `OSJS/tests/toolkit-persistence-ui.test.js`
-
-Declared preparation (safe, no manifest change): Go 1.25.x toolchain; in `OSJS`, `npm install --no-save jsdom` (jsdom is already a declared devDependency; do not modify `package.json`/lockfiles).
-
-Exact commands (run once, in order; stop at first failed product gate):
-1. `cd mma2composer && go test -mod=readonly ./...`
-2. `cd simulator && go test -mod=readonly ./...`
-3. `cd replicator && go test -mod=readonly ./...`
-4. `cd OSJS && node tests/toolkit-persistence-ui.test.js`
-5. `cd OSJS && node tests/toolkit-ui-parity.test.js`
-6. `cd OSJS && node tests/toolkit-fc43.test.js`
-
-Expected: each `go test` prints `ok` and exits 0; each `node` test prints its PASS line and exits 0.
-
-Raw evidence: capture each exact command, exit code and full stdout/stderr.
-
-Post-check (read-only, even after FAIL): `git status --short` shows no product/test file modified by JR; report `git rev-parse HEAD`.
-
-Verdict: PASS only if every command exits 0 and the post-check is clean; FAIL if any executed test fails; BLOCKED if the checkpoint is not current or a required toolchain is unavailable within the declared safe scope; INCOMPLETE if the report/post-check cannot be delivered.
-
-Report/transport: return the full report in chat (verdict, tested HEAD, environment, command transcript with exits, post-state, caveats). No product edits. No commit/push unless separately authorized; if authorized, update only a `## JR TEST REPORT — PERSIST-011` section of this handoff.
+Execute PERSIST-012 exactly as written:
+- react to persistence-owned RBE events without continuous polling;
+- obtain authoritative configured area state on event;
+- compare current state to the snapshot image;
+- write only changed bytes/register words;
+- unchanged state causes no disk write;
+- do not implement startup restore, manifests, unseal, or UI status;
+- run only task-bounded self-checks and bounded in-scope corrective retests;
+- commit and non-force push under standing JR DEV authority;
+- record changed paths/checks/source checkpoint;
+- prepare PERSIST-013 for the next invocation only after genuine PERSIST-012 completion;
+- STOP after PERSIST-012.
 
 ## Successor routing
 
-PERSIST-012..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 is the ACTIVE independent JR TEST/VERIFY gate above; it must not be self-certified by JR DEV.
+PERSIST-013..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

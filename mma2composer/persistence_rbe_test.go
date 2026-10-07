@@ -16,8 +16,8 @@ func TestDerivePersistenceRBEOneRulePerPresentArea(t *testing.T) {
 	rules := DerivePersistenceRBE(memory)
 
 	want := []PersistenceRBERule{
-		{Area: "coils", Start: 4, Count: 8},
-		{Area: "holding_registers", Start: 100, Count: 50},
+		{Area: "coils", Start: 4, Count: 8, SystemOwned: true},
+		{Area: "holding_registers", Start: 100, Count: 50, SystemOwned: true},
 	}
 	if len(rules) != len(want) {
 		t.Fatalf("want %d derived rules, got %d: %+v", len(want), len(rules), rules)

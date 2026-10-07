@@ -1,8 +1,8 @@
 # PERSIST-010 — Persistence Configuration UI
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-009
 Next: PERSIST-011
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-009. Being present in `workflow
 2/0/2/1/1=6; UI only.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-009 is delivered on GitHub main at `19057f02d94ff404b74a9f01348fc8c31235e374`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare PERSIST-011 for the next invocation as an independent JR TEST task, and STOP.

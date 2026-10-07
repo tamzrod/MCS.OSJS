@@ -43,4 +43,4 @@ Requires genuine completion evidence for no predecessor. Being present in `workf
 - This is a JR DEV self-check only. It is **not** an independent TEST/VERIFY PASS; PERSIST-011 remains the separate independent JR gate.
 
 ## CWAL
-Human has promoted this packet into Active Work and explicitly selected it as the sole current ACTIVE assignment for OpenHands JR DEV. OPERATION CWAL executes this one task, records evidence, and STOPS.
+CODE COMPLETE at `faa33929429a0382a64b78bc773f0074e11cb6b1`. This packet is no longer the current ACTIVE assignment. Its independent TEST/VERIFY coverage remains deferred to PERSIST-011.

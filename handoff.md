@@ -32,31 +32,34 @@ CODE COMPLETE at `4e8f774eb946cc9a946938e4f3a28eaa13de5c9d`, delivered on main.
 CODE COMPLETE at `936ab24560d57cbf8aacc8180bc00a2527dcfad5`, delivered on main.
 
 **PERSIST-005 — Memory Range Synchronization**
-CODE COMPLETE at `c743174204455afa83bc92b859fd47582a7afdbc`, delivered on main by this invocation.
+CODE COMPLETE at `c743174204455afa83bc92b859fd47582a7afdbc`, delivered on main.
 
-PERSIST-002..PERSIST-005 self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is still deferred to PERSIST-011.
+**PERSIST-006 — Memory Area Removal Synchronization**
+CODE COMPLETE at `9ac48cb23e369fb0384b3d8f00811435d5bf7b69`, delivered on main by this invocation.
+
+PERSIST-002..PERSIST-006 self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is still deferred to PERSIST-011.
 
 ## Current task — ACTIVE
 
-**PERSIST-006 — Memory Area Removal Synchronization**
+**PERSIST-007 — Persistence Disable Cleanup**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-006-memory-area-removal-synchronization.md`
+Packet: `workflow/active_work/persist-007-persistence-disable-cleanup.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-006 exactly as written:
-- remove the corresponding derived persistence RBE when an authoritative memory area is removed;
-- removing one area removes only its system persistence RBE; other persisted-area projections remain;
-- leave user RBE rules untouched;
-- do not implement persistence-disable behavior;
+Execute PERSIST-007 exactly as written:
+- remove persistence-owned RBE projections when persistence is disabled for a memory;
+- user RBE rules survive unchanged;
+- re-enabling persistence regenerates projections from current memory ranges;
+- do not delete or rewrite user-owned RBE entries;
 - run only task-bounded targeted self-checks and bounded in-scope corrective retests;
 - commit and non-force push the completed task under standing JR DEV authority;
 - record exact changed paths, checks and resulting source checkpoint;
-- prepare PERSIST-007 for the next invocation only after genuine PERSIST-006 completion;
-- STOP after PERSIST-006.
+- prepare PERSIST-008 for the next invocation only after genuine PERSIST-007 completion;
+- STOP after PERSIST-007.
 
 ## Successor routing
 
-PERSIST-007..022 are already human-promoted and remain QUEUED/dependency-gated.
+PERSIST-008..022 are already human-promoted and remain QUEUED/dependency-gated.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

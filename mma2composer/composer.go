@@ -56,6 +56,14 @@ type Policy struct {
 	Extra map[string]interface{} `yaml:",inline"`
 }
 
+// Persistence marks one memory instance for MCS appliance persistence. It
+// carries no range identity: the Port → Unit ID → Memory chain and the
+// authoritative memory area start/count remain the single source of truth.
+// Only the enablement flag is represented, so absent means persistence is off.
+type Persistence struct {
+	Enabled *bool `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+}
+
 type Memory struct {
 	UnitID         uint16                 `yaml:"unit_id"`
 	Coils          *Area                  `yaml:"coils,omitempty"`
@@ -63,6 +71,7 @@ type Memory struct {
 	HoldingRegs    *Area                  `yaml:"holding_registers,omitempty"`
 	InputRegs      *Area                  `yaml:"input_registers,omitempty"`
 	Policy         *Policy                `yaml:"policy,omitempty"`
+	Persistence    *Persistence           `yaml:"persistence,omitempty"`
 	Extra          map[string]interface{} `yaml:",inline"`
 }
 

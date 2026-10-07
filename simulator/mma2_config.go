@@ -154,6 +154,9 @@ func addReservation(cfg EffectiveMMA2Config, p MMA2Params) EffectiveMMA2Config {
 
 func memoryFromMMA2Params(p MMA2Params) MMA2Memory {
 	mem := MMA2Memory{UnitID: p.UnitID}
+	if p.Persistence != nil {
+		mem.Persistence = p.Persistence
+	}
 	if p.FC1.Count > 0 {
 		mem.Coils = &MMA2Area{Start: p.FC1.Start, Count: p.FC1.Count}
 	}
@@ -202,6 +205,9 @@ func inheritMemorySettings(params *MMA2Params, cfg EffectiveMMA2Config) {
 			}
 			if params.Policy == nil {
 				params.Policy = memory.Policy
+			}
+			if params.Persistence == nil {
+				params.Persistence = memory.Persistence
 			}
 			if params.Extra == nil {
 				params.Extra = make(map[string]interface{})

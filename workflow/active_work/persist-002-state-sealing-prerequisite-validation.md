@@ -1,8 +1,8 @@
 # PERSIST-002 — State Sealing Prerequisite Validation
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-001
 Next: PERSIST-003
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-001. Being present in `workflow
 1/0/1/1/1=4; one validation invariant.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-001 has genuine CODE completion evidence at `faa33929429a0382a64b78bc773f0074e11cb6b1`. Human/workflow owner has explicitly selected this packet as the sole current ACTIVE assignment for OpenHands JR DEV. OPERATION CWAL executes this one task, records evidence, and STOPS.

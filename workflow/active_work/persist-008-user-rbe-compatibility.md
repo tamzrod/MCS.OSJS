@@ -1,8 +1,8 @@
 # PERSIST-008 — User RBE Compatibility
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-007
 Next: PERSIST-009
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-007. Being present in `workflow
 1/0/2/1/1=5.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-007 is delivered on GitHub main at `feb1e622d38cf8107a1df9ee182e5df17f95790f`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

@@ -1,6 +1,6 @@
 # PERSIST-007 — Persistence Disable Cleanup
 
-Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
+Status: CODE COMPLETE — 2026-10-07 (OpenHands JR DEV); awaiting separate independent TEST/VERIFY (PERSIST-011)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-006
@@ -28,6 +28,20 @@ Requires genuine completion evidence for PERSIST-006. Being present in `workflow
 
 ## Sizing
 1/0/2/1/1=5.
+
+## Coding evidence (PERSIST-007, OpenHands JR DEV)
+
+- Source checkpoint base: `8c50ba5e10d44b885c4c40a60cf98acaa9ccaf77` (`main`, clean, = `origin/main` at run).
+- Changed/added paths (product):
+  - M `mma2composer/persistence_rbe.go` (blob `9f2e5b0bdc29b37d020d7da7e1494c05e91577fe`) — adds `PersistenceEnabled(memory)` and `PersistenceRBEProjection(memory)`: the persistence-owned RBE projection computed from enablement + authoritative layout (disabled/nil → empty; enabled → layout-derived system-owned rules, same source as re-enable).
+  - A `mma2composer/persistence_rbe_disable_test.go` (blob `96c63890fb6767ee02433be1f8a54c7cb79e8038`) — disable/re-enable self-check.
+- Self-check: `cd mma2composer && go test -run 'TestPersistenceDisableCleanup|TestPersistenceProjection' .` → `ok`, exit 0.
+- Bounded regression (`-mod=readonly`): full `mma2composer`, `simulator`, `replicator` suites → all `ok`, exit 0. `gofmt -l` clean; `go vet` exit 0.
+- Acceptance mapping: (1) disabling persistence removes all persistence-owned RBE for the memory (projection empty); (2) user RBE rules are a separate set and are never represented/deleted here; (3) re-enabling regenerates projections from the current memory ranges (verified after a range change).
+- Non-scope preserved: no user-owned RBE entry is deleted or rewritten; no file/runtime operation.
+- Invariant lives on the shared schema owner (`mma2composer`), applying to Simulator and Replicator alike.
+- This is a JR DEV self-check only. It is **not** an independent TEST/VERIFY PASS; PERSIST-011 remains the separate independent JR gate.
+- Delivered source commit: `feb1e622d38cf8107a1df9ee182e5df17f95790f`.
 
 ## CWAL
 PERSIST-006 is delivered on GitHub main at `9ac48cb23e369fb0384b3d8f00811435d5bf7b69`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

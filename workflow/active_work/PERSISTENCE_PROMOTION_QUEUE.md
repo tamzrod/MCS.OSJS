@@ -4,7 +4,7 @@ Human-approved and promoted: PERSIST-001..022 on 2026-10-07.
 
 All packets in this queue are authorized Active Work for their written scope. Promotion does NOT mean simultaneous execution. Repository rule remains: exactly ONE ACTIVE/current task per OPERATION CWAL invocation, selected by `handoff.md`.
 
-Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is CODE COMPLETE and delivered at `2f18f8196f5497c5435b697b8b1570f59cab2642`. PERSIST-013 is CODE COMPLETE and delivered at `ccccb891b737995f6a24a58e844e5bd1d794b609`. PERSIST-014 is CODE COMPLETE and delivered at `98a952a89b087f12a9b99b6bd648ce97ac44e6f2` via connector recovery after transport failure. PERSIST-015 is the sole current ACTIVE task, assigned to OpenHands JR DEV.** PERSIST-016..022 remain QUEUED and dependency-gated.
+Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is CODE COMPLETE and delivered at `2f18f8196f5497c5435b697b8b1570f59cab2642`. PERSIST-013 is CODE COMPLETE and delivered at `ccccb891b737995f6a24a58e844e5bd1d794b609`. PERSIST-014 is CODE COMPLETE and delivered at `98a952a89b087f12a9b99b6bd648ce97ac44e6f2` via connector recovery after transport failure. PERSIST-015 is CODE COMPLETE (OpenHands JR DEV, delivered by this invocation; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-016 is the sole current ACTIVE task, assigned to OpenHands JR DEV.** PERSIST-017..022 remain QUEUED and dependency-gated.
 
 Ordered persistence sequence:
 
@@ -22,8 +22,8 @@ Ordered persistence sequence:
 - [x] PERSIST-012 — RBE-Triggered Snapshot Writer (CODE COMPLETE — `2f18f81`; independent TEST/VERIFY deferred to PERSIST-022)
 - [x] PERSIST-013 — Snapshot File Format (CODE COMPLETE — `ccccb89`; recovered/delivered via GitHub connector; independent TEST/VERIFY deferred to PERSIST-022)
 - [x] PERSIST-014 — Snapshot Manifest / Compatibility Metadata (CODE COMPLETE — `98a952a`; recovered/delivered via GitHub connector; independent TEST/VERIFY deferred to PERSIST-022)
-- [>] PERSIST-015 — Startup Snapshot Loader (CODE, ACTIVE — OpenHands JR DEV)
-- [ ] PERSIST-016 — Raw Ingest Restore (CODE)
+- [x] PERSIST-015 — Startup Snapshot Loader (CODE COMPLETE — OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022)
+- [>] PERSIST-016 — Raw Ingest Restore (CODE, ACTIVE — OpenHands JR DEV)
 - [ ] PERSIST-017 — Seal-Flag Protection During Restore (CODE)
 - [ ] PERSIST-018 — Restore Verification (CODE)
 - [ ] PERSIST-019 — Atomic Unseal / Commit Step (CODE)
@@ -32,7 +32,7 @@ Ordered persistence sequence:
 - [ ] PERSIST-022 — End-to-End Persistence Verification (VERIFY)
 
 ## Routing
-This queue is selected. PERSIST-014 delivery is confirmed at `98a952a`. Execute PERSIST-015 now as OpenHands JR DEV. Run one packet per invocation and STOP.
+This queue is selected. PERSIST-015 CODE is complete and delivered by this invocation. Execute PERSIST-016 next as OpenHands JR DEV. Run one packet per invocation and STOP.
 
 ## Architectural invariants
 - Persistence requires State Sealing.

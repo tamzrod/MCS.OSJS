@@ -75,30 +75,39 @@ Verified once, in order:
 
 Freshness/post-check passed: commits after `190e464` were workflow-only, working tree clean, no product/test modification by independent JR. This PASS covers PERSIST-001..010 configuration behavior only; runtime persistence remains for PERSIST-012+.
 
-## Current task — ACTIVE
+## Completed predecessor — PERSIST-015
 
 **PERSIST-015 — Startup Snapshot Loader**
+CODE COMPLETE by OpenHands JR DEV in this invocation (source commit recorded in the task packet); awaiting independent TEST/VERIFY (PERSIST-022).
+- `mma2composer/persistence_snapshot_loader.go` (blob `29cf1950cbec796508f1ab3c7c214c6ed5f30208`) and `mma2composer/persistence_snapshot_loader_test.go` (blob `8ff2147ef88ca29b499e3c07d897e54fc07a47f0`).
+- `LoadPersistenceSnapshots` loads/validates each configured persisted area at startup only for persistence-enabled **sealed** memories; missing/invalid/incompatible snapshots yield distinct explicit restore states; aggregate state is `ready` only when every configured area is ready; no Raw Ingest write or unseal.
+- Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceSnapshot .` → `ok`, exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator` suites → all `ok`, exit 0. `gofmt -l` clean; `go vet` exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
+## Current task — ACTIVE
+
+**PERSIST-016 — Raw Ingest Restore**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-015-startup-snapshot-loader.md`
+Packet: `workflow/active_work/persist-016-raw-ingest-restore.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-015 exactly as written:
-- load and validate persistence snapshots during startup while target MMA2 memory remains sealed;
-- act only for persistence-enabled sealed memories;
-- missing/invalid/incompatible snapshots produce explicit restore state;
-- never expose partially loaded state through Modbus;
-- do not perform Raw Ingest writes or unseal;
+Execute PERSIST-016 exactly as written:
+- restore validated snapshot area payloads into the matching MMA2 memory through the existing Raw Ingest v1 contract;
+- each snapshot area restores to the same area/start/count identity;
+- check every Raw Ingest response; a non-zero response aborts restore;
+- add no cross-area mirroring and change no Raw Ingest protocol;
+- do not unseal memory;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-016 for the next invocation only after genuine PERSIST-015 completion;
-- STOP after PERSIST-015.
+- prepare PERSIST-017 for the next invocation only after genuine PERSIST-016 completion;
+- STOP after PERSIST-016.
 
 Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-016..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-014 are CODE complete; PERSIST-015 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-017..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-015 are CODE complete; PERSIST-016 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

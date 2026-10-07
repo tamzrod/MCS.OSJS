@@ -72,3 +72,17 @@ If the exact local commit is missing, the tree is dirty, remote touched any of t
 PERSIST-003 remains QUEUED. It may be activated only after GitHub main contains the rebased PERSIST-002 source commit and the workflow owner confirms repository completion.
 
 Only BLACK SHEEP WALL edits ICC.
+
+
+## Operator loop
+
+For OpenHands, the intended human workflow is:
+
+```text
+git pull
+OPERATION CWAL
+```
+
+JR DEV has standing authority for routine in-scope Git synchronization, commit, non-force push, evidence recording, current-task closure, and selection of the next already-promoted eligible packet for the next invocation.
+
+One invocation still executes exactly one product task. Independent TEST/VERIFY remains a separate mode and cannot be self-certified by JR DEV.

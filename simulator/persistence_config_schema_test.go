@@ -24,6 +24,8 @@ func TestPersistenceConfigurationSchemaRoundTrip(t *testing.T) {
 	disabled := false
 	withEnabled := validDevice()
 	withEnabled.MMA2.Persistence = &mma2composer.Persistence{Enabled: &enabled}
+	// PERSIST-002 invariant: persistence ON requires state sealing present+enabled.
+	withEnabled.MMA2.StateSealing = map[string]interface{}{"enabled": true, "area": "coil", "address": 0}
 	withDisabled := validDevice()
 	withDisabled.MMA2.Persistence = &mma2composer.Persistence{Enabled: &disabled}
 

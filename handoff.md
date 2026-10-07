@@ -9,27 +9,31 @@ OpenHands has two distinct CWAL modes:
 
 One invocation uses exactly one mode. JR DEV self-checks are not independent TEST/VERIFY evidence.
 
-## Current task — ACTIVE
+## Completed predecessor
 **PERSIST-001 — Persistence Configuration Schema**
+CODE COMPLETE at source checkpoint `faa33929429a0382a64b78bc773f0074e11cb6b1`.
+Its task packet records the bounded self-check/regression evidence. This is source/CODE completion only; it is not an independent TEST/VERIFY PASS.
+
+## Current task — ACTIVE
+**PERSIST-002 — State Sealing Prerequisite Validation**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-001-persistence-configuration-schema.md`
+Packet: `workflow/active_work/persist-002-state-sealing-prerequisite-validation.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-This human instruction explicitly supersedes the previous OTR-001C current assignment for now. OTR-001C remains promoted work but is no longer the current CWAL task.
-
-Execute PERSIST-001 exactly as written:
-- add the persistence configuration schema/round-trip semantics only;
-- preserve Port → Unit ID → Memory as authority;
-- do not add duplicate persistence-owned start/count/area identity;
-- do not implement RBE derivation, snapshot filesystem behavior, restore, Raw Ingest restore, or unseal behavior in this task;
-- run only task-bounded targeted self-checks;
-- record the exact changed paths, checks and resulting source checkpoint;
-- STOP after PERSIST-001.
+Execute PERSIST-002 exactly as written:
+- reject persistence-enabled memory when State Sealing is absent or disabled;
+- allow persistence disabled with sealing either enabled or disabled;
+- do not silently enable or mutate State Sealing;
+- preserve existing State Sealing semantics and Port → Unit ID → Memory authority;
+- do not implement derived persistence RBE, filesystem persistence, restore, Raw Ingest restore, or unseal behavior in this task;
+- run only task-bounded targeted self-checks and bounded in-scope corrective retests;
+- record exact changed paths, checks, and resulting source checkpoint;
+- STOP after PERSIST-002.
 
 ## Persistence successor routing
-PERSIST-002..022 are already human-promoted in Active Work. They are authorized for their written scopes but remain QUEUED.
+PERSIST-003..022 are already human-promoted in Active Work and remain QUEUED/dependency-gated.
 
-After genuine completion evidence for the current task is persisted, a later OPERATION CWAL invocation may select the next eligible persistence task according to `PERSISTENCE_PROMOTION_QUEUE.md`. Exactly one task per invocation.
+After genuine completion evidence for PERSIST-002 is persisted, a later OPERATION CWAL invocation may select PERSIST-003 according to `PERSISTENCE_PROMOTION_QUEUE.md`. Exactly one task per invocation.
 
 CODE/DISCOVERY successors may be assigned to OpenHands JR DEV. TEST/VERIFY tasks require a **separate independent JR invocation and exact current test packet**; the JR DEV coding run must never certify those gates.
 

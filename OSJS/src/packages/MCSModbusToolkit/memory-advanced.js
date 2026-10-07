@@ -19,12 +19,27 @@ const memoryUI = (() => {
   const states = new WeakMap();
   const sourceAliases = {'All IPv4': '0.0.0.0/0', 'All IPv6': '::/0'};
   const splitSources = value => String(value).split(',').map(item => item.trim()).filter(Boolean).map(item => sourceAliases[item] || item);
+  const sealingEnabled = params => Boolean(params.state_sealing && params.state_sealing.enabled !== false);
+  const persistenceEnabled = params => Boolean(params.persistence && params.persistence.enabled === true);
+  // Persistence requires state sealing. This returns an operator-facing reason
+  // when persistence is enabled without an enabled state-sealing block, else null.
+  const persistenceError = params => {
+    if (!persistenceEnabled(params)) return null;
+    if (sealingEnabled(params)) return null;
+    return 'Persistence requires state sealing to be present and enabled. Enable state sealing first.';
+  };
+  // One derived persistence RBE rule per present area, start/count taken from the
+  // authoritative area. Mirrors the Go projection; used for the locked display.
+  const derivedPersistenceRules = params => Object.keys(areas).flatMap((area, index) => {
+    const layout = params[`fc${index + 1}`];
+    return layout && layout.count > 0 ? [{area, start: layout.start, count: layout.count, system_owned: true}] : [];
+  });
   const defaults = () => ({state_sealing: {enabled: false}, policy: {rules: [{id: 'all-addresses', source_ip: ['0.0.0.0/0', '::/0'], allow_fc: [...presets['Read/Write']]}]}});
   const accessMode = codes => Object.keys(presets).find(key => codes.length === presets[key].length && presets[key].every(code => codes.includes(code))) || 'Custom';
   const replicatorParams = device => {
     device.mma2_advanced ||= {};
     const params = {};
-    for (const key of ['policy', 'rbe', 'state_sealing', 'fc43']) Object.defineProperty(params, key, {
+    for (const key of ['policy', 'rbe', 'state_sealing', 'fc43', 'persistence']) Object.defineProperty(params, key, {
       get: () => device.mma2_advanced[key], set: value => { device.mma2_advanced[key] = value; }
     });
     for (let number = 1; number <= 4; number++) {
@@ -100,7 +115,7 @@ const memoryUI = (() => {
     const draw = () => {
       root.replaceChildren();
       const tabs = element('nav', undefined, 'memory-subtabs');
-      for (const title of ['RBE Rules', 'State Sealing', 'Access Policy', 'Device Identification']) {
+      for (const title of ['RBE Rules', 'State Sealing', 'Access Policy', 'Device Identification', 'Persistence']) {
         const tab = button(title, () => { state.tab = title; draw(); });
         tab.setAttribute('aria-pressed', state.tab === title ? 'true' : 'false'); tabs.append(tab);
       }
@@ -116,6 +131,38 @@ const memoryUI = (() => {
           }));
         }
         root.append(form, button('Use MMA2 Defaults', () => { params.fc43 = {}; draw(); }));
+        return;
+      }
+      if (state.tab === 'Persistence') {
+        const enabled = persistenceEnabled(params);
+        root.append(checkbox('Enable persistence', enabled, checked => {
+          if (checked) {
+            params.persistence ||= {};
+            params.persistence.enabled = true;
+          } else if (params.persistence) {
+            params.persistence.enabled = false;
+          }
+          draw();
+        }));
+        const error = persistenceError(params);
+        if (error) {
+          const message = element('p', error, 'tool-validation');
+          message.setAttribute('role', 'alert');
+          root.append(message);
+        }
+        root.append(element('p', 'Persistence-owned RBE rules are derived from the memory layout and are system-owned; they are locked and cannot be edited or deleted here. User RBE rules remain editable on the RBE Rules tab.', 'advanced-note'));
+        const table = element('div', undefined, 'advanced-rules');
+        const header = element('div', undefined, 'rbe-rule-row');
+        for (const title of ['Area', 'Start', 'Count', 'Ownership']) header.append(element('span', title));
+        table.append(header);
+        const derived = derivedPersistenceRules(params);
+        for (const rule of derived) {
+          const row = element('div', undefined, 'rbe-rule-row');
+          row.append(element('span', areas[rule.area]), element('span', String(rule.start)), element('span', String(rule.count)), element('span', 'System-owned (locked)'));
+          table.append(row);
+        }
+        if (!derived.length) table.append(element('div', 'No memory areas configured.', 'tool-empty'));
+        root.append(table);
         return;
       }
       if (state.tab === 'State Sealing') {
@@ -278,7 +325,7 @@ const memoryUI = (() => {
     };
     draw();
   };
-  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams, validateIdentity};
+  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams, validateIdentity, sealingEnabled, persistenceEnabled, persistenceError, derivedPersistenceRules};
 })();
 if (typeof module !== 'undefined') module.exports = memoryUI;
 if (typeof window !== 'undefined') window.mcsMemoryUI = memoryUI;

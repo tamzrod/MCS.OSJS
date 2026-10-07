@@ -57,6 +57,9 @@ CODE COMPLETE at `2f18f8196f5497c5435b697b8b1570f59cab2642`, delivered on main.
 **PERSIST-013 — Snapshot File Format**
 CODE COMPLETE and delivered on GitHub main at `ccccb891b737995f6a24a58e844e5bd1d794b609` via GitHub connector recovery after the OpenHands push credential expired. OpenHands' local-only commits `9343d9e` / `ab27b27` are superseded by this remote recovery and must not be treated as additional product work.
 
+**PERSIST-014 — Snapshot Manifest / Compatibility Metadata**
+CODE COMPLETE and delivered on GitHub main at `98a952a89b087f12a9b99b6bd648ce97ac44e6f2` via GitHub connector recovery after the OpenHands credential remained invalid. OpenHands' local-only commits `5f944bd` / `17648ce` are superseded by this remote recovery and must not be replayed as additional product work.
+
 ## Completed independent gate
 
 **PERSIST-011 — Persistence Configuration Tests**
@@ -74,27 +77,28 @@ Freshness/post-check passed: commits after `190e464` were workflow-only, working
 
 ## Current task — ACTIVE
 
-**PERSIST-014 — Snapshot Manifest / Compatibility Metadata**
+**PERSIST-015 — Startup Snapshot Loader**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-014-snapshot-manifest-compatibility-metadata.md`
+Packet: `workflow/active_work/persist-015-startup-snapshot-loader.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-014 exactly as written:
-- bind each snapshot to Port, Unit ID, area, start, count and format version;
-- add integrity metadata sufficient to detect corrupted/incomplete payloads;
-- reject incompatible changed memory layouts explicitly rather than truncate/remap;
-- do not restore or unseal memory;
+Execute PERSIST-015 exactly as written:
+- load and validate persistence snapshots during startup while target MMA2 memory remains sealed;
+- act only for persistence-enabled sealed memories;
+- missing/invalid/incompatible snapshots produce explicit restore state;
+- never expose partially loaded state through Modbus;
+- do not perform Raw Ingest writes or unseal;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-015 for the next invocation only after genuine PERSIST-014 completion;
-- STOP after PERSIST-014.
+- prepare PERSIST-016 for the next invocation only after genuine PERSIST-015 completion;
+- STOP after PERSIST-015.
 
-Recovery note for a reused OpenHands workspace: if local-only commits `9343d9e` / `ab27b27` are still present, they represent the transport-blocked PERSIST-013 attempt already superseded by remote checkpoint `ccccb891`. Do not replay them as new work; reconcile only through bounded safe Git mechanics consistent with standing JR DEV authority.
+Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-015..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 and PERSIST-013 are CODE complete; PERSIST-014 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-016..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-014 are CODE complete; PERSIST-015 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

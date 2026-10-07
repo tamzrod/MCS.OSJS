@@ -4,11 +4,11 @@ Human-approved and promoted: PERSIST-001..022 on 2026-10-07.
 
 All packets in this queue are authorized Active Work for their written scope. Promotion does NOT mean simultaneous execution. Repository rule remains: exactly ONE ACTIVE/current task per OPERATION CWAL invocation, selected by `handoff.md`.
 
-The existing OTR-001C assignment remains the repository's sole current ACTIVE task. Therefore every persistence packet is presently QUEUED. Do not supersede OTR-001C unless the human explicitly changes the current assignment or the workflow owner records its genuine completion and selects this queue.
+Human explicitly selected the persistence workstream on 2026-10-07 and superseded OTR-001C as the current assignment. **PERSIST-001 is the sole current ACTIVE task, assigned to OpenHands JR DEV.** PERSIST-002..022 remain QUEUED and dependency-gated.
 
 Ordered persistence sequence:
 
-- [ ] PERSIST-001 — Persistence Configuration Schema (CODE)
+- [>] PERSIST-001 — Persistence Configuration Schema (CODE, ACTIVE — OpenHands JR DEV)
 - [ ] PERSIST-002 — State Sealing Prerequisite Validation (CODE)
 - [ ] PERSIST-003 — Derived Persistence RBE Generation (CODE)
 - [ ] PERSIST-004 — Locked System RBE Behavior (CODE)
@@ -32,7 +32,7 @@ Ordered persistence sequence:
 - [ ] PERSIST-022 — End-to-End Persistence Verification (VERIFY)
 
 ## Routing
-When this queue becomes selected, begin with PERSIST-001. Advance only after genuine predecessor evidence is recorded. Run one packet per invocation and STOP. CODE does not self-certify independent TEST/VERIFY. TEST/VERIFY uses an exact current handoff packet and never fixes product source.
+This queue is selected. Execute PERSIST-001 now as OpenHands JR DEV. Advance only after genuine predecessor evidence is recorded. Run one packet per invocation and STOP. OpenHands JR DEV may implement assigned CODE/DISCOVERY packets but does not self-certify independent TEST/VERIFY. TEST/VERIFY requires a separate independent JR invocation with an exact current handoff packet and never fixes product source.
 
 ## Architectural invariants
 - Persistence requires State Sealing.

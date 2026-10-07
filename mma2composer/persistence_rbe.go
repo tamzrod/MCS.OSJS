@@ -11,6 +11,7 @@ import "fmt"
 // non-editable/non-deletable through supported configuration paths. Ordinary
 // user-authored RBE rules live elsewhere and are never marked system-owned.
 type PersistenceRBERule struct {
+	ID          uint8  `yaml:"id" json:"id"`
 	Area        string `yaml:"area" json:"area"`
 	Start       uint16 `yaml:"start" json:"start"`
 	Count       uint16 `yaml:"count" json:"count"`
@@ -128,6 +129,37 @@ func PersistenceRBEProjection(memory Memory) []PersistenceRBERule {
 		return nil
 	}
 	return DerivePersistenceRBE(memory)
+}
+
+// AllocatePersistenceRBEIDs assigns the given persistence rules globally unique
+// RBE v1 IDs within 1..255, avoiding every ID in usedIDs (for example, the
+// operator's user-owned rule IDs, which are reserved so persistence never
+// collides with them). Assignment is deterministic (input order, lowest free ID
+// first) and dynamic: it draws from free IDs rather than reserving a permanent
+// partition of the one-byte space. Callers never choose a persistence ID.
+//
+// The RBE v1 one-byte ID contract is preserved. If every rule cannot be placed,
+// it returns an error and no partial set; it never mutates the input.
+func AllocatePersistenceRBEIDs(rules []PersistenceRBERule, usedIDs ...uint8) ([]PersistenceRBERule, error) {
+	used := make(map[uint8]bool, len(usedIDs))
+	for _, id := range usedIDs {
+		used[id] = true
+	}
+	assigned := make([]PersistenceRBERule, len(rules))
+	copy(assigned, rules)
+	next := 1
+	for i := range assigned {
+		for next <= 255 && used[uint8(next)] {
+			next++
+		}
+		if next > 255 {
+			return nil, fmt.Errorf("persistence RBE ID allocation exhausted: no free ID in 1..255")
+		}
+		assigned[i].ID = uint8(next)
+		used[uint8(next)] = true
+		next++
+	}
+	return assigned, nil
 }
 
 // RBECoexistence is the read-only view of both independent RBE sets for one

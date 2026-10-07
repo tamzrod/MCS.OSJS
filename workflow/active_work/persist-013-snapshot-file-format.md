@@ -1,6 +1,6 @@
 # PERSIST-013 — Snapshot File Format
 
-Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
+Status: CODE COMPLETE — 2026-10-08; delivered via GitHub connector recovery; awaiting independent TEST/VERIFY (PERSIST-022)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-012
@@ -29,5 +29,27 @@ Requires genuine completion evidence for PERSIST-012. Being present in `workflow
 ## Sizing
 1/0/2/1/1=5.
 
+## Coding evidence / recovery
+
+OpenHands completed and self-checked this task locally but transport failed because its runtime GitHub credential returned HTTP 401. Local-only commits were `9343d9e70bdb2d557b837b3d9f3d6604bf54f9a1` (product) and `ab27b27e4d9734b9bb28a5a0c38d2582d4cba7a2` (workflow); they were never delivered.
+
+The GitHub connector recovered the product change directly onto authoritative main as:
+- `ccccb891b737995f6a24a58e844e5bd1d794b609` — `PERSIST-013: deterministic snapshot file format`
+- product paths: `mma2composer/persistence_snapshot_format.go`, `mma2composer/persistence_snapshot_format_test.go`
+
+Delivered behavior:
+- bit snapshots pack values LSB-first, with deterministic ceil(count/8) size;
+- register snapshots encode uint16 words big-endian, deterministic 2*count size;
+- decode/validation rejects wrong raw lengths;
+- raw payload contains no compatibility metadata; that belongs to PERSIST-014.
+
+OpenHands' reported local self-check before transport failure:
+- `cd mma2composer && go test -run TestPersistenceSnapshot .` → ok, exit 0
+- full mma2composer/simulator/replicator regression → all ok
+- gofmt clean; go vet exit 0
+
+Because connector recovery recreated equivalent remote source rather than pushing the exact local commit object, the authoritative delivered SHA is `ccccb891...`. Independent verification remains deferred to PERSIST-022.
+
 ## CWAL
-PERSIST-012 is delivered on GitHub main at `2f18f8196f5497c5435b697b8b1570f59cab2642`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.
+
+PERSIST-013 is complete and no longer ACTIVE. If a reused OpenHands workspace still contains local-only `9343d9e` / `ab27b27`, treat them as superseded duplicate history, not new work. PERSIST-014 is the next current task.

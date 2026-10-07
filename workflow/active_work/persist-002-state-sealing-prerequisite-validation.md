@@ -1,6 +1,6 @@
 # PERSIST-002 — State Sealing Prerequisite Validation
 
-Status: ACTIVE — CODE COMPLETE LOCALLY / TRANSPORT PENDING 2026-10-07
+Status: CODE COMPLETE — DELIVERED 2026-10-07
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-001
@@ -30,7 +30,7 @@ Requires genuine completion evidence for PERSIST-001. Being present in `workflow
 1/0/1/1/1=4; one validation invariant.
 
 ## CWAL
-PERSIST-001 has genuine CODE completion evidence at `faa33929429a0382a64b78bc773f0074e11cb6b1`. Human/workflow owner has explicitly selected this packet as the sole current ACTIVE assignment for OpenHands JR DEV. OPERATION CWAL executes this one task, records evidence, and STOPS.
+CODE COMPLETE and delivered at `fe3bda9e5c863c959500514e8c6083d2514526d1`. This packet is no longer the current ACTIVE assignment.
 
 
 ## Transport status
@@ -50,4 +50,4 @@ Reported acceptance:
 
 Reported self-checks were successful, but remain JR DEV evidence only, not independent TEST/VERIFY PASS.
 
-Next CWAL invocation is transport-only per `handoff.md`: if and only if the exact reported dirty workspace still exists with no unrelated changes, commit and non-force push those four paths, verify remote delivery, report SHA, and STOP. Do not start PERSIST-003.
+Repository delivery completed after authorized recovery. Final pushed source checkpoint: `fe3bda9e5c863c959500514e8c6083d2514526d1`. The pushed commit contains only the three product/test paths; the task-packet conflict was intentionally resolved to the authoritative remote version. Independent TEST/VERIFY remains deferred to PERSIST-011.

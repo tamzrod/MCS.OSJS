@@ -1,25 +1,36 @@
-# Handoff — OS.js Toolkit Electron replica
+# Handoff — MCS.OSJS
 
 ## Autonomous routing authority
-Human has approved the ordered OTR roadmap and promotion of its existing microtasks. Human has also approved and promoted the PERSIST-001..022 persistence roadmap into `workflow/active_work/` on 2026-10-07. OPERATION CWAL is the invocation; no additional human prompt, approval or task-selection question is needed for a valid current packet.
+Human has approved the PERSIST-001..022 persistence roadmap and explicitly promoted **OpenHands to JR DEV** for OPERATION CWAL CODE/DISCOVERY work on 2026-10-07. OPERATION CWAL is the invocation; no second approval or task-selection prompt is required for the current packet.
 
-On every invocation, resolve the single current assignment from this handoff and the applicable promotion queue. Select exactly ONE task per invocation; execute it, report evidence, and STOP. A promoted queue is authorization for its written scope, not permission to run multiple tasks at once. Do not infer assignment from numbering alone.
+OpenHands has two distinct CWAL modes:
+- **JR DEV** — CODE/DISCOVERY implementation for an explicitly assigned active task.
+- **Independent JR** — separately assigned TEST/VERIFY execution only.
 
-## Current task
-OTR-001C — OpenCode, read-only DISCOVERY. Packet: `workflow/active_work/otr-001c-electron-backend-boundary-inventory.md`.
+One invocation uses exactly one mode. JR DEV self-checks are not independent TEST/VERIFY evidence.
 
-OTR-001A and OTR-001B are complete in the OTR promotion queue, and OTR-001C remains the sole current ACTIVE assignment. Execute its exact scope now without asking what to do. Inventory actual Electron renderer-to-backend calls for configuration load, validation, save, restart and status; distinguish portable logic from Electron/Windows-specific dependencies and report unsupported or unknown contracts explicitly. No OS.js implementation, API invention, service execution or builds. Return the source-linked boundary inventory in chat and STOP.
+## Current task — ACTIVE
+**PERSIST-001 — Persistence Configuration Schema**
+Mode / owner: **CODE / OpenHands JR DEV**
+Packet: `workflow/active_work/persist-001-persistence-configuration-schema.md`
+Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-## Promoted persistence queue
-`workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md` contains the human-promoted PERSIST-001..022 roadmap. Every persistence packet is authorized Active Work for its written scope, but is currently QUEUED because CWAL requires exactly one ACTIVE/current task and OTR-001C already owns that slot.
+This human instruction explicitly supersedes the previous OTR-001C current assignment for now. OTR-001C remains promoted work but is no longer the current CWAL task.
 
-Do not self-select PERSIST-001 while OTR-001C remains current. The human may explicitly supersede the current assignment, or the workflow owner may select the persistence queue after the current assignment is genuinely completed/closed. Once selected, persistence routing starts at PERSIST-001 and advances only from recorded predecessor evidence, one task per invocation.
+Execute PERSIST-001 exactly as written:
+- add the persistence configuration schema/round-trip semantics only;
+- preserve Port → Unit ID → Memory as authority;
+- do not add duplicate persistence-owned start/count/area identity;
+- do not implement RBE derivation, snapshot filesystem behavior, restore, Raw Ingest restore, or unseal behavior in this task;
+- run only task-bounded targeted self-checks;
+- record the exact changed paths, checks and resulting source checkpoint;
+- STOP after PERSIST-001.
 
-## Successor selection on a later invocation
-For the current OTR stream, after genuine OTR-001C evidence is available, OTR-002A is the next candidate, then OTR-002B, OTR-003A and OTR-003B, unless the human explicitly changes the current workstream. The workflow owner must record completion evidence and the next selected task in this handoff/queue when the task packet grants workflow-write authority.
+## Persistence successor routing
+PERSIST-002..022 are already human-promoted in Active Work. They are authorized for their written scopes but remain QUEUED.
 
-If persistence becomes the selected workstream, use `PERSISTENCE_PROMOTION_QUEUE.md`; begin at PERSIST-001 and obey each packet's Previous/Next and stage gates.
+After genuine completion evidence for the current task is persisted, a later OPERATION CWAL invocation may select the next eligible persistence task according to `PERSISTENCE_PROMOTION_QUEUE.md`. Exactly one task per invocation.
 
-If a later invocation cannot establish predecessor evidence, exact scope, or authorization, report the specific blocker rather than pretending completion. OTR-004..014 parent files are NOT executable: split them into source-pinned atomic child packets after inventories/maps and assign one child at a time. Do not execute a parent as a substitute.
+CODE/DISCOVERY successors may be assigned to OpenHands JR DEV. TEST/VERIFY tasks require a **separate independent JR invocation and exact current test packet**; the JR DEV coding run must never certify those gates.
 
-Only BLACK SHEEP WALL edits ICC. No JR TEST task is currently assigned; do not invent JR results. No production YAML writes, live service actions or global restart without explicit task authority.
+Only BLACK SHEEP WALL edits ICC. No production/customer data, live service actions, destructive cleanup, global restart, or unrelated repository mutation is authorized unless the selected task explicitly grants it.

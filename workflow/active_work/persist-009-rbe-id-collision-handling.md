@@ -1,6 +1,6 @@
 # PERSIST-009 — RBE ID Collision Handling
 
-Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
+Status: CODE COMPLETE — 2026-10-07 (OpenHands JR DEV); awaiting separate independent TEST/VERIFY (PERSIST-011)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-008
@@ -28,6 +28,20 @@ Requires genuine completion evidence for PERSIST-008. Being present in `workflow
 
 ## Sizing
 1/1/2/1/2=7; collision policy only.
+
+## Coding evidence (PERSIST-009, OpenHands JR DEV)
+
+- Source checkpoint base: `b0b4823c920d4be73da85f5df3f3bb84e722ee0a` (`main`, clean, = `origin/main` at run).
+- Changed/added paths (product):
+  - M `mma2composer/persistence_rbe.go` (blob `15744d97e4daff2057f904310c6f3767790e0da5`) — `PersistenceRBERule` gains `ID uint8` (serialized `id`); adds `AllocatePersistenceRBEIDs(rules, usedIDs...)`: deterministic, dynamic, collision-free allocation of globally-unique IDs in 1..255, reserving caller-supplied user IDs; fail-closed with no partial set on exhaustion; input never mutated.
+  - A `mma2composer/persistence_rbe_id_test.go` (blob `49cba043b9c459c01273fbaaf56fa783cfb95665`) — ID allocation self-check.
+- Self-check: `cd mma2composer && go test -run TestAllocatePersistenceRBEIDs .` → `ok`, exit 0.
+- Bounded regression (`-mod=readonly`): full `mma2composer`, `simulator`, `replicator` suites → all `ok`, exit 0. `gofmt -l` clean; `go vet` exit 0.
+- Acceptance mapping: (1) system and user RBE IDs are globally unique — allocator reserves user IDs and never repeats; (2) users cannot assign/change system IDs — IDs are assigned by the system, and PERSIST-004's mutation guard rejects any change to a system-owned rule (including its ID); (3) no permanent user/system partition — allocation is dynamic (draws from free IDs; verified that reserving ID 1 shifts persistence to 2,3).
+- RBE v1 one-byte contract preserved: IDs bounded to 1..255; exhaustion is an error, never a widened ID.
+- Invariant lives on the shared schema owner (`mma2composer`), applying to Simulator and Replicator alike.
+- This is a JR DEV self-check only. It is **not** an independent TEST/VERIFY PASS; PERSIST-011 remains the separate independent JR gate.
+- Delivered source commit: `19057f02d94ff404b74a9f01348fc8c31235e374`.
 
 ## CWAL
 PERSIST-008 is delivered on GitHub main at `4783e0d6e1d3dbd55b29b8647a115905eb5bc285`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

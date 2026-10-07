@@ -9,6 +9,42 @@
 - OpenHands / independent JR assigned a ready TEST/VERIFY task: follow the independent JR lifecycle below, using its complete current test packet. Independent JR does not implement or self-authorize a test.
 - Missing task identity, genuinely conflicting assignments, or a missing essential execution/safety detail: report the precise blocker once and STOP. Do not select a different task, rewrite workflow files or perform speculative reconciliation. A stale queue label or redundant promotion wording alone is not a blocker when the approved task and assignment are unambiguous.
 
+### OpenHands JR DEV standing authority — routine continuation
+
+When OpenHands is explicitly assigned as JR DEV to a CODE/DISCOVERY packet in an already human-promoted ordered queue, it has standing authority to finish that packet end-to-end without separate human approval for routine repository mechanics.
+
+Allowed routine actions, when needed for the current packet:
+- inspect current branch/status/HEAD and fetch the assigned remote branch;
+- fast-forward local state when clean and safe;
+- rebase the current task's own commit(s) onto newer remote workflow-only or non-overlapping commits;
+- resolve a conflict only when the authoritative choice is unambiguous from the current task/remote source and no product semantics are invented;
+- abort and report BLOCKED if a conflict touches overlapping product semantics or cannot be resolved deterministically;
+- run task-declared targeted self-tests and bounded corrective retests;
+- stage only task-authorized files;
+- commit the current task;
+- push non-force to the assigned branch;
+- verify remote delivery;
+- update the current task/queue/handoff with genuine completion evidence;
+- select the next already-promoted eligible packet for the **next** OPERATION CWAL invocation.
+
+This standing authority does **not** permit:
+- force/force-with-lease push;
+- destructive reset/clean/history rewrite;
+- production/operator-data changes;
+- scope expansion;
+- ICC edits;
+- independent TEST/VERIFY self-certification;
+- executing a second product task in the same invocation.
+
+The normal operator loop is therefore:
+
+```text
+git pull
+OPERATION CWAL
+```
+
+CWAL handles one task completely, records/delivers it, prepares the next authorized packet, then STOPS. The next human invocation repeats the same two-step loop.
+
 Approval to enter `active_work/` covers the task's documented edits and routine in-scope tests; it does not grant destructive cleanup, production access, unrelated edits, network actions, or commit/push permissions that the task does not grant. Ask for authorization only for an action outside that scope or a genuine safety boundary. A coding-agent self-test (OpenCode or OpenHands JR DEV) is not an independent JR PASS. No coding or test identity may archive or start a successor without its own assignment, or update ICC; ICC changes belong to BLACK SHEEP WALL under separate authorization. Routine Git archaeology, backups, conflict resolution, reset and worktree repair are not implicit tasks. For a genuine workspace blocker, report the precise issue once and STOP; destructive cleanup requires explicit authorization.
 
 ## ICC context boundary — CODE/DISCOVERY versus JR

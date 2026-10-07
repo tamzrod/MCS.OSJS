@@ -41,7 +41,7 @@ Requires genuine completion evidence for PERSIST-015. Being present in `workflow
 - Acceptance mapping: (1) each snapshot area restores to the same area/start/count identity — `rawIngestArea` maps the canonical area key to the v1 code and the write carries `area.Start`/`area.Count` unchanged; (2) every Raw Ingest response is checked and a non-zero response aborts — the loop returns before any later area is written and records no successful write; (3) no cross-area mirroring is added — only the plan's own areas are written, exactly once each, with their own payloads.
 - Design boundary: seal-flag protection is PERSIST-017, restore-completion verification PERSIST-018 and unseal PERSIST-019, so this task performs Raw Ingest transport only and never unseals. Placement is the shared schema owner `mma2composer` (consistent with PERSIST-012..015).
 - This is a JR DEV self-check only. It is **not** an independent TEST/VERIFY PASS; independent verification is deferred to PERSIST-022.
-- Delivered source commit: recorded in the repository commit for this task.
+- Delivered source commit: `2fbabc3481b6435ca38596ea7dd060e36ed0655d` on GitHub main.
 
 ## CWAL
 PERSIST-015 is delivered on GitHub main at `a497d9d4ca35cab8de832bc92fc3b5d90c7a4b33`. PERSIST-016 CODE is now complete and no longer ACTIVE; PERSIST-017 is the next eligible CODE packet. This is JR DEV evidence only, not an independent TEST/VERIFY PASS.

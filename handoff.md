@@ -85,7 +85,7 @@ CODE COMPLETE at `a497d9d4ca35cab8de832bc92fc3b5d90c7a4b33`, delivered on main; 
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
 **PERSIST-016 — Raw Ingest Restore**
-CODE COMPLETE by OpenHands JR DEV in this invocation (source commit recorded in the task packet); awaiting independent TEST/VERIFY (PERSIST-022).
+CODE COMPLETE at `2fbabc3481b6435ca38596ea7dd060e36ed0655d`, delivered on main; awaiting independent TEST/VERIFY (PERSIST-022).
 - `mma2composer/persistence_restore.go` (blob `3c31ade58d4a0f7c5a82f40c6873244d15002586`) and `mma2composer/persistence_restore_test.go` (blob `1193029d53e01385ae49219e50fec165a6c28c03`).
 - `RestorePersistencePlan` writes each validated ready area of the PERSIST-015 `PersistenceRestorePlan` back through the **existing Raw Ingest v1 contract** (`PersistenceRawIngestWriter`); the v1 area code is derived from the canonical area key and each write carries the same area/start/count identity it was loaded from. A non-`ready` plan is refused with no write; every Raw Ingest response is checked and the first non-`0x00` response, transport error or unknown area aborts immediately; no cross-area mirroring and no unseal.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRestore -v .` → 7 tests PASS, exit 0. Additional temporary real-socket v1 check passed with `-race` (removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.

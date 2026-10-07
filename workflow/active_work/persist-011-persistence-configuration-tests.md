@@ -1,6 +1,6 @@
 # PERSIST-011 — Persistence Configuration Tests
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — independent JR TEST/VERIFY; exact packet prepared in `handoff.md`
 Stage: TEST
 Owner: OpenHands / independent JR
 Previous: PERSIST-010

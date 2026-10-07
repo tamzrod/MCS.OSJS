@@ -1,8 +1,8 @@
 # PERSIST-012 — RBE-Triggered Snapshot Writer
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-011
 Next: PERSIST-013
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-011. Being present in `workflow
 2/1/2/1/1=7; writer only.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56` against pinned product checkpoint `190e464f6106c3e640d21b1f9352328447464bef`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

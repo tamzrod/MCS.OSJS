@@ -52,7 +52,10 @@ CODE COMPLETE at `190e464f6106c3e640d21b1f9352328447464bef`, delivered on main b
 PERSIST-001..PERSIST-010 CODE tasks are complete. Their self-check/regression evidence remains JR DEV evidence only.
 
 **PERSIST-012 — RBE-Triggered Snapshot Writer**
-CODE COMPLETE at `2f18f8196f5497c5435b697b8b1570f59cab2642`, delivered on main by this invocation.
+CODE COMPLETE at `2f18f8196f5497c5435b697b8b1570f59cab2642`, delivered on main.
+
+**PERSIST-013 — Snapshot File Format**
+CODE COMPLETE and delivered on GitHub main at `ccccb891b737995f6a24a58e844e5bd1d794b609` via GitHub connector recovery after the OpenHands push credential expired. OpenHands' local-only commits `9343d9e` / `ab27b27` are superseded by this remote recovery and must not be treated as additional product work.
 
 ## Completed independent gate
 
@@ -71,25 +74,27 @@ Freshness/post-check passed: commits after `190e464` were workflow-only, working
 
 ## Current task — ACTIVE
 
-**PERSIST-013 — Snapshot File Format**
+**PERSIST-014 — Snapshot Manifest / Compatibility Metadata**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-013-snapshot-file-format.md`
+Packet: `workflow/active_work/persist-014-snapshot-manifest-compatibility-metadata.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-013 exactly as written:
-- define and implement deterministic raw snapshot encoding for all supported Modbus memory areas;
-- coils/discrete inputs use LSB-first packed bits; holding/input registers use big-endian uint16 words;
-- encoding/decoding is deterministic for the configured start/count;
-- do not add a compatibility manifest or restore sequencing;
+Execute PERSIST-014 exactly as written:
+- bind each snapshot to Port, Unit ID, area, start, count and format version;
+- add integrity metadata sufficient to detect corrupted/incomplete payloads;
+- reject incompatible changed memory layouts explicitly rather than truncate/remap;
+- do not restore or unseal memory;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-014 for the next invocation only after genuine PERSIST-013 completion;
-- STOP after PERSIST-013.
+- prepare PERSIST-015 for the next invocation only after genuine PERSIST-014 completion;
+- STOP after PERSIST-014.
+
+Recovery note for a reused OpenHands workspace: if local-only commits `9343d9e` / `ab27b27` are still present, they represent the transport-blocked PERSIST-013 attempt already superseded by remote checkpoint `ccccb891`. Do not replay them as new work; reconcile only through bounded safe Git mechanics consistent with standing JR DEV authority.
 
 ## Successor routing
 
-PERSIST-014..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 is CODE complete; PERSIST-013 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-015..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 and PERSIST-013 are CODE complete; PERSIST-014 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

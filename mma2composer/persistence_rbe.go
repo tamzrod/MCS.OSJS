@@ -130,6 +130,68 @@ func PersistenceRBEProjection(memory Memory) []PersistenceRBERule {
 	return DerivePersistenceRBE(memory)
 }
 
+// RBECoexistence is the read-only view of both independent RBE sets for one
+// memory: the system-owned persistence projection and the operator's own
+// user-authored rules. They coexist — a persistence lifecycle change mutates
+// only Persistence and never UserRules.
+type RBECoexistence struct {
+	Persistence []PersistenceRBERule
+	UserRules   []UserRBERule
+}
+
+// UserRBERule is one operator-authored RBE rule. Persistence never owns,
+// rewrites or deletes these; overlap with a persistence-owned range is allowed
+// as long as the user rule is otherwise valid.
+type UserRBERule struct {
+	Area  string
+	Start uint16
+	Count uint16
+}
+
+// RBECoexist builds the coexistence view for a memory. It is a pure projection:
+// neither the persistence rules nor the caller's user rules are mutated, and
+// user rules are carried through unchanged (conserving overlap).
+func RBECoexist(memory Memory, userRules []UserRBERule) RBECoexistence {
+	user := append([]UserRBERule(nil), userRules...)
+	return RBECoexistence{Persistence: PersistenceRBEProjection(memory), UserRules: user}
+}
+
+// rangesOverlap reports whether two start/count ranges intersect. Overlap is
+// permitted and is reported, never rejected.
+func rangesOverlap(aStart, aCount, bStart, bCount uint16) bool {
+	if aCount == 0 || bCount == 0 {
+		return false
+	}
+	return uint32(aStart) < uint32(bStart)+uint32(bCount) && uint32(bStart) < uint32(aStart)+uint32(aCount)
+}
+
+// PersistenceOverlapsUser reports whether a user rule overlaps any
+// persistence-owned rule for the same memory area. Overlap is supported and is
+// purely informational; it never invalidates the user rule.
+func PersistenceOverlapsUser(coexistence RBECoexistence, user UserRBERule) bool {
+	for _, rule := range coexistence.Persistence {
+		if rule.Area == user.Area && rangesOverlap(rule.Start, rule.Count, user.Start, user.Count) {
+			return true
+		}
+	}
+	return false
+}
+
+// UserRBEUnchanged reports whether the coexistence view carries the given user
+// rules unchanged (same members, same order), confirming a persistence
+// lifecycle operation never mutates operator-owned rules.
+func UserRBEUnchanged(coexistence RBECoexistence, userRules []UserRBERule) bool {
+	if len(coexistence.UserRules) != len(userRules) {
+		return false
+	}
+	for i := range userRules {
+		if coexistence.UserRules[i] != userRules[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // rejectUserOwnedRules is a fail-closed guard for the supported configuration
 // path: every persistence rule must be system-owned. A caller cannot submit
 // user-owned (editable/deletable) persistence rules.

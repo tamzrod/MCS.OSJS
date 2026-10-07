@@ -1,8 +1,8 @@
 # PERSIST-014 — Snapshot Manifest / Compatibility Metadata
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-013
 Next: PERSIST-015
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-013. Being present in `workflow
 2/0/2/1/2=7; metadata/validation only.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-013 is delivered on GitHub main at `ccccb891b737995f6a24a58e844e5bd1d794b609`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. If a reused workspace still has local-only PERSIST-013 commits `9343d9e` / `ab27b27`, treat them as superseded duplicate history and reconcile them with bounded safe Git mechanics; do not replay them as new product work. Execute exactly PERSIST-014, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

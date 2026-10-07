@@ -15,7 +15,7 @@ On OPERATION CWAL invocation, identify and execute exactly ONE currently assigne
 
 A later invocation may route an eligible successor only from genuine persisted predecessor evidence and the current handoff. `ACTIVE` and `QUEUED` are scheduling labels, not extra approval gates, but the repository must still maintain exactly one current ACTIVE assignment.
 
-At the time of the 2026-10-07 persistence promotion, `handoff.md` keeps OTR-001C as the sole current ACTIVE task; all PERSIST packets are therefore QUEUED until that assignment is completed/closed or the human explicitly supersedes it.
+On 2026-10-07 the human explicitly superseded OTR-001C as current and selected **PERSIST-001** as the sole ACTIVE task, assigned to **OpenHands JR DEV**. PERSIST-002..022 remain QUEUED and dependency-gated.
 
 Missing required task details, predecessor evidence, safe target, or exact TEST/VERIFY packet remains a blocker even for already promoted work.
 

@@ -1,8 +1,8 @@
 # PERSIST-013 — Snapshot File Format
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-012
 Next: PERSIST-014
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-012. Being present in `workflow
 1/0/2/1/1=5.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-012 is delivered on GitHub main at `2f18f8196f5497c5435b697b8b1570f59cab2642`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, deliver it under standing JR DEV authority, prepare the next already-promoted eligible packet for a later invocation, and STOP.

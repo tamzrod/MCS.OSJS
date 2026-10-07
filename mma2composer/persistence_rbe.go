@@ -104,6 +104,32 @@ func PruneRemovedPersistenceRBE(projection []PersistenceRBERule, memory Memory) 
 	return kept
 }
 
+// PersistenceEnabled reports whether persistence is enabled for this memory.
+// Persistence is off unless it is explicitly enabled.
+func PersistenceEnabled(memory Memory) bool {
+	return memory.Persistence != nil && memory.Persistence.Enabled != nil && *memory.Persistence.Enabled
+}
+
+// PersistenceRBEProjection returns the persistence-owned RBE projection for a
+// memory as a function of its persistence enablement and its authoritative
+// layout:
+//
+//   - persistence disabled -> no persistence-owned RBE (cleanup); the caller's
+//     existing projection is dropped wholesale;
+//   - persistence enabled  -> one layout-derived system-owned rule per present
+//     area (regeneration), identical to SynchronizePersistenceRBE.
+//
+// Disabling removal and re-enabling regeneration therefore use the same source
+// of truth and never require a hand-authored range. Only persistence-owned rules
+// are represented here; ordinary user-owned RBE entries are a separate set and
+// are never deleted or rewritten. This is not a file or runtime operation.
+func PersistenceRBEProjection(memory Memory) []PersistenceRBERule {
+	if !PersistenceEnabled(memory) {
+		return nil
+	}
+	return DerivePersistenceRBE(memory)
+}
+
 // rejectUserOwnedRules is a fail-closed guard for the supported configuration
 // path: every persistence rule must be system-owned. A caller cannot submit
 // user-owned (editable/deletable) persistence rules.

@@ -4,85 +4,53 @@
 Human has approved the PERSIST-001..022 persistence roadmap and explicitly promoted **OpenHands to JR DEV** for OPERATION CWAL CODE/DISCOVERY work.
 
 OpenHands modes remain separate:
-- **JR DEV** — assigned CODE/DISCOVERY implementation and bounded source transport.
+- **JR DEV** — assigned CODE/DISCOVERY implementation plus bounded workflow continuation.
 - **Independent JR** — separately assigned TEST/VERIFY only.
 
-## Completed predecessor
-**PERSIST-001 — Persistence Configuration Schema**
-CODE COMPLETE at `faa33929429a0382a64b78bc773f0074e11cb6b1`.
-
-## Current task — ACTIVE / TRANSPORT RECOVERY
-**PERSIST-002 — State Sealing Prerequisite Validation**
-Mode / owner: **CODE / OpenHands JR DEV**
-
-Local implementation commit reported:
-`62234991a19e323aef9bcecb2161e486ccba474f`
-
-Its first non-force push correctly failed because remote main had advanced with workflow-only commits. The local commit is preserved. This invocation is authorized only to integrate that already-created PERSIST-002 commit onto current remote main and push it non-force.
-
-### Exact recovery authority
-
-1. Start from the existing OpenHands workspace where local `main` contains commit `62234991a19e323aef9bcecb2161e486ccba474f`.
-2. Require clean working tree before integration.
-3. Run one `git fetch origin main`.
-4. Verify fetched `origin/main` is a descendant of `0256c1ff4e94f522279404516081f1dafc162025`.
-5. Verify commits on remote main after `0256c1f`, if any, are workflow-only and do not modify these three product/test paths:
-   - `mma2composer/memory_validation.go`
-   - `mma2composer/persistence_sealing_validation_test.go`
-   - `simulator/persistence_config_schema_test.go`
-   If any of those three paths changed upstream, BLOCKED / STOP.
-6. Rebase the single local PERSIST-002 commit onto fetched `origin/main`:
-   `git rebase origin/main`
-
-### Exact conflict rule
-
-A conflict is permitted **only** in:
-`workflow/active_work/persist-002-state-sealing-prerequisite-validation.md`
-
-If that one file conflicts:
-- resolve it by keeping the **remote/origin-main version** of the task packet;
-- do not carry the local task-packet version into the rebased source commit;
-- stage that resolution and continue the rebase once.
-
-Any conflict in any other file => abort the rebase and report BLOCKED / STOP. Do not invent a merge.
-
-Expected rebased source commit should therefore change only:
-- `mma2composer/memory_validation.go`
-- `mma2composer/persistence_sealing_validation_test.go`
-- `simulator/persistence_config_schema_test.go`
-
-7. After successful rebase, verify the rebased commit diff contains only those three paths.
-8. Push `main` to `origin/main` **non-force**.
-9. Verify `git ls-remote origin refs/heads/main` equals the new local HEAD.
-10. Report the new pushed SHA and STOP.
-
-### Forbidden in this invocation
-- no force or force-with-lease;
-- no merge commit;
-- no second fetch/rebase attempt;
-- no source reimplementation;
-- no additional tests/retests;
-- no PERSIST-003;
-- no ICC edits;
-- no unrelated cleanup or workflow advancement.
-
-If the exact local commit is missing, the tree is dirty, remote touched any of the three source/test paths, rebase conflicts outside the one authorized task packet, or push again fails: report the precise blocker and STOP.
-
-## Successor routing
-PERSIST-003 remains QUEUED. It may be activated only after GitHub main contains the rebased PERSIST-002 source commit and the workflow owner confirms repository completion.
-
-Only BLACK SHEEP WALL edits ICC.
-
-
-## Operator loop
-
-For OpenHands, the intended human workflow is:
+The normal operator loop is:
 
 ```text
 git pull
 OPERATION CWAL
 ```
 
-JR DEV has standing authority for routine in-scope Git synchronization, commit, non-force push, evidence recording, current-task closure, and selection of the next already-promoted eligible packet for the next invocation.
+One invocation executes exactly one product task, may deliver/record it, may prepare the next already-promoted eligible task, then STOPS.
 
-One invocation still executes exactly one product task. Independent TEST/VERIFY remains a separate mode and cannot be self-certified by JR DEV.
+## Completed predecessors
+
+**PERSIST-001 — Persistence Configuration Schema**
+CODE COMPLETE at `faa33929429a0382a64b78bc773f0074e11cb6b1`.
+
+**PERSIST-002 — State Sealing Prerequisite Validation**
+CODE COMPLETE and delivered on GitHub main at
+`fe3bda9e5c863c959500514e8c6083d2514526d1`.
+
+PERSIST-002 self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is still deferred to PERSIST-011.
+
+## Current task — ACTIVE
+
+**PERSIST-003 — Derived Persistence RBE Generation**
+Mode / owner: **CODE / OpenHands JR DEV**
+Packet: `workflow/active_work/persist-003-derived-persistence-rbe-generation.md`
+Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
+
+Execute PERSIST-003 exactly as written:
+- generate one system-owned persistence RBE rule for each configured memory area;
+- derive area/start/count exclusively from the authoritative memory layout;
+- do not introduce independent persistence range fields;
+- do not implement UI locking, user-rule collision policy, filesystem persistence, restore, or runtime snapshot behavior;
+- run only task-bounded targeted self-checks and bounded in-scope corrective retests;
+- commit and non-force push the completed task under standing JR DEV authority;
+- record exact changed paths, checks and resulting source checkpoint;
+- prepare PERSIST-004 for the next invocation only after genuine PERSIST-003 completion;
+- STOP after PERSIST-003.
+
+## Successor routing
+
+PERSIST-004..022 are already human-promoted and remain QUEUED/dependency-gated.
+
+OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
+
+TEST/VERIFY packets switch to independent JR mode and require their exact current packet. JR DEV must not self-certify those gates.
+
+Only BLACK SHEEP WALL edits ICC. No force push, destructive history rewrite, production/operator-data mutation, or scope expansion.

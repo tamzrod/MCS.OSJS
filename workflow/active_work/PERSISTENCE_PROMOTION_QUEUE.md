@@ -4,7 +4,7 @@ Human-approved and promoted: PERSIST-001..022 on 2026-10-07.
 
 All packets in this queue are authorized Active Work for their written scope. Promotion does NOT mean simultaneous execution. Repository rule remains: exactly ONE ACTIVE/current task per OPERATION CWAL invocation, selected by `handoff.md`.
 
-Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is now the sole current ACTIVE task, assigned to OpenHands JR DEV.** PERSIST-013..022 remain QUEUED and dependency-gated.
+Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is CODE COMPLETE at `2f18f8196f5497c5435b697b8b1570f59cab2642`, pending delivery; PERSIST-013 is prepared as the next ACTIVE task for the next invocation.** PERSIST-014..022 remain QUEUED and dependency-gated.
 
 Ordered persistence sequence:
 
@@ -19,8 +19,8 @@ Ordered persistence sequence:
 - [x] PERSIST-009 — RBE ID Collision Handling (CODE COMPLETE — `19057f0`; independent TEST/VERIFY deferred to PERSIST-011)
 - [x] PERSIST-010 — Persistence Configuration UI (CODE COMPLETE — `190e464`; independent TEST/VERIFY deferred to PERSIST-011)
 - [x] PERSIST-011 — Persistence Configuration Tests (TEST PASS — independent JR on `313e3be`; pinned product checkpoint `190e464`)
-- [>] PERSIST-012 — RBE-Triggered Snapshot Writer (CODE, ACTIVE — OpenHands JR DEV)
-- [ ] PERSIST-013 — Snapshot File Format (CODE)
+- [x] PERSIST-012 — RBE-Triggered Snapshot Writer (CODE COMPLETE — `2f18f81`; independent TEST/VERIFY deferred to PERSIST-022)
+- [>] PERSIST-013 — Snapshot File Format (CODE, ACTIVE — OpenHands JR DEV; prepared for next invocation)
 - [ ] PERSIST-014 — Snapshot Manifest / Compatibility Metadata (CODE)
 - [ ] PERSIST-015 — Startup Snapshot Loader (CODE)
 - [ ] PERSIST-016 — Raw Ingest Restore (CODE)

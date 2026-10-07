@@ -49,7 +49,10 @@ CODE COMPLETE at `19057f02d94ff404b74a9f01348fc8c31235e374`, delivered on main.
 **PERSIST-010 — Persistence Configuration UI**
 CODE COMPLETE at `190e464f6106c3e640d21b1f9352328447464bef`, delivered on main by this invocation.
 
-PERSIST-001..PERSIST-010 CODE tasks are complete. Their self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is now the PERSIST-011 gate below.
+PERSIST-001..PERSIST-010 CODE tasks are complete. Their self-check/regression evidence remains JR DEV evidence only.
+
+**PERSIST-012 — RBE-Triggered Snapshot Writer**
+CODE COMPLETE at `2f18f8196f5497c5435b697b8b1570f59cab2642`, delivered on main by this invocation.
 
 ## Completed independent gate
 
@@ -68,27 +71,25 @@ Freshness/post-check passed: commits after `190e464` were workflow-only, working
 
 ## Current task — ACTIVE
 
-**PERSIST-012 — RBE-Triggered Snapshot Writer**
+**PERSIST-013 — Snapshot File Format**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-012-rbe-triggered-snapshot-writer.md`
+Packet: `workflow/active_work/persist-013-snapshot-file-format.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-012 exactly as written:
-- react to persistence-owned RBE events without continuous polling;
-- obtain authoritative configured area state on event;
-- compare current state to the snapshot image;
-- write only changed bytes/register words;
-- unchanged state causes no disk write;
-- do not implement startup restore, manifests, unseal, or UI status;
+Execute PERSIST-013 exactly as written:
+- define and implement deterministic raw snapshot encoding for all supported Modbus memory areas;
+- coils/discrete inputs use LSB-first packed bits; holding/input registers use big-endian uint16 words;
+- encoding/decoding is deterministic for the configured start/count;
+- do not add a compatibility manifest or restore sequencing;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-013 for the next invocation only after genuine PERSIST-012 completion;
-- STOP after PERSIST-012.
+- prepare PERSIST-014 for the next invocation only after genuine PERSIST-013 completion;
+- STOP after PERSIST-013.
 
 ## Successor routing
 
-PERSIST-013..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-014..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 is CODE complete; PERSIST-013 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

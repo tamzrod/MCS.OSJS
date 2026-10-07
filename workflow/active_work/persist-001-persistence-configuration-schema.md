@@ -1,8 +1,8 @@
 # PERSIST-001 — Persistence Configuration Schema
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-07
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: none
 Next: PERSIST-002
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for no predecessor. Being present in `workf
 1/0/1/1/1=4; tightly coupled schema/round-trip change.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+Human has promoted this packet into Active Work and explicitly selected it as the sole current ACTIVE assignment for OpenHands JR DEV. OPERATION CWAL executes this one task, records evidence, and STOPS.

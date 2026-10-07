@@ -38,31 +38,33 @@ CODE COMPLETE at `c743174204455afa83bc92b859fd47582a7afdbc`, delivered on main.
 CODE COMPLETE at `9ac48cb23e369fb0384b3d8f00811435d5bf7b69`, delivered on main.
 
 **PERSIST-007 — Persistence Disable Cleanup**
-CODE COMPLETE at `feb1e622d38cf8107a1df9ee182e5df17f95790f`, delivered on main by this invocation.
+CODE COMPLETE at `feb1e622d38cf8107a1df9ee182e5df17f95790f`, delivered on main.
 
-PERSIST-002..PERSIST-007 self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is still deferred to PERSIST-011.
+**PERSIST-008 — User RBE Compatibility**
+CODE COMPLETE at `4783e0d6e1d3dbd55b29b8647a115905eb5bc285`, delivered on main by this invocation.
+
+PERSIST-002..PERSIST-008 self-check/regression evidence remains JR DEV evidence only; independent TEST/VERIFY is still deferred to PERSIST-011.
 
 ## Current task — ACTIVE
 
-**PERSIST-008 — User RBE Compatibility**
+**PERSIST-009 — RBE ID Collision Handling**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-008-user-rbe-compatibility.md`
+Packet: `workflow/active_work/persist-009-rbe-id-collision-handling.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-008 exactly as written:
-- preserve independent user-created RBE rules, including overlap with persistence-owned ranges;
-- user rules and system persistence rules may coexist;
-- persistence lifecycle operations do not mutate user rules;
-- do not redefine RBE wire semantics;
+Execute PERSIST-009 exactly as written:
+- allocate persistence-owned RBE IDs without collision while preserving the existing RBE v1 one-byte ID contract;
+- system and user RBE IDs are globally unique as required; users cannot directly assign/change system-owned IDs;
+- do not redesign RBE v1 or widen its one-byte ID space;
 - run only task-bounded targeted self-checks and bounded in-scope corrective retests;
 - commit and non-force push the completed task under standing JR DEV authority;
 - record exact changed paths, checks and resulting source checkpoint;
-- prepare PERSIST-009 for the next invocation only after genuine PERSIST-008 completion;
-- STOP after PERSIST-008.
+- prepare PERSIST-010 for the next invocation only after genuine PERSIST-009 completion;
+- STOP after PERSIST-009.
 
 ## Successor routing
 
-PERSIST-009..022 are already human-promoted and remain QUEUED/dependency-gated.
+PERSIST-010..022 are already human-promoted and remain QUEUED/dependency-gated.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

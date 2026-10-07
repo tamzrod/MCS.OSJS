@@ -43,3 +43,16 @@ This queue is selected. PERSIST-001 has recorded CODE completion evidence. Compl
 - Persistence restore occurs while sealed; explicit successful final unseal is the commit point.
 - Filesystem persistence is MCS appliance behavior, not a reason to make MMA2 memorycore own a historian/workflow engine.
 - Only BLACK SHEEP WALL edits ICC.
+
+
+## Standing JR DEV continuation
+
+For this already human-promoted queue, OpenHands JR DEV may autonomously:
+- finish and deliver the current CODE/DISCOVERY packet;
+- perform bounded safe Git sync/rebase when remote advances without overlapping product semantics;
+- commit and non-force push the current task;
+- record genuine completion evidence;
+- mark the current packet complete;
+- assign the next eligible already-promoted CODE/DISCOVERY packet to OpenHands JR DEV for the **next invocation**.
+
+It must still execute only one product task per invocation and STOP after preparing the successor. TEST/VERIFY packets switch to independent JR mode and require their exact packet; JR DEV does not certify them.

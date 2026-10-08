@@ -2,7 +2,7 @@
 
 Status: PROMOTED / CURRENT
 Stage: CODE
-Owner: Codex JR DEV
+Owner: OpenHands JR DEV
 Previous: NP-01 historical implementation
 Next: NPE-02
 

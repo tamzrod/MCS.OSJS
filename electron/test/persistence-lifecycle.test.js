@@ -138,3 +138,37 @@ test('final unseal rejection fails closed', async t => {
   fake.seal();
   await assert.rejects(persistence.restoreAndUnseal(root, after), /Raw Ingest rejected with 0x21/);
 });
+
+
+test('every persistence Save & Apply capture overwrites the previous snapshot', async t => {
+  const fake = await fakeMMA2({register: 0x1234});
+  t.after(() => fake.close());
+  const root = tempRoot();
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+
+  const current = device(fake.port, true);
+  await persistence.captureInitialSnapshots(root, {devices: [current]}, {devices: [current]});
+
+  const snapshot = path.join(root, 'persistence', 'snapshots', `port-${fake.port}`, 'unit-1', 'area-holding_registers', 'snapshot.bin');
+  fs.writeFileSync(snapshot, Buffer.from([0x00, 0x00]));
+
+  await persistence.captureInitialSnapshots(root, {devices: [current]}, {devices: [current]});
+  assert.deepEqual([...fs.readFileSync(snapshot)], [0x12, 0x34]);
+});
+
+test('Save & Apply snapshot capture recovers a previously sealed persistence runtime', async t => {
+  const fake = await fakeMMA2({register: 0x4321});
+  t.after(() => fake.close());
+  const root = tempRoot();
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+
+  const current = device(fake.port, true);
+  fake.seal();
+
+  await persistence.captureInitialSnapshots(root, {devices: [current]}, {devices: [current]});
+
+  const snapshot = path.join(root, 'persistence', 'snapshots', `port-${fake.port}`, 'unit-1', 'area-holding_registers', 'snapshot.bin');
+  assert.deepEqual([...fs.readFileSync(snapshot)], [0x43, 0x21]);
+  const unseal = fake.packets.find(packet => packet.area === 1 && packet.count === 1 && packet.payload[0] === 0x01);
+  assert.ok(unseal, 'sealed runtime must be unsealed through Raw Ingest before fresh snapshot capture');
+});

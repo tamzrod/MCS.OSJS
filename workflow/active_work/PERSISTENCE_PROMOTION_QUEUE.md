@@ -1,3 +1,9 @@
+# Superseding native persistence migration queue — 2026-10-08
+
+Human promoted **NP-01..NP-06** as queued active-work packets. **NP-01 is the only current task.** Ordered: NP-01 schema/validation → NP-02 UI → NP-03 Simulator/Replicator → NP-04 legacy removal → NP-05 integration → NP-06 workflow/docs. One task per invocation; no recursive continuation. The old PERSIST queue below is historical and must not be reactivated. Do not delete historical evidence or user snapshots.
+
+---
+
 # Persistence autonomous promotion queue
 
 Human-approved and promoted: PERSIST-001..022 on 2026-10-07; optimized continuation PERSIST-R01..R05 + PERSIST-UI01 promoted on 2026-10-08.

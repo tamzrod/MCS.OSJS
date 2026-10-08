@@ -10,6 +10,7 @@ const {createReplicatorCall} = require('./replicator-ipc');
 const {getWindowsServiceStatus} = require('./runtime-status');
 const memorySettings = require('./memory-settings');
 const diagnostics = require('./diagnostics');
+const persistence = require('./persistence');
 const diagnosticSessionLogs = [];
 const reviewRoot = process.env.MCS_REVIEW_DATA_ROOT ? path.resolve(process.env.MCS_REVIEW_DATA_ROOT) : null;
 if (reviewRoot) app.setPath('userData', path.join(reviewRoot, 'electron-profile'));
@@ -175,6 +176,7 @@ const writeRestartRequest = cfg => {
   const sum = crypto.createHash('sha256').update(body).digest('hex');
   try { fs.rmSync(p.mma2RestartAck, {force: true}); } catch (_) {}
   writeYamlAtomic(p.mma2RestartRequest, {requested_at: new Date().toISOString(), reason: 'Electron desktop shared MMA2 configuration commit', config_sha256: sum, ports: (cfg.listeners || []).map(l => listenPort(l.listen)).filter(Boolean)});
+  return sum;
 };
 
 const composeAll = (simDoc, repDoc) => {
@@ -218,7 +220,7 @@ const composeAll = (simDoc, repDoc) => {
   validateMMA2(cfg);
   writeYamlAtomic(p.mma2Config, cfg);
   writeYamlAtomic(p.mma2Owners, owners);
-  writeRestartRequest(cfg);
+  return writeRestartRequest(cfg);
 };
 
 const loadSimulator = () => memorySettings.hydrateDocument(normalizeDocument(readYaml(paths().simulatorDevices, {devices: []})), readYaml(paths().mma2Config, {listeners: []}));
@@ -243,16 +245,35 @@ const applyMMASettings = settings => {
   return {settings: memorySettings.sharedSettings(config), message: reviewRoot ? 'MMA settings saved to isolated review data. Backend not started.' : 'MMA settings saved; restart requested.'};
 };
 
-const applySimulator = doc => {
+const applySimulator = async doc => {
   const simDoc = normalizeDocument(doc);
+  const previousDoc = loadSimulator();
   const repDoc = loadReplicator();
-  composeAll(simDoc, repDoc);
+
+  // Normal operator flow: checking Persistence and pressing Save & Apply owns
+  // the entire bootstrap. Capture the current live memory before State Sealing
+  // takes effect; if capture fails, do not proceed into a sealed restart.
+  if (!reviewRoot) await persistence.captureInitialSnapshots(dataRoot(), previousDoc, simDoc);
+
+  const restartSHA = composeAll(simDoc, repDoc);
   writeYamlAtomic(paths().simulatorDevices, simDoc);
+
+  if (!reviewRoot) {
+    await persistence.waitRestartAcknowledged(paths().mma2RestartAck, restartSHA);
+    const ports = [...new Set((simDoc.devices || []).filter(device => device.enabled).map(device => num(device.mma2?.port)).filter(Boolean))];
+    for (const port of ports) await persistence.waitPort(port);
+    for (const device of simDoc.devices || []) {
+      if (device.enabled && device.mma2?.persistence?.enabled === true) {
+        await persistence.restoreAndUnseal(dataRoot(), device);
+      }
+    }
+  }
+
   resetSimulatorSchedulers(simDoc);
   const randomEnabled = (simDoc.devices || []).some(device => device.enabled && ['fc1', 'fc2', 'fc3', 'fc4'].some(fc => hasArea(areaFor(device, fc)) && intervalFor(device, fc) > 0));
   const message = randomEnabled
-    ? 'Memory settings saved, MMA2 restart requested, and random value publishing started.'
-    : 'Memory settings saved, MMA2 restart requested. Random value publishing is not required.';
+    ? 'Memory settings saved, persistence restored/unsealed, and random value publishing started.'
+    : 'Memory settings saved and persistence restored/unsealed.';
   return {document: simDoc, message: reviewRoot ? 'Memory settings saved to isolated review data. Backend not started.' : message, completed_at: new Date().toISOString()};
 };
 

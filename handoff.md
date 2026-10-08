@@ -132,22 +132,29 @@ CODE COMPLETE at `1ac1477177ec19fa02cb344d6a20a8632fc0c88a`, delivered on main.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceFilesystem -v .` → 14 tests PASS, exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt`/`vet` clean.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-R02 — Runtime Save Wiring**
+CODE COMPLETE at `407fcc32979b9acd83dd6826e86f4b700da70c1b`, delivered on main.
+- `mma2composer/persistence_runtime_save.go` (blob `3dc796dab80259a75b5f75ebbea327a915c89375`), `simulator/persistence_save.go` (blob `a4d8112419dffa7b71544a560093cf7315c7d1c1`), `simulator/persistence_area_reader.go` (blob `a06e45bcaff246ac1132151d133d9b17462180f6`), `simulator/persistence_rbe_subscriber.go` (blob `4bc66ef653ef73f01f3e5fc9d96d010b82d6b9e0`), `simulator/apply.go` (blob `4f93dd73547cbbbab65d3ceff5e7d0beacc19f6e`), `simulator/cmd/modbus-simulator-runtime/main.go` (blob `dc8293978abf48cf4c7ebbe7e857aa8df7366647`), `mma2composer/persistence_filesystem.go` (blob `229cc504f73306bc4c29bef227b8b171b60b208d`), plus tests.
+- Persistence-owned RBE events are wired into the existing `PersistenceSnapshotWriter` via the real `SchedulerApplier.PublishPersistenceEvent` call site; the authoritative-state reader performs a real Modbus FC1/FC3 read and never fabricates bytes; only the derived/system-owned projection is subscribed.
+- Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRuntimeSave -v .` → 4 tests PASS; `cd simulator && go test ... 'TestPersistenceRuntimeSave|TestPersistenceRBESubscriber|TestModbusReadArea|TestPersistenceAreaReader'` → 9 tests PASS. Bounded regression: all Go modules and the OSJS node suite pass, exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-R02 — Runtime Save Wiring**
+**PERSIST-R03 — Startup Restore Wiring**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-r02-runtime-save-wiring.md`
+Packet: `workflow/active_work/persist-r03-startup-restore-wiring.md`
 
-Execute PERSIST-R02 exactly as written (read the packet for its exact scope before implementing):
-- create the non-test runtime call site for `NewPersistenceSnapshotWriter` wiring to the PERSIST-R01 filesystem adapter;
-- subscribe only the system-derived persistence RBE projection and route its one-byte rule events to snapshot writes;
-- preserve change-only behavior (read the configured area on event; persist only changed bytes/words);
-- do not touch user-owned RBE, add alternate ranges, poll, restore, or edit UI/ICC;
+Execute PERSIST-R03 exactly as written (read the packet for its exact scope before implementing):
+- add real non-test startup call sites for `LoadPersistenceSnapshots` and `RestorePersistencePlan` in the runtime;
+- persistence-enabled memory starts sealed, loads validated snapshots, restores through existing Raw Ingest v1, verifies the full required set, and performs the existing final explicit unseal only after success;
+- any loader/Raw Ingest/verification/commit failure stays sealed with the existing deterministic classification;
+- do not add a new seal flag, alternate unseal path, retry/repair loop, format redesign, UI or ICC edit;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- automatically arm PERSIST-R03 for the next invocation only after genuine PERSIST-R02 completion;
-- STOP after PERSIST-R02.
+- automatically arm PERSIST-UI01 for the next invocation only after genuine PERSIST-R03 completion;
+- STOP after PERSIST-R03.
 
 Human promoted the full optimized persistence continuation chain on 2026-10-08:
 

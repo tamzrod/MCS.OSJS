@@ -126,47 +126,48 @@ CODE COMPLETE at `1310c1367c7f98f084187006084d624d8e20e07b`, delivered on main.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRuntimeStatus -v .` → 7 tests PASS, exit 0; simulator persistence status tests PASS; OS.js diagnostics tests exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites and the whole OSJS node suite → all pass, exit 0. New Go files `gofmt`/`vet` clean.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — none ACTIVE (PERSIST-022 BLOCKED)
+## Current task — ACTIVE
 
-All CODE packets **PERSIST-001..021 are CODE COMPLETE**. PERSIST-021 is delivered at `1310c1367c7f98f084187006084d624d8e20e07b`.
+**PERSIST-R01 — Filesystem Snapshot Adapter**
+Mode / owner: **CODE / OpenHands JR DEV**
+Packet: `workflow/active_work/persist-r01-filesystem-snapshot-adapter.md`
 
-**PERSIST-022 — End-to-End Persistence Verification** is human-promoted VERIFY work, but it is **BLOCKED** and must not be selected yet.
+Human promoted the full optimized persistence continuation chain on 2026-10-08:
 
-### Verification precondition blocker
+```text
+PERSIST-R01  Filesystem Snapshot Adapter
+    ↓
+PERSIST-R02  Runtime Save Wiring
+    ↓
+PERSIST-R03  Startup Restore Wiring
+    ↓
+PERSIST-UI01 Electron Persistence Settings
+    ↓
+PERSIST-R04  Runtime Status Wiring
+    ↓
+PERSIST-R05  Disposable Persistence E2E Harness
+    ↓
+PERSIST-022  Independent End-to-End VERIFY
+```
 
-At product checkpoint `1310c1367c7f98f084187006084d624d8e20e07b`, repository call-site inspection found:
-- `NewPersistenceSnapshotWriter` — definition/tests only; no non-test runtime caller.
-- `LoadPersistenceSnapshots` — definition/tests only; no non-test runtime caller.
-- `RestorePersistencePlan` — definition/tests only; no non-test runtime caller.
-- `PersistenceRuntimeStatusFromPlan` — definition/tests only; no non-test runtime caller.
+Exactly one product task executes per OPERATION CWAL invocation to keep context bounded. After genuine delivery of a CODE packet, OpenHands JR DEV **must** update completion evidence and arm the named already-promoted successor for the next invocation without asking the human to promote/select it again.
 
-The current runtime therefore cannot yet be independently exercised through the promoted lifecycle:
-`save state → restart sealed → restore → verify → unseal → Modbus sees restored state`.
+The normal operator action is now simply:
 
-Unit tests and prior temporary JR DEV socket checks do not substitute for that end-to-end appliance path.
+```text
+OPERATION CWAL
+```
 
-### Review-stage follow-up
+JR DEV may perform its already-authorized safe fetch/fast-forward itself. A reused workspace must still preserve the superseded PERSIST-013/PERSIST-014 local-history recovery notes and must never force/reset destructively.
 
-A CODE proposal has been created at:
-`workflow/micro_task/persist-runtime-integration-gap.md`
+## Autonomous successor routing
 
-It is **PROPOSED / HUMAN REVIEW REQUIRED**, not ACTIVE. It covers:
-- concrete appliance snapshot payload + manifest filesystem store/source;
-- persistence-owned RBE → snapshot writer runtime wiring;
-- startup sealed load/restore/verify/final-unseal wiring;
-- actual restore/save observations feeding runtime status;
-- a committed disposable integration harness suitable for independent PERSIST-022.
+- R01 success → activate R02
+- R02 success → activate R03
+- R03 success → activate UI01
+- UI01 success → activate R04
+- R04 success → activate R05
+- R05 success → pin and activate PERSIST-022 as **independent JR VERIFY**, then STOP
+- Any genuine blocker/failure → fail closed, record it, do not skip ahead
 
-Do not execute that proposal until human-promoted. Do not run PERSIST-022 until the runtime integration exists and the workflow owner can pin its exact independent-JR packet.
-
-Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
-
-## Successor routing
-
-PERSIST-011 passed independently; PERSIST-012 through PERSIST-021 are CODE complete. PERSIST-022 is human-promoted VERIFY work but is currently BLOCKED because the persistence lifecycle is not wired into a non-test runtime path. The review-stage follow-up is `workflow/micro_task/persist-runtime-integration-gap.md`; it requires human promotion before CODE execution.
-
-OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
-
-TEST/VERIFY packets switch to independent JR mode and require their exact current packet. JR DEV must not self-certify those gates.
-
-Only BLACK SHEEP WALL edits ICC. No force push, destructive history rewrite, production/operator-data mutation, or scope expansion.
+JR DEV never executes PERSIST-022 and never self-certifies the VERIFY gate. Only BLACK SHEEP WALL edits ICC.

@@ -2,6 +2,7 @@
 
 Status: PROMOTED / QUEUED (human authorized 2026-10-08)
 Stage: CODE
+Owner: Codex JR DEV (operator assignment 2026-10-08)
 Previous: NP-02
 Next: NP-04
 

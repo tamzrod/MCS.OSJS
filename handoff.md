@@ -125,11 +125,29 @@ CODE COMPLETE at `1310c1367c7f98f084187006084d624d8e20e07b`, delivered on main.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRuntimeStatus -v .` → 7 tests PASS, exit 0; simulator persistence status tests PASS; OS.js diagnostics tests exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites and the whole OSJS node suite → all pass, exit 0. New Go files `gofmt`/`vet` clean.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-R01 — Filesystem Snapshot Adapter**
+CODE COMPLETE at `1ac1477177ec19fa02cb344d6a20a8632fc0c88a`, delivered on main.
+- `mma2composer/persistence_filesystem.go` (blob `d99a8f9c8254e64f678133ccf8234289584307e3`) and `mma2composer/persistence_filesystem_test.go` (blob `aae87093f997a2f04e64c0bc1623cde199ab3ecd`).
+- `PersistenceFilesystemAdapter` implements both `PersistenceSnapshotStore` and `PersistenceSnapshotSource`, rooted beneath the appliance data root at `persistence/snapshots/port-<P>/unit-<U>/area-<A>/`, reusing the existing raw snapshot format and manifest metadata. Registration rejects non-canonical/duplicate areas; writes splice changed runs and atomically replace `snapshot.bin` + `manifest.json`; malformed/missing content fails closed.
+- Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceFilesystem -v .` → 14 tests PASS, exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt`/`vet` clean.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-R01 — Filesystem Snapshot Adapter**
+**PERSIST-R02 — Runtime Save Wiring**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-r01-filesystem-snapshot-adapter.md`
+Packet: `workflow/active_work/persist-r02-runtime-save-wiring.md`
+
+Execute PERSIST-R02 exactly as written (read the packet for its exact scope before implementing):
+- create the non-test runtime call site for `NewPersistenceSnapshotWriter` wiring to the PERSIST-R01 filesystem adapter;
+- subscribe only the system-derived persistence RBE projection and route its one-byte rule events to snapshot writes;
+- preserve change-only behavior (read the configured area on event; persist only changed bytes/words);
+- do not touch user-owned RBE, add alternate ranges, poll, restore, or edit UI/ICC;
+- run only task-bounded self-checks and bounded in-scope corrective retests;
+- commit and non-force push under standing JR DEV authority;
+- record changed paths/checks/source checkpoint;
+- automatically arm PERSIST-R03 for the next invocation only after genuine PERSIST-R02 completion;
+- STOP after PERSIST-R02.
 
 Human promoted the full optimized persistence continuation chain on 2026-10-08:
 

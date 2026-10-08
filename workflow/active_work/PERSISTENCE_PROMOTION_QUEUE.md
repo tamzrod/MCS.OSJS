@@ -2,7 +2,7 @@
 
 Human has realigned the persistence migration into TWO sequential product phases.
 
-CURRENT: **NPE-01 — Native Persistence Contract Realignment**
+CURRENT: **NPE-05A — Refresh Embedded MMA2 Native Persistence Runtime**
 
 Order:
 
@@ -12,6 +12,7 @@ NPE-02  Electron persistence UI
 NPE-03  Electron native config / Save & Apply wiring
 NPE-04  Electron Replicator destination persistence parity
 NPE-05  Electron legacy persistence cleanup
+NPE-05A Refresh embedded MMA2 native persistence runtime
 NPE-06  Electron independent native-persistence verification
         ↓ ONLY AFTER PASS
 NPO-01  OS.js Toolkit persistence UI
@@ -25,6 +26,7 @@ NPF-01  workflow/documentation cleanup
 ## Routing rules
 
 - One packet per OPERATION CWAL invocation unless a later handoff explicitly changes that rule.
+- NPE-06 remains blocked until NPE-05A refreshes the stale embedded MMA2 donor copy.
 - Electron is completed and independently verified BEFORE OS.js Toolkit persistence work starts.
 - MMA2 owns persistence runtime: disk snapshot, runtime flush, startup restore, backup and recovery.
 - Integration layers configure native per-memory persistence only.

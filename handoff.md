@@ -153,21 +153,28 @@ CODE COMPLETE at `cff34f41ebb350fc1c4380253cc2acc02e4562ca`, delivered on main.
 - Self-check: `cd electron && node test/memory-advanced.test.js` → 12 PASS; `node test/memory-persistence.test.js` → 4 PASS; all Electron test files pass.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-R04 — Runtime Status Wiring**
+CODE COMPLETE at `d9251d3c56bf490c21655bdb372b342ee1eec7f8`, delivered on main.
+- `mma2composer/persistence_status.go` (blob `6d0b48dd2ff891bd38ebff8a56036bde8a086c0c`), `mma2composer/persistence_runtime_save.go` (blob `4401194e0b40057d8dfa9ee328a5b3f71764e25b`), `simulator/persistence_save.go` (blob `f408910f6df9e5d6ebf8cfb73c3781ab8c81086e`), `simulator/apply.go` (blob `7df13e87ce43cfab53374a8c73b93e20706cd7f1`), plus focused tests.
+- `RuntimeStatus` now feeds real save/restore observations into `DeviceRuntimeStatus.Persistence` (not a configured-only placeholder); last save/restore appear only when genuinely observed.
+- Self-check: `mma2composer` `TestPersistenceRuntimeStatus|TestPersistenceRuntimeSave` → ok; `simulator` `TestRuntimeStatusCarriesRealPersistenceObservations|TestPersistenceStartup` → ok. Bounded regression: all Go modules and OS.js+Electron node suites pass, exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-R04 — Runtime Status Wiring**
+**PERSIST-R05 — Disposable Persistence E2E Harness**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-r04-runtime-status-wiring.md`
+Packet: `workflow/active_work/persist-r05-disposable-e2e-harness.md`
 
-Execute PERSIST-R04 exactly as written (read the packet for its exact scope before implementing):
-- add the real non-test runtime call site for `PersistenceRuntimeStatusFromPlan`;
-- carry actual last-save and last-restore observations from PERSIST-R02/R03 into `DeviceRuntimeStatus.Persistence`;
-- keep status observational: restore failure remains visibly sealed and the UI gains no control authority;
-- run only task-bounded self-checks and bounded in-scope corrective retests;
+Execute PERSIST-R05 exactly as written (read the packet for its exact scope before implementing):
+- add one committed repository-native disposable integration harness that PERSIST-022 independent JR can execute without modifying product source;
+- prove the real runtime sequence `known value → RBE save → restart sealed → Modbus rejected while sealed → restore → verify → final unseal → Modbus reads restored value` using disposable loopback/temp data only;
+- include one deterministic failed-restore case that remains sealed;
+- clean only its own disposable resources; provide stable one-run evidence;
+- no production/customer data, no global services, no product behavior changes disguised as a test, no ICC edits;
 - commit and non-force push under standing JR DEV authority;
-- record changed paths/checks/source checkpoint;
-- automatically arm PERSIST-R05 for the next invocation only after genuine PERSIST-R04 completion;
-- STOP after PERSIST-R04.
+- record harness path/exact command/expected observations/cleanup;
+- prepare and activate the exact PERSIST-022 independent-JR VERIFY packet, then STOP at the identity boundary (JR DEV must not execute or certify PERSIST-022).
 
 Human promoted the full optimized persistence continuation chain on 2026-10-08:
 

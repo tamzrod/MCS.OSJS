@@ -1,5 +1,7 @@
 ## Current native persistence assignment — operator realignment 2026-10-08
 
+**JR DEV OWNER: OpenHands.** OpenHands is explicitly authorized to execute the current NPE/NPO CODE packets under OPERATION CWAL. There is no Codex owner for this workstream.
+
 **CURRENT: NPE-01 — Native Persistence Contract Realignment**
 
 The prior NP-02..NP-06 queue is SUPERSEDED. Do not execute it.

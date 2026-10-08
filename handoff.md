@@ -1,24 +1,49 @@
-## Current NP assignment — operator authorization 2026-10-08
-NP-01 completed by OpenHands JR DEV at 757fe00b. OpenHands is paused. **Codex JR DEV is explicitly assigned NP-02, NP-03, NP-04, and NP-06** (CODE/workflow scopes only). **NP-05 is reserved for Independent JR TEST/VERIFY**; Codex JR DEV must not self-certify NP-05. Current task: NP-02. One task per invocation, STOP after each task. This explicit assignment supersedes the prior OpenHands-only identity for the NP workstream, without changing historical PERSIST assignments.
+## Current native persistence assignment — operator realignment 2026-10-08
 
----
+**CURRENT: NPE-01 — Native Persistence Contract Realignment**
 
-# Current human-approved workstream — MMA2 native persistence migration (2026-10-08)
+The prior NP-02..NP-06 queue is SUPERSEDED. Do not execute it.
 
-**CURRENT: NP-02 — Persistence UI.** Six packets NP-01..NP-06 are PROMOTED/QUEUED under `workflow/active_work/np-*.md`. **NP-01 is CODE COMPLETE and delivered (see below).** Recursive continuation is disabled for this workstream: execute one packet per OPERATION CWAL invocation and STOP after its handoff. Advance only after predecessor completion and human/current-task routing. The older PERSIST-001..022 / R01..R05 / UI01 workstream is completed historical implementation and is superseded for new persistence development. Do NOT resume legacy persistence continuation or recursive task execution. MMA2 PR #22 owns native persistence runtime. Keep unrelated workflows intact.
+### Authoritative sequence
 
----
+```text
+NPE-01  contract realignment
+→ NPE-02 Electron UI
+→ NPE-03 Electron config/apply wiring
+→ NPE-04 Electron Replicator parity
+→ NPE-05 Electron legacy cleanup
+→ NPE-06 Independent Electron verification
+→ NPO-01 OS.js Toolkit UI
+→ NPO-02 OS.js Toolkit config wiring
+→ NPO-03 OS.js Toolkit cleanup/parity
+→ NPO-04 Independent OS.js verification
+→ NPF-01 workflow/docs cleanup
+```
 
-## Completed predecessor — NP-01 (Native Schema & Validation)
+Electron must be fully implemented and NPE-06 must PASS before any NPO-* product task begins.
 
-**NP-01 — Native Schema & Validation**
-CODE COMPLETE at `757fe00b6e8b057b92cb693781fe1885ce362dd6`, delivered on GitHub main (verified `git ls-remote origin refs/heads/main` = `757fe00`).
-- `mma2composer/composer.go` — extended `Persistence` to the native per-memory block (`enabled`, `directory`, `ranges`); added `PersistenceArea`/`PersistenceRanges`; `Commit` now rejects root-level persistence and validates each memory's persistence block before any write.
-- `mma2composer/persistence_native.go` (new) — `ValidateMemoryPersistence` (enabled requires nonempty directory; optional ranges must be nonempty, inside allocated areas and nonoverlapping; omitted ranges = all allocated areas) and `ValidateCandidatePersistence` (rejects root `persistence`). Read-only; no mutation; no second range source of truth.
-- `mma2composer/memory_validation.go` — `ValidateMemory` composes the native persistence check after the State Sealing prerequisite.
-- `mma2composer/persistence_native_test.go` (new) + fixture updates in `mma2composer/persistence_sealing_validation_test.go`, `simulator/persistence_config_schema_test.go` so enabled fixtures carry the now-required directory.
-- Self-check: `cd mma2composer && go test -mod=readonly -run 'TestNativePersistence|TestCandidateRejectsRootPersistence|TestCommitRejectsInvalidPersistence' -v .` → 8 tests PASS, exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
-- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+### Runtime ownership
+
+MMA2 is the sole persistence runtime owner. Integration code configures native per-memory persistence only.
+
+Current native contract that NPE-01 must reconcile:
+- `persistence.enabled: true` enables persistence per memory;
+- `directory` is optional; omitted uses MMA2's native YAML-directory default;
+- omitted `ranges` means all allocated areas;
+- custom ranges are optional and bounded by allocated areas;
+- persistence is independent of State Sealing;
+- persistence is independent of RBE/TCP;
+- persistence restore is internal to MMA2 before ingress is exposed.
+
+Do not add or preserve integration-owned snapshot capture, Raw-Ingest restore, unlock-coil writes, persistence watchdogs, or persistence-generated RBE.
+
+### Execution rule
+
+One packet per OPERATION CWAL invocation. Record genuine implementation/test evidence, commit, non-force push, update handoff to the named successor, then STOP. Independent TEST/VERIFY packets must remain separate identity boundaries.
+
+### Historical note
+
+NP-01 was delivered at `757fe00b6e8b057b92cb693781fe1885ce362dd6`. It is not being erased, but some assumptions are stale versus the current MMA2 contract; NPE-01 corrects that before Electron work proceeds.
 
 ---
 

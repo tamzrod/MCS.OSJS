@@ -1,6 +1,6 @@
 # NPE-06 — Electron Native Persistence Verification
 
-Status: PROMOTED / QUEUED
+Status: BLOCKED — headless Linux environment; superseded by NPE-06W Windows acceptance
 Stage: TEST/VERIFY
 Owner: Independent JR TEST/VERIFY
 Previous: NPE-05
@@ -27,3 +27,16 @@ Using a disposable/safe test memory:
 Do not change product source while acting as Independent JR except under separate explicit authorization.
 
 Record exact commands/actions and raw evidence. PASS only on executed evidence. STOP after verdict.
+
+
+## Blocked execution record — 2026-10-08
+
+Independent JR could not launch the Electron product because DISPLAY was unset and no Xvfb/xvfb-run environment was available. Therefore the required Electron product acceptance path could not be exercised.
+
+Supplementary native-runtime evidence was real and successful:
+`python3 MMA2/test/persistence_manual/test.py` → exit 0, PASS (primary restore + backup recovery).
+
+This does not constitute NPE-06 PASS. Product-level Electron verification is moved to:
+`workflow/active_work/npe-06w-windows-electron-native-persistence-acceptance.md`.
+
+Do not execute this packet again unless specifically reactivated.

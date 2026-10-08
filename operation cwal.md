@@ -36,12 +36,13 @@ This standing authority does **not** permit:
 - independent TEST/VERIFY self-certification;
 - executing a second product task in the same invocation.
 
-The normal operator loop is therefore:
+The normal operator loop for an already-promoted autonomous JR DEV queue is therefore:
 
 ```text
-git pull
 OPERATION CWAL
 ```
+
+JR DEV may perform the already-authorized safe fetch/fast-forward itself. A human does not need to re-promote or re-select each successor.
 
 CWAL handles one task completely, records/delivers it, prepares the next authorized packet, then STOPS. The next human invocation repeats the same two-step loop.
 

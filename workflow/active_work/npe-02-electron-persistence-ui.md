@@ -2,7 +2,7 @@
 
 Status: PROMOTED / QUEUED
 Stage: CODE
-Owner: Codex JR DEV
+Owner: OpenHands JR DEV
 Previous: NPE-01
 Next: NPE-03
 

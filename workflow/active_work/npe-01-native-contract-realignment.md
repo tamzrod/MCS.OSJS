@@ -1,6 +1,6 @@
 # NPE-01 — Native Persistence Contract Realignment
 
-Status: PROMOTED / CURRENT
+Status: CODE COMPLETE — delivered on main at `b868c2d2d8cb132d52498cb47105b1bd8c095551` (OpenHands JR DEV); awaiting independent verification (NPE-06)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: NP-01 historical implementation
@@ -44,3 +44,22 @@ Focused schema/model tests prove:
 6. persistence and RBE validate independently.
 
 Record exact changed paths, commands, outputs and delivered SHA. STOP after delivery.
+
+## Delivery evidence (OpenHands JR DEV)
+
+Delivered SHA: `b868c2d2d8cb132d52498cb47105b1bd8c095551` on `main` (base `bedf33a`).
+
+Changed paths (all authorized):
+- `mma2composer/composer.go` — `Persistence` model comment realigned (directory optional; independent of State Sealing/RBE/RBE TCP).
+- `mma2composer/persistence_native.go` — `ValidateMemoryPersistence` no longer requires a nonempty directory; enabled + omitted/empty directory is valid.
+- `mma2composer/memory_validation.go` — removed the persistence-specific State Sealing prerequisite and the now-unused `memoryStateSealingEnabled` helper; `ValidateMemory` no longer inspects sealing.
+- `mma2composer/persistence_native_test.go` — acceptance 1 (`TestNativePersistenceDirectoryOptional`), 2 (`TestNativePersistenceRangesOmittedValid` now asserts no range projection is materialized), 4 (existing range validation), 6 (`TestPersistenceIndependentOfRBE`).
+- `mma2composer/persistence_sealing_validation_test.go` — acceptance 5: `TestPersistenceIndependentOfStateSealing` and `TestPersistenceValidationDoesNotMutateSealing` now assert independence instead of a sealing prerequisite.
+- `simulator/persistence_config_schema_test.go` — stale PERSIST-002 prerequisite comment corrected to the independence invariant.
+
+Commands and results:
+- `cd mma2composer && go test -mod=readonly -run 'TestNativePersistence|TestPersistenceIndependentOfStateSealing|TestPersistenceValidationDoesNotMutateSealing|TestPersistenceIndependentOfRBE|TestCandidateRejectsRootPersistence|TestCommitRejectsInvalidPersistence' -v .` → 11 tests PASS, exit 0.
+- `cd mma2composer && go vet -mod=readonly ./...` → exit 0; `gofmt -l` clean for all changed files.
+- Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. (The unrelated `TestWatchDocumentReloadsNoneSchedule` timing test flaked on one run and passed on re-run; it exercises None-schedule reload, not persistence validation.)
+
+This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.

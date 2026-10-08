@@ -1,9 +1,9 @@
 # PERSIST-022 — End-to-End Persistence Verification
 
-Status: BLOCKED — runtime lifecycle not wired; exact VERIFY packet cannot yet be pinned
+Status: QUEUED — HUMAN PROMOTED; dependency-gated until PERSIST-R05 completes
 Stage: VERIFY
 Owner: OpenHands / independent JR
-Previous: PERSIST-021
+Previous: PERSIST-R05
 Next: none
 
 ## Primary outcome
@@ -24,14 +24,15 @@ No production/customer data, no source fixes, no invented commands, no global se
 JR changes no product source, follows `operation cwal.md`, captures genuine evidence and STOPS after verdict.
 
 ## Dependencies
-Requires genuine completion evidence for PERSIST-021, a complete current VERIFY packet in `handoff.md`, and an actual runtime path capable of executing the lifecycle.
+Requires genuine completion of the already-promoted continuation chain:
+`PERSIST-R01 → R02 → R03 → UI01 → R04 → R05`.
 
-Current blocker at product checkpoint `1310c1367c7f98f084187006084d624d8e20e07b`: repository call-site inspection found no non-test runtime caller of `NewPersistenceSnapshotWriter`, `LoadPersistenceSnapshots`, `RestorePersistencePlan`, or `PersistenceRuntimeStatusFromPlan`. The concrete appliance snapshot store/source and startup/RBE wiring required for true end-to-end execution are therefore not yet observable in source.
+PERSIST-R05 must deliver a committed disposable real-runtime harness and record its exact command, target, expected observations and cleanup. Only then may the workflow owner/JR DEV pin this VERIFY packet exactly in `handoff.md` and switch execution identity to **OpenHands / independent JR**.
 
-Review-stage proposal: `workflow/micro_task/persist-runtime-integration-gap.md`.
+JR DEV must not execute or self-certify PERSIST-022.
 
 ## Sizing
 0/2/0/2/2=6.
 
 ## CWAL
-This VERIFY packet remains human-promoted but is **BLOCKED**, not executable. Do not run independent JR yet: the runtime currently lacks observable non-test persistence lifecycle wiring, so the exact disposable end-to-end execution packet cannot be truthfully pinned. Do not substitute unit tests for the required runtime lifecycle and do not invent a test runner.
+Human promotion is already granted, but execution is dependency-gated. Do not run this packet until genuine PERSIST-R05 delivery has pinned the exact safe independent-JR execution packet. After R05, JR DEV may activate this packet for the next invocation but must STOP; the next invocation runs under independent JR identity.

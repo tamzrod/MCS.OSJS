@@ -55,7 +55,7 @@ func fakeModbus(t *testing.T, fc byte, payload []byte) uint16 {
 func TestModbusReadAreaRegisterAndBit(t *testing.T) {
 	regPayload := []byte{0x01, 0x02, 0x03, 0x04}
 	port := fakeModbus(t, 3, regPayload)
-	got, err := modbusReadArea("127.0.0.1", port, 1, mma2composer.PersistenceRegisters, 0, 2)
+	got, err := modbusReadArea("127.0.0.1", port, 1, "holding_registers", mma2composer.PersistenceRegisters, 0, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestModbusReadAreaRegisterAndBit(t *testing.T) {
 
 	bitPayload := []byte{0xAB}
 	port = fakeModbus(t, 1, bitPayload)
-	got, err = modbusReadArea("127.0.0.1", port, 1, mma2composer.PersistenceBits, 0, 8)
+	got, err = modbusReadArea("127.0.0.1", port, 1, "coils", mma2composer.PersistenceBits, 0, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestModbusReadAreaRegisterAndBit(t *testing.T) {
 // A wrong-length payload is an explicit error, never a fabricated snapshot.
 func TestModbusReadAreaRejectsWrongLength(t *testing.T) {
 	port := fakeModbus(t, 3, []byte{0x01, 0x02}) // 1 reg, but we ask for 2
-	if _, err := modbusReadArea("127.0.0.1", port, 1, mma2composer.PersistenceRegisters, 0, 2); err == nil {
+	if _, err := modbusReadArea("127.0.0.1", port, 1, "holding_registers", mma2composer.PersistenceRegisters, 0, 2); err == nil {
 		t.Fatal("a wrong-length read must fail closed")
 	}
 }
@@ -143,5 +143,47 @@ func TestPersistenceRBESubscriberDialAndSubscribe(t *testing.T) {
 	}
 	if len(handler.ids) != 2 || handler.ids[0] != 5 || handler.ids[1] != 6 {
 		t.Fatalf("dialed IDs wrong: %v", handler.ids)
+	}
+}
+
+
+func TestModbusReadAreaUsesActualFCForEachPersistenceArea(t *testing.T) {
+	tests := []struct {
+		area string
+		kind mma2composer.PersistenceAreaKind
+		fc byte
+		payload []byte
+		count uint16
+	}{
+		{"coils", mma2composer.PersistenceBits, 1, []byte{0x01}, 1},
+		{"discrete_inputs", mma2composer.PersistenceBits, 2, []byte{0x01}, 1},
+		{"holding_registers", mma2composer.PersistenceRegisters, 3, []byte{0x00, 0x01}, 1},
+		{"input_registers", mma2composer.PersistenceRegisters, 4, []byte{0x00, 0x01}, 1},
+	}
+	for _, tc := range tests {
+		t.Run(tc.area, func(t *testing.T) {
+			ln, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil { t.Fatal(err) }
+			defer ln.Close()
+			go func() {
+				conn, err := ln.Accept()
+				if err != nil { return }
+				defer conn.Close()
+				req := make([]byte, 12)
+				if _, err := io.ReadFull(conn, req); err != nil { return }
+				if req[7] != tc.fc { return }
+				resp := make([]byte, 9+len(tc.payload))
+				binary.BigEndian.PutUint16(resp[0:2], binary.BigEndian.Uint16(req[0:2]))
+				binary.BigEndian.PutUint16(resp[4:6], uint16(3+len(tc.payload)))
+				resp[6], resp[7], resp[8] = req[6], tc.fc, byte(len(tc.payload))
+				copy(resp[9:], tc.payload)
+				_, _ = conn.Write(resp)
+			}()
+			_, portText, _ := net.SplitHostPort(ln.Addr().String())
+			n, _ := strconv.Atoi(portText)
+			got, err := modbusReadArea("127.0.0.1", uint16(n), 1, tc.area, tc.kind, 0, tc.count)
+			if err != nil { t.Fatal(err) }
+			if !bytes.Equal(got, tc.payload) { t.Fatalf("got %v want %v", got, tc.payload) }
+		})
 	}
 }

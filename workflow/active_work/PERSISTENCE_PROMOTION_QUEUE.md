@@ -2,7 +2,7 @@
 
 Human has realigned the persistence migration into TWO sequential product phases.
 
-CURRENT: **NPE-05A — Refresh Embedded MMA2 Native Persistence Runtime**
+CURRENT: **NPE-06W — Windows Electron Native Persistence Acceptance**
 
 Order:
 
@@ -13,7 +13,8 @@ NPE-03  Electron native config / Save & Apply wiring
 NPE-04  Electron Replicator destination persistence parity
 NPE-05  Electron legacy persistence cleanup
 NPE-05A Refresh embedded MMA2 native persistence runtime
-NPE-06  Electron independent native-persistence verification
+NPE-06  Electron independent native-persistence verification — BLOCKED on headless Linux
+NPE-06W Windows Electron native-persistence acceptance
         ↓ ONLY AFTER PASS
 NPO-01  OS.js Toolkit persistence UI
 NPO-02  OS.js Toolkit native config wiring

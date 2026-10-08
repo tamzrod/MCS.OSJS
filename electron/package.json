@@ -28,6 +28,7 @@
       "replicator-ipc.js",
       "runtime-status.js",
       "diagnostics.js",
+      "persistence.js",
       "memory-settings.js",
       "renderer/**/*",
       "build/icon.png",

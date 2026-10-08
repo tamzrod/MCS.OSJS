@@ -147,16 +147,21 @@ test('device copies get unused global RBE IDs and exhaustion leaves the copy unc
 test('persistence tab round-trips persistence.enabled through the same draft', () => {
   const params = {...ui.defaults(), fc1: {start: 10, count: 16}};
   const {root} = setup(params);
-  const tabs = collect(root).filter(node => node.tagName === 'button' && ['Persistence'].includes(node.textContent));
-  assert.equal(tabs.length, 1);
+  const tabOrder = collect(root).filter(node => node.tagName === 'button' && ['RBE Rules', 'State Sealing', 'Persistence', 'Access Policy'].includes(node.textContent)).map(node => node.textContent);
+  assert.deepEqual(tabOrder, ['RBE Rules', 'State Sealing', 'Persistence', 'Access Policy']);
   click(root, 'Persistence');
   const enable = find(root, 'Enable persistence');
   assert.equal(enable.checked, false);
   enable.checked = true; enable.events.change();
   assert.deepEqual(params.persistence, {enabled: true});
-  // Save-and-apply composition would send unknown keys through applySettings.
+  assert.equal(params.state_sealing.enabled, true);
+  assert.equal(params.state_sealing.area, 'coil');
+  // Save-and-apply composition would send the same persistence + state_sealing
+  // draft through applySettings; disabling persistence releases ownership but
+  // preserves the sealing configuration.
   enable.checked = false; enable.events.change();
   assert.deepEqual(params.persistence, {enabled: false});
+  assert.equal(params.state_sealing.enabled, true);
   // Navigating away and back preserves the draft value.
   click(root, 'RBE Rules'); click(root, 'Persistence');
   assert.equal(find(root, 'Enable persistence').checked, false);
@@ -177,19 +182,35 @@ test('persistence is hidden where unsupported and locked derived areas are read-
   assert.equal(collect(root).filter(node => node.tagName === 'input').length, 1); // only the enable checkbox
 });
 
-test('persistenceError requires RBE availability and state sealing, never enables them', () => {
-  const enabled = {persistence: {enabled: true}};
+test('persistence owns state sealing while enabled and keeps RBE as external prerequisite', () => {
+  const enabled = {persistence: {enabled: true}, state_sealing: {enabled: true}};
   assert.match(ui.persistenceError(enabled, {rbeAvailable: false}), /RBE mechanism/);
-  assert.match(ui.persistenceError(enabled, {rbeAvailable: true}), /state sealing/);
-  const sealed = {persistence: {enabled: true}, state_sealing: {enabled: true}};
-  assert.equal(ui.persistenceError(sealed, {rbeAvailable: true}), null);
+  assert.equal(ui.persistenceError(enabled, {rbeAvailable: true}), null);
   assert.equal(ui.persistenceError({persistence: {enabled: false}}, {rbeAvailable: false}), null);
-  // The prerequisites are reported, not silently created.
-  const params = {...ui.defaults()};
+
+  const params = {...ui.defaults(), fc1: {start: 10, count: 16}};
   const {root} = setup(params);
   click(root, 'Persistence');
   const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
-  assert.equal(params.state_sealing.enabled, false);
+
+  assert.equal(params.state_sealing.enabled, true);
+  assert.equal(params.state_sealing.area, 'coil');
+  assert.equal(params.state_sealing.address, 10);
+  assert.equal(params.state_sealing.exception, 6);
   assert.equal(params.rbe, undefined);
-  assert.ok(collect(root).some(node => node.attributes.role === 'alert' && /state sealing/.test(node.textContent)));
+
+  type(find(root, 'Lock coil address'), '12');
+  change(find(root, 'Sealed response'), '2');
+  assert.equal(params.state_sealing.address, 12);
+  assert.equal(params.state_sealing.exception, 2);
+
+  const sealingTab = collect(root).find(node => node.tagName === 'button' && node.textContent === 'State Sealing');
+  assert.equal(sealingTab.disabled, true);
+  assert.ok(collect(root).some(node => /owns State Sealing/.test(node.textContent || '')));
+
+  // Disabling persistence releases the tab without deleting sealing config.
+  const disable = find(root, 'Enable persistence'); disable.checked = false; disable.events.change();
+  const released = collect(root).find(node => node.tagName === 'button' && node.textContent === 'State Sealing');
+  assert.equal(released.disabled, false);
+  assert.deepEqual(params.state_sealing, {enabled: true, area: 'coil', address: 12, exception: 2});
 });

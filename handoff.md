@@ -1,41 +1,35 @@
-## Current native persistence assignment — operator resolution 2026-10-08
+## Current native persistence assignment — Windows hotfix 2026-10-08
 
 **CURRENT: NPE-06W — Windows Electron Native Persistence Acceptance**
 
-NPE-06 Independent JR verification is BLOCKED by the headless Linux environment, not by a product failure. Native MMA2 persistence itself passed the committed disposable harness.
+The first NPE-06W run exposed a real compatibility defect:
 
-The remaining product gate must run on the actual Windows Electron target.
-
-### Routing
-
-```text
-NPE-01   COMPLETE
-NPE-02   COMPLETE
-NPE-03   COMPLETE
-NPE-04   COMPLETE
-NPE-05   COMPLETE
-NPE-05A  COMPLETE — embedded MMA2 refreshed
-NPE-06   BLOCKED — no graphical Electron environment
-→ NPE-06W Windows Electron native persistence acceptance   ← CURRENT
-→ NPO-01 OS.js Toolkit persistence UI                     ← only after PASS
-→ NPO-02 OS.js Toolkit config wiring
-→ NPO-03 OS.js Toolkit cleanup/parity
-→ NPO-04 Independent OS.js verification
-→ NPF-01 workflow/docs cleanup
+```
+Save & Apply
+→ Electron invokes mma2 --validate-stdin
+→ refreshed embedded MMA2 treated --validate-stdin as a filename
+→ config path must end in .yaml or .yml
 ```
 
-NPE-06W packet:
-`workflow/active_work/npe-06w-windows-electron-native-persistence-acceptance.md`
+This was caused by the NPE-05A donor refresh overwriting the pre-existing MCS-local generic validation-only CLI mode.
 
-### Gate rule
+### Hotfix delivered
 
-Do not begin NPO-* product work until NPE-06W passes the Windows Electron acceptance path:
-- default persistence;
-- MMA2-only restart restore;
-- State Sealing disabled;
-- RBE TCP absent/disabled;
-- disabled persistence no-restore;
-- custom-range behavior.
+NPE-06H — Restore MMA2 Validation CLI Compatibility
+
+Product commit:
+`8c1a805a868dfaec41c5d2d11ab0bc7ec4a53ba0`
+
+Workflow evidence:
+`workflow/active_work/npe-06h-restore-mma2-validation-cli.md`
+
+The fix restores `mma2 --validate-stdin` using the existing `pkg/configvalidate.YAML` path and does not start listeners or alter persistence runtime behavior.
+
+### Required next action
+
+Rebuild/reinstall the Windows Electron package so its bundled `mma2.exe` contains the hotfix, then rerun NPE-06W beginning with Save & Apply.
+
+Do not advance to NPO-* until NPE-06W passes.
 
 
 ---

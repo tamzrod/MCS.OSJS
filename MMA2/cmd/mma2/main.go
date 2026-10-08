@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -23,9 +24,23 @@ import (
 	"mma2/internal/transport/modbus"
 	"mma2/internal/transport/rawingest"
 	"mma2/internal/version"
+	"mma2/pkg/configvalidate"
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--validate-stdin" {
+		data, err := io.ReadAll(io.LimitReader(os.Stdin, 4*1024*1024+1))
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(data) > 4*1024*1024 {
+			log.Fatal("configuration exceeds 4 MiB")
+		}
+		if err := configvalidate.YAML(data); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if len(os.Args) != 2 {
 		log.Fatalf("usage: mma2 <config.yaml>")
 	}

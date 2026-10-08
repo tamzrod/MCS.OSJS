@@ -1,10 +1,10 @@
 # Persistence autonomous promotion queue
 
-Human-approved and promoted: PERSIST-001..022 on 2026-10-07.
+Human-approved and promoted: PERSIST-001..022 on 2026-10-07; optimized continuation PERSIST-R01..R05 + PERSIST-UI01 promoted on 2026-10-08.
 
 All packets in this queue are authorized Active Work for their written scope. Promotion does NOT mean simultaneous execution. Repository rule remains: exactly ONE ACTIVE/current task per OPERATION CWAL invocation, selected by `handoff.md`.
 
-Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is CODE COMPLETE and delivered at `2f18f8196f5497c5435b697b8b1570f59cab2642`. PERSIST-013 is CODE COMPLETE and delivered at `ccccb891b737995f6a24a58e844e5bd1d794b609`. PERSIST-014 is CODE COMPLETE and delivered at `98a952a89b087f12a9b99b6bd648ce97ac44e6f2` via connector recovery after transport failure. PERSIST-015 is CODE COMPLETE and delivered at `a497d9d4ca35cab8de832bc92fc3b5d90c7a4b33` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-016 is CODE COMPLETE and delivered at `2fbabc3481b6435ca38596ea7dd060e36ed0655d` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-017 is CODE COMPLETE and delivered at `fa1276c26cbb639f061436c3f111351232037b57` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-018 is CODE COMPLETE and delivered at `3eb118f507688d483c5d4985f74fe6a98b531bc3` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-019 is CODE COMPLETE and delivered at `e22459ecdd10433ef21f63df25e3a22a43fb3662` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-020 is CODE COMPLETE and delivered at `1528d3e2451f3588de46f7539127164588878f1a` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-021 is CODE COMPLETE and delivered at `1310c1367c7f98f084187006084d624d8e20e07b` (OpenHands JR DEV). PERSIST-001..021 CODE tasks are complete. PERSIST-022 remains the final VERIFY packet but is BLOCKED because the persistence lifecycle is not yet wired into an observable non-test runtime path. A review-stage CODE proposal exists at `workflow/micro_task/persist-runtime-integration-gap.md`.**
+Human explicitly selected the persistence workstream on 2026-10-07. **PERSIST-001..010 CODE tasks are complete and delivered through `190e464f6106c3e640d21b1f9352328447464bef`. PERSIST-011 independently PASSed on tested HEAD `313e3be60a29fff6c967d78c0cf677b8b888ed56`. PERSIST-012 is CODE COMPLETE and delivered at `2f18f8196f5497c5435b697b8b1570f59cab2642`. PERSIST-013 is CODE COMPLETE and delivered at `ccccb891b737995f6a24a58e844e5bd1d794b609`. PERSIST-014 is CODE COMPLETE and delivered at `98a952a89b087f12a9b99b6bd648ce97ac44e6f2` via connector recovery after transport failure. PERSIST-015 is CODE COMPLETE and delivered at `a497d9d4ca35cab8de832bc92fc3b5d90c7a4b33` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-016 is CODE COMPLETE and delivered at `2fbabc3481b6435ca38596ea7dd060e36ed0655d` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-017 is CODE COMPLETE and delivered at `fa1276c26cbb639f061436c3f111351232037b57` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-018 is CODE COMPLETE and delivered at `3eb118f507688d483c5d4985f74fe6a98b531bc3` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-019 is CODE COMPLETE and delivered at `e22459ecdd10433ef21f63df25e3a22a43fb3662` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-020 is CODE COMPLETE and delivered at `1528d3e2451f3588de46f7539127164588878f1a` (OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022). PERSIST-021 is CODE COMPLETE and delivered at `1310c1367c7f98f084187006084d624d8e20e07b` (OpenHands JR DEV). PERSIST-001..021 CODE tasks are complete. The runtime-integration gap has been decomposed and human-promoted as PERSIST-R01..R05 + PERSIST-UI01. PERSIST-R01 is the sole current ACTIVE CODE task. PERSIST-022 remains the final independent VERIFY gate and becomes executable only after genuine PERSIST-R05 delivery.**
 
 Ordered persistence sequence:
 
@@ -29,10 +29,21 @@ Ordered persistence sequence:
 - [x] PERSIST-019 — Atomic Unseal / Commit Step (CODE COMPLETE — `e22459e`; OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022)
 - [x] PERSIST-020 — Restore Failure Behavior (CODE COMPLETE — `1528d3e`; OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022)
 - [x] PERSIST-021 — Persistence Runtime Status (CODE COMPLETE — `1310c13`; OpenHands JR DEV; independent TEST/VERIFY deferred to PERSIST-022)
-- [!] PERSIST-022 — End-to-End Persistence Verification (VERIFY — BLOCKED: runtime persistence lifecycle not wired; independent JR must not run yet)
+- [>] PERSIST-R01 — Filesystem Snapshot Adapter (CODE, ACTIVE — OpenHands JR DEV)
+- [ ] PERSIST-R02 — Runtime Save Wiring (CODE, QUEUED — OpenHands JR DEV)
+- [ ] PERSIST-R03 — Startup Restore Wiring (CODE, QUEUED — OpenHands JR DEV)
+- [ ] PERSIST-UI01 — Electron Persistence Settings (CODE, QUEUED — OpenHands JR DEV)
+- [ ] PERSIST-R04 — Runtime Status Wiring (CODE, QUEUED — OpenHands JR DEV)
+- [ ] PERSIST-R05 — Disposable Persistence E2E Harness (CODE, QUEUED — OpenHands JR DEV)
+- [!] PERSIST-022 — End-to-End Persistence Verification (VERIFY — dependency-gated until PERSIST-R05; independent JR)
 
 ## Routing
-This persistence queue has no executable current packet. PERSIST-021 delivery is confirmed at `1310c1367c7f98f084187006084d624d8e20e07b`. PERSIST-022 is BLOCKED because no non-test runtime path currently wires snapshot save/startup restore/final unseal. Do not select independent JR and do not substitute unit tests. Review-stage follow-up: `workflow/micro_task/persist-runtime-integration-gap.md` (not ACTIVE; human promotion required).
+This queue is selected. Execute **PERSIST-R01** now as OpenHands JR DEV.
+
+Autonomous successor chain is mandatory after genuine delivery:
+`R01 → R02 → R03 → UI01 → R04 → R05 → PERSIST-022 independent JR`.
+
+Do not request a second human promotion or task-selection confirmation for R02..R05/UI01: they are already human-promoted. Execute exactly one product task per invocation, deliver it, arm its named successor for the next invocation, then STOP. Do not skip a blocked/failed task.
 
 ## Architectural invariants
 - Persistence requires State Sealing.

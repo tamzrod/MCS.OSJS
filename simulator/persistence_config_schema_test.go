@@ -23,7 +23,7 @@ func TestPersistenceConfigurationSchemaRoundTrip(t *testing.T) {
 	enabled := true
 	disabled := false
 	withEnabled := validDevice()
-	withEnabled.MMA2.Persistence = &mma2composer.Persistence{Enabled: &enabled}
+	withEnabled.MMA2.Persistence = &mma2composer.Persistence{Enabled: &enabled, Directory: "/var/lib/mma2/unit1"}
 	// PERSIST-002 invariant: persistence ON requires state sealing present+enabled.
 	withEnabled.MMA2.StateSealing = map[string]interface{}{"enabled": true, "area": "coil", "address": 0}
 	withDisabled := validDevice()
@@ -33,7 +33,7 @@ func TestPersistenceConfigurationSchemaRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(encoded), `"persistence":{"enabled":true}`) {
+	if !strings.Contains(string(encoded), `"persistence":{`) || !strings.Contains(string(encoded), `"enabled":true`) || !strings.Contains(string(encoded), `"directory":"/var/lib/mma2/unit1"`) {
 		t.Fatalf("persistence not encoded per memory: %s", encoded)
 	}
 	var round DeviceDefinition
@@ -42,6 +42,9 @@ func TestPersistenceConfigurationSchemaRoundTrip(t *testing.T) {
 	}
 	if round.MMA2.Persistence == nil || round.MMA2.Persistence.Enabled == nil || *round.MMA2.Persistence.Enabled != true {
 		t.Fatalf("persistence lost on JSON round trip: %s", encoded)
+	}
+	if round.MMA2.Persistence.Directory != "/var/lib/mma2/unit1" {
+		t.Fatalf("persistence directory lost on JSON round trip: %s", encoded)
 	}
 
 	for _, tc := range []struct {

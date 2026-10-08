@@ -27,7 +27,7 @@ func TestPersistenceRequiresEnabledStateSealing(t *testing.T) {
 		return m
 	}
 
-	on := &Persistence{Enabled: boolPtr(true)}
+	on := &Persistence{Enabled: boolPtr(true), Directory: "/var/lib/mma2/unit1"}
 	off := &Persistence{Enabled: boolPtr(false)}
 
 	for _, tc := range []struct {
@@ -62,7 +62,7 @@ func TestPersistenceRequiresEnabledStateSealing(t *testing.T) {
 // Validation must never silently enable or mutate State Sealing, even on the
 // rejection path.
 func TestPersistenceValidationDoesNotMutateSealing(t *testing.T) {
-	on := &Persistence{Enabled: boolPtr(true)}
+	on := &Persistence{Enabled: boolPtr(true), Directory: "/var/lib/mma2/unit1"}
 	memory := Memory{
 		UnitID:      1,
 		Coils:       &Area{Start: 0, Count: 4},

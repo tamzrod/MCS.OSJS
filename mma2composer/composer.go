@@ -56,12 +56,33 @@ type Policy struct {
 	Extra map[string]interface{} `yaml:",inline"`
 }
 
-// Persistence marks one memory instance for MCS appliance persistence. It
-// carries no range identity: the Port → Unit ID → Memory chain and the
-// authoritative memory area start/count remain the single source of truth.
-// Only the enablement flag is represented, so absent means persistence is off.
+// PersistenceArea is one explicit persisted range inside an allocated memory
+// area, matching MMA2's per-memory persistence range pair.
+type PersistenceArea struct {
+	Start uint16 `yaml:"start"`
+	Count uint16 `yaml:"count"`
+}
+
+// PersistenceRanges is the optional explicit per-area range selection for one
+// memory. Each area accepts a direct list of ranges (no segments wrapper).
+// An omitted or nil Ranges means every allocated area of that same memory.
+type PersistenceRanges struct {
+	Coils          []PersistenceArea `yaml:"coils,omitempty"`
+	DiscreteInputs []PersistenceArea `yaml:"discrete_inputs,omitempty"`
+	HoldingRegs    []PersistenceArea `yaml:"holding_registers,omitempty"`
+	InputRegs      []PersistenceArea `yaml:"input_registers,omitempty"`
+}
+
+// Persistence is the MMA2 native per-memory persistence block. It lives at
+// listeners[].memory[].persistence and never carries range identity: the
+// Port → Unit ID → Memory chain and the authoritative memory area start/count
+// remain the single source of truth. Absent, or enabled false, means
+// persistence is off for that memory only; enabled true requires a directory in
+// the same memory entry.
 type Persistence struct {
-	Enabled *bool `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+	Enabled   *bool              `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+	Directory string             `yaml:"directory,omitempty" json:"directory,omitempty"`
+	Ranges    *PersistenceRanges `yaml:"ranges,omitempty" json:"ranges,omitempty"`
 }
 
 type Memory struct {
@@ -209,9 +230,15 @@ func Collision(port, unitID uint16, owner string, owners OwnershipDoc) error {
 // atomically replaces each artifact. If the second replace fails,the first
 // artifact is restored byte-for-byte..
 func (c *Composer) Commit(cfg EffectiveConfig, owners OwnershipDoc) error {
+	if err := ValidateCandidatePersistence(cfg); err != nil {
+		return err
+	}
 	for _, listener := range cfg.Listeners {
 		for _, memory := range listener.Memory {
 			if err := ValidateFC43(memory.Extra["fc43"]); err != nil {
+				return fmt.Errorf("memory (%d,%d): %w", ListenPort(listener.Listen), memory.UnitID, err)
+			}
+			if err := ValidateMemoryPersistence(memory); err != nil {
 				return fmt.Errorf("memory (%d,%d): %w", ListenPort(listener.Listen), memory.UnitID, err)
 			}
 		}

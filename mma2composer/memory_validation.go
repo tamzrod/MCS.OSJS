@@ -63,6 +63,9 @@ func ValidateMemory(memory Memory) error {
 			return fmt.Errorf("persistence.enabled requires state sealing to be present and enabled")
 		}
 	}
+	if err := ValidateMemoryPersistence(memory); err != nil {
+		return err
+	}
 	if err := ValidateFC43(memory.Extra["fc43"]); err != nil {
 		return err
 	}

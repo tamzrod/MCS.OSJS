@@ -16,3 +16,18 @@ test('Electron package whitelist includes every main-process local module', () =
     assert.ok(files.has(file), `${file} is required by main.js but missing from electron-builder build.files`);
   }
 });
+
+// NPE-05: MMA2 owns persistence runtime, so no Electron-owned persistence
+// runtime/restore engine may remain.
+test('Electron retains no legacy persistence runtime or restore engine', () => {
+  const root = path.join(__dirname, '..');
+  assert.equal(fs.existsSync(path.join(root, 'persistence.js')), false, 'electron/persistence.js must be removed');
+  const sources = ['main.js', 'preload.js', 'replicator-runtime.js', 'replicator-ipc.js', 'runtime-status.js', 'diagnostics.js', 'memory-settings.js',
+    ...fs.readdirSync(path.join(root, 'renderer')).filter(name => name.endsWith('.js')).map(name => path.join('renderer', name))];
+  for (const relative of sources) {
+    const source = fs.readFileSync(path.join(root, relative), 'utf8');
+    for (const banned of ['captureSnapshots', 'restoreAndUnseal', 'snapshotsComplete', "require('./persistence')", 'persistence manager watchdog']) {
+      assert.ok(!source.includes(banned), `${relative} must not contain the retired persistence runtime marker ${banned}`);
+    }
+  }
+});

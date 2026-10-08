@@ -111,6 +111,24 @@ func (a *SchedulerApplier) applyStructuralLocked(previous, edited Document) erro
 	if err := WaitMMA2Ready(ports, a.restartTimeout); err != nil {
 		return fmt.Errorf("mma2 config committed but readiness failed (recovery required): %w", err)
 	}
+
+	// A structural restart is also a persistence startup boundary. Run the same
+	// sealed restore -> verify -> final-unseal lifecycle used on process boot
+	// before reporting Save & Apply success. This is what unlocks a memory after
+	// persistence is enabled for the first time.
+	startupResults, err := persistenceStartupContext(a.store.Root, edited.Devices)
+	if err != nil {
+		return fmt.Errorf("mma2 restarted but persistence startup failed (memory remains sealed): %w", err)
+	}
+	a.recordPersistenceStartup(startupResults)
+
+	// Rebuild the save host for the newly applied document after restore. A
+	// failure is explicit; never claim persistence is active when save wiring is
+	// unavailable.
+	if err := a.ArmPersistenceSave(edited); err != nil {
+		return fmt.Errorf("mma2 restarted but persistence save wiring failed: %w", err)
+	}
+
 	if err := a.store.clearRestartRequestLocked(); err != nil { return err }
 	return nil
 }

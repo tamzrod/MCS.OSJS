@@ -7,15 +7,20 @@ const memoryUI = (() => {
   const splitSources = value => String(value).split(',').map(item => item.trim()).filter(Boolean).map(item => sourceAliases[item] || item);
   const sealingEnabled = params => Boolean(params.state_sealing && params.state_sealing.enabled !== false);
   const persistenceEnabled = params => Boolean(params.persistence && params.persistence.enabled === true);
-  // Persistence requires both the RBE mechanism (the event source for snapshot
-  // saves) and State Sealing to be available. This returns an operator-facing
-  // reason when persistence is enabled without a prerequisite, else null. It
-  // never silently enables sealing or creates operator-owned RBE rules.
+  // Persistence owns State Sealing while enabled. RBE remains an external
+  // prerequisite; sealing itself is explicitly managed by the Persistence tab.
   const persistenceError = (params, options = {}) => {
     if (!persistenceEnabled(params)) return null;
     if (options.rbeAvailable === false) return 'Persistence requires the RBE mechanism to be available. Configure the RBE TCP output first.';
-    if (!sealingEnabled(params)) return 'Persistence requires state sealing to be present and enabled. Enable state sealing first.';
     return null;
+  };
+  const ensureSealing = params => {
+    params.state_sealing ||= {enabled: false, area: 'coil', address: params.fc1?.start ?? 0, exception: 6};
+    params.state_sealing.enabled = true;
+    params.state_sealing.area = 'coil';
+    params.state_sealing.address ??= params.fc1?.start ?? 0;
+    params.state_sealing.exception ??= 6;
+    return params.state_sealing;
   };
   // One derived persistence RBE rule per present area, start/count taken from the
   // authoritative memory area. Mirrors the Go projection; used for the locked,
@@ -105,16 +110,15 @@ const memoryUI = (() => {
     const draw = () => {
       root.replaceChildren();
       const tabs = element('nav', undefined, 'memory-subtabs');
-      for (const title of ['RBE Rules', 'State Sealing', 'Access Policy']) {
-        const tab = button(title, () => { state.tab = title; draw(); });
-        tab.setAttribute('aria-pressed', state.tab === title ? 'true' : 'false'); tabs.append(tab);
-      }
-      // Persistence is exposed only where the mount declares it supported (the
-      // Simulator Memory editor). It is never offered where the backend does not
-      // accept persistence, so the UI cannot present an unsupported authority.
-      if (options.persistenceSupported) {
-        const tab = button('Persistence', () => { state.tab = 'Persistence'; draw(); });
-        tab.setAttribute('aria-pressed', state.tab === 'Persistence' ? 'true' : 'false'); tabs.append(tab);
+      const tabTitles = options.persistenceSupported
+        ? ['RBE Rules', 'State Sealing', 'Persistence', 'Access Policy']
+        : ['RBE Rules', 'State Sealing', 'Access Policy'];
+      for (const title of tabTitles) {
+        const managedSealing = title === 'State Sealing' && persistenceEnabled(params);
+        const tab = button(title, () => { state.tab = title; draw(); }, managedSealing);
+        if (managedSealing) tab.title = 'State Sealing is managed by Persistence while persistence is enabled.';
+        tab.setAttribute('aria-pressed', state.tab === title ? 'true' : 'false');
+        tabs.append(tab);
       }
       root.append(tabs);
       if (state.tab === 'Persistence') {
@@ -123,6 +127,7 @@ const memoryUI = (() => {
           if (checked) {
             params.persistence ||= {};
             params.persistence.enabled = true;
+            ensureSealing(params);
           } else if (params.persistence) {
             params.persistence.enabled = false;
           }
@@ -134,7 +139,25 @@ const memoryUI = (() => {
           message.setAttribute('role', 'alert');
           root.append(message);
         }
-        root.append(element('p', 'Persistence requires the RBE mechanism and state sealing as prerequisites. Persistence-owned RBE rules are derived from the memory layout and are system-owned; they are locked and cannot be edited or deleted here. User RBE rules remain editable on the RBE Rules tab.', 'advanced-note'));
+        root.append(element('p',
+          enabled
+            ? 'Persistence owns State Sealing for this memory. The standalone State Sealing tab is disabled while persistence is enabled. Disabling persistence releases ownership but keeps the sealing configuration.'
+            : 'Enabling persistence also enables State Sealing explicitly and makes Persistence its owner. Existing sealing settings are preserved if persistence is later disabled.',
+          'advanced-note'));
+        if (enabled) {
+          const seal = ensureSealing(params);
+          const sealing = element('div', undefined, 'advanced-form');
+          sealing.append(
+            input('Lock coil address', seal.address ?? params.fc1?.start ?? 0, value => { ensureSealing(params).address = value; }, 'number'),
+            select('Sealed response', seal.exception ?? 6, [
+              [1, '0x01 — Illegal Function'], [2, '0x02 — Illegal Data Address'], [3, '0x03 — Illegal Data Value'],
+              [4, '0x04 — Server Device Failure'], [5, '0x05 — Acknowledge'], [6, '0x06 — Server Device Busy'],
+              [8, '0x08 — Memory Parity Error'], [10, '0x0A — Gateway Path Unavailable'], [11, '0x0B — Gateway Target Failed to Respond']
+            ], value => { ensureSealing(params).exception = Number(value); })
+          );
+          root.append(element('h3', 'State Sealing (managed by Persistence)'), sealing);
+        }
+        root.append(element('p', 'Persistence-owned RBE rules are derived from the memory layout and are system-owned; they are locked and cannot be edited or deleted here. User RBE rules remain editable on the RBE Rules tab.', 'advanced-note'));
         const table = element('div', undefined, 'advanced-rules');
         const header = element('div', undefined, 'rbe-rule-row');
         for (const title of ['Area', 'Start', 'Count', 'Ownership']) header.append(element('span', title));
@@ -149,6 +172,11 @@ const memoryUI = (() => {
         root.append(table); return;
       }
       if (state.tab === 'State Sealing') {
+        if (persistenceEnabled(params)) {
+          state.tab = 'Persistence';
+          draw();
+          return;
+        }
         const seal = params.state_sealing;
         const enabled = Boolean(seal && seal.enabled !== false);
         const ensure = () => params.state_sealing ||= {enabled: false, area: 'coil', address: params.fc1.start, exception: 6};

@@ -2,10 +2,11 @@
 
 **JR DEV OWNER: OpenHands.** OpenHands is explicitly authorized to execute the current NPE/NPO CODE packets under OPERATION CWAL. There is no Codex owner for this workstream.
 
-**CURRENT: NPE-03 — Electron Native Persistence Config / Apply Wiring** — CODE COMPLETE and delivered on `main` at `817a6948d7db5bcf666a1e6acf00b1545f9815e8` (OpenHands JR DEV, base `f4453db`). Independent verification is deferred to NPE-06. **Next assigned packet: NPE-04 — Electron Replicator Destination Persistence Parity** (`workflow/active_work/npe-04-electron-replicator-persistence-parity.md`), assigned to OpenHands JR DEV. Recursive JR DEV continuation is NOT enabled for this NPE chain: this invocation records the delivery and STOPS.
+**CURRENT: NPE-04 — Electron Replicator Destination Persistence Parity** — CODE COMPLETE and delivered on `main` at `b4580d6fa3bbee547caea4680aacd1a8c812b48b` (OpenHands JR DEV, base `3d20c32`). Independent verification is deferred to NPE-06. **Next assigned packet: NPE-05 — Electron Legacy Persistence Cleanup** (`workflow/active_work/npe-05-electron-legacy-persistence-cleanup.md`), assigned to OpenHands JR DEV. Recursive JR DEV continuation is NOT enabled for this NPE chain: this invocation records the delivery and STOPS.
 
 NPE-01 was accepted as delivered at `b868c2d2d8cb132d52498cb47105b1bd8c095551`.
 NPE-02 was accepted as delivered at `a90f52a1b7ce2830dbc2aa8b6a65041962f21355`.
+NPE-03 was accepted as delivered at `817a6948d7db5bcf666a1e6acf00b1545f9815e8`.
 
 The prior NP-02..NP-06 queue is SUPERSEDED. Do not execute it.
 

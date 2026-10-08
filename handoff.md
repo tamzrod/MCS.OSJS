@@ -119,27 +119,26 @@ CODE COMPLETE at `1528d3e2451f3588de46f7539127164588878f1a`, delivered on main; 
 - Self-check: `cd mma2composer && go test -mod=readonly -run 'TestPersistenceRestore|TestPersistenceSealing|TestForcePersistenceSealingFlag|TestVerifyPersistenceRestore|TestEncodePersistenceSealingFlag' -v .` → 30 tests PASS, exit 0. Additional temporary real-socket v1 check confirmed a rejected area write keeps the memory sealed and never emits the unseal packet (passed with `-race`, removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — ACTIVE
-
 **PERSIST-021 — Persistence Runtime Status**
-Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-021-persistence-runtime-status.md`
-Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
+CODE COMPLETE at `1310c1367c7f98f084187006084d624d8e20e07b`, delivered on main.
+- `mma2composer/persistence_status.go` (blob `56ceb22b5026fea300c408262e26364554fda5a9`), `simulator/apply.go` (blob `c35ae093c9b8580f51f2a0cdcd314bbe07830e25`), `OSJS/src/packages/MCSModbusToolkit/diagnostics-model.js` (blob `84970aa4246a8caf8e89996b30e67a4030676c66`), `OSJS/src/packages/MCSModbusToolkit/diagnostics-editor.js` (blob `2d46c63609ddd3823db26f0dd958bcf0b952721c`), plus tests.
+- `PersistenceRuntimeStatus` is a pure read-only projection from the authoritative restore plan/result: `Configured`, authoritative `Sealed`, `Healthy` (only when committed), `SnapshotHealth`, classified `RestoreOutcome`, and optional `LastSave`/`LastRestore`. Surfaced through the simulator `DeviceRuntimeStatus.Persistence` and the OS.js diagnostics model/editor (fail-closed to UNKNOWN; controls remain disabled). Restore failure stays visible while sealed stays authoritative; no bypass of restore/sealing gates.
+- Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRuntimeStatus -v .` → 7 tests PASS, exit 0; simulator persistence status tests PASS; OS.js diagnostics tests exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites and the whole OSJS node suite → all pass, exit 0. New Go files `gofmt`/`vet` clean.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-Execute PERSIST-021 exactly as written (read the packet for its exact scope before implementing):
-- surface persistence runtime status from the authoritative restore state without inventing a second source of truth;
-- keep the Port → Unit ID → Memory authority model and existing State Sealing/RBE semantics;
-- run only task-bounded self-checks and bounded in-scope corrective retests;
-- commit and non-force push under standing JR DEV authority;
-- record changed paths/checks/source checkpoint;
-- prepare PERSIST-022 for the next invocation only after genuine PERSIST-021 completion;
-- STOP after PERSIST-021.
+## Current task — none ACTIVE (CODE workstream complete)
+
+All CODE packets **PERSIST-001..021 are CODE COMPLETE**. There is no current ACTIVE CODE task.
+
+**PERSIST-022 — End-to-End Persistence Verification** remains QUEUED and is a **VERIFY** packet.
+Mode / owner: **independent JR** (separate invocation), not JR DEV.
+Before it can be selected, the workflow owner must pin its exact execution packet in `handoff.md` (exact source checkpoint, disposable target, preflight, ordered actions/commands, expected observations, evidence destination and report permissions). JR DEV must not fabricate or self-certify this packet. Do not select it until that pinned packet exists.
 
 Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-022 is already human-promoted and remains QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-020 are CODE complete; PERSIST-021 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-011 passed independently; PERSIST-012 through PERSIST-021 are CODE complete. All CODE packets PERSIST-001..021 are complete. PERSIST-022 is already human-promoted and remains QUEUED/dependency-gated as a VERIFY packet; it requires an independent-JR execution packet pinned by the workflow owner before selection.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

@@ -112,19 +112,11 @@ func (a *SchedulerApplier) applyStructuralLocked(previous, edited Document) erro
 		return fmt.Errorf("mma2 config committed but readiness failed (recovery required): %w", err)
 	}
 
-	// A structural restart is also a persistence startup boundary. Run the same
-	// sealed restore -> verify -> final-unseal lifecycle used on process boot
-	// before reporting Save & Apply success. This is what unlocks a memory after
-	// persistence is enabled for the first time.
-	startupResults, err := persistenceStartupContext(a.store.Root, edited.Devices)
-	if err != nil {
-		return fmt.Errorf("mma2 restarted but persistence startup failed (memory remains sealed): %w", err)
-	}
-	a.recordPersistenceStartup(startupResults)
-	for _, result := range startupResults {
-		if !result.Result.Committed {
-			return fmt.Errorf("mma2 restarted but persistence restore for port %d unit %d did not commit (%s); memory remains sealed", result.Key.Port, result.Key.UnitID, result.Result.Failure)
-		}
+	// Same persistence-manager rule used everywhere: if the restarted MMA2
+	// answers the normal Modbus probe with the sealing exception, restore the
+	// snapshot and let the restore contract perform the final unlock.
+	if err := a.PollPersistenceRestore(); err != nil {
+		return fmt.Errorf("mma2 restarted but persistence restore failed: %w", err)
 	}
 
 	// Rebuild the save host for the newly applied document after restore. A
@@ -326,15 +318,11 @@ func newRuntimeApplyRouter(store Store, bootTimeout time.Duration) (*ApplyRouter
 			if err := timing.ArmPersistenceSave(initial); err != nil {
 				return nil, nil, err
 			}
-			// Real runtime startup restore wiring (PERSIST-R03): load and restore
-			// persistence-enabled memories while sealed, unsealing only after the
-			// existing verified final commit. A build error fails startup closed;
-			// per-memory restore failures stay sealed and are surfaced truthfully.
-			startupResults, err := persistenceStartupContext(store.Root, initial.Devices)
-			if err != nil {
+			// Use the same simple persistence-manager probe used by the watchdog.
+			// Normal response: nothing to do. Sealed exception: restore + unlock.
+			if err := timing.PollPersistenceRestore(); err != nil {
 				return nil, nil, err
 			}
-			timing.recordPersistenceStartup(startupResults)
 		}
 	}
 	return NewApplyRouter(store, timing, timing), timing, nil

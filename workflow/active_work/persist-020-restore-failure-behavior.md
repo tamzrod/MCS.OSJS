@@ -1,8 +1,8 @@
 # PERSIST-020 — Restore Failure Behavior
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-019
 Next: PERSIST-021
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-019.
 1/0/2/1/2=6.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`.
+PERSIST-019 is delivered on GitHub main at `e22459ecdd10433ef21f63df25e3a22a43fb3662`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task: any missing/corrupt/incompatible snapshot, Raw Ingest failure, restore-verification failure, or unseal/commit failure must leave the persistence-enabled memory sealed and expose a deterministic failure reason; add no repair/retry loop, fabricated default, alternate unseal path, or operator-data mutation. Prepare PERSIST-021 for the next invocation only after genuine completion, then STOP.

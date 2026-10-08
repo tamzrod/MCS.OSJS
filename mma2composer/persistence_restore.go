@@ -125,6 +125,115 @@ func forcePersistenceSealingFlag(areaStart, areaCount uint16, payload []byte, fl
 	return out, nil
 }
 
+// PersistenceRestoreFailure classifies, deterministically, why a startup
+// persistence restore did not safely commit. A non-zero value means the memory
+// was left sealed; PersistenceRestoreFailureNone is used only when the restore
+// completed and committed.
+type PersistenceRestoreFailure int
+
+const (
+	// PersistenceRestoreFailureNone: no failure; the restore committed.
+	PersistenceRestoreFailureNone PersistenceRestoreFailure = iota
+	// PersistenceRestoreFailureDisabled: persistence is not enabled.
+	PersistenceRestoreFailureDisabled
+	// PersistenceRestoreFailureUnsealed: persistence is enabled but the memory
+	// was not sealed at startup, so restore must not proceed.
+	PersistenceRestoreFailureUnsealed
+	// PersistenceRestoreFailureEmpty: no area is configured to restore.
+	PersistenceRestoreFailureEmpty
+	// PersistenceRestoreFailureMissingSnapshot: no snapshot is present for a
+	// configured area.
+	PersistenceRestoreFailureMissingSnapshot
+	// PersistenceRestoreFailureInvalidSnapshot: a snapshot is corrupt, incomplete
+	// or unreadable.
+	PersistenceRestoreFailureInvalidSnapshot
+	// PersistenceRestoreFailureIncompatibleSnapshot: a snapshot does not match
+	// the configured format/identity/area/layout.
+	PersistenceRestoreFailureIncompatibleSnapshot
+	// PersistenceRestoreFailureAreaNotReady: a configured area in the plan is not
+	// ready to restore.
+	PersistenceRestoreFailureAreaNotReady
+	// PersistenceRestoreFailureUnknownArea: a configured area has no Raw Ingest
+	// mapping.
+	PersistenceRestoreFailureUnknownArea
+	// PersistenceRestoreFailureRawIngestWrite: the Raw Ingest write for an area
+	// failed at the transport level.
+	PersistenceRestoreFailureRawIngestWrite
+	// PersistenceRestoreFailureRawIngestResponse: a Raw Ingest write for an area
+	// was rejected with a non-zero response code.
+	PersistenceRestoreFailureRawIngestResponse
+	// PersistenceRestoreFailureIncomplete: verification found a required area
+	// missing or failed.
+	PersistenceRestoreFailureIncomplete
+	// PersistenceRestoreFailureNoSealingFlag: the restore completed but no State
+	// Sealing flag is configured to unseal.
+	PersistenceRestoreFailureNoSealingFlag
+	// PersistenceRestoreFailureUnsealWrite: the unseal write failed at the
+	// transport level.
+	PersistenceRestoreFailureUnsealWrite
+	// PersistenceRestoreFailureUnsealResponse: the unseal write was rejected with
+	// a non-zero response code.
+	PersistenceRestoreFailureUnsealResponse
+)
+
+func (f PersistenceRestoreFailure) String() string {
+	switch f {
+	case PersistenceRestoreFailureNone:
+		return "none"
+	case PersistenceRestoreFailureDisabled:
+		return "disabled"
+	case PersistenceRestoreFailureUnsealed:
+		return "unsealed"
+	case PersistenceRestoreFailureEmpty:
+		return "empty"
+	case PersistenceRestoreFailureMissingSnapshot:
+		return "missing_snapshot"
+	case PersistenceRestoreFailureInvalidSnapshot:
+		return "invalid_snapshot"
+	case PersistenceRestoreFailureIncompatibleSnapshot:
+		return "incompatible_snapshot"
+	case PersistenceRestoreFailureAreaNotReady:
+		return "area_not_ready"
+	case PersistenceRestoreFailureUnknownArea:
+		return "unknown_area"
+	case PersistenceRestoreFailureRawIngestWrite:
+		return "raw_ingest_write"
+	case PersistenceRestoreFailureRawIngestResponse:
+		return "raw_ingest_response"
+	case PersistenceRestoreFailureIncomplete:
+		return "incomplete"
+	case PersistenceRestoreFailureNoSealingFlag:
+		return "no_sealing_flag"
+	case PersistenceRestoreFailureUnsealWrite:
+		return "unseal_write"
+	case PersistenceRestoreFailureUnsealResponse:
+		return "unseal_response"
+	default:
+		return "unknown"
+	}
+}
+
+// persistenceRestoreFailureForArea maps a loader area outcome to its restore
+// failure classification.
+func persistenceRestoreFailureForArea(outcome PersistenceRestoreOutcome) PersistenceRestoreFailure {
+	switch outcome {
+	case PersistenceRestoreMissing:
+		return PersistenceRestoreFailureMissingSnapshot
+	case PersistenceRestoreIncompatible:
+		return PersistenceRestoreFailureIncompatibleSnapshot
+	case PersistenceRestoreInvalid:
+		return PersistenceRestoreFailureInvalidSnapshot
+	case PersistenceRestoreDisabled:
+		return PersistenceRestoreFailureDisabled
+	case PersistenceRestoreUnsealed:
+		return PersistenceRestoreFailureUnsealed
+	case PersistenceRestoreEmpty:
+		return PersistenceRestoreFailureEmpty
+	default:
+		return PersistenceRestoreFailureAreaNotReady
+	}
+}
+
 // PersistenceRestoreResult reports what one memory's restore did. RequiredAreas
 // is the deterministic set of configured area keys that must be restored, in the
 // plan's canonical order; AcknowledgedAreas is the subset that was written and
@@ -136,6 +245,11 @@ func forcePersistenceSealingFlag(areaStart, areaCount uint16, payload []byte, fl
 // when the authoritative State Sealing flag was written to unsealed (1) after
 // verification success. A restore that is Completed but not Committed has been
 // written but remains sealed, so it is still not exposed to Modbus.
+//
+// Failure is the deterministic classification of why the restore did not
+// commit (PERSIST-020); it is PersistenceRestoreFailureNone only when Committed
+// is true. Detail carries a human-readable reason and Sealed reports whether the
+// memory was left sealed as a result.
 type PersistenceRestoreResult struct {
 	Key               PersistenceMemoryKey
 	State             PersistenceRestoreOutcome
@@ -145,7 +259,20 @@ type PersistenceRestoreResult struct {
 	AcknowledgedAreas []string
 	Completed         bool
 	Committed         bool
+	Failure           PersistenceRestoreFailure
+	Sealed            bool
 	Detail            string
+}
+
+// failedPersistenceRestore marks a result as a deterministic, sealed failure and
+// returns it. Every non-committing path in RestorePersistencePlan goes through
+// here, so a failure always leaves the memory sealed and carries a classified
+// reason. It never fabricates a default, retries or unseals.
+func failedPersistenceRestore(result PersistenceRestoreResult, failure PersistenceRestoreFailure, detail string) PersistenceRestoreResult {
+	result.Failure = failure
+	result.Sealed = true
+	result.Detail = detail
+	return result
 }
 
 // persistenceRequiredAreas returns the deterministic required-area set for a
@@ -212,6 +339,13 @@ func VerifyPersistenceRestore(result PersistenceRestoreResult) bool {
 // verification success. The flag location comes solely from configuration. Until
 // this step the memory remains sealed, so no earlier restore step can expose it
 // to Modbus; Committed reports whether this final unseal committed.
+//
+// Restore-failure behavior (PERSIST-020): every path that does not safely commit
+// leaves the memory sealed and returns a deterministic Failure classification
+// plus a human-readable Detail. Missing, corrupt or incompatible snapshots, a
+// Raw Ingest or verification failure, and an unseal/commit failure all keep the
+// memory sealed; the restore never fabricates a default, retries or unseals on
+// failure.
 func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIngestWriter) (PersistenceRestoreResult, error) {
 	result := PersistenceRestoreResult{
 		Key:           plan.Key,
@@ -220,44 +354,45 @@ func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIn
 		RequiredAreas: persistenceRequiredAreas(plan),
 	}
 	if plan.State != PersistenceRestoreReady {
-		result.Detail = fmt.Sprintf("restore plan is %s, not ready", plan.State)
-		return result, nil
+		return failedPersistenceRestore(result, persistenceRestoreFailureForArea(plan.State),
+			fmt.Sprintf("restore plan is %s, not ready; memory remains sealed", plan.State)), nil
 	}
 	if len(plan.Areas) == 0 {
 		result.State = PersistenceRestoreEmpty
-		result.Detail = "restore plan has no configured areas"
-		return result, nil
+		return failedPersistenceRestore(result, PersistenceRestoreFailureEmpty,
+			"restore plan has no configured areas; memory remains sealed"), nil
 	}
 	if writer == nil {
 		return PersistenceRestoreResult{}, fmt.Errorf("persistence restore requires a raw ingest writer")
 	}
 	for _, area := range plan.Areas {
 		if area.Outcome != PersistenceRestoreReady {
-			result.Detail = fmt.Sprintf("area %q is %s, not ready", area.Area, area.Outcome)
-			return result, nil
+			return failedPersistenceRestore(result, persistenceRestoreFailureForArea(area.Outcome),
+				fmt.Sprintf("area %q is %s, not ready; memory remains sealed", area.Area, area.Outcome)), nil
 		}
 		code, ok := rawIngestArea(area.Area)
 		if !ok {
-			result.Detail = fmt.Sprintf("area %q has no raw ingest mapping", area.Area)
-			return result, nil
+			return failedPersistenceRestore(result, PersistenceRestoreFailureUnknownArea,
+				fmt.Sprintf("area %q has no raw ingest mapping; memory remains sealed", area.Area)), nil
 		}
 		payload := area.Payload
 		if plan.SealingFlag != nil && area.Area == "coils" {
 			protected, err := forcePersistenceSealingFlag(area.Start, area.Count, payload, *plan.SealingFlag)
 			if err != nil {
-				result.Detail = fmt.Sprintf("area %q seal-flag protection failed: %v", area.Area, err)
-				return result, nil
+				return failedPersistenceRestore(result, PersistenceRestoreFailureInvalidSnapshot,
+					fmt.Sprintf("area %q seal-flag protection failed: %v; memory remains sealed", area.Area, err)), nil
 			}
 			payload = protected
 		}
 		response, err := writer.WritePersistenceRawIngest(plan.Key, code, area.Start, area.Count, payload)
 		if err != nil {
-			result.Detail = fmt.Sprintf("area %q raw ingest write failed: %v", area.Area, err)
-			return result, err
+			failed := failedPersistenceRestore(result, PersistenceRestoreFailureRawIngestWrite,
+				fmt.Sprintf("area %q raw ingest write failed: %v; memory remains sealed", area.Area, err))
+			return failed, err
 		}
 		if response != PersistenceRawIngestOK {
-			result.Detail = fmt.Sprintf("area %q raw ingest response 0x%02X aborted restore", area.Area, response)
-			return result, nil
+			return failedPersistenceRestore(result, PersistenceRestoreFailureRawIngestResponse,
+				fmt.Sprintf("area %q raw ingest response 0x%02X aborted restore; memory remains sealed", area.Area, response)), nil
 		}
 		result.Written++
 		result.AcknowledgedAreas = append(result.AcknowledgedAreas, area.Area)
@@ -266,30 +401,31 @@ func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIn
 	// area set exactly covers the deterministic required-area set.
 	result.Completed = VerifyPersistenceRestore(result)
 	if !result.Completed {
-		result.Detail = "restore did not acknowledge every required persistence area"
-		return result, nil
+		return failedPersistenceRestore(result, PersistenceRestoreFailureIncomplete,
+			"restore did not acknowledge every required persistence area; memory remains sealed"), nil
 	}
 	// Atomic unseal / commit step (PERSIST-019): only after verification success,
 	// write the authoritative State Sealing flag to unsealed (1) as the explicit
 	// final commit action. The location comes solely from configuration; no
 	// earlier step can expose memory to Modbus because it stays sealed until here.
 	if plan.SealingFlag == nil {
-		result.Detail = "restore completed but no state sealing flag is configured to unseal"
-		return result, nil
+		return failedPersistenceRestore(result, PersistenceRestoreFailureNoSealingFlag,
+			"restore completed but no state sealing flag is configured to unseal; memory remains sealed"), nil
 	}
 	unsealed, err := encodePersistenceSealingFlag(persistenceUnsealValue)
 	if err != nil {
-		result.Detail = fmt.Sprintf("state sealing unseal encoding failed: %v", err)
-		return result, nil
+		return failedPersistenceRestore(result, PersistenceRestoreFailureUnsealWrite,
+			fmt.Sprintf("state sealing unseal encoding failed: %v; memory remains sealed", err)), nil
 	}
 	response, err := writer.WritePersistenceRawIngest(plan.Key, RawIngestCoils, plan.SealingFlag.Address, 1, unsealed)
 	if err != nil {
-		result.Detail = fmt.Sprintf("state sealing unseal write failed: %v", err)
-		return result, err
+		failed := failedPersistenceRestore(result, PersistenceRestoreFailureUnsealWrite,
+			fmt.Sprintf("state sealing unseal write failed: %v; memory remains sealed", err))
+		return failed, err
 	}
 	if response != PersistenceRawIngestOK {
-		result.Detail = fmt.Sprintf("state sealing unseal response 0x%02X aborted commit", response)
-		return result, nil
+		return failedPersistenceRestore(result, PersistenceRestoreFailureUnsealResponse,
+			fmt.Sprintf("state sealing unseal response 0x%02X aborted commit; memory remains sealed", response)), nil
 	}
 	result.Committed = true
 	return result, nil

@@ -648,3 +648,240 @@ func TestEncodePersistenceSealingFlag(t *testing.T) {
 		t.Fatalf("sealed encode must be 0x00: %v err=%v", off, err)
 	}
 }
+
+// PERSIST-020 self-check: a committed restore has no failure classification and
+// is not left sealed.
+func TestPersistenceRestoreCommittedHasNoFailure(t *testing.T) {
+	plan := restoreReadyPlanWithFlag(t, 4)
+	writer := &fakeRawIngestWriter{}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Committed {
+		t.Fatalf("restore must commit: %+v", result)
+	}
+	if result.Failure != PersistenceRestoreFailureNone || result.Sealed {
+		t.Fatalf("a committed restore must have no failure and not be sealed: %+v", result)
+	}
+}
+
+// brokenLoaderPlan builds a non-ready plan from a loader source the caller has
+// corrupted, so the restore-failure classification can be exercised.
+func brokenLoaderPlan(t *testing.T, mutate func(*fakeSnapshotSource)) PersistenceRestorePlan {
+	t.Helper()
+	key, areas, source := loaderFixture(t)
+	mutate(source)
+	plan, err := LoadPersistenceSnapshots(key, true, true, areas, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return plan
+}
+
+// PERSIST-020 self-check: missing, corrupt and incompatible snapshots each keep
+// the memory sealed with a deterministic, distinct failure classification.
+func TestPersistenceRestoreSnapshotFailuresKeepSealed(t *testing.T) {
+	cases := []struct {
+		name    string
+		mutate  func(*fakeSnapshotSource)
+		failure PersistenceRestoreFailure
+	}{
+		{"missing", func(s *fakeSnapshotSource) { delete(s.snapshots, "coils") }, PersistenceRestoreFailureMissingSnapshot},
+		{"corrupt", func(s *fakeSnapshotSource) { s.payloads["coils"][0] ^= 0x01 }, PersistenceRestoreFailureInvalidSnapshot},
+		{"incompatible-version", func(s *fakeSnapshotSource) {
+			m := s.snapshots["coils"]
+			m.FormatVersion++
+			s.snapshots["coils"] = m
+		}, PersistenceRestoreFailureIncompatibleSnapshot},
+		{"incompatible-layout", func(s *fakeSnapshotSource) {
+			m := s.snapshots["coils"]
+			m.Count = 10
+			s.snapshots["coils"] = m
+		}, PersistenceRestoreFailureIncompatibleSnapshot},
+		{"incompatible-identity", func(s *fakeSnapshotSource) {
+			m := s.snapshots["coils"]
+			m.UnitID = 5
+			s.snapshots["coils"] = m
+		}, PersistenceRestoreFailureIncompatibleSnapshot},
+	}
+	for _, tc := range cases {
+		plan := brokenLoaderPlan(t, tc.mutate)
+		writer := &fakeRawIngestWriter{}
+		result, err := RestorePersistencePlan(plan, writer)
+		if err != nil {
+			t.Fatalf("%s: unexpected error: %v", tc.name, err)
+		}
+		if result.Committed || result.Completed {
+			t.Fatalf("%s: must not complete or commit: %+v", tc.name, result)
+		}
+		if result.Failure != tc.failure || !result.Sealed {
+			t.Fatalf("%s: want failure %s sealed, got %+v", tc.name, tc.failure, result)
+		}
+		if result.Detail == "" {
+			t.Fatalf("%s: failure must surface a reason", tc.name)
+		}
+		if len(writer.calls) != 0 {
+			t.Fatalf("%s: a non-ready plan must write nothing: %d calls", tc.name, len(writer.calls))
+		}
+	}
+}
+
+// PERSIST-020 self-check: a Raw Ingest failure (transport error or non-zero
+// response) keeps the memory sealed with the matching classification.
+func TestPersistenceRestoreRawIngestFailureKeepsSealed(t *testing.T) {
+	plan := restoreReadyPlanWithFlag(t, 4)
+	writer := &fakeRawIngestWriter{responses: map[PersistenceRawIngestArea]byte{RawIngestHoldingRegisters: 0x21}}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Failure != PersistenceRestoreFailureRawIngestResponse || !result.Sealed || result.Committed {
+		t.Fatalf("non-zero response must keep sealed: %+v", result)
+	}
+	if len(unsealCalls(writer)) != 0 {
+		t.Fatal("no unseal may occur after a Raw Ingest failure")
+	}
+
+	plan2 := restoreReadyPlanWithFlag(t, 4)
+	writer2 := &fakeRawIngestWriter{err: errors.New("raw ingest unavailable")}
+	result2, err := RestorePersistencePlan(plan2, writer2)
+	if err == nil {
+		t.Fatal("transport error must surface")
+	}
+	if result2.Failure != PersistenceRestoreFailureRawIngestWrite || !result2.Sealed || result2.Committed {
+		t.Fatalf("transport error must keep sealed: %+v", result2)
+	}
+}
+
+// PERSIST-020 self-check: a completed-but-uncommitted restore (no flag, or a
+// rejected unseal) is deterministically classified and left sealed.
+func TestPersistenceRestoreCommitFailuresKeepSealed(t *testing.T) {
+	// No sealing flag configured.
+	plan, _, _ := restoreReadyPlan(t)
+	result, err := RestorePersistencePlan(plan, &fakeRawIngestWriter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Completed || result.Committed {
+		t.Fatalf("expected completed-not-committed: %+v", result)
+	}
+	if result.Failure != PersistenceRestoreFailureNoSealingFlag || !result.Sealed {
+		t.Fatalf("missing flag must be classified and sealed: %+v", result)
+	}
+
+	// Unseal rejected with a non-zero response.
+	plan2 := restoreReadyPlanWithFlag(t, 4)
+	result2, err := RestorePersistencePlan(plan2, &unsealFailWriter{inner: &fakeRawIngestWriter{}, flagAddress: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result2.Completed || result2.Committed {
+		t.Fatalf("expected completed-not-committed: %+v", result2)
+	}
+	if result2.Failure != PersistenceRestoreFailureUnsealResponse || !result2.Sealed {
+		t.Fatalf("rejected unseal must be classified and sealed: %+v", result2)
+	}
+
+	// Unseal transport error.
+	plan3 := restoreReadyPlanWithFlag(t, 4)
+	writer3 := &unsealErrWriter{inner: &fakeRawIngestWriter{}, flagAddress: 4, err: errors.New("unseal transport down")}
+	result3, err := RestorePersistencePlan(plan3, writer3)
+	if err == nil {
+		t.Fatal("unseal transport error must surface")
+	}
+	if !result3.Completed || result3.Committed {
+		t.Fatalf("expected completed-not-committed: %+v", result3)
+	}
+	if result3.Failure != PersistenceRestoreFailureUnsealWrite || !result3.Sealed {
+		t.Fatalf("unseal transport error must be classified and sealed: %+v", result3)
+	}
+}
+
+// unsealErrWriter fails only the single-coil sealing flag write with a transport
+// error, letting all area writes succeed.
+type unsealErrWriter struct {
+	inner       *fakeRawIngestWriter
+	flagAddress uint16
+	err         error
+}
+
+func (w *unsealErrWriter) WritePersistenceRawIngest(key PersistenceMemoryKey, area PersistenceRawIngestArea, start, count uint16, payload []byte) (byte, error) {
+	if area == RawIngestCoils && count == 1 && start == w.flagAddress {
+		return 0, w.err
+	}
+	return w.inner.WritePersistenceRawIngest(key, area, start, count, payload)
+}
+
+// PERSIST-020 self-check: the disabled and empty plan states are classified and
+// leave the memory sealed.
+func TestPersistenceRestoreDisabledAndEmptyKeepSealed(t *testing.T) {
+	key, areas, source := loaderFixture(t)
+	disabled, err := LoadPersistenceSnapshots(key, false, true, areas, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := RestorePersistencePlan(disabled, &fakeRawIngestWriter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Failure != PersistenceRestoreFailureDisabled || !result.Sealed {
+		t.Fatalf("disabled must be classified and sealed: %+v", result)
+	}
+
+	empty, err := LoadPersistenceSnapshots(key, true, true, nil, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result2, err := RestorePersistencePlan(empty, &fakeRawIngestWriter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result2.Failure != PersistenceRestoreFailureEmpty || !result2.Sealed {
+		t.Fatalf("empty must be classified and sealed: %+v", result2)
+	}
+}
+
+// The failure classification has a stable string form for each value.
+func TestPersistenceRestoreFailureString(t *testing.T) {
+	want := map[PersistenceRestoreFailure]string{
+		PersistenceRestoreFailureNone:                 "none",
+		PersistenceRestoreFailureDisabled:             "disabled",
+		PersistenceRestoreFailureUnsealed:             "unsealed",
+		PersistenceRestoreFailureEmpty:                "empty",
+		PersistenceRestoreFailureMissingSnapshot:      "missing_snapshot",
+		PersistenceRestoreFailureInvalidSnapshot:      "invalid_snapshot",
+		PersistenceRestoreFailureIncompatibleSnapshot: "incompatible_snapshot",
+		PersistenceRestoreFailureAreaNotReady:         "area_not_ready",
+		PersistenceRestoreFailureUnknownArea:          "unknown_area",
+		PersistenceRestoreFailureRawIngestWrite:       "raw_ingest_write",
+		PersistenceRestoreFailureRawIngestResponse:    "raw_ingest_response",
+		PersistenceRestoreFailureIncomplete:           "incomplete",
+		PersistenceRestoreFailureNoSealingFlag:        "no_sealing_flag",
+		PersistenceRestoreFailureUnsealWrite:          "unseal_write",
+		PersistenceRestoreFailureUnsealResponse:       "unseal_response",
+	}
+	for value, text := range want {
+		if got := value.String(); got != text {
+			t.Fatalf("failure %d string = %q, want %q", value, got, text)
+		}
+	}
+	if got := PersistenceRestoreFailure(999).String(); got != "unknown" {
+		t.Fatalf("unrecognized failure must map to unknown, got %q", got)
+	}
+}
+
+// A plan whose area is not ready is classified as area_not_ready and sealed.
+func TestPersistenceRestoreAreaNotReadyClassification(t *testing.T) {
+	plan := PersistenceRestorePlan{
+		Key: PersistenceMemoryKey{Port: 1, UnitID: 1}, Enabled: true, Sealed: true, State: PersistenceRestoreReady,
+		Areas: []PersistenceAreaRestore{{Area: "holding_registers", Kind: PersistenceRegisters, Start: 0, Count: 2, Outcome: PersistenceRestoreInvalid, Detail: "corrupt"}},
+	}
+	result, err := RestorePersistencePlan(plan, &fakeRawIngestWriter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Failure != PersistenceRestoreFailureInvalidSnapshot || !result.Sealed {
+		t.Fatalf("non-ready area must be classified from its outcome and sealed: %+v", result)
+	}
+}

@@ -32,7 +32,7 @@ Ordered persistence sequence:
 - [ ] PERSIST-022 — End-to-End Persistence Verification (VERIFY)
 
 ## Routing
-This queue is selected. PERSIST-020 CODE is complete and delivered by this invocation at `1528d3e`. Execute PERSIST-021 next as OpenHands JR DEV. Run one packet per invocation and STOP.
+This queue is selected. PERSIST-020 delivery is confirmed at `1528d3e2451f3588de46f7539127164588878f1a`. Execute PERSIST-021 now as OpenHands JR DEV. Run one packet per invocation and STOP.
 
 ## Architectural invariants
 - Persistence requires State Sealing.

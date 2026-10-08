@@ -116,12 +116,43 @@ const rawIngest = async (device, areaCode, start, count, payload) => {
   });
 };
 
+const snapshotsComplete = (root, device) => {
+  try {
+    for (const spec of AREAS) {
+      const area = device.mma2[spec.fc];
+      if (!hasArea(area)) continue;
+      const dir = snapshotDir(root, device.mma2.port, device.mma2.unit_id, spec.area);
+      const payload = Buffer.from(fs.readFileSync(path.join(dir, 'snapshot.bin')));
+      const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+      validateManifest(device, spec, payload, manifest);
+    }
+    return AREAS.some(spec => hasArea(device.mma2[spec.fc]));
+  } catch (_) {
+    return false;
+  }
+};
+
+const unsealForBootstrap = async device => {
+  const sealing = device?.mma2?.state_sealing;
+  if (!sealing || sealing.enabled === false) return;
+  if (String(sealing.area || '').toLowerCase() !== 'coil') {
+    throw new Error(`${device.name}: State Sealing bootstrap requires coil area`);
+  }
+  await rawIngest(device, 1, num(sealing.address), 1, Buffer.from([0x01]));
+};
+
 const captureInitialSnapshots = async (root, previousDoc, editedDoc) => {
   const before = new Map((previousDoc.devices || []).map(device => [device.name, device]));
   for (const after of editedDoc.devices || []) {
     if (!enabled(after)) continue;
+
+    // A previous failed Save & Apply may already have persisted
+    // persistence.enabled=true even though no initial snapshot was ever
+    // created. Snapshot presence/validity, not the checkbox history, is the
+    // authoritative bootstrap gate.
+    if (snapshotsComplete(root, after)) continue;
+
     const old = before.get(after.name);
-    if (old && enabled(old)) continue;
     if (!old) throw new Error(`${after.name}: cannot enable persistence before the memory has a running instance to snapshot`);
     if (num(old.mma2.port) !== num(after.mma2.port) || num(old.mma2.unit_id) !== num(after.mma2.unit_id)) {
       throw new Error(`${after.name}: enable persistence before changing Port/Unit ID`);
@@ -132,11 +163,24 @@ const captureInitialSnapshots = async (root, previousDoc, editedDoc) => {
       if (num(oldArea.start) !== num(newArea.start) || num(oldArea.count) !== num(newArea.count)) {
         throw new Error(`${after.name}: enable persistence before changing memory ranges`);
       }
+    }
+
+    // Recover safely from a prior failed bootstrap that already restarted MMA2
+    // into SEALED state. Raw Ingest is the authoritative bypass and the same
+    // final commit mechanism used after restore.
+    if (enabled(old)) await unsealForBootstrap(old);
+
+    for (const spec of AREAS) {
+      const newArea = after.mma2[spec.fc] || {start: 0, count: 0};
       if (!hasArea(newArea)) continue;
       const payload = await readModbus(old, spec);
       const dir = snapshotDir(root, after.mma2.port, after.mma2.unit_id, spec.area);
       writeAtomic(path.join(dir, 'snapshot.bin'), payload);
       writeAtomic(path.join(dir, 'manifest.json'), Buffer.from(JSON.stringify(manifestFor(after, spec, payload), null, 2)));
+    }
+
+    if (!snapshotsComplete(root, after)) {
+      throw new Error(`${after.name}: initial persistence snapshot set is incomplete after capture`);
     }
   }
 };
@@ -205,6 +249,7 @@ const restoreAndUnseal = async (root, device) => {
 
 module.exports = {
   AREAS,
+  snapshotsComplete,
   captureInitialSnapshots,
   restoreAndUnseal,
   waitRestartAcknowledged,

@@ -1,6 +1,6 @@
 # PERSIST-RUNTIME — Persistence Runtime Integration
 
-Status: PROPOSED — HUMAN REVIEW REQUIRED
+Status: SUPERSEDED — DECOMPOSED AND HUMAN-PROMOTED 2026-10-08
 Stage: CODE
 Owner: unassigned
 Predecessor: PERSIST-021
@@ -69,6 +69,13 @@ Coding owner records exact changed paths, targeted tests, full bounded regressio
 
 3/1/3/2/2=11; runtime integration + concrete filesystem adapter + committed disposable integration harness.
 
-## Promotion
+## Superseded by
+Human decomposed and promoted this oversized proposal into:
+- `PERSIST-R01 — Filesystem Snapshot Adapter`
+- `PERSIST-R02 — Runtime Save Wiring`
+- `PERSIST-R03 — Startup Restore Wiring`
+- `PERSIST-UI01 — Electron Persistence Settings`
+- `PERSIST-R04 — Runtime Status Wiring`
+- `PERSIST-R05 — Disposable Persistence E2E Harness`
 
-This is a review-stage proposal only. It is **not ACTIVE** and must not be executed until human-promoted.
+Do not execute this parent proposal. The active selector is `handoff.md`.

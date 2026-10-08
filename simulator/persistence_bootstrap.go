@@ -16,10 +16,6 @@ import (
 // must have the same name, Port/UnitID and FC1-FC4 ranges as the edited device.
 // Any read/write failure aborts Save & Apply before compose/restart.
 func bootstrapPersistenceTransitions(dataRoot string, previous, edited Document) error {
-	if dataRoot == "" {
-		return fmt.Errorf("appliance data root is unavailable")
-	}
-
 	beforeByName := make(map[string]DeviceDefinition, len(previous.Devices))
 	for _, d := range previous.Devices {
 		beforeByName[d.Name] = d
@@ -32,6 +28,9 @@ func bootstrapPersistenceTransitions(dataRoot string, previous, edited Document)
 		before, ok := beforeByName[after.Name]
 		if ok && persistenceConfigured(before) {
 			continue
+		}
+		if dataRoot == "" {
+			return fmt.Errorf("device %q cannot bootstrap persistence because the appliance data root is unavailable", after.Name)
 		}
 		if !ok {
 			return fmt.Errorf("device %q cannot enable persistence before it has a running memory to snapshot", after.Name)

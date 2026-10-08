@@ -23,7 +23,7 @@ No filesystem/runtime implementation, no manual snapshot/restore buttons, no edi
 3. Derived persisted areas/system RBE rows are read-only/locked while ordinary user RBE remains editable and unchanged.
 
 ## Evidence / handoff
-Record changed Electron paths, focused renderer tests, bounded Electron regression and delivered source SHA. Do not claim installed-Windows VERIFY. After genuine delivery, automatically arm PERSIST-R04 for the next invocation and STOP.
+Record changed Electron paths, focused renderer tests, bounded Electron regression and delivered source SHA. Do not claim installed-Windows VERIFY. After genuine delivery, automatically activate PERSIST-R04. If recursive JR DEV continuation is enabled in handoff, perform the context-reset checkpoint and continue with PERSIST-R04 in the same invocation; otherwise stop.
 
 ## Dependencies
 Requires genuine PERSIST-R03 delivery. Runtime behavior remains authoritative; UI is configuration only.
@@ -32,4 +32,4 @@ Requires genuine PERSIST-R03 delivery. Runtime behavior remains authoritative; U
 2/0/1/1/0=4.
 
 ## CWAL
-Already human-promoted. Execute only when selected by handoff. After delivery, automatically activate PERSIST-R04 and STOP.
+Already human-promoted. Execute only when selected by handoff. After delivery, automatically activate PERSIST-R04. If recursive JR DEV continuation is enabled in handoff, perform the context-reset checkpoint and continue with PERSIST-R04 in the same invocation; otherwise stop.

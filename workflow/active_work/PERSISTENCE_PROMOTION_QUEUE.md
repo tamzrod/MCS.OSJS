@@ -1,6 +1,6 @@
 # Superseding native persistence migration queue — 2026-10-08
 
-Human promoted **NP-01..NP-06** as queued active-work packets. **NP-01 is the only current task.** Ordered: NP-01 schema/validation → NP-02 UI → NP-03 Simulator/Replicator → NP-04 legacy removal → NP-05 integration → NP-06 workflow/docs. One task per invocation; no recursive continuation. The old PERSIST queue below is historical and must not be reactivated. Do not delete historical evidence or user snapshots.
+Human promoted **NP-01..NP-06** as queued active-work packets. **NP-01 (schema & validation) is CODE COMPLETE and delivered at `757fe00b6e8b057b92cb693781fe1885ce362dd6`; NP-02 is the current task.** Ordered: NP-01 schema/validation → NP-02 UI → NP-03 Simulator/Replicator → NP-04 legacy removal → NP-05 integration → NP-06 workflow/docs. One task per invocation; no recursive continuation. The old PERSIST queue below is historical and must not be reactivated. Do not delete historical evidence or user snapshots.
 
 ---
 

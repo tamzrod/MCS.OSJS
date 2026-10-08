@@ -1,6 +1,6 @@
 # NP-01 — Native Schema & Validation
 
-Status: PROMOTED / QUEUED (human authorized 2026-10-08)
+Status: CODE COMPLETE — 2026-10-08 (OpenHands JR DEV); delivered on main at `757fe00b6e8b057b92cb693781fe1885ce362dd6`
 Stage: CODE
 Previous: none
 Next: NP-02

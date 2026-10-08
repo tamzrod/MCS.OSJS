@@ -1,6 +1,19 @@
 # Current human-approved workstream — MMA2 native persistence migration (2026-10-08)
 
-**CURRENT: NP-01 — Native Schema & Validation.** Six packets NP-01..NP-06 are PROMOTED/QUEUED under `workflow/active_work/np-*.md`, but only NP-01 is current. Execute one packet per OPERATION CWAL invocation; STOP after its handoff. Advance only after predecessor completion and human/current-task routing. The older PERSIST-001..022 / R01..R05 / UI01 workstream is completed historical implementation and is superseded for new persistence development. Do NOT resume legacy persistence continuation or recursive task execution. MMA2 PR #22 owns native persistence runtime. Keep unrelated workflows intact.
+**CURRENT: NP-02 — Persistence UI.** Six packets NP-01..NP-06 are PROMOTED/QUEUED under `workflow/active_work/np-*.md`. **NP-01 is CODE COMPLETE and delivered (see below).** Recursive continuation is disabled for this workstream: execute one packet per OPERATION CWAL invocation and STOP after its handoff. Advance only after predecessor completion and human/current-task routing. The older PERSIST-001..022 / R01..R05 / UI01 workstream is completed historical implementation and is superseded for new persistence development. Do NOT resume legacy persistence continuation or recursive task execution. MMA2 PR #22 owns native persistence runtime. Keep unrelated workflows intact.
+
+---
+
+## Completed predecessor — NP-01 (Native Schema & Validation)
+
+**NP-01 — Native Schema & Validation**
+CODE COMPLETE at `757fe00b6e8b057b92cb693781fe1885ce362dd6`, delivered on GitHub main (verified `git ls-remote origin refs/heads/main` = `757fe00`).
+- `mma2composer/composer.go` — extended `Persistence` to the native per-memory block (`enabled`, `directory`, `ranges`); added `PersistenceArea`/`PersistenceRanges`; `Commit` now rejects root-level persistence and validates each memory's persistence block before any write.
+- `mma2composer/persistence_native.go` (new) — `ValidateMemoryPersistence` (enabled requires nonempty directory; optional ranges must be nonempty, inside allocated areas and nonoverlapping; omitted ranges = all allocated areas) and `ValidateCandidatePersistence` (rejects root `persistence`). Read-only; no mutation; no second range source of truth.
+- `mma2composer/memory_validation.go` — `ValidateMemory` composes the native persistence check after the State Sealing prerequisite.
+- `mma2composer/persistence_native_test.go` (new) + fixture updates in `mma2composer/persistence_sealing_validation_test.go`, `simulator/persistence_config_schema_test.go` so enabled fixtures carry the now-required directory.
+- Self-check: `cd mma2composer && go test -mod=readonly -run 'TestNativePersistence|TestCandidateRejectsRootPersistence|TestCommitRejectsInvalidPersistence' -v .` → 8 tests PASS, exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
 ---
 

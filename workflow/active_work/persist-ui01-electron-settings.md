@@ -1,6 +1,6 @@
 # PERSIST-UI01 — Electron Persistence Settings
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-08
+Status: ACTIVE — ARMED 2026-10-08 by PERSIST-R03 delivery (OpenHands JR DEV)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-R03

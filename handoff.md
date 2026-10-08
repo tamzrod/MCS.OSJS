@@ -139,22 +139,29 @@ CODE COMPLETE at `407fcc32979b9acd83dd6826e86f4b700da70c1b`, delivered on main.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRuntimeSave -v .` → 4 tests PASS; `cd simulator && go test ... 'TestPersistenceRuntimeSave|TestPersistenceRBESubscriber|TestModbusReadArea|TestPersistenceAreaReader'` → 9 tests PASS. Bounded regression: all Go modules and the OSJS node suite pass, exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-R03 — Startup Restore Wiring**
+CODE COMPLETE at `2236e15277ebb17c60cac206e05d77e17e296a53`, delivered on main.
+- `mma2composer/persistence_startup.go` (blob `cb9d739b52d74c0be467465bfbdf3d75bc8441b9`), `simulator/persistence_raw_ingest.go` (blob `685a90ba7396daa41cefcb98831ada33a0c98191`), `simulator/persistence_startup.go` (blob `c97533891196f9bf194c7504a0f24fb2482f7037`), `simulator/apply.go` (blob `c27a09e154ed6430d4d31dcf8ff3a8d977829685`), plus tests.
+- `RestorePersistenceAtStartup` is the real startup orchestration: load/validate durable snapshots while sealed, attach the authoritative State Sealing flag from config, restore through the existing Raw Ingest v1 contract, verify the full required-area set, and perform the existing final explicit unseal only after success. The simulator `newRuntimeApplyRouter` is the real non-test startup call site.
+- Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRestoreAtStartup -v .` → 3 tests PASS; `cd simulator && go test -mod=readonly -run TestPersistenceStartup .` → 4 tests PASS. Bounded regression: all Go modules pass, exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-R03 — Startup Restore Wiring**
+**PERSIST-UI01 — Electron Persistence Settings**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-r03-startup-restore-wiring.md`
+Packet: `workflow/active_work/persist-ui01-electron-settings.md`
 
-Execute PERSIST-R03 exactly as written (read the packet for its exact scope before implementing):
-- add real non-test startup call sites for `LoadPersistenceSnapshots` and `RestorePersistencePlan` in the runtime;
-- persistence-enabled memory starts sealed, loads validated snapshots, restores through existing Raw Ingest v1, verifies the full required set, and performs the existing final explicit unseal only after success;
-- any loader/Raw Ingest/verification/commit failure stays sealed with the existing deterministic classification;
-- do not add a new seal flag, alternate unseal path, retry/repair loop, format redesign, UI or ICC edit;
+Execute PERSIST-UI01 exactly as written (read the packet for its exact scope before implementing):
+- expose the existing per-memory persistence configuration in the Windows Electron Memory → Advanced Settings editor without creating another configuration authority;
+- add the Advanced Settings tab order `RBE Rules | State Sealing | Persistence | Access Policy`; show RBE mechanism availability + State Sealing as prerequisites and never silently enable sealing or create operator-owned RBE rules;
+- expose `persistence.enabled` plus read-only persisted areas and locked system-owned persistence RBE projection derived from authoritative memory ranges;
+- keep ordinary user RBE editable and unchanged; no filesystem/runtime implementation, manual snapshot/restore buttons, editable ranges/RBE IDs/pathnames, alternate config store, or UI bypass of Save & Apply / Discard;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- automatically arm PERSIST-UI01 for the next invocation only after genuine PERSIST-R03 completion;
-- STOP after PERSIST-R03.
+- automatically arm PERSIST-R04 for the next invocation only after genuine PERSIST-UI01 completion;
+- STOP after PERSIST-UI01.
 
 Human promoted the full optimized persistence continuation chain on 2026-10-08:
 

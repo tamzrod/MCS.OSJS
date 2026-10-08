@@ -13,7 +13,7 @@ The normal operator loop for this already-promoted autonomous queue is:
 OPERATION CWAL
 ```
 
-OpenHands JR DEV may perform its authorized safe fetch/fast-forward itself. One invocation executes exactly one product task, delivers/records it, activates the named already-promoted successor for the next invocation, then STOPS.
+OpenHands JR DEV may perform its authorized safe fetch/fast-forward itself. **Recursive JR DEV continuation is enabled for the current promoted persistence CODE chain.** One OPERATION CWAL invocation should continue task-to-task after each genuine delivery, using a context-reset checkpoint between packets. Stop only on failure/blocker, queue end, or before the PERSIST-022 independent-VERIFY identity boundary.
 
 ## Completed predecessors
 
@@ -191,14 +191,14 @@ OPERATION CWAL
 
 JR DEV may perform its already-authorized safe fetch/fast-forward itself. A reused workspace must still preserve the superseded PERSIST-013/PERSIST-014 local-history recovery notes and must never force/reset destructively.
 
-## Autonomous successor routing
+## Autonomous successor routing — RECURSIVE JR DEV ENABLED
 
-- R01 success → activate R02
-- R02 success → activate R03
-- R03 success → activate UI01
-- UI01 success → activate R04
-- R04 success → activate R05
+Current continuation:
+- UI01 success → activate and immediately execute R04
+- R04 success → activate and immediately execute R05
 - R05 success → pin and activate PERSIST-022 as **independent JR VERIFY**, then STOP
 - Any genuine blocker/failure → fail closed, record it, do not skip ahead
+
+Between CODE tasks, perform a context-reset checkpoint: reread this handoff, read only the newly active packet, and load only its minimal relevant source/context. Prior task implementation detail is evidence, not active reasoning context.
 
 JR DEV never executes PERSIST-022 and never self-certifies the VERIFY gate. Only BLACK SHEEP WALL edits ICC.

@@ -1,8 +1,8 @@
 # PERSIST-018 — Restore Verification
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-017
 Next: PERSIST-019
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-017. Being present in `workflow
 1/0/2/1/2=6.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-017 is delivered on GitHub main at `fa1276c26cbb639f061436c3f111351232037b57`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task, require the complete configured persistence area set and successful integrity/Raw Ingest acknowledgement state before reporting restore completion, do not unseal directly, prepare PERSIST-019 for the next invocation only after genuine completion, and STOP.

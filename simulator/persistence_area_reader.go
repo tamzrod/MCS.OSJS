@@ -17,7 +17,7 @@ const persistenceModbusTimeout = 2 * time.Second
 // packed bits for bit areas, big-endian uint16 words for register areas. It is
 // the authoritative current-state source for the persistence save path; it never
 // writes and never fabricates bytes (a failure is an explicit error).
-func modbusReadArea(host string, port, unitID uint16, area mma2composer.PersistenceAreaKind, start, count uint16) ([]byte, error) {
+func modbusReadArea(host string, port, unitID uint16, area string, kind mma2composer.PersistenceAreaKind, start, count uint16) ([]byte, error) {
 	if count == 0 {
 		return nil, fmt.Errorf("persistence area read requires a non-empty range")
 	}
@@ -31,9 +31,22 @@ func modbusReadArea(host string, port, unitID uint16, area mma2composer.Persiste
 		return nil, fmt.Errorf("set deadline: %w", err)
 	}
 
-	function := byte(3)
-	if area == mma2composer.PersistenceBits {
+	var function byte
+	switch area {
+	case "coils":
+		if kind != mma2composer.PersistenceBits { return nil, fmt.Errorf("persistence area %q has non-bit kind", area) }
 		function = 1
+	case "discrete_inputs":
+		if kind != mma2composer.PersistenceBits { return nil, fmt.Errorf("persistence area %q has non-bit kind", area) }
+		function = 2
+	case "holding_registers":
+		if kind != mma2composer.PersistenceRegisters { return nil, fmt.Errorf("persistence area %q has non-register kind", area) }
+		function = 3
+	case "input_registers":
+		if kind != mma2composer.PersistenceRegisters { return nil, fmt.Errorf("persistence area %q has non-register kind", area) }
+		function = 4
+	default:
+		return nil, fmt.Errorf("unknown persistence area %q", area)
 	}
 
 	const transactionID uint16 = 1
@@ -71,7 +84,7 @@ func modbusReadArea(host string, port, unitID uint16, area mma2composer.Persiste
 		return nil, fmt.Errorf("modbus byte count %d does not match payload %d", byteCount, len(data))
 	}
 
-	if area == mma2composer.PersistenceBits {
+	if kind == mma2composer.PersistenceBits {
 		expected := (int(count) + 7) / 8
 		if len(data) != expected {
 			return nil, fmt.Errorf("modbus bit payload length %d does not match expected %d", len(data), expected)
@@ -90,6 +103,6 @@ func modbusReadArea(host string, port, unitID uint16, area mma2composer.Persiste
 // configured listen port.
 func persistenceAreaReader(device DeviceDefinition) mma2composer.PersistenceAreaReader {
 	return PersistenceAreaReaderFunc(func(key mma2composer.PersistenceMemoryKey, area string, kind mma2composer.PersistenceAreaKind, start, count uint16) ([]byte, error) {
-		return modbusReadArea("127.0.0.1", device.MMA2.Port, device.MMA2.UnitID, kind, start, count)
+		return modbusReadArea("127.0.0.1", device.MMA2.Port, device.MMA2.UnitID, area, kind, start, count)
 	})
 }

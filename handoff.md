@@ -126,19 +126,44 @@ CODE COMPLETE at `1310c1367c7f98f084187006084d624d8e20e07b`, delivered on main.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRuntimeStatus -v .` → 7 tests PASS, exit 0; simulator persistence status tests PASS; OS.js diagnostics tests exit 0. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites and the whole OSJS node suite → all pass, exit 0. New Go files `gofmt`/`vet` clean.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — none ACTIVE (CODE workstream complete)
+## Current task — none ACTIVE (PERSIST-022 BLOCKED)
 
-All CODE packets **PERSIST-001..021 are CODE COMPLETE**. There is no current ACTIVE CODE task.
+All CODE packets **PERSIST-001..021 are CODE COMPLETE**. PERSIST-021 is delivered at `1310c1367c7f98f084187006084d624d8e20e07b`.
 
-**PERSIST-022 — End-to-End Persistence Verification** remains QUEUED and is a **VERIFY** packet.
-Mode / owner: **independent JR** (separate invocation), not JR DEV.
-Before it can be selected, the workflow owner must pin its exact execution packet in `handoff.md` (exact source checkpoint, disposable target, preflight, ordered actions/commands, expected observations, evidence destination and report permissions). JR DEV must not fabricate or self-certify this packet. Do not select it until that pinned packet exists.
+**PERSIST-022 — End-to-End Persistence Verification** is human-promoted VERIFY work, but it is **BLOCKED** and must not be selected yet.
+
+### Verification precondition blocker
+
+At product checkpoint `1310c1367c7f98f084187006084d624d8e20e07b`, repository call-site inspection found:
+- `NewPersistenceSnapshotWriter` — definition/tests only; no non-test runtime caller.
+- `LoadPersistenceSnapshots` — definition/tests only; no non-test runtime caller.
+- `RestorePersistencePlan` — definition/tests only; no non-test runtime caller.
+- `PersistenceRuntimeStatusFromPlan` — definition/tests only; no non-test runtime caller.
+
+The current runtime therefore cannot yet be independently exercised through the promoted lifecycle:
+`save state → restart sealed → restore → verify → unseal → Modbus sees restored state`.
+
+Unit tests and prior temporary JR DEV socket checks do not substitute for that end-to-end appliance path.
+
+### Review-stage follow-up
+
+A CODE proposal has been created at:
+`workflow/micro_task/persist-runtime-integration-gap.md`
+
+It is **PROPOSED / HUMAN REVIEW REQUIRED**, not ACTIVE. It covers:
+- concrete appliance snapshot payload + manifest filesystem store/source;
+- persistence-owned RBE → snapshot writer runtime wiring;
+- startup sealed load/restore/verify/final-unseal wiring;
+- actual restore/save observations feeding runtime status;
+- a committed disposable integration harness suitable for independent PERSIST-022.
+
+Do not execute that proposal until human-promoted. Do not run PERSIST-022 until the runtime integration exists and the workflow owner can pin its exact independent-JR packet.
 
 Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-011 passed independently; PERSIST-012 through PERSIST-021 are CODE complete. All CODE packets PERSIST-001..021 are complete. PERSIST-022 is already human-promoted and remains QUEUED/dependency-gated as a VERIFY packet; it requires an independent-JR execution packet pinned by the workflow owner before selection.
+PERSIST-011 passed independently; PERSIST-012 through PERSIST-021 are CODE complete. PERSIST-022 is human-promoted VERIFY work but is currently BLOCKED because the persistence lifecycle is not wired into a non-test runtime path. The review-stage follow-up is `workflow/micro_task/persist-runtime-integration-gap.md`; it requires human promotion before CODE execution.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

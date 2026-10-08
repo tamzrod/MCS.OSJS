@@ -91,29 +91,37 @@ CODE COMPLETE at `2fbabc3481b6435ca38596ea7dd060e36ed0655d`, delivered on main; 
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRestore -v .` → 7 tests PASS, exit 0. Additional temporary real-socket v1 check passed with `-race` (removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-017 — Seal-Flag Protection During Restore**
+CODE COMPLETE at `fa1276c26cbb639f061436c3f111351232037b57`, delivered on main; awaiting independent TEST/VERIFY (PERSIST-022).
+- `mma2composer/persistence_restore.go` (blob `2f14d6bd4132d15e3607afe9311284c30828d964`), `mma2composer/persistence_snapshot_loader.go` (blob `1d62df77e3be5d9e26eff0c2fcf1d09636fe76ac`), `mma2composer/persistence_restore_test.go` (blob `03ac862771bf67e80370e81ff2185540977972ec`).
+- `RestorePersistencePlan` forces the authoritative State Sealing bit to sealed (0) within the restored coils payload before writing it, so a snapshot captured while unsealed cannot unseal the memory mid-restore. `PersistenceSealingFlagFromExtra` derives the flag location from the configured `state_sealing` block (area `"coil"`, address) and introduces no second sealing source of truth; `forcePersistenceSealingFlag` clears exactly that one bit, preserves every other restored bit, and fails closed if the flag lies beyond the payload. `PersistenceRestorePlan` gained an optional `SealingFlag`.
+- Self-check: `cd mma2composer && go test -mod=readonly -run 'TestPersistenceRestore|TestPersistenceSealing|TestForcePersistenceSealingFlag' -v .` → 12 tests PASS, exit 0. Additional temporary real-socket v1 check confirmed the sealing bit is cleared on the wire (passed with `-race`, removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-017 — Seal-Flag Protection During Restore**
+**PERSIST-018 — Restore Verification**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-017-seal-flag-protection-during-restore.md`
+Packet: `workflow/active_work/persist-018-restore-verification.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-017 exactly as written:
-- prevent the persisted sealing-flag value from causing a premature unseal during snapshot restoration;
-- keep the configured State Sealing address sealed/zero throughout area restoration;
-- a snapshot containing prior flag=1 must not unseal during restore;
-- follow the authoritative State Sealing area/address configuration; add no second sealing source of truth and no duplicate flag setting;
+Execute PERSIST-018 exactly as written:
+- add the restore-completion gate that requires all configured persisted areas and their Raw Ingest acknowledgements/integrity checks to succeed before commit;
+- track the complete required-area set deterministically;
+- any failed or missing area prevents restore completion;
+- emit success only after every required area is validated and committed;
+- do not unseal directly in this task;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-018 for the next invocation only after genuine PERSIST-017 completion;
-- STOP after PERSIST-017.
+- prepare PERSIST-019 for the next invocation only after genuine PERSIST-018 completion;
+- STOP after PERSIST-018.
 
 Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-018..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-016 are CODE complete; PERSIST-017 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-019..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-017 are CODE complete; PERSIST-018 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

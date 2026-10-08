@@ -101,7 +101,7 @@ test('first enable captures live snapshots then restores and final-unseals', asy
 
   const before = device(fake.port, false);
   const after = device(fake.port, true);
-  await persistence.captureInitialSnapshots(root, {devices: [before]}, {devices: [after]});
+  await persistence.captureSnapshots(root, {devices: [before]}, {devices: [after]});
 
   assert.equal(fs.existsSync(path.join(root, 'persistence', 'snapshots', `port-${fake.port}`, 'unit-1', 'area-holding_registers', 'snapshot.bin')), true);
 
@@ -120,7 +120,7 @@ test('capture failure is surfaced before a sealed restart can be reported succes
   const before = device(65534, false);
   const after = device(65534, true);
   await assert.rejects(
-    persistence.captureInitialSnapshots(root, {devices: [before]}, {devices: [after]}),
+    persistence.captureSnapshots(root, {devices: [before]}, {devices: [after]}),
     /connect|ECONNREFUSED|timed out/i
   );
   fs.rmSync(root, {recursive: true, force: true});
@@ -134,7 +134,7 @@ test('final unseal rejection fails closed', async t => {
 
   const before = device(fake.port, false);
   const after = device(fake.port, true);
-  await persistence.captureInitialSnapshots(root, {devices: [before]}, {devices: [after]});
+  await persistence.captureSnapshots(root, {devices: [before]}, {devices: [after]});
   fake.seal();
   await assert.rejects(persistence.restoreAndUnseal(root, after), /Raw Ingest rejected with 0x21/);
 });
@@ -147,12 +147,12 @@ test('every persistence Save & Apply capture overwrites the previous snapshot', 
   t.after(() => fs.rmSync(root, {recursive: true, force: true}));
 
   const current = device(fake.port, true);
-  await persistence.captureInitialSnapshots(root, {devices: [current]}, {devices: [current]});
+  await persistence.captureSnapshots(root, {devices: [current]}, {devices: [current]});
 
   const snapshot = path.join(root, 'persistence', 'snapshots', `port-${fake.port}`, 'unit-1', 'area-holding_registers', 'snapshot.bin');
   fs.writeFileSync(snapshot, Buffer.from([0x00, 0x00]));
 
-  await persistence.captureInitialSnapshots(root, {devices: [current]}, {devices: [current]});
+  await persistence.captureSnapshots(root, {devices: [current]}, {devices: [current]});
   assert.deepEqual([...fs.readFileSync(snapshot)], [0x12, 0x34]);
 });
 
@@ -165,7 +165,7 @@ test('Save & Apply snapshot capture recovers a previously sealed persistence run
   const current = device(fake.port, true);
   fake.seal();
 
-  await persistence.captureInitialSnapshots(root, {devices: [current]}, {devices: [current]});
+  await persistence.captureSnapshots(root, {devices: [current]}, {devices: [current]});
 
   const snapshot = path.join(root, 'persistence', 'snapshots', `port-${fake.port}`, 'unit-1', 'area-holding_registers', 'snapshot.bin');
   assert.deepEqual([...fs.readFileSync(snapshot)], [0x43, 0x21]);

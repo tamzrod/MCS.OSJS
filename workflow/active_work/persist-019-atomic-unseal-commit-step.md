@@ -1,8 +1,8 @@
 # PERSIST-019 — Atomic Unseal / Commit Step
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-07
+Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
 Stage: CODE
-Owner: OpenCode
+Owner: OpenHands JR DEV
 Previous: PERSIST-018
 Next: PERSIST-020
 
@@ -30,4 +30,4 @@ Requires genuine completion evidence for PERSIST-018. Being present in `workflow
 1/0/2/1/2=6.
 
 ## CWAL
-Human has promoted this packet into Active Work. It is QUEUED, not the repository's sole current ACTIVE assignment. OPERATION CWAL must execute exactly one task selected by `handoff.md`; do not self-select this task while another ACTIVE assignment exists.
+PERSIST-018 is delivered on GitHub main at `3eb118f507688d483c5d4985f74fe6a98b531bc3`. This packet is the sole current ACTIVE assignment for OpenHands JR DEV. Execute exactly this task: unseal only after `VerifyPersistenceRestore` success, write the existing authoritative State Sealing flag to 1 as the final commit action, derive its location only from current State Sealing configuration, add no runtime reseal or alternate commit flag, prepare PERSIST-020 for the next invocation only after genuine completion, and STOP.

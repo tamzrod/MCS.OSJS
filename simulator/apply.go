@@ -35,6 +35,9 @@ type SchedulerApplier struct {
 	// unless the appliance data root is known and a persistence-enabled memory
 	// exists; it never touches MMA2 authority, sealing, restore or user RBE.
 	persistenceSave *PersistenceRuntimeSaveHost
+	// persistenceStartup records the observed startup restore outcomes (PERSIST-R03)
+	// for observational reporting; it is never a control source.
+	persistenceStartup []mma2composer.PersistenceStartupResult
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
@@ -138,6 +141,22 @@ func (a *SchedulerApplier) PublishPersistenceEvent(id uint8) {
 	if host != nil {
 		host.Publish(id)
 	}
+}
+
+// recordPersistenceStartup stores the observed startup restore outcomes for
+// observational reporting. It is read-only over the results.
+func (a *SchedulerApplier) recordPersistenceStartup(results []mma2composer.PersistenceStartupResult) {
+	a.mu.Lock()
+	a.persistenceStartup = results
+	a.mu.Unlock()
+}
+
+// PersistenceStartupResults returns a copy of the observed startup restore
+// outcomes (success and fail-closed), for diagnostics.
+func (a *SchedulerApplier) PersistenceStartupResults() []mma2composer.PersistenceStartupResult {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return append([]mma2composer.PersistenceStartupResult(nil), a.persistenceStartup...)
 }
 
 func (a *SchedulerApplier) ApplyTiming(previous, edited Document) error {
@@ -265,6 +284,15 @@ func newRuntimeApplyRouter(store Store, bootTimeout time.Duration) (*ApplyRouter
 			if err := timing.ArmPersistenceSave(initial); err != nil {
 				return nil, nil, err
 			}
+			// Real runtime startup restore wiring (PERSIST-R03): load and restore
+			// persistence-enabled memories while sealed, unsealing only after the
+			// existing verified final commit. A build error fails startup closed;
+			// per-memory restore failures stay sealed and are surfaced truthfully.
+			startupResults, err := persistenceStartupContext(store.Root, initial.Devices)
+			if err != nil {
+				return nil, nil, err
+			}
+			timing.recordPersistenceStartup(startupResults)
 		}
 	}
 	return NewApplyRouter(store, timing, timing), timing, nil

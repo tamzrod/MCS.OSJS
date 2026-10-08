@@ -89,7 +89,14 @@ func (a *SchedulerApplier) ApplyStructural(previous, edited Document) error {
 // applyStructuralLocked spans compose, restart request, ack and readiness under
 // ONE lock. A failed ack means the config may already be committed: never claim
 // success or roll it back while MMA2 may be serving the new configuration.
-func (a *SchedulerApplier) applyStructuralLocked(_, edited Document) error {
+func (a *SchedulerApplier) applyStructuralLocked(previous, edited Document) error {
+	// First persistence enablement must bootstrap from the currently running,
+	// still-unsealed memory BEFORE the structural restart enables State Sealing.
+	// If this capture fails, do not compose/restart into a permanently sealed
+	// memory with no restorable snapshot.
+	if err := bootstrapPersistenceTransitions(a.store.Root, previous, edited); err != nil {
+		return fmt.Errorf("persistence bootstrap failed: %w", err)
+	}
 	if err := a.store.composeDocumentLocked(edited); err != nil { return err }
 	cfg, err := a.store.loadEffective()
 	if err != nil { return fmt.Errorf("load composed MMA2 config: %w", err) }

@@ -5,30 +5,43 @@ const memoryUI = (() => {
   const states = new WeakMap();
   const sourceAliases = {'All IPv4': '0.0.0.0/0', 'All IPv6': '::/0'};
   const splitSources = value => String(value).split(',').map(item => item.trim()).filter(Boolean).map(item => sourceAliases[item] || item);
-  const sealingEnabled = params => Boolean(params.state_sealing && params.state_sealing.enabled !== false);
   const persistenceEnabled = params => Boolean(params.persistence && params.persistence.enabled === true);
-  // Persistence owns State Sealing while enabled. RBE remains an external
-  // prerequisite; sealing itself is explicitly managed by the Persistence tab.
-  const persistenceError = (params, options = {}) => {
+  // Canonical area order maps fc1..fc4 to the four Modbus areas.
+  const areaOrder = ['coils', 'discrete_inputs', 'holding_registers', 'input_registers'];
+  // Allocated areas of this memory (count > 0), in canonical order. Native
+  // persistence ranges are bounded by these authoritative areas.
+  const allocatedAreas = params => areaOrder.flatMap((area, index) => {
+    const layout = params[`fc${index + 1}`];
+    return layout && Number(layout.count) > 0 ? [{area, start: Number(layout.start) || 0, count: Number(layout.count)}] : [];
+  });
+  // Native persistence is independent of State Sealing and RBE. Explicit ranges,
+  // when present, must be nonempty, bounded by the owning allocated area and
+  // non-overlapping per area; an omitted ranges block means all allocated areas.
+  const persistenceRangeError = params => {
     if (!persistenceEnabled(params)) return null;
-    if (options.rbeAvailable === false) return 'Persistence requires the RBE mechanism to be available. Configure the RBE TCP output first.';
+    const ranges = params.persistence.ranges;
+    if (ranges === undefined || ranges === null) return null;
+    const allocated = new Map(allocatedAreas(params).map(entry => [entry.area, entry]));
+    let total = 0;
+    for (const area of areaOrder) {
+      const list = ranges[area];
+      if (!list || !list.length) continue;
+      const alloc = allocated.get(area);
+      if (!alloc) return `${areas[area]} is not an allocated area.`;
+      for (const range of list) {
+        const start = Number(range.start), count = Number(range.count);
+        if (!(count > 0)) return `${areas[area]} range count must be greater than 0.`;
+        if (start < alloc.start || start + count > alloc.start + alloc.count) return `${areas[area]} range is outside the allocated area.`;
+      }
+      const sorted = [...list].sort((left, right) => Number(left.start) - Number(right.start));
+      for (let index = 1; index < sorted.length; index++) {
+        if (Number(sorted[index].start) < Number(sorted[index - 1].start) + Number(sorted[index - 1].count)) return `${areas[area]} ranges overlap.`;
+      }
+      total += list.length;
+    }
+    if (total === 0) return 'Select at least one range, or use All Allocated Areas.';
     return null;
   };
-  const ensureSealing = params => {
-    params.state_sealing ||= {enabled: false, area: 'coil', address: params.fc1?.start ?? 0, exception: 6};
-    params.state_sealing.enabled = true;
-    params.state_sealing.area = 'coil';
-    params.state_sealing.address ??= params.fc1?.start ?? 0;
-    params.state_sealing.exception ??= 6;
-    return params.state_sealing;
-  };
-  // One derived persistence RBE rule per present area, start/count taken from the
-  // authoritative memory area. Mirrors the Go projection; used for the locked,
-  // read-only display. Persistence never authors an independent range or ID.
-  const derivedPersistenceRules = params => Object.keys(areas).flatMap((area, index) => {
-    const layout = params[`fc${index + 1}`];
-    return layout && layout.count > 0 ? [{area, start: layout.start, count: layout.count, system_owned: true}] : [];
-  });
   const defaults = () => ({state_sealing: {enabled: false}, policy: {rules: [{id: 'all-addresses', source_ip: ['0.0.0.0/0', '::/0'], allow_fc: [...presets['Read/Write']]}]}});
   const accessMode = codes => Object.keys(presets).find(key => codes.length === presets[key].length && presets[key].every(code => codes.includes(code))) || 'Custom';
   const replicatorParams = device => {
@@ -114,9 +127,9 @@ const memoryUI = (() => {
         ? ['RBE Rules', 'State Sealing', 'Persistence', 'Access Policy']
         : ['RBE Rules', 'State Sealing', 'Access Policy'];
       for (const title of tabTitles) {
-        const managedSealing = title === 'State Sealing' && persistenceEnabled(params);
-        const tab = button(title, () => { state.tab = title; draw(); }, managedSealing);
-        if (managedSealing) tab.title = 'State Sealing is managed by Persistence while persistence is enabled.';
+        // State Sealing stays an independent feature; the Persistence tab never
+        // manages or blocks it.
+        const tab = button(title, () => { state.tab = title; draw(); });
         tab.setAttribute('aria-pressed', state.tab === title ? 'true' : 'false');
         tabs.append(tab);
       }
@@ -127,56 +140,67 @@ const memoryUI = (() => {
           if (checked) {
             params.persistence ||= {};
             params.persistence.enabled = true;
-            ensureSealing(params);
           } else if (params.persistence) {
             params.persistence.enabled = false;
           }
           draw();
         }));
-        const error = persistenceError(params, options);
+        root.append(element('p',
+          'Native MMA2 persistence for this memory. State Sealing and RBE are independent features configured on their own tabs. MMA2 owns snapshot, restore, flush, backup and recovery.',
+          'advanced-note'));
+        if (!enabled) return;
+        const allocated = allocatedAreas(params);
+        const usingAll = params.persistence.ranges === undefined || params.persistence.ranges === null;
+        const settings = element('div', undefined, 'advanced-form');
+        settings.append(
+          input('Directory', params.persistence.directory ?? '', value => {
+            const text = String(value).trim();
+            if (text) params.persistence.directory = text; else delete params.persistence.directory;
+          }),
+          element('p', 'Leave Directory empty to use MMA2\'s native default location beside the loaded YAML.', 'advanced-note'),
+          select('Persisted memory', usingAll ? 'all' : 'selected', [['all', 'All Allocated Areas'], ['selected', 'Selected Ranges']], value => {
+            if (value === 'all') delete params.persistence.ranges;
+            else if (usingAll) params.persistence.ranges = {};
+            draw();
+          }));
+        root.append(settings);
+        const error = persistenceRangeError(params);
         if (error) {
           const message = element('p', error, 'tool-validation');
           message.setAttribute('role', 'alert');
           root.append(message);
         }
-        root.append(element('p',
-          enabled
-            ? 'Persistence owns State Sealing for this memory. The standalone State Sealing tab is disabled while persistence is enabled. Disabling persistence releases ownership but keeps the sealing configuration.'
-            : 'Enabling persistence also enables State Sealing explicitly and makes Persistence its owner. Existing sealing settings are preserved if persistence is later disabled.',
-          'advanced-note'));
-        if (enabled) {
-          const seal = ensureSealing(params);
-          const sealing = element('div', undefined, 'advanced-form');
-          sealing.append(
-            input('Lock coil address', seal.address ?? params.fc1?.start ?? 0, value => { ensureSealing(params).address = value; }, 'number'),
-            select('Sealed response', seal.exception ?? 6, [
-              [1, '0x01 — Illegal Function'], [2, '0x02 — Illegal Data Address'], [3, '0x03 — Illegal Data Value'],
-              [4, '0x04 — Server Device Failure'], [5, '0x05 — Acknowledge'], [6, '0x06 — Server Device Busy'],
-              [8, '0x08 — Memory Parity Error'], [10, '0x0A — Gateway Path Unavailable'], [11, '0x0B — Gateway Target Failed to Respond']
-            ], value => { ensureSealing(params).exception = Number(value); })
-          );
-          root.append(element('h3', 'State Sealing (managed by Persistence)'), sealing);
+        if (!allocated.length) { root.append(element('div', 'No allocated memory areas to persist.', 'tool-empty')); return; }
+        if (usingAll) {
+          const table = element('div', undefined, 'advanced-rules');
+          const header = element('div', undefined, 'rbe-rule-row');
+          for (const title of ['Area', 'Start', 'Count']) header.append(element('span', title));
+          table.append(header);
+          for (const entry of allocated) {
+            const row = element('div', undefined, 'rbe-rule-row');
+            row.append(element('span', areas[entry.area]), element('span', String(entry.start)), element('span', String(entry.count)));
+            table.append(row);
+          }
+          root.append(table); return;
         }
-        root.append(element('p', 'Persistence-owned RBE rules are derived from the memory layout and are system-owned; they are locked and cannot be edited or deleted here. User RBE rules remain editable on the RBE Rules tab.', 'advanced-note'));
-        const table = element('div', undefined, 'advanced-rules');
-        const header = element('div', undefined, 'rbe-rule-row');
-        for (const title of ['Area', 'Start', 'Count', 'Ownership']) header.append(element('span', title));
-        table.append(header);
-        const derived = derivedPersistenceRules(params);
-        for (const rule of derived) {
-          const row = element('div', undefined, 'rbe-rule-row');
-          row.append(element('span', areas[rule.area]), element('span', String(rule.start)), element('span', String(rule.count)), element('span', 'System-owned (locked)'));
-          table.append(row);
+        for (const entry of allocated) {
+          const list = params.persistence.ranges[entry.area] || [];
+          root.append(element('h3', areas[entry.area]));
+          const table = element('div', undefined, 'advanced-rules');
+          list.forEach((range, index) => {
+            const row = element('div', undefined, 'rbe-rule-row');
+            row.append(
+              input('Start', range.start, value => { range.start = Number(value); draw(); }, 'number'),
+              input('Count', range.count, value => { range.count = Number(value); draw(); }, 'number'),
+              button('Delete', () => { list.splice(index, 1); if (!list.length) delete params.persistence.ranges[entry.area]; draw(); }));
+            table.append(row);
+          });
+          table.append(button('Add range', () => { (params.persistence.ranges[entry.area] ||= []).push({start: entry.start, count: 1}); draw(); }));
+          root.append(table);
         }
-        if (!derived.length) table.append(element('div', 'No memory areas configured.', 'tool-empty'));
-        root.append(table); return;
+        return;
       }
       if (state.tab === 'State Sealing') {
-        if (persistenceEnabled(params)) {
-          state.tab = 'Persistence';
-          draw();
-          return;
-        }
         const seal = params.state_sealing;
         const enabled = Boolean(seal && seal.enabled !== false);
         const ensure = () => params.state_sealing ||= {enabled: false, area: 'coil', address: params.fc1.start, exception: 6};
@@ -336,7 +360,7 @@ const memoryUI = (() => {
     };
     draw();
   };
-  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams, sealingEnabled, persistenceEnabled, persistenceError, derivedPersistenceRules};
+  return {defaults, accessMode, mount, mountShared, nextID, assignCopiedIDs, splitSources, replicatorParams, persistenceEnabled, persistenceRangeError, allocatedAreas};
 })();
 if (typeof module !== 'undefined') module.exports = memoryUI;
 if (typeof window !== 'undefined') window.mcsMemoryUI = memoryUI;

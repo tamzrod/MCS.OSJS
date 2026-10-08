@@ -154,63 +154,98 @@ test('persistence tab round-trips persistence.enabled through the same draft', (
   assert.equal(enable.checked, false);
   enable.checked = true; enable.events.change();
   assert.deepEqual(params.persistence, {enabled: true});
-  assert.equal(params.state_sealing.enabled, true);
-  assert.equal(params.state_sealing.area, 'coil');
-  // Save-and-apply composition would send the same persistence + state_sealing
-  // draft through applySettings; disabling persistence releases ownership but
-  // preserves the sealing configuration.
+  // NPE-02: enabling persistence must not touch State Sealing or RBE.
+  assert.equal(params.state_sealing.enabled, false);
+  assert.equal(params.rbe, undefined);
+  // Disabling only flips the persistence flag.
   enable.checked = false; enable.events.change();
   assert.deepEqual(params.persistence, {enabled: false});
-  assert.equal(params.state_sealing.enabled, true);
+  assert.equal(params.state_sealing.enabled, false);
   // Navigating away and back preserves the draft value.
   click(root, 'RBE Rules'); click(root, 'Persistence');
   assert.equal(find(root, 'Enable persistence').checked, false);
 });
 
-test('persistence is hidden where unsupported and locked derived areas are read-only', () => {
-  const params = {...ui.defaults(), state_sealing: {enabled: true}, fc1: {start: 10, count: 16}, fc3: {start: 100, count: 8}};
+test('persistence is hidden where unsupported and shows all allocated areas by default', () => {
+  const params = {...ui.defaults(), fc1: {start: 10, count: 16}, fc3: {start: 100, count: 8}};
   const {root} = setup(params, {persistenceSupported: false});
   assert.ok(!collect(root).some(node => node.tagName === 'button' && node.textContent === 'Persistence'));
-  // Support it again to inspect the derived, locked rows.
-  ui.mount(root, params, {document, devices: [{mma2: params}], outputLoaded: true, persistenceSupported: true, rbeAvailable: true});
+  // Support it again: default is All Allocated Areas with no explicit ranges.
+  ui.mount(root, params, {document, devices: [{mma2: params}], outputLoaded: true, persistenceSupported: true});
   click(root, 'Persistence');
+  const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
+  assert.equal(find(root, 'Persisted memory').value, 'all');
+  assert.equal(params.persistence.ranges, undefined);
+  assert.ok(collect(root).some(node => /State Sealing and RBE are independent/.test(node.textContent || '')));
   const rows = collect(root).filter(node => node.className === 'rbe-rule-row');
   const text = rows.map(row => collect(row).map(node => node.textContent).join('|'));
-  assert.ok(text.some(entry => /Coils|10|16|System-owned/.test(entry)));
-  assert.ok(text.some(entry => /Holding Registers|100|8|System-owned/.test(entry)));
-  // The derived rows have no editable inputs.
-  assert.equal(collect(root).filter(node => node.tagName === 'input').length, 1); // only the enable checkbox
+  assert.ok(text.some(entry => /Coils|10|16/.test(entry)));
+  assert.ok(text.some(entry => /Holding Registers|100|8/.test(entry)));
+  // Default view is read-only: only the enable checkbox and the directory field.
+  assert.equal(collect(root).filter(node => node.tagName === 'input').length, 2);
+  // No persistence RBE, lock coil, unseal, restore or snapshot controls remain.
+  assert.ok(!collect(root).some(node => /Lock coil|Unseal|Restore|Snapshot|RBE rules are derived/.test(node.textContent || '')));
 });
 
-test('persistence owns state sealing while enabled and keeps RBE as external prerequisite', () => {
-  const enabled = {persistence: {enabled: true}, state_sealing: {enabled: true}};
-  assert.match(ui.persistenceError(enabled, {rbeAvailable: false}), /RBE mechanism/);
-  assert.equal(ui.persistenceError(enabled, {rbeAvailable: true}), null);
-  assert.equal(ui.persistenceError({persistence: {enabled: false}}, {rbeAvailable: false}), null);
+test('persistence directory is optional and custom overrides round-trip', () => {
+  const params = {...ui.defaults(), fc1: {start: 10, count: 16}};
+  const {root} = setup(params);
+  click(root, 'Persistence');
+  const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
+  assert.equal(params.persistence.directory, undefined);
+  type(find(root, 'Directory'), '/var/lib/mma2/unit1');
+  assert.equal(params.persistence.directory, '/var/lib/mma2/unit1');
+  type(find(root, 'Directory'), '   ');
+  assert.equal(params.persistence.directory, undefined);
+});
+
+test('selected custom ranges validate against allocated areas and round-trip', () => {
+  const params = {...ui.defaults(), fc1: {start: 10, count: 16}, fc3: {start: 100, count: 8}};
+  const {root} = setup(params);
+  click(root, 'Persistence');
+  const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
+  change(find(root, 'Persisted memory'), 'selected');
+  assert.deepEqual(params.persistence.ranges, {});
+  // Empty explicit ranges are invalid until a range exists.
+  const text = () => collect(root).map(node => node.textContent).join('|');
+  assert.ok(/Select at least one range, or use All Allocated Areas\./.test(text()));
+  // Add a range under Coils.
+  const addButtons = collect(root).filter(node => node.tagName === 'button' && node.textContent === 'Add range');
+  assert.equal(addButtons.length, 2); // one per allocated area
+  addButtons[0].events.click();
+  assert.deepEqual(params.persistence.ranges.coils, [{start: 10, count: 1}]);
+  const starts = collect(root).filter(node => node.attributes['aria-label'] === 'Start');
+  const counts = collect(root).filter(node => node.attributes['aria-label'] === 'Count');
+  type(starts[0], '12'); type(counts[0], '4');
+  assert.deepEqual(params.persistence.ranges.coils, [{start: 12, count: 4}]);
+  // Out-of-area range is rejected (allocated Coils is [10..26)).
+  type(starts[0], '24'); type(counts[0], '4');
+  assert.ok(/Coils range is outside the allocated area\./.test(text()));
+  type(starts[0], '12'); type(counts[0], '4');
+  assert.ok(!/Coils range is outside the allocated area\./.test(text()));
+  // Switching back to All Allocated Areas clears explicit ranges.
+  change(find(root, 'Persisted memory'), 'all');
+  assert.equal(params.persistence.ranges, undefined);
+});
+
+test('persistence validates independently of State Sealing and RBE', () => {
+  // Range validation is a pure function of the persistence block and layout.
+  const on = {persistence: {enabled: true}, state_sealing: {enabled: true}, fc1: {start: 10, count: 16}};
+  assert.equal(ui.persistenceRangeError(on), null);
+  assert.equal(ui.persistenceRangeError({...on, state_sealing: {enabled: false}}), null);
+  assert.equal(ui.persistenceRangeError({...on, rbe: {tcp: {listen: ':9001'}}}), null);
+  assert.match(ui.persistenceRangeError({persistence: {enabled: true, ranges: {coils: [{start: 0, count: 4}]}}, fc1: {start: 10, count: 16}}), /outside the allocated area/);
 
   const params = {...ui.defaults(), fc1: {start: 10, count: 16}};
   const {root} = setup(params);
   click(root, 'Persistence');
   const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
-
-  assert.equal(params.state_sealing.enabled, true);
-  assert.equal(params.state_sealing.area, 'coil');
-  assert.equal(params.state_sealing.address, 10);
-  assert.equal(params.state_sealing.exception, 6);
-  assert.equal(params.rbe, undefined);
-
-  type(find(root, 'Lock coil address'), '12');
-  change(find(root, 'Sealed response'), '2');
-  assert.equal(params.state_sealing.address, 12);
-  assert.equal(params.state_sealing.exception, 2);
-
+  // State Sealing tab stays independently usable while persistence is enabled.
+  click(root, 'State Sealing');
   const sealingTab = collect(root).find(node => node.tagName === 'button' && node.textContent === 'State Sealing');
-  assert.equal(sealingTab.disabled, true);
-  assert.ok(collect(root).some(node => /owns State Sealing/.test(node.textContent || '')));
-
-  // Disabling persistence releases the tab without deleting sealing config.
-  const disable = find(root, 'Enable persistence'); disable.checked = false; disable.events.change();
-  const released = collect(root).find(node => node.tagName === 'button' && node.textContent === 'State Sealing');
-  assert.equal(released.disabled, false);
-  assert.deepEqual(params.state_sealing, {enabled: true, area: 'coil', address: 12, exception: 2});
+  assert.equal(sealingTab.disabled, false);
+  const seal = find(root, 'Enable state sealing'); seal.checked = true; seal.events.change();
+  assert.equal(params.state_sealing.enabled, true);
+  // Sealing state does not affect the persistence draft.
+  assert.deepEqual(params.persistence, {enabled: true});
 });

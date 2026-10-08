@@ -1,60 +1,51 @@
-## Current native persistence assignment — operator realignment 2026-10-08
+## Current native persistence assignment — operator resolution 2026-10-08
 
-**JR DEV OWNER: OpenHands.** OpenHands is explicitly authorized to execute the current NPE/NPO CODE packets under OPERATION CWAL. There is no Codex owner for this workstream.
+**JR DEV OWNER: OpenHands.**
 
-**AUTO-ADVANCE AUTHORIZED (operator, 2026-10-08).** The operator invoked `operation cwal auto advance`, explicitly enabling recursive JR DEV continuation for this promoted Electron-first (NPE) CODE chain. This supersedes the "recursive continuation NOT enabled" note for CODE/DISCOVERY packets only. The TEST/VERIFY identity boundary is unchanged: JR DEV advances through NPE-05, then prepares and STOPS before NPE-06 (Independent JR TEST/VERIFY) without executing it.
+**CURRENT: NPE-05A — Refresh Embedded MMA2 Native Persistence Runtime**
 
-**CURRENT: NPE-05 — Electron Legacy Persistence Cleanup** — CODE COMPLETE and delivered on `main` at `10a4e22aa5350868dac13796ffe78a875fcea641` (OpenHands JR DEV, base `1427520`). **Next packet: NPE-06 — Electron Native Persistence Verification** (`workflow/active_work/npe-06-electron-native-persistence-verification.md`), which is **Stage: TEST/VERIFY, Owner: Independent JR TEST/VERIFY** — an identity boundary. JR DEV MUST STOP here and must not execute NPE-06. A separate invocation/assignment as Independent JR re-reads the exact NPE-06 packet and executes it.
+NPE-06 is BLOCKED by stale embedded MMA2 source and must not execute again until NPE-05A is delivered.
 
-All Electron CODE packets (NPE-01..NPE-05) are now CODE COMPLETE and delivered. Electron must be independently verified by NPE-06 before any NPO-* product task begins.
+### Root cause confirmed
 
-NPE-01 was accepted as delivered at `b868c2d2d8cb132d52498cb47105b1bd8c095551`.
-NPE-02 was accepted as delivered at `a90f52a1b7ce2830dbc2aa8b6a65041962f21355`.
-NPE-03 was accepted as delivered at `817a6948d7db5bcf666a1e6acf00b1545f9815e8`.
-NPE-04 was accepted as delivered at `b4580d6fa3bbee547caea4680aacd1a8c812b48b`.
+The repository-root `MMA2/` is a harvested copy pinned to an old donor revision. It is not a submodule and is not automatically synchronized with `tamzrod/MMA2`.
 
-The prior NP-02..NP-06 queue is SUPERSEDED. Do not execute it.
+Current MCS.OSJS embedded MMA2 lacks native persistence, while authoritative `tamzrod/MMA2` main at:
 
-### Authoritative sequence
+```
+a38687574645ada94c7a7f844152932afb09f147
+```
+
+contains the implemented and verified native persistence runtime.
+
+Therefore the fix is NOT to implement another persistence engine in MCS.OSJS. The fix is to refresh the embedded `MMA2/` component from the authoritative donor checkpoint.
+
+### Routing
 
 ```text
-NPE-01  contract realignment
-→ NPE-02 Electron UI
-→ NPE-03 Electron config/apply wiring
-→ NPE-04 Electron Replicator parity
-→ NPE-05 Electron legacy cleanup
-→ NPE-06 Independent Electron verification
-→ NPO-01 OS.js Toolkit UI
+NPE-01  COMPLETE
+NPE-02  COMPLETE
+NPE-03  COMPLETE
+NPE-04  COMPLETE
+NPE-05  COMPLETE
+→ NPE-05A Refresh embedded MMA2 native persistence   ← CURRENT CODE
+→ NPE-06 Independent Electron native persistence verification
+→ NPO-01 OS.js Toolkit persistence UI
 → NPO-02 OS.js Toolkit config wiring
 → NPO-03 OS.js Toolkit cleanup/parity
 → NPO-04 Independent OS.js verification
 → NPF-01 workflow/docs cleanup
 ```
 
-Electron must be fully implemented and NPE-06 must PASS before any NPO-* product task begins.
+NPE-05A packet:
+`workflow/active_work/npe-05a-refresh-embedded-mma2-native-persistence.md`
 
-### Runtime ownership
+### Authority
 
-MMA2 is the sole persistence runtime owner. Integration code configures native per-memory persistence only.
+OpenHands JR DEV is authorized to execute NPE-05A under OPERATION CWAL, including bounded donor-source synchronization from the exact pinned `tamzrod/MMA2` SHA, reconciliation required to build against the refreshed component, tests, commit and non-force push.
 
-Current native contract that NPE-01 must reconcile:
-- `persistence.enabled: true` enables persistence per memory;
-- `directory` is optional; omitted uses MMA2's native YAML-directory default;
-- omitted `ranges` means all allocated areas;
-- custom ranges are optional and bounded by allocated areas;
-- persistence is independent of State Sealing;
-- persistence is independent of RBE/TCP;
-- persistence restore is internal to MMA2 before ingress is exposed.
+After genuine NPE-05A delivery, route to NPE-06 and STOP at the Independent JR TEST/VERIFY identity boundary.
 
-Do not add or preserve integration-owned snapshot capture, Raw-Ingest restore, unlock-coil writes, persistence watchdogs, or persistence-generated RBE.
-
-### Execution rule
-
-One packet per OPERATION CWAL invocation. Record genuine implementation/test evidence, commit, non-force push, update handoff to the named successor, then STOP. Independent TEST/VERIFY packets must remain separate identity boundaries.
-
-### Historical note
-
-NP-01 was delivered at `757fe00b6e8b057b92cb693781fe1885ce362dd6`. It is not being erased, but some assumptions are stale versus the current MMA2 contract; NPE-01 corrects that before Electron work proceeds.
 
 ---
 

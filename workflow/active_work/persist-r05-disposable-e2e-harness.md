@@ -23,7 +23,7 @@ No production/customer data, no global services, no product behavior changes dis
 3. The harness cleans only its own disposable resources and provides stable evidence suitable for a one-run independent PERSIST-022 packet.
 
 ## Evidence / handoff
-Record harness path, exact command, expected observations, cleanup behavior, bounded regression and delivered source SHA. After genuine delivery, prepare and activate the exact PERSIST-022 independent-JR VERIFY packet for the next invocation; JR DEV must not execute or certify it. STOP.
+Record harness path, exact command, expected observations, cleanup behavior, bounded regression and delivered source SHA. After genuine delivery, prepare and activate the exact PERSIST-022 independent-JR VERIFY packet. This is the recursion boundary: JR DEV must STOP before executing or certifying PERSIST-022.
 
 ## Dependencies
 Requires genuine PERSIST-R04 delivery and the full runtime path from R01-R03.
@@ -32,4 +32,4 @@ Requires genuine PERSIST-R04 delivery and the full runtime path from R01-R03.
 1/1/1/2/0=5.
 
 ## CWAL
-Already human-promoted. Execute only when selected by handoff. After delivery, pin PERSIST-022 exactly for independent JR and STOP; do not self-certify VERIFY.
+Already human-promoted. Execute when selected by handoff. After delivery, pin and activate PERSIST-022 exactly for independent JR, then STOP because VERIFY requires a new independent-JR identity; do not self-certify.

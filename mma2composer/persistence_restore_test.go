@@ -2,6 +2,7 @@ package mma2composer
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 )
 
@@ -379,5 +380,132 @@ func TestForcePersistenceSealingFlag(t *testing.T) {
 	}
 	if &got[0] == &src[0] {
 		t.Fatal("must return a copy, not the same slice")
+	}
+}
+
+// PERSIST-018 self-check: the required-area set is tracked deterministically in
+// plan order, and a successful restore acknowledges exactly that set.
+func TestPersistenceRestoreTracksRequiredAndAcknowledgedAreas(t *testing.T) {
+	plan, _, _ := restoreReadyPlan(t)
+	writer := &fakeRawIngestWriter{}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"holding_registers", "coils"}
+	if !reflect.DeepEqual(result.RequiredAreas, want) {
+		t.Fatalf("required set must be deterministic plan order: got %v want %v", result.RequiredAreas, want)
+	}
+	if !reflect.DeepEqual(result.AcknowledgedAreas, want) {
+		t.Fatalf("acknowledged set must equal required set: got %v want %v", result.AcknowledgedAreas, want)
+	}
+	if !result.Completed || !VerifyPersistenceRestore(result) {
+		t.Fatalf("full acknowledgement must complete and verify: %+v", result)
+	}
+}
+
+// PERSIST-018 self-check: any failed area prevents restore completion and never
+// appears as acknowledged.
+func TestPersistenceRestoreAnyFailedAreaPreventsCompletion(t *testing.T) {
+	for _, code := range []byte{0x10, 0x12, 0x14, 0x20, 0x21, 0x30} {
+		plan, _, _ := restoreReadyPlan(t)
+		writer := &fakeRawIngestWriter{responses: map[PersistenceRawIngestArea]byte{RawIngestHoldingRegisters: code}}
+		result, err := RestorePersistencePlan(plan, writer)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Completed || VerifyPersistenceRestore(result) {
+			t.Fatalf("code 0x%02X must prevent completion: %+v", code, result)
+		}
+		if len(result.RequiredAreas) != 2 {
+			t.Fatalf("required set must still be tracked: %v", result.RequiredAreas)
+		}
+		if len(result.AcknowledgedAreas) != 0 {
+			t.Fatalf("failed area must not be acknowledged: %v", result.AcknowledgedAreas)
+		}
+		if result.Detail == "" {
+			t.Fatal("failure must report a detail")
+		}
+	}
+}
+
+// A partial acknowledgement (first area succeeds, a later area fails) must not
+// complete: the acknowledged set is a strict subset of the required set.
+func TestPersistenceRestorePartialAcknowledgementDoesNotComplete(t *testing.T) {
+	plan, _, _ := restoreReadyPlan(t)
+	// Fixture order is [holding_registers, coils]; fail the second area.
+	writer := &fakeRawIngestWriter{responses: map[PersistenceRawIngestArea]byte{RawIngestCoils: 0x21}}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Completed || VerifyPersistenceRestore(result) {
+		t.Fatalf("partial acknowledgement must not complete: %+v", result)
+	}
+	if len(result.AcknowledgedAreas) != 1 || result.AcknowledgedAreas[0] != "holding_registers" {
+		t.Fatalf("only the acknowledged area may be recorded: %v", result.AcknowledgedAreas)
+	}
+	if result.Written != 1 {
+		t.Fatalf("written count must reflect the acknowledged area only: %d", result.Written)
+	}
+}
+
+// A transport error prevents completion and acknowledges nothing.
+func TestPersistenceRestoreTransportErrorPreventsCompletion(t *testing.T) {
+	plan, _, _ := restoreReadyPlan(t)
+	writer := &fakeRawIngestWriter{err: errors.New("raw ingest unavailable")}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err == nil {
+		t.Fatal("transport error must surface")
+	}
+	if result.Completed || VerifyPersistenceRestore(result) || len(result.AcknowledgedAreas) != 0 {
+		t.Fatalf("transport error must prevent completion: %+v", result)
+	}
+}
+
+// The completion gate is strict: it requires a non-empty required set that
+// exactly equals the acknowledged set (no missing, extra or duplicate areas).
+func TestVerifyPersistenceRestoreGate(t *testing.T) {
+	ok := PersistenceRestoreResult{
+		RequiredAreas:     []string{"coils", "holding_registers"},
+		AcknowledgedAreas: []string{"holding_registers", "coils"},
+		Completed:         true,
+	}
+	if !VerifyPersistenceRestore(ok) {
+		t.Fatal("identical sets must verify")
+	}
+	cases := map[string]PersistenceRestoreResult{
+		"empty-required":     {RequiredAreas: nil, AcknowledgedAreas: nil},
+		"missing-area":       {RequiredAreas: []string{"coils", "holding_registers"}, AcknowledgedAreas: []string{"coils"}},
+		"extra-area":         {RequiredAreas: []string{"coils"}, AcknowledgedAreas: []string{"coils", "holding_registers"}},
+		"foreign-area":       {RequiredAreas: []string{"coils"}, AcknowledgedAreas: []string{"holding_registers"}},
+		"duplicate-required": {RequiredAreas: []string{"coils", "coils"}, AcknowledgedAreas: []string{"coils"}},
+		"no-acknowledged":    {RequiredAreas: []string{"coils"}, AcknowledgedAreas: nil},
+	}
+	for name, result := range cases {
+		if VerifyPersistenceRestore(result) {
+			t.Fatalf("%s must not verify: %+v", name, result)
+		}
+	}
+}
+
+// A non-ready plan is refused, tracks the required set, and never completes.
+func TestPersistenceRestoreNonReadyTracksRequiredWithoutCompletion(t *testing.T) {
+	key, areas, source := loaderFixture(t)
+	delete(source.snapshots, "coils")
+	plan, err := LoadPersistenceSnapshots(key, true, true, areas, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := &fakeRawIngestWriter{}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Completed || VerifyPersistenceRestore(result) {
+		t.Fatalf("non-ready plan must not complete: %+v", result)
+	}
+	if len(result.RequiredAreas) != 2 || len(writer.calls) != 0 {
+		t.Fatalf("required set tracked, no writes: required=%v calls=%d", result.RequiredAreas, len(writer.calls))
 	}
 }

@@ -120,17 +120,59 @@ func forcePersistenceSealingFlag(areaStart, areaCount uint16, payload []byte, fl
 	return out, nil
 }
 
-// PersistenceRestoreResult reports what one memory's restore did. Completed is
-// true only when every configured area was written through Raw Ingest and every
-// response was the success code. Nothing is unsealed here: the final unseal is
-// a later, separate commit step.
+// PersistenceRestoreResult reports what one memory's restore did. RequiredAreas
+// is the deterministic set of configured area keys that must be restored, in the
+// plan's canonical order; AcknowledgedAreas is the subset that was written and
+// acknowledged with the Raw Ingest success code. Completed is true only when
+// both sets are identical — every required area was written and acknowledged —
+// so a missing or failed area can never be reported as a completed restore.
+// Nothing is unsealed here: the final unseal is a later, separate commit step.
 type PersistenceRestoreResult struct {
-	Key       PersistenceMemoryKey
-	State     PersistenceRestoreOutcome
-	Areas     int
-	Written   int
-	Completed bool
-	Detail    string
+	Key               PersistenceMemoryKey
+	State             PersistenceRestoreOutcome
+	Areas             int
+	Written           int
+	RequiredAreas     []string
+	AcknowledgedAreas []string
+	Completed         bool
+	Detail            string
+}
+
+// persistenceRequiredAreas returns the deterministic required-area set for a
+// plan in plan order. It never mutates the plan.
+func persistenceRequiredAreas(plan PersistenceRestorePlan) []string {
+	required := make([]string, 0, len(plan.Areas))
+	for _, area := range plan.Areas {
+		required = append(required, area.Area)
+	}
+	return required
+}
+
+// VerifyPersistenceRestore reports whether a restore completed: true only when
+// there is a non-empty deterministic required-area set and it is identical to
+// the acknowledged-area set (same size and same members). This is the
+// restore-completion gate; it is a pure read-only check over already-observed
+// restore results and never writes, commits or unseals.
+func VerifyPersistenceRestore(result PersistenceRestoreResult) bool {
+	if len(result.RequiredAreas) == 0 || len(result.RequiredAreas) != len(result.AcknowledgedAreas) {
+		return false
+	}
+	required := make(map[string]int, len(result.RequiredAreas))
+	for _, area := range result.RequiredAreas {
+		required[area]++
+	}
+	for _, area := range result.AcknowledgedAreas {
+		if required[area] == 0 {
+			return false
+		}
+		required[area]--
+	}
+	for _, count := range required {
+		if count != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // RestorePersistencePlan writes a validated restore plan back into the matching
@@ -149,8 +191,18 @@ type PersistenceRestoreResult struct {
 // it is written, so a snapshot captured while unsealed cannot unseal the memory
 // mid-restore. Only that one bit is altered; the flag location comes solely from
 // configuration and no second sealing source of truth is introduced.
+//
+// Restore completion is gated (PERSIST-018): the result records the
+// deterministic required-area set and the acknowledged-area set, and Completed
+// is emitted only when VerifyPersistenceRestore confirms they are identical. A
+// missing or failed area therefore prevents completion. No unseal occurs.
 func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIngestWriter) (PersistenceRestoreResult, error) {
-	result := PersistenceRestoreResult{Key: plan.Key, State: plan.State, Areas: len(plan.Areas)}
+	result := PersistenceRestoreResult{
+		Key:           plan.Key,
+		State:         plan.State,
+		Areas:         len(plan.Areas),
+		RequiredAreas: persistenceRequiredAreas(plan),
+	}
 	if plan.State != PersistenceRestoreReady {
 		result.Detail = fmt.Sprintf("restore plan is %s, not ready", plan.State)
 		return result, nil
@@ -192,7 +244,13 @@ func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIn
 			return result, nil
 		}
 		result.Written++
+		result.AcknowledgedAreas = append(result.AcknowledgedAreas, area.Area)
 	}
-	result.Completed = true
+	// Restore-completion gate: success is emitted only when the acknowledged
+	// area set exactly covers the deterministic required-area set.
+	result.Completed = VerifyPersistenceRestore(result)
+	if !result.Completed {
+		result.Detail = "restore did not acknowledge every required persistence area"
+	}
 	return result, nil
 }

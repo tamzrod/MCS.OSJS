@@ -7,14 +7,13 @@ OpenHands modes remain separate:
 - **JR DEV** — assigned CODE/DISCOVERY implementation plus bounded workflow continuation.
 - **Independent JR** — separately assigned TEST/VERIFY only.
 
-The normal operator loop is:
+The normal operator loop for this already-promoted autonomous queue is:
 
 ```text
-git pull
 OPERATION CWAL
 ```
 
-One invocation executes exactly one product task, may deliver/record it, may prepare the next already-promoted eligible task, then STOPS.
+OpenHands JR DEV may perform its authorized safe fetch/fast-forward itself. One invocation executes exactly one product task, delivers/records it, activates the named already-promoted successor for the next invocation, then STOPS.
 
 ## Completed predecessors
 

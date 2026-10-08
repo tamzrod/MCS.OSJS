@@ -121,6 +121,11 @@ func (a *SchedulerApplier) applyStructuralLocked(previous, edited Document) erro
 		return fmt.Errorf("mma2 restarted but persistence startup failed (memory remains sealed): %w", err)
 	}
 	a.recordPersistenceStartup(startupResults)
+	for _, result := range startupResults {
+		if !result.Result.Committed {
+			return fmt.Errorf("mma2 restarted but persistence restore for port %d unit %d did not commit (%s); memory remains sealed", result.Key.Port, result.Key.UnitID, result.Result.Failure)
+		}
+	}
 
 	// Rebuild the save host for the newly applied document after restore. A
 	// failure is explicit; never claim persistence is active when save wiring is

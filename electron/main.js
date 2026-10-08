@@ -10,7 +10,6 @@ const {createReplicatorCall} = require('./replicator-ipc');
 const {getWindowsServiceStatus} = require('./runtime-status');
 const memorySettings = require('./memory-settings');
 const diagnostics = require('./diagnostics');
-const persistence = require('./persistence');
 const diagnosticSessionLogs = [];
 const reviewRoot = process.env.MCS_REVIEW_DATA_ROOT ? path.resolve(process.env.MCS_REVIEW_DATA_ROOT) : null;
 if (reviewRoot) app.setPath('userData', path.join(reviewRoot, 'electron-profile'));
@@ -245,31 +244,62 @@ const applyMMASettings = settings => {
   return {settings: memorySettings.sharedSettings(config), message: reviewRoot ? 'MMA settings saved to isolated review data. Backend not started.' : 'MMA settings saved; restart requested.'};
 };
 
+// Generic MMA2 restart readiness: wait for the restart acknowledgement file to
+// match the composed config hash, then wait for each listener port to answer.
+// These are ordinary configuration-lifecycle helpers with no persistence
+// semantics.
+const waitRestartAcknowledged = async (ackPath, expectedSHA, timeout = 20000) => {
+  const deadline = Date.now() + timeout;
+  while (true) {
+    try {
+      if (fs.readFileSync(ackPath, 'utf8') === expectedSHA) return;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    if (Date.now() >= deadline) throw new Error('MMA2 restart request was not acknowledged within timeout');
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+};
+
+const waitPort = async (port, timeout = 20000) => {
+  const deadline = Date.now() + timeout;
+  while (true) {
+    const ready = await new Promise(resolve => {
+      const socket = net.createConnection({host: '127.0.0.1', port: num(port)});
+      socket.setTimeout(250);
+      socket.on('connect', () => { socket.destroy(); resolve(true); });
+      socket.on('timeout', () => { socket.destroy(); resolve(false); });
+      socket.on('error', () => resolve(false));
+    });
+    if (ready) return;
+    if (Date.now() >= deadline) throw new Error(`MMA2 restart not ready on port ${port}`);
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+};
+
 const applySimulator = async doc => {
   const simDoc = normalizeDocument(doc);
-  const previousDoc = loadSimulator();
   const repDoc = loadReplicator();
 
-  // Normal operator flow: checking Persistence and pressing Save & Apply owns
-  // the entire bootstrap. Capture the current live memory before State Sealing
-  // takes effect; if capture fails, do not proceed into a sealed restart.
-  if (!reviewRoot) await persistence.captureSnapshots(dataRoot(), previousDoc, simDoc);
-
+  // Save & Apply writes only the native MMA2 configuration — including each
+  // memory's native persistence block — and then requests a normal MMA2 restart
+  // through the generic configuration lifecycle. MMA2 owns persistence runtime.
+  // The legacy external lifecycle is intentionally gone.
   const restartSHA = composeAll(simDoc, repDoc);
   writeYamlAtomic(paths().simulatorDevices, simDoc);
 
-  if (!reviewRoot) {
-    await persistence.waitRestartAcknowledged(paths().mma2RestartAck, restartSHA);
-    const ports = [...new Set((simDoc.devices || []).filter(device => device.enabled).map(device => num(device.mma2?.port)).filter(Boolean))];
-    for (const port of ports) await persistence.waitPort(port);
-  }
+  if (reviewRoot) return {document: simDoc, message: 'Memory settings saved to isolated review data. Backend not started.', completed_at: new Date().toISOString()};
+
+  await waitRestartAcknowledged(paths().mma2RestartAck, restartSHA);
+  const ports = [...new Set((simDoc.devices || []).filter(device => device.enabled).map(device => num(device.mma2?.port)).filter(Boolean))];
+  for (const port of ports) await waitPort(port);
 
   resetSimulatorSchedulers(simDoc);
   const randomEnabled = (simDoc.devices || []).some(device => device.enabled && ['fc1', 'fc2', 'fc3', 'fc4'].some(fc => hasArea(areaFor(device, fc)) && intervalFor(device, fc) > 0));
   const message = randomEnabled
     ? 'Memory settings saved, MMA2 restart requested, and random value publishing started.'
     : 'Memory settings saved and MMA2 restart requested.';
-  return {document: simDoc, message: reviewRoot ? 'Memory settings saved to isolated review data. Backend not started.' : message, completed_at: new Date().toISOString()};
+  return {document: simDoc, message, completed_at: new Date().toISOString()};
 };
 
 

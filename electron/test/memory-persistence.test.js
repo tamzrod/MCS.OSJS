@@ -100,3 +100,96 @@ test('Electron composition validates before writes and preserves foreign setting
   assert.deepEqual(memories.find(memory => memory.unit_id === 1).policy, config.listeners[0].memory[0].policy);
   assert.equal(candidate.rbe.tcp.listen, '127.0.0.1:9001');
 });
+
+// NPE-03 harness: load the main-process compose/validate/save region in an
+// isolated VM. The './persistence' module is intentionally unavailable so any
+// accidental Save & Apply dependency on the legacy external persistence
+// lifecycle fails loudly.
+const loadMain = (config, owners) => {
+  const writes = [];
+  const candidate = {value: null};
+  const fakeFS = {
+    readFileSync: file => JSON.stringify(file.endsWith('owners.yaml') ? owners : config),
+    mkdirSync: () => {}, rmSync: () => {},
+    writeFileSync: (file, body) => writes.push({file, body}), renameSync: () => {}
+  };
+  const mockRequire = name => {
+    if (name === 'electron') return {app: {isPackaged: false, getPath: () => '/isolated'}, ipcMain: {}};
+    if (name === 'fs') return fakeFS;
+    if (name === 'js-yaml') return {load: JSON.parse, dump: JSON.stringify};
+    if (name === 'child_process') return {execFileSync: (file, args, options) => {
+      assert.deepEqual(Array.from(args), ['--validate-stdin']);
+      candidate.value = JSON.parse(options.input);
+    }};
+    if (name === './memory-settings') return settings;
+    if (name === './persistence') throw new Error('Save & Apply must not require the legacy persistence module');
+    if (name.startsWith('./')) return {};
+    return require(name);
+  };
+  const context = vm.createContext({require: mockRequire, __dirname: path.join(__dirname, '..'), process});
+  const source = fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8');
+  vm.runInContext(source.slice(0, source.indexOf('const portStatus =')), context);
+  return {context, writes, candidate};
+};
+
+const composeSimulator = (h, mma2) => {
+  const sim = {devices: [{name: 'PLC', enabled: true, mma2}]};
+  vm.runInContext(`composeAll(${JSON.stringify(sim)},{devices:[]})`, h.context);
+  return h.candidate.value.listeners
+    .find(listener => Number(String(listener.listen).match(/:(\d+)$/)[1]) === Number(mma2.port))
+    .memory.find(memory => Number(memory.unit_id) === Number(mma2.unit_id));
+};
+
+const persistenceOwners = () => ({reservations: [{port: 5020, unit_id: 1, owner: 'simulator'}]});
+
+test('Save & Apply emits native persistence with no forced directory or ranges', () => {
+  const h = loadMain(fixture(), persistenceOwners());
+  const memory = composeSimulator(h, {port: 5020, unit_id: 1, fc1: {start: 0, count: 4}, persistence: {enabled: true}});
+  // Enabled with default settings carries no directory and no ranges override.
+  assert.deepEqual(memory.persistence, {enabled: true});
+});
+
+test('custom persistence directory and ranges round-trip through Save & Apply', () => {
+  const h = loadMain(fixture(), persistenceOwners());
+  const memory = composeSimulator(h, {
+    port: 5020, unit_id: 1, fc1: {start: 0, count: 4},
+    persistence: {enabled: true, directory: '/custom/mma2/unit1', ranges: {coils: [{start: 1, count: 2}]}}
+  });
+  assert.deepEqual(memory.persistence, {enabled: true, directory: '/custom/mma2/unit1', ranges: {coils: [{start: 1, count: 2}]}});
+});
+
+test('disabling persistence changes only the persistence block', () => {
+  const h = loadMain(fixture(), persistenceOwners());
+  const memory = composeSimulator(h, {
+    port: 5020, unit_id: 1, fc1: {start: 0, count: 4},
+    persistence: {enabled: false},
+    state_sealing: {enabled: false, area: 'coil', address: 0},
+    rbe: {coils: [{id: 1, name: 'coil', start: 0, count: 1}]}
+  });
+  assert.deepEqual(memory.persistence, {enabled: false});
+  // Unrelated memory settings survive composition untouched.
+  assert.deepEqual(memory.state_sealing, {enabled: false, area: 'coil', address: 0});
+  assert.deepEqual(memory.rbe, {coils: [{id: 1, name: 'coil', start: 0, count: 1}]});
+});
+
+test('Save & Apply preserves unrelated and foreign memory settings', () => {
+  const config = fixture();
+  config.listeners[0].memory.push({unit_id: 9, holding_registers: {start: 0, count: 2}, custom: 'foreign'});
+  const owners = {reservations: [{port: 5020, unit_id: 1, owner: 'simulator'}, {port: 5020, unit_id: 9, owner: 'other'}]};
+  const h = loadMain(config, owners);
+  const memory = composeSimulator(h, {port: 5020, unit_id: 1, fc1: {start: 0, count: 4}, persistence: {enabled: true}});
+  assert.deepEqual(memory.persistence, {enabled: true});
+  const candidate = h.candidate.value;
+  assert.equal(candidate.listeners[0].memory.find(entry => entry.unit_id === 9).custom, 'foreign');
+  assert.deepEqual(candidate.listeners[0].memory.find(entry => entry.unit_id === 1).policy, config.listeners[0].memory[0].policy);
+});
+
+test('Save & Apply contains no external persistence restore/unseal lifecycle', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8');
+  const block = source.slice(source.indexOf('const applySimulator'), source.indexOf('const portStatus'));
+  for (const banned of ['captureSnapshots', 'restoreAndUnseal', 'snapshotsComplete', 'persistence.', 'watchdog', 'unseal', 'Unlock']) {
+    assert.ok(!block.includes(banned), `Save & Apply must not contain ${banned}`);
+  }
+  assert.ok(!source.includes("require('./persistence')"), 'main process must not require the legacy persistence module');
+});
+

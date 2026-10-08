@@ -509,3 +509,142 @@ func TestPersistenceRestoreNonReadyTracksRequiredWithoutCompletion(t *testing.T)
 		t.Fatalf("required set tracked, no writes: required=%v calls=%d", result.RequiredAreas, len(writer.calls))
 	}
 }
+
+// restoreReadyPlanWithFlag builds a Ready plan carrying an authoritative State
+// Sealing flag so the PERSIST-019 commit step is exercised.
+func restoreReadyPlanWithFlag(t *testing.T, address uint16) PersistenceRestorePlan {
+	t.Helper()
+	plan, _, _ := restoreReadyPlan(t)
+	plan.SealingFlag = &PersistenceSealingFlag{Address: address}
+	return plan
+}
+
+// unsealCalls returns the Raw Ingest writes that target a single coil (the
+// sealing flag write), i.e. the PERSIST-019 commit step.
+func unsealCalls(writer *fakeRawIngestWriter) []rawIngestCall {
+	var out []rawIngestCall
+	for _, call := range writer.calls {
+		if call.area == RawIngestCoils && call.count == 1 {
+			out = append(out, call)
+		}
+	}
+	return out
+}
+
+// PERSIST-019 self-check: the final successful restore action is an explicit
+// write of the authoritative State Sealing flag to unsealed (1), at the
+// configured flag address, and it happens only after every area is restored.
+func TestPersistenceRestoreUnsealsOnlyAfterVerification(t *testing.T) {
+	plan := restoreReadyPlanWithFlag(t, 4)
+	writer := &fakeRawIngestWriter{}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Completed || !result.Committed {
+		t.Fatalf("restore must complete and commit: %+v", result)
+	}
+	unseals := unsealCalls(writer)
+	if len(unseals) != 1 {
+		t.Fatalf("expected exactly one sealing flag write, got %d", len(unseals))
+	}
+	write := unseals[0]
+	if write.start != 4 || write.count != 1 {
+		t.Fatalf("unseal must target the configured flag address: %+v", write)
+	}
+	if len(write.payload) != 1 || write.payload[0] != 0x01 {
+		t.Fatalf("unseal payload must be the sealed->unsealed value 1: %v", write.payload)
+	}
+	// The unseal must be the very last write, after all area restores.
+	last := writer.calls[len(writer.calls)-1]
+	if last.area != RawIngestCoils || last.count != 1 || last.start != 4 {
+		t.Fatalf("unseal must be the final write action: %+v", last)
+	}
+}
+
+// PERSIST-019 self-check: a failed area prevents completion and therefore the
+// unseal/commit step never runs.
+func TestPersistenceRestoreNoUnsealOnFailure(t *testing.T) {
+	plan := restoreReadyPlanWithFlag(t, 4)
+	writer := &fakeRawIngestWriter{responses: map[PersistenceRawIngestArea]byte{RawIngestHoldingRegisters: 0x21}}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Completed || result.Committed {
+		t.Fatalf("failed area must prevent completion and commit: %+v", result)
+	}
+	if len(unsealCalls(writer)) != 0 {
+		t.Fatalf("no unseal write may occur on failure: %+v", writer.calls)
+	}
+}
+
+// PERSIST-019 self-check: a non-zero unseal response leaves the restore
+// completed but not committed (the memory stays sealed).
+func TestPersistenceRestoreUnsealResponseFailureNotCommitted(t *testing.T) {
+	plan := restoreReadyPlanWithFlag(t, 4)
+	// unsealFailWriter rejects only the single-coil sealing flag write; every
+	// area write still succeeds.
+	failing := &unsealFailWriter{inner: &fakeRawIngestWriter{}, flagAddress: 4}
+	result, err := RestorePersistencePlan(plan, failing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Completed {
+		t.Fatalf("areas succeeded, restore must complete: %+v", result)
+	}
+	if result.Committed {
+		t.Fatalf("a rejected unseal response must not commit: %+v", result)
+	}
+	if result.Detail == "" {
+		t.Fatal("unseal failure must report a detail")
+	}
+}
+
+// unsealFailWriter fails only the single-coil sealing flag write, letting all
+// area writes succeed.
+type unsealFailWriter struct {
+	inner       *fakeRawIngestWriter
+	flagAddress uint16
+}
+
+func (w *unsealFailWriter) WritePersistenceRawIngest(key PersistenceMemoryKey, area PersistenceRawIngestArea, start, count uint16, payload []byte) (byte, error) {
+	if area == RawIngestCoils && count == 1 && start == w.flagAddress {
+		w.inner.calls = append(w.inner.calls, rawIngestCall{key: key, area: area, start: start, count: count, payload: append([]byte(nil), payload...)})
+		return 0x21, nil
+	}
+	return w.inner.WritePersistenceRawIngest(key, area, start, count, payload)
+}
+
+// PERSIST-019 self-check: without a configured State Sealing flag the restore
+// completes but does not commit, and no unseal write is issued.
+func TestPersistenceRestoreNoFlagCompletesWithoutCommit(t *testing.T) {
+	plan, _, _ := restoreReadyPlan(t) // SealingFlag nil
+	writer := &fakeRawIngestWriter{}
+	result, err := RestorePersistencePlan(plan, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Completed {
+		t.Fatalf("restore must complete: %+v", result)
+	}
+	if result.Committed {
+		t.Fatalf("no flag configured means no commit: %+v", result)
+	}
+	if len(unsealCalls(writer)) != 0 {
+		t.Fatalf("no unseal write without a configured flag: %+v", writer.calls)
+	}
+}
+
+// PERSIST-019 self-check: the unseal payload encoder sets exactly the unsealed
+// value 1 and never a different flag value.
+func TestEncodePersistenceSealingFlag(t *testing.T) {
+	on, err := encodePersistenceSealingFlag(true)
+	if err != nil || len(on) != 1 || on[0] != 0x01 {
+		t.Fatalf("unsealed encode must be 0x01: %v err=%v", on, err)
+	}
+	off, err := encodePersistenceSealingFlag(false)
+	if err != nil || len(off) != 1 || off[0] != 0x00 {
+		t.Fatalf("sealed encode must be 0x00: %v err=%v", off, err)
+	}
+}

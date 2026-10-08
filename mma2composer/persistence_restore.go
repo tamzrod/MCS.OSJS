@@ -45,6 +45,11 @@ type PersistenceRawIngestWriter interface {
 // PersistenceRawIngestOK is the Raw Ingest v1 success response code (0x00).
 const PersistenceRawIngestOK = byte(0x00)
 
+// persistenceUnsealValue is the State Sealing flag value that means unsealed
+// (MMA2 state sealing: 0 = sealed, 1 = unsealed). Writing it is the explicit
+// final commit action of a completed restore.
+const persistenceUnsealValue = true
+
 // PersistenceSealingFlag is the authoritative State Sealing flag location: the
 // coils bit that encodes sealed (0) or unsealed (1). It is derived from the
 // configured State Sealing block, which remains the single source of truth; no
@@ -126,7 +131,11 @@ func forcePersistenceSealingFlag(areaStart, areaCount uint16, payload []byte, fl
 // acknowledged with the Raw Ingest success code. Completed is true only when
 // both sets are identical — every required area was written and acknowledged —
 // so a missing or failed area can never be reported as a completed restore.
-// Nothing is unsealed here: the final unseal is a later, separate commit step.
+//
+// Committed is the separate, later final step (PERSIST-019): it is true only
+// when the authoritative State Sealing flag was written to unsealed (1) after
+// verification success. A restore that is Completed but not Committed has been
+// written but remains sealed, so it is still not exposed to Modbus.
 type PersistenceRestoreResult struct {
 	Key               PersistenceMemoryKey
 	State             PersistenceRestoreOutcome
@@ -135,6 +144,7 @@ type PersistenceRestoreResult struct {
 	RequiredAreas     []string
 	AcknowledgedAreas []string
 	Completed         bool
+	Committed         bool
 	Detail            string
 }
 
@@ -195,7 +205,13 @@ func VerifyPersistenceRestore(result PersistenceRestoreResult) bool {
 // Restore completion is gated (PERSIST-018): the result records the
 // deterministic required-area set and the acknowledged-area set, and Completed
 // is emitted only when VerifyPersistenceRestore confirms they are identical. A
-// missing or failed area therefore prevents completion. No unseal occurs.
+// missing or failed area therefore prevents completion.
+//
+// The final commit action (PERSIST-019) is an explicit write of the
+// authoritative State Sealing flag to unsealed (1), performed only after
+// verification success. The flag location comes solely from configuration. Until
+// this step the memory remains sealed, so no earlier restore step can expose it
+// to Modbus; Committed reports whether this final unseal committed.
 func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIngestWriter) (PersistenceRestoreResult, error) {
 	result := PersistenceRestoreResult{
 		Key:           plan.Key,
@@ -251,6 +267,38 @@ func RestorePersistencePlan(plan PersistenceRestorePlan, writer PersistenceRawIn
 	result.Completed = VerifyPersistenceRestore(result)
 	if !result.Completed {
 		result.Detail = "restore did not acknowledge every required persistence area"
+		return result, nil
 	}
+	// Atomic unseal / commit step (PERSIST-019): only after verification success,
+	// write the authoritative State Sealing flag to unsealed (1) as the explicit
+	// final commit action. The location comes solely from configuration; no
+	// earlier step can expose memory to Modbus because it stays sealed until here.
+	if plan.SealingFlag == nil {
+		result.Detail = "restore completed but no state sealing flag is configured to unseal"
+		return result, nil
+	}
+	unsealed, err := encodePersistenceSealingFlag(persistenceUnsealValue)
+	if err != nil {
+		result.Detail = fmt.Sprintf("state sealing unseal encoding failed: %v", err)
+		return result, nil
+	}
+	response, err := writer.WritePersistenceRawIngest(plan.Key, RawIngestCoils, plan.SealingFlag.Address, 1, unsealed)
+	if err != nil {
+		result.Detail = fmt.Sprintf("state sealing unseal write failed: %v", err)
+		return result, err
+	}
+	if response != PersistenceRawIngestOK {
+		result.Detail = fmt.Sprintf("state sealing unseal response 0x%02X aborted commit", response)
+		return result, nil
+	}
+	result.Committed = true
 	return result, nil
+}
+
+// encodePersistenceSealingFlag encodes the single coils write payload for one
+// State Sealing flag value. The location comes from the authoritative State
+// Sealing configuration; this function never introduces an alternate flag or
+// location.
+func encodePersistenceSealingFlag(value bool) ([]byte, error) {
+	return EncodePersistenceBits([]bool{value}, 1)
 }

@@ -132,16 +132,7 @@ const snapshotsComplete = (root, device) => {
   }
 };
 
-const unsealForBootstrap = async device => {
-  const sealing = device?.mma2?.state_sealing;
-  if (!sealing || sealing.enabled === false) return;
-  if (String(sealing.area || '').toLowerCase() !== 'coil') {
-    throw new Error(`${device.name}: State Sealing bootstrap requires coil area`);
-  }
-  await rawIngest(device, 1, num(sealing.address), 1, Buffer.from([0x01]));
-};
-
-const captureInitialSnapshots = async (root, previousDoc, editedDoc) => {
+const captureSnapshots = async (root, previousDoc, editedDoc) => {
   const before = new Map((previousDoc.devices || []).map(device => [device.name, device]));
   for (const after of editedDoc.devices || []) {
     if (!enabled(after)) continue;
@@ -160,11 +151,9 @@ const captureInitialSnapshots = async (root, previousDoc, editedDoc) => {
     }
 
     // Save & Apply always starts by taking a fresh full persistence snapshot.
-    // If a previous failed apply left the running memory sealed, Raw Ingest is
-    // the authoritative bypass used only to make the current state readable
-    // before capture. Existing snapshot files are deliberately overwritten;
-    // runtime RBE saves may update them again afterward.
-    if (enabled(old)) await unsealForBootstrap(old);
+    // Existing snapshot files are deliberately overwritten; runtime RBE saves
+    // may update them again afterward. Sealed-state recovery belongs to the
+    // persistence manager watchdog, not to the UI save path.
 
     for (const spec of AREAS) {
       const newArea = after.mma2[spec.fc] || {start: 0, count: 0};
@@ -246,7 +235,7 @@ const restoreAndUnseal = async (root, device) => {
 module.exports = {
   AREAS,
   snapshotsComplete,
-  captureInitialSnapshots,
+  captureSnapshots,
   restoreAndUnseal,
   waitRestartAcknowledged,
   waitPort

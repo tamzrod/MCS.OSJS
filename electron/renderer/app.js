@@ -514,8 +514,12 @@ const renderReplicator = () => {
     window.mcsComms.update(commsStrip, Date.now() - replicatorStatusReceivedAt < 6000 && device.enabled ? replicatorState.runtimeStatus : null, device.name, replicatorState.runtimeError);
     if (replicatorView.editor === 'advanced') {
       const advanced = h('div', 'memory-advanced');
+      // Replicator destination memory owns the same native per-memory persistence
+      // configuration as the Simulator; ranges are bounded by the destination
+      // allocation (the pull-block union).
       window.mcsMemoryUI.mount(advanced, window.mcsMemoryUI.replicatorParams(device), {
         document, devices: advancedDevices(), outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen,
+        persistenceSupported: true,
         configureOutput: () => openRBEOutput('rep-mma')
       });
       editor.appendChild(advanced);

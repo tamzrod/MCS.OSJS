@@ -249,3 +249,30 @@ test('persistence validates independently of State Sealing and RBE', () => {
   // Sealing state does not affect the persistence draft.
   assert.deepEqual(params.persistence, {enabled: true});
 });
+
+test('Replicator destination exposes native persistence parity bounded to pull-block areas', () => {
+  const device = {pull_blocks: [{function: 1, start: 10, count: 4}, {function: 3, start: 100, count: 8}], mma2_advanced: ui.defaults()};
+  const params = ui.replicatorParams(device);
+  const root = new Element('div');
+  ui.mount(root, params, {document, devices: [{mma2: params}], outputLoaded: true, persistenceSupported: true});
+  // The destination allocation is the pull-block union.
+  assert.deepEqual(ui.allocatedAreas(params).map(entry => [entry.area, entry.start, entry.count]), [['coils', 10, 4], ['holding_registers', 100, 8]]);
+  click(root, 'Persistence');
+  const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
+  // The native block is written to the Replicator's own advanced settings.
+  assert.deepEqual(device.mma2_advanced.persistence, {enabled: true});
+  change(find(root, 'Persisted memory'), 'selected');
+  assert.deepEqual(device.mma2_advanced.persistence.ranges, {});
+  const addButtons = collect(root).filter(node => node.tagName === 'button' && node.textContent === 'Add range');
+  assert.equal(addButtons.length, 2);
+  addButtons[0].events.click();
+  assert.deepEqual(device.mma2_advanced.persistence.ranges.coils, [{start: 10, count: 1}]);
+  const starts = collect(root).filter(node => node.attributes['aria-label'] === 'Start');
+  const counts = collect(root).filter(node => node.attributes['aria-label'] === 'Count');
+  const text = () => collect(root).map(node => node.textContent).join('|');
+  type(starts[0], '12'); type(counts[0], '4'); // 12..16 exceeds destination coils [10..14)
+  assert.ok(/Coils range is outside the allocated area\./.test(text()));
+  type(starts[0], '11'); type(counts[0], '3'); // 11..14 within
+  assert.ok(!/Coils range is outside the allocated area\./.test(text()));
+  assert.deepEqual(device.mma2_advanced.persistence.ranges.coils, [{start: 11, count: 3}]);
+});

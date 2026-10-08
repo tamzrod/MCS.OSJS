@@ -142,6 +142,31 @@ const composeSimulator = (h, mma2) => {
 
 const persistenceOwners = () => ({reservations: [{port: 5020, unit_id: 1, owner: 'simulator'}]});
 
+const composeReplicator = (h, destination, advanced) => {
+  const rep = {devices: [{name: 'REP', enabled: true, endpoint: '10.0.0.9:502', unit_id: 1, destination, pull_blocks: [{function: 3, start: 0, count: 8, scan_rate_ms: 1000}], mma2_advanced: advanced}]};
+  vm.runInContext(`composeAll({devices:[]},${JSON.stringify(rep)})`, h.context);
+  return h.candidate.value.listeners
+    .find(listener => Number(String(listener.listen).match(/:(\d+)$/)[1]) === Number(destination.port))
+    .memory.find(memory => Number(memory.unit_id) === Number(destination.unit_id));
+};
+
+test('Replicator destination composes the same native persistence block without a second runtime', () => {
+  const h = loadMain(fixture(), {reservations: []});
+  const memory = composeReplicator(h, {port: 5021, unit_id: 1}, {persistence: {enabled: true, directory: '/custom/rep', ranges: {holding_registers: [{start: 0, count: 8}]}}});
+  assert.deepEqual(memory.persistence, {enabled: true, directory: '/custom/rep', ranges: {holding_registers: [{start: 0, count: 8}]}});
+  // Replicator introduces no persistence runtime and no sealing/RBE dependency.
+  for (const banned of ['captureSnapshots', 'restoreAndUnseal', 'snapshotsComplete', 'watchdog', 'unseal', 'state_sealing', 'rbe']) {
+    assert.ok(!JSON.stringify(memory).includes(banned), `Replicator destination must not carry ${banned}`);
+  }
+});
+
+test('Replicator destination defaults persistence to all allocated areas', () => {
+  const h = loadMain(fixture(), {reservations: []});
+  const memory = composeReplicator(h, {port: 5021, unit_id: 1}, {persistence: {enabled: true}});
+  assert.deepEqual(memory.persistence, {enabled: true});
+  assert.deepEqual(memory.holding_registers, {start: 0, count: 8});
+});
+
 test('Save & Apply emits native persistence with no forced directory or ranges', () => {
   const h = loadMain(fixture(), persistenceOwners());
   const memory = composeSimulator(h, {port: 5020, unit_id: 1, fc1: {start: 0, count: 4}, persistence: {enabled: true}});

@@ -1,6 +1,6 @@
 # PERSIST-R04 — Runtime Status Wiring
 
-Status: QUEUED — HUMAN PROMOTED 2026-10-08
+Status: ACTIVE — ARMED 2026-10-08 by PERSIST-UI01 delivery (OpenHands JR DEV)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-UI01

@@ -24,6 +24,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	go watchDocument(ctx, simulator.Store{Root: root}, scheduler)
+	go watchPersistence(ctx, scheduler)
 	if err := simulator.ServeRuntime(ctx, simulator.RuntimeSocketPath(root), service); err != nil {
 		log.Fatal(err)
 	}
@@ -75,6 +76,22 @@ func watchDocument(ctx context.Context, store simulator.Store, scheduler *simula
 			}
 			lastSize = info.Size()
 			lastModified = modified
+		}
+	}
+}
+
+
+func watchPersistence(ctx context.Context, scheduler *simulator.SchedulerApplier) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := scheduler.PollPersistenceRestore(); err != nil {
+				log.Printf("persistence watchdog: %v", err)
+			}
 		}
 	}
 }

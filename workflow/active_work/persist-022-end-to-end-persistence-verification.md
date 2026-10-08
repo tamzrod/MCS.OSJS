@@ -1,6 +1,6 @@
 # PERSIST-022 — End-to-End Persistence Verification
 
-Status: QUEUED — HUMAN PROMOTED; dependency-gated until PERSIST-R05 completes
+Status: PINNED — independent-JR packet ready in handoff.md; JR DEV must STOP before executing
 Stage: VERIFY
 Owner: OpenHands / independent JR
 Previous: PERSIST-R05

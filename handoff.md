@@ -160,21 +160,39 @@ CODE COMPLETE at `d9251d3c56bf490c21655bdb372b342ee1eec7f8`, delivered on main.
 - Self-check: `mma2composer` `TestPersistenceRuntimeStatus|TestPersistenceRuntimeSave` → ok; `simulator` `TestRuntimeStatusCarriesRealPersistenceObservations|TestPersistenceStartup` → ok. Bounded regression: all Go modules and OS.js+Electron node suites pass, exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — ACTIVE
+## Current task — none ACTIVE for JR DEV (CODE chain complete)
 
-**PERSIST-R05 — Disposable Persistence E2E Harness**
-Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-r05-disposable-e2e-harness.md`
+All CODE packets **PERSIST-001..021 + PERSIST-R01..R05 + PERSIST-UI01 are CODE COMPLETE**. JR DEV has no further CODE task and STOPS at the VERIFY identity boundary.
 
-Execute PERSIST-R05 exactly as written (read the packet for its exact scope before implementing):
-- add one committed repository-native disposable integration harness that PERSIST-022 independent JR can execute without modifying product source;
-- prove the real runtime sequence `known value → RBE save → restart sealed → Modbus rejected while sealed → restore → verify → final unseal → Modbus reads restored value` using disposable loopback/temp data only;
-- include one deterministic failed-restore case that remains sealed;
-- clean only its own disposable resources; provide stable one-run evidence;
-- no production/customer data, no global services, no product behavior changes disguised as a test, no ICC edits;
-- commit and non-force push under standing JR DEV authority;
-- record harness path/exact command/expected observations/cleanup;
-- prepare and activate the exact PERSIST-022 independent-JR VERIFY packet, then STOP at the identity boundary (JR DEV must not execute or certify PERSIST-022).
+## Next task — PERSIST-022 independent-JR VERIFY packet (pinned)
+
+**PERSIST-022 — End-to-End Persistence Verification**
+Mode / owner: **independent JR** (separate invocation) — JR DEV must not execute or certify this.
+Stage: VERIFY. Previous: PERSIST-R05. Next: none.
+Packet: `workflow/active_work/persist-022-end-to-end-persistence-verification.md`
+
+### Pinned execution packet (exact)
+
+- Source checkpoint to verify (pinned): `c8f31b2443b69201f36464db72497ed8271aeb7d` (`main`, the PERSIST-R05 delivery commit; tree otherwise workflow-only).
+- Disposable target: real MMA2 built from source by the harness; loopback ports and `t.TempDir()` roots only. No production/customer data, no global services, no network output.
+- Preflight (independent JR): confirm `git rev-parse HEAD` ancestry includes the pinned checkpoint; working tree clean; Go toolchain available (`go version`); network not required beyond loopback.
+- Exact ordered actions/commands:
+  1. `cd simulator && go test -mod=readonly -count=1 ./...` — expect `ok`, exit 0 (gated harness SKIP is expected here).
+  2. `cd simulator && MCS_RUN_PERSIST_E2E=1 go test -mod=readonly -count=1 -run TestPersistenceDisposableEndToEnd -v .` — expect `--- PASS: TestPersistenceDisposableEndToEnd`, exit 0.
+- Expected observations (from the harness output/assertions):
+  1. live phase: no-snapshot first boot stays sealed; Modbus read rejected `0x06`; known value `0x1234` written and unsealed reads back `0x1234`; a real RBE save is observed.
+  2. restart phase: fresh MMA2 sealed before restore; startup restore → verify → final unseal commits; `Healthy` true, `Sealed` false; Modbus reads restored `0x1234`.
+  3. fail-closed phase: corrupted snapshot → restore fails closed; `Healthy` false, `Sealed` true, non-`none` classified reason, Modbus still rejected `0x06`.
+- Evidence destination / report permission: this packet is chat-only unless the workflow owner separately pins a report path; independent JR captures raw stdout/stderr + exit codes and returns the verdict. JR changes no product source.
+- Cleanup: the harness cleans only its own `t.TempDir()` roots and disposable processes.
+
+### Existing evidence (JR DEV self-check — NOT the independent gate)
+
+- PERSIST-R05 delivered `simulator/persistence_e2e_test.go` (blob `7c833aa20fe3f6ee6005b4f6633b5d4cecc3b8e9`); the exact command was run once by JR DEV and observed `--- PASS` (real MMA2, exit 0). This is context only and does not substitute for independent JR verification.
+
+## Successor routing
+
+The autonomous CODE chain `R01 → R02 → R03 → UI01 → R04 → R05` is complete. Independent TEST/VERIFY for PERSIST-011(PASS) and PERSIST-012..021 + R01..R05 + UI01 remains deferred to PERSIST-022, now pinned above for the next **independent-JR** invocation. JR DEV STOPS here.
 
 Human promoted the full optimized persistence continuation chain on 2026-10-08:
 

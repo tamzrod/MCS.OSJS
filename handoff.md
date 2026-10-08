@@ -160,18 +160,18 @@ CODE COMPLETE at `d9251d3c56bf490c21655bdb372b342ee1eec7f8`, delivered on main.
 - Self-check: `mma2composer` `TestPersistenceRuntimeStatus|TestPersistenceRuntimeSave` → ok; `simulator` `TestRuntimeStatusCarriesRealPersistenceObservations|TestPersistenceStartup` → ok. Bounded regression: all Go modules and OS.js+Electron node suites pass, exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — none
+## Current task — ACTIVE
 
-The persistence workstream is complete.
+**PERSIST-HOTFIX-01 — Electron Persistence Bootstrap / Unseal**
+Mode / owner: **CODE / OpenHands JR DEV**
+Packet: `workflow/active_work/persist-hotfix-01-electron-bootstrap-unseal.md`
 
-**PERSIST-022 — End-to-End Persistence Verification**
-Independent JR VERIFY **PASS** on tested HEAD `6175a77688a85e4aec4706c9e01079fa235f7963`, with pinned product checkpoint `c8f31b2443b69201f36464db72497ed8271aeb7d`.
+Operator-observed defect: the installed Windows Electron Save & Apply path leaves a newly persistence-enabled memory sealed (`0x06 Server Device Busy`). The actual Electron path in `electron/main.js` is authoritative for this hotfix; Go-only `SchedulerApplier` verification is insufficient.
 
-Observed once, in order:
-- `cd simulator && go test -mod=readonly -count=1 ./...` → PASS, exit 0.
-- `cd simulator && MCS_RUN_PERSIST_E2E=1 go test -mod=readonly -count=1 -run TestPersistenceDisposableEndToEnd -v .` → PASS, exit 0.
-- Disposable harness proved: no-snapshot first boot remains sealed; Modbus rejected with `0x06`; live `0x1234` was persisted; restart began sealed; startup restore verified and committed final unseal; Modbus read restored `0x1234`; corrupted snapshot remained sealed with classified failure.
-- Post-check: working tree clean; post-checkpoint changes workflow-only; no stray harness/MMA2 processes; temp resources cleaned.
-- Independent JR made no product or workflow changes; report was chat-only as pinned.
+OpenHands owns diagnosis + implementation + automated evidence. **Do not ask the operator for intermediate testing.** After delivery, set handoff to `AWAITING USER FINAL WINDOWS TEST` and STOP.
 
-Persistence CODE + independent verification are complete. No persistence packet remains ACTIVE.
+Operator command:
+
+```text
+OPERATION CWAL
+```

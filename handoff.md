@@ -160,76 +160,18 @@ CODE COMPLETE at `d9251d3c56bf490c21655bdb372b342ee1eec7f8`, delivered on main.
 - Self-check: `mma2composer` `TestPersistenceRuntimeStatus|TestPersistenceRuntimeSave` → ok; `simulator` `TestRuntimeStatusCarriesRealPersistenceObservations|TestPersistenceStartup` → ok. Bounded regression: all Go modules and OS.js+Electron node suites pass, exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — none ACTIVE for JR DEV (CODE chain complete)
+## Current task — none
 
-All CODE packets **PERSIST-001..021 + PERSIST-R01..R05 + PERSIST-UI01 are CODE COMPLETE**. JR DEV has no further CODE task and STOPS at the VERIFY identity boundary.
-
-## Next task — PERSIST-022 independent-JR VERIFY packet (pinned)
+The persistence workstream is complete.
 
 **PERSIST-022 — End-to-End Persistence Verification**
-Mode / owner: **independent JR** (separate invocation) — JR DEV must not execute or certify this.
-Stage: VERIFY. Previous: PERSIST-R05. Next: none.
-Packet: `workflow/active_work/persist-022-end-to-end-persistence-verification.md`
+Independent JR VERIFY **PASS** on tested HEAD `6175a77688a85e4aec4706c9e01079fa235f7963`, with pinned product checkpoint `c8f31b2443b69201f36464db72497ed8271aeb7d`.
 
-### Pinned execution packet (exact)
+Observed once, in order:
+- `cd simulator && go test -mod=readonly -count=1 ./...` → PASS, exit 0.
+- `cd simulator && MCS_RUN_PERSIST_E2E=1 go test -mod=readonly -count=1 -run TestPersistenceDisposableEndToEnd -v .` → PASS, exit 0.
+- Disposable harness proved: no-snapshot first boot remains sealed; Modbus rejected with `0x06`; live `0x1234` was persisted; restart began sealed; startup restore verified and committed final unseal; Modbus read restored `0x1234`; corrupted snapshot remained sealed with classified failure.
+- Post-check: working tree clean; post-checkpoint changes workflow-only; no stray harness/MMA2 processes; temp resources cleaned.
+- Independent JR made no product or workflow changes; report was chat-only as pinned.
 
-- Source checkpoint to verify (pinned): `c8f31b2443b69201f36464db72497ed8271aeb7d` (`main`, the PERSIST-R05 delivery commit; tree otherwise workflow-only).
-- Disposable target: real MMA2 built from source by the harness; loopback ports and `t.TempDir()` roots only. No production/customer data, no global services, no network output.
-- Preflight (independent JR): confirm `git rev-parse HEAD` ancestry includes the pinned checkpoint; working tree clean; Go toolchain available (`go version`); network not required beyond loopback.
-- Exact ordered actions/commands:
-  1. `cd simulator && go test -mod=readonly -count=1 ./...` — expect `ok`, exit 0 (gated harness SKIP is expected here).
-  2. `cd simulator && MCS_RUN_PERSIST_E2E=1 go test -mod=readonly -count=1 -run TestPersistenceDisposableEndToEnd -v .` — expect `--- PASS: TestPersistenceDisposableEndToEnd`, exit 0.
-- Expected observations (from the harness output/assertions):
-  1. live phase: no-snapshot first boot stays sealed; Modbus read rejected `0x06`; known value `0x1234` written and unsealed reads back `0x1234`; a real RBE save is observed.
-  2. restart phase: fresh MMA2 sealed before restore; startup restore → verify → final unseal commits; `Healthy` true, `Sealed` false; Modbus reads restored `0x1234`.
-  3. fail-closed phase: corrupted snapshot → restore fails closed; `Healthy` false, `Sealed` true, non-`none` classified reason, Modbus still rejected `0x06`.
-- Evidence destination / report permission: this packet is chat-only unless the workflow owner separately pins a report path; independent JR captures raw stdout/stderr + exit codes and returns the verdict. JR changes no product source.
-- Cleanup: the harness cleans only its own `t.TempDir()` roots and disposable processes.
-
-### Existing evidence (JR DEV self-check — NOT the independent gate)
-
-- PERSIST-R05 delivered `simulator/persistence_e2e_test.go` (blob `7c833aa20fe3f6ee6005b4f6633b5d4cecc3b8e9`); the exact command was run once by JR DEV and observed `--- PASS` (real MMA2, exit 0). This is context only and does not substitute for independent JR verification.
-
-## Successor routing
-
-The autonomous CODE chain `R01 → R02 → R03 → UI01 → R04 → R05` is complete. Independent TEST/VERIFY for PERSIST-011(PASS) and PERSIST-012..021 + R01..R05 + UI01 remains deferred to PERSIST-022, now pinned above for the next **independent-JR** invocation. JR DEV STOPS here.
-
-Human promoted the full optimized persistence continuation chain on 2026-10-08:
-
-```text
-PERSIST-R01  Filesystem Snapshot Adapter
-    ↓
-PERSIST-R02  Runtime Save Wiring
-    ↓
-PERSIST-R03  Startup Restore Wiring
-    ↓
-PERSIST-UI01 Electron Persistence Settings
-    ↓
-PERSIST-R04  Runtime Status Wiring
-    ↓
-PERSIST-R05  Disposable Persistence E2E Harness
-    ↓
-PERSIST-022  Independent End-to-End VERIFY
-```
-
-Exactly one product task executes per OPERATION CWAL invocation to keep context bounded. After genuine delivery of a CODE packet, OpenHands JR DEV **must** update completion evidence and arm the named already-promoted successor for the next invocation without asking the human to promote/select it again.
-
-The normal operator action is now simply:
-
-```text
-OPERATION CWAL
-```
-
-JR DEV may perform its already-authorized safe fetch/fast-forward itself. A reused workspace must still preserve the superseded PERSIST-013/PERSIST-014 local-history recovery notes and must never force/reset destructively.
-
-## Autonomous successor routing — RECURSIVE JR DEV ENABLED
-
-Current continuation:
-- UI01 success → activate and immediately execute R04
-- R04 success → activate and immediately execute R05
-- R05 success → pin and activate PERSIST-022 as **independent JR VERIFY**, then STOP
-- Any genuine blocker/failure → fail closed, record it, do not skip ahead
-
-Between CODE tasks, perform a context-reset checkpoint: reread this handoff, read only the newly active packet, and load only its minimal relevant source/context. Prior task implementation detail is evidence, not active reasoning context.
-
-JR DEV never executes PERSIST-022 and never self-certifies the VERIFY gate. Only BLACK SHEEP WALL edits ICC.
+Persistence CODE + independent verification are complete. No persistence packet remains ACTIVE.

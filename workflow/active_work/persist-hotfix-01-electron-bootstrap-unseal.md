@@ -1,6 +1,6 @@
 # PERSIST-HOTFIX-01 — Electron Persistence Bootstrap / Unseal
 
-Status: ACTIVE — HUMAN ASSIGNED 2026-10-08
+Status: CODE COMPLETE — CONNECTOR RECOVERY PUBLISHED — AWAITING USER FINAL WINDOWS TEST
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: PERSIST-022 PASS
@@ -69,3 +69,20 @@ On completion:
 
 ## CWAL
 This is the sole current ACTIVE product task. OpenHands JR DEV owns diagnosis, implementation, automated testing, commit/push, and evidence. The operator performs only the final installed-Windows test after this task is delivered.
+
+## Connector recovery — 2026-10-08
+
+OpenHands completed the hotfix locally but could not push because its GitHub token returned HTTP 401. The local-only commits `79e293c` (product) and `c30ffed` (workflow evidence) are **superseded for remote delivery** by GitHub-connector recovery.
+
+Published to `main`:
+- `04d8bce1a5a4754323126843d371aa38977160e8` — new `electron/persistence.js`: initial snapshot capture, manifest v1 validation, Raw Ingest restore, final State Sealing coil=1 unseal, post-unseal normal Modbus proof.
+- `15c4f1aec8c0d63bc52385f668751fde06865209` — `electron/main.js`: actual Electron Save & Apply now owns capture-before-restart → restart acknowledgement/readiness → restore → final unseal before reporting success.
+- `fd761967169dfb930e49bc32a331d3b4747cc0b7` — focused disposable Electron persistence lifecycle tests on the recovered remote source.
+
+OpenHands' previously reported JR DEV evidence (5/5 focused lifecycle PASS plus bounded Electron/Go/OS.js regressions) was produced against its local implementation before the transport failure. The connector recovery publishes the same required lifecycle but does not claim a second test execution by the connector.
+
+### Final operator acceptance
+Build/install current `main`, then perform only:
+`Persistence OFF → Enable Persistence → Save & Apply → normal Modbus read/write works; restart app/services → persisted value restored and normal Modbus works`.
+
+No further coding task is active unless that final Windows test finds a defect.

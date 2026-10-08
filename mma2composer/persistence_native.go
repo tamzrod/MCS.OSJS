@@ -1,9 +1,6 @@
 package mma2composer
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // persistenceAreaOrder is the canonical area order used when enumerating
 // explicit persistence ranges, matching the MMA2 memory layout.
@@ -58,18 +55,17 @@ func allocatedPersistenceArea(memory Memory, area string) (Area, bool) {
 // ValidateMemoryPersistence validates the native per-memory persistence block
 // for one memory candidate. An absent block, or an explicit enabled:false,
 // disables persistence for that memory only and is accepted. An enabled block
-// requires a nonempty directory in the same memory entry, and any explicit
-// ranges must be nonempty, contained within the owning memory's allocated area
-// and nonoverlapping (per area). Validation is read-only and never mutates the
-// caller's memory. Persistence never carries range identity beyond what is
-// validated here.
+// requires no directory: an omitted or empty directory leaves storage at MMA2's
+// native default beside the loaded YAML. An omitted Ranges means every allocated
+// area of that memory; explicit ranges, when present, must be nonempty,
+// contained within the owning memory's allocated area and nonoverlapping (per
+// area). Persistence is independent of State Sealing and of RBE. Validation is
+// read-only and never mutates the caller's memory, and never carries range
+// identity beyond what is validated here.
 func ValidateMemoryPersistence(memory Memory) error {
 	p := memory.Persistence
 	if p == nil || p.Enabled == nil || !*p.Enabled {
 		return nil
-	}
-	if strings.TrimSpace(p.Directory) == "" {
-		return fmt.Errorf("persistence.enabled requires a nonempty directory")
 	}
 	if p.Ranges == nil {
 		return nil

@@ -37,32 +37,12 @@ func ValidateFC43(value interface{}) error {
 	return nil
 }
 
-// memoryStateSealingEnabled mirrors MMA2's state sealing enablement rule: an
-// absent block is disabled, an absent enabled flag defaults to enabled, and an
-// explicit flag wins. It is read-only and never mutates the caller's memory.
-func memoryStateSealingEnabled(value interface{}) bool {
-	block, ok := value.(map[string]interface{})
-	if !ok {
-		return false
-	}
-	enabled, present := block["enabled"]
-	if !present {
-		return true
-	}
-	flag, ok := enabled.(bool)
-	return ok && flag
-}
-
 // ValidateMemory checks editor settings even for disabled memories. Commit
-// separately checks the real shared output; this candidate validates RBE rules
-// and the persistence prerequisite: persistence-enabled memory requires State
-// Sealing to be present and enabled, and validation never mutates sealing.
+// separately checks the real shared output. Persistence and State Sealing
+// validate independently: a persistence-enabled memory does not require State
+// Sealing, and validation never enables, mutates or inspects sealing on
+// persistence's behalf.
 func ValidateMemory(memory Memory) error {
-	if memory.Persistence != nil && memory.Persistence.Enabled != nil && *memory.Persistence.Enabled {
-		if !memoryStateSealingEnabled(memory.Extra["state_sealing"]) {
-			return fmt.Errorf("persistence.enabled requires state sealing to be present and enabled")
-		}
-	}
 	if err := ValidateMemoryPersistence(memory); err != nil {
 		return err
 	}

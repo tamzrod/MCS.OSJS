@@ -74,20 +74,35 @@ func TestNativePersistenceDisabledAccepted(t *testing.T) {
 	}
 }
 
-// enabled true without a directory fails closed.
-func TestNativePersistenceRequiresDirectory(t *testing.T) {
-	memory := nativeEnabledMemory()
-	memory.Persistence.Directory = "   "
-	err := ValidateMemoryPersistence(memory)
-	if err == nil || !strings.Contains(err.Error(), "directory") {
-		t.Fatalf("expected directory-required error, got %v", err)
+// NPE-01 acceptance 1: enabled is valid whether the directory is omitted or an
+// explicit custom override; directory is optional, not required.
+func TestNativePersistenceDirectoryOptional(t *testing.T) {
+	omitted := nativeEnabledMemory()
+	omitted.Persistence.Directory = ""
+	if err := ValidateMemoryPersistence(omitted); err != nil {
+		t.Fatalf("enabled with omitted/empty directory should be valid: %v", err)
+	}
+	custom := nativeEnabledMemory()
+	custom.Persistence.Directory = "/custom/mma2"
+	if err := ValidateMemoryPersistence(custom); err != nil {
+		t.Fatalf("enabled with custom directory should be valid: %v", err)
 	}
 }
 
-// A candidate with an omitted Ranges block persists all allocated areas: valid.
+// NPE-01 acceptance 2: an omitted Ranges block persists all allocated areas and
+// MCS creates no duplicate range projection; explicit valid custom ranges are an
+// optional override that round-trips (acceptance 3).
 func TestNativePersistenceRangesOmittedValid(t *testing.T) {
-	if err := ValidateMemoryPersistence(nativeEnabledMemory()); err != nil {
+	memory := nativeEnabledMemory()
+	if memory.Persistence.Ranges != nil {
+		t.Fatal("precondition: ranges should start omitted")
+	}
+	if err := ValidateMemoryPersistence(memory); err != nil {
 		t.Fatalf("omitted ranges should be accepted: %v", err)
+	}
+	// Omitted ranges must remain nil: MCS does not synthesize a range projection.
+	if memory.Persistence.Ranges != nil {
+		t.Fatalf("omitted ranges must not be materialized by validation: %+v", memory.Persistence.Ranges)
 	}
 }
 
@@ -134,6 +149,30 @@ func TestNativePersistenceRangeValidation(t *testing.T) {
 		}
 		if err == nil || !strings.Contains(err.Error(), tc.errContains) {
 			t.Fatalf("%s: expected error containing %q, got %v", tc.name, tc.errContains, err)
+		}
+	}
+}
+
+// NPE-01 acceptance 6: persistence and RBE validate independently. A
+// persistence-enabled memory validates with RBE absent, present, or explicitly
+// empty; persistence never derives from or rejects based on RBE.
+func TestPersistenceIndependentOfRBE(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		rbe  interface{}
+		set  bool
+	}{
+		{"rbe absent", nil, false},
+		{"rbe empty", map[string]interface{}{}, true},
+		{"rbe present", map[string]interface{}{"coils": []interface{}{map[string]interface{}{"id": 1, "name": "u", "start": 0, "count": 1}}}, true},
+	} {
+		memory := nativeEnabledMemory()
+		memory.Extra = map[string]interface{}{}
+		if tc.set {
+			memory.Extra["rbe"] = tc.rbe
+		}
+		if err := ValidateMemory(memory); err != nil {
+			t.Fatalf("%s: persistence and RBE must validate independently: %v", tc.name, err)
 		}
 	}
 }

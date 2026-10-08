@@ -77,8 +77,10 @@ type PersistenceRanges struct {
 // listeners[].memory[].persistence and never carries range identity: the
 // Port → Unit ID → Memory chain and the authoritative memory area start/count
 // remain the single source of truth. Absent, or enabled false, means
-// persistence is off for that memory only; enabled true requires a directory in
-// the same memory entry.
+// persistence is off for that memory only; enabled true turns on native MMA2
+// persistence for that memory. Directory is optional and its absence means
+// MMA2's native default beside the loaded YAML; persistence is independent of
+// State Sealing, RBE and RBE TCP.
 type Persistence struct {
 	Enabled   *bool              `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 	Directory string             `yaml:"directory,omitempty" json:"directory,omitempty"`

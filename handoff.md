@@ -98,30 +98,37 @@ CODE COMPLETE at `fa1276c26cbb639f061436c3f111351232037b57`, delivered on main; 
 - Self-check: `cd mma2composer && go test -mod=readonly -run 'TestPersistenceRestore|TestPersistenceSealing|TestForcePersistenceSealingFlag' -v .` → 12 tests PASS, exit 0. Additional temporary real-socket v1 check confirmed the sealing bit is cleared on the wire (passed with `-race`, removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-018 — Restore Verification**
+CODE COMPLETE at `3eb118f507688d483c5d4985f74fe6a98b531bc3`, delivered on main; awaiting independent TEST/VERIFY (PERSIST-022).
+- `mma2composer/persistence_restore.go` (blob `8a3d716e24ed5747499137e1d3a5d8eb42218513`) and `mma2composer/persistence_restore_test.go` (blob `80ed02387f88958e1f49d46fb78cef8d668fbd86`).
+- `PersistenceRestoreResult` records `RequiredAreas` (deterministic configured area set in plan order) and `AcknowledgedAreas` (subset written and acknowledged with the Raw Ingest success code). `RestorePersistencePlan` emits `Completed` only through `VerifyPersistenceRestore`, which requires a non-empty required set exactly equal to the acknowledged set, so any failed or missing area prevents completion. No unseal.
+- Self-check: `cd mma2composer && go test -mod=readonly -run 'TestPersistenceRestore|TestPersistenceSealing|TestForcePersistenceSealingFlag|TestVerifyPersistenceRestore' -v .` → 18 tests PASS, exit 0. Additional temporary real-socket v1 check confirmed the gate (all-ack → completed; one rejected → not completed), passed with `-race`, removed before commit. Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-018 — Restore Verification**
+**PERSIST-019 — Atomic Unseal / Commit Step**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-018-restore-verification.md`
+Packet: `workflow/active_work/persist-019-atomic-unseal-commit-step.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-018 exactly as written:
-- add the restore-completion gate that requires all configured persisted areas and their Raw Ingest acknowledgements/integrity checks to succeed before commit;
-- track the complete required-area set deterministically;
-- any failed or missing area prevents restore completion;
-- emit success only after every required area is validated and committed;
-- do not unseal directly in this task;
+Execute PERSIST-019 exactly as written:
+- make the final successful restore action an explicit write of the existing State Sealing flag to 1 (unsealed);
+- unseal only after restore verification success;
+- take the flag location only from the current State Sealing configuration;
+- ensure no earlier restore step can expose memory to Modbus;
+- do not add runtime reseal or alternate commit flags;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-019 for the next invocation only after genuine PERSIST-018 completion;
-- STOP after PERSIST-018.
+- prepare PERSIST-020 for the next invocation only after genuine PERSIST-019 completion;
+- STOP after PERSIST-019.
 
 Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-019..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-017 are CODE complete; PERSIST-018 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-020..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-018 are CODE complete; PERSIST-019 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

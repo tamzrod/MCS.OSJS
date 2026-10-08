@@ -112,30 +112,34 @@ CODE COMPLETE at `e22459ecdd10433ef21f63df25e3a22a43fb3662`, delivered on main; 
 - Self-check: `cd mma2composer && go test -mod=readonly -run 'TestPersistenceRestore|TestPersistenceSealing|TestForcePersistenceSealingFlag|TestVerifyPersistenceRestore|TestEncodePersistenceSealingFlag' -v .` → 23 tests PASS, exit 0. Additional temporary real-socket v1 check confirmed the final wire packet is the unseal at the configured address (passed with `-race`, removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-020 — Restore Failure Behavior**
+CODE COMPLETE at `1528d3e2451f3588de46f7539127164588878f1a`, delivered on main; awaiting independent TEST/VERIFY (PERSIST-022).
+- `mma2composer/persistence_restore.go` (blob `023d89ab1898b4a1414a33929a851459d5f48e35`) and `mma2composer/persistence_restore_test.go` (blob `55d9e143b75460a5bd7c28e4944db989750cd4a3`).
+- New `PersistenceRestoreFailure` classification and `failedPersistenceRestore` helper; every non-committing path in `RestorePersistencePlan` leaves the memory sealed and returns a deterministic `Failure` (disabled, unsealed, empty, missing/invalid/incompatible snapshot, area_not_ready, unknown_area, raw_ingest_write/response, incomplete, no_sealing_flag, unseal_write/response) plus a `Detail`. `PersistenceRestoreResult` gains `Failure` and `Sealed`; a committed restore has `Failure` None and `Sealed` false. No fabricated defaults, retry loops, alternate unseal paths or operator-data mutation.
+- Self-check: `cd mma2composer && go test -mod=readonly -run 'TestPersistenceRestore|TestPersistenceSealing|TestForcePersistenceSealingFlag|TestVerifyPersistenceRestore|TestEncodePersistenceSealingFlag' -v .` → 30 tests PASS, exit 0. Additional temporary real-socket v1 check confirmed a rejected area write keeps the memory sealed and never emits the unseal packet (passed with `-race`, removed before commit). Bounded regression: full `mma2composer`, `simulator`, `replicator`, `MMA2`, `mma2raw` suites → all `ok`, exit 0. `gofmt -l` clean for changed files; `go vet` exit 0.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-020 — Restore Failure Behavior**
+**PERSIST-021 — Persistence Runtime Status**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-020-restore-failure-behavior.md`
+Packet: `workflow/active_work/persist-021-persistence-runtime-status.md`
 Queue: `workflow/active_work/PERSISTENCE_PROMOTION_QUEUE.md`
 
-Execute PERSIST-020 exactly as written:
-- keep persistence-enabled memory sealed and expose a deterministic failure state whenever startup persistence restore cannot safely complete;
-- missing, corrupt or incompatible snapshot keeps the memory sealed;
-- Raw Ingest or restore-verification failure keeps the memory sealed;
-- surface the failure reason without fabricated defaults or automatic unsafe unseal;
-- do not add repair/retry loops, operator-data mutation, historian behavior or alternate unseal paths;
+Execute PERSIST-021 exactly as written (read the packet for its exact scope before implementing):
+- surface persistence runtime status from the authoritative restore state without inventing a second source of truth;
+- keep the Port → Unit ID → Memory authority model and existing State Sealing/RBE semantics;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- prepare PERSIST-021 for the next invocation only after genuine PERSIST-020 completion;
-- STOP after PERSIST-020.
+- prepare PERSIST-022 for the next invocation only after genuine PERSIST-021 completion;
+- STOP after PERSIST-021.
 
 Recovery note for a reused OpenHands workspace: local-only PERSIST-013 commits `9343d9e` / `ab27b27` and local-only PERSIST-014 commits `5f944bd` / `17648ce` are superseded by authoritative remote recovery commits `ccccb891` and `98a952a8`. Do not replay them as new work; reconcile only with bounded safe Git mechanics.
 
 ## Successor routing
 
-PERSIST-021..022 are already human-promoted and remain QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-019 are CODE complete; PERSIST-020 is now the sole current ACTIVE JR DEV CODE task.
+PERSIST-022 is already human-promoted and remains QUEUED/dependency-gated. PERSIST-011 passed independently; PERSIST-012 through PERSIST-020 are CODE complete; PERSIST-021 is now the sole current ACTIVE JR DEV CODE task.
 
 OpenHands JR DEV may autonomously close and deliver CODE/DISCOVERY packets and select the next already-promoted eligible CODE/DISCOVERY packet for the next invocation.
 

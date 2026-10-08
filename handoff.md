@@ -1,3 +1,9 @@
+# Current human-approved workstream — MMA2 native persistence migration (2026-10-08)
+
+**CURRENT: NP-01 — Native Schema & Validation.** Six packets NP-01..NP-06 are PROMOTED/QUEUED under `workflow/active_work/np-*.md`, but only NP-01 is current. Execute one packet per OPERATION CWAL invocation; STOP after its handoff. Advance only after predecessor completion and human/current-task routing. The older PERSIST-001..022 / R01..R05 / UI01 workstream is completed historical implementation and is superseded for new persistence development. Do NOT resume legacy persistence continuation or recursive task execution. MMA2 PR #22 owns native persistence runtime. Keep unrelated workflows intact.
+
+---
+
 # Handoff — MCS.OSJS
 
 ## Autonomous routing authority

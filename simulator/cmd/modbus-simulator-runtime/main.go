@@ -70,6 +70,9 @@ func watchDocument(ctx context.Context, store simulator.Store, scheduler *simula
 				continue
 			}
 			scheduler.ArmSchedules(doc)
+			if err := scheduler.ArmPersistenceSave(doc); err != nil {
+				log.Printf("reload persistence save wiring: %v", err)
+			}
 			lastSize = info.Size()
 			lastModified = modified
 		}

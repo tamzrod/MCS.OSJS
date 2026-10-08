@@ -77,6 +77,21 @@ func PersistenceCanonicalArea(area string) bool {
 	return ok
 }
 
+// PersistenceSnapshotConfigs derives the adapter registration for a memory's
+// persistence-owned rules from the authoritative rule set: kind/start/count are
+// taken from PersistenceSnapshotRules, never authored independently.
+func PersistenceSnapshotConfigs(key PersistenceMemoryKey, rules []PersistenceRBERule) ([]PersistenceSnapshotConfig, error) {
+	snapshotRules, err := PersistenceSnapshotRules(key, rules)
+	if err != nil {
+		return nil, err
+	}
+	configs := make([]PersistenceSnapshotConfig, 0, len(snapshotRules))
+	for _, r := range snapshotRules {
+		configs = append(configs, PersistenceSnapshotConfig{Key: key, Area: r.Area, Kind: r.Kind, Start: r.Start, Count: r.Count})
+	}
+	return configs, nil
+}
+
 func (a *PersistenceFilesystemAdapter) areaDir(key PersistenceMemoryKey, area string) string {
 	return filepath.Join(a.root, RelPersistenceDir,
 		fmt.Sprintf("port-%d", key.Port),

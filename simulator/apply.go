@@ -31,6 +31,10 @@ type SchedulerApplier struct {
 	devices        map[string]DeviceDefinition
 	rawErrors      map[string]string
 	ingestOK       map[string]bool
+	// persistenceSave is the real runtime save wiring (PERSIST-R02). It is nil
+	// unless the appliance data root is known and a persistence-enabled memory
+	// exists; it never touches MMA2 authority, sealing, restore or user RBE.
+	persistenceSave *PersistenceRuntimeSaveHost
 }
 
 func NewSchedulerApplier(store Store, initial Document) *SchedulerApplier {
@@ -106,6 +110,34 @@ func (a *SchedulerApplier) ArmSchedules(doc Document) {
 	a.ready = true
 	a.mu.Unlock()
 	a.replaceSchedulers(doc)
+}
+
+// ArmPersistenceSave builds the runtime persistence save host for the document.
+// It returns an explicit error when persistence is enabled but the save path
+// cannot be built (for example a subscription to a user-owned rule), so the
+// caller can fail closed rather than silently drop persistence.
+func (a *SchedulerApplier) ArmPersistenceSave(doc Document) error {
+	host, err := persistenceSaveContext(a.store.Root, doc.Devices)
+	if err != nil {
+		return err
+	}
+	a.mu.Lock()
+	a.persistenceSave = host
+	a.mu.Unlock()
+	return nil
+}
+
+// PublishPersistenceEvent routes one persistence-owned RBE event to the runtime
+// save path. It is the real non-test subscription point for
+// PersistenceSnapshotWriter; a non-persistence ID is ignored. It never changes
+// MMA2 memory, sealing or restore state.
+func (a *SchedulerApplier) PublishPersistenceEvent(id uint8) {
+	a.mu.Lock()
+	host := a.persistenceSave
+	a.mu.Unlock()
+	if host != nil {
+		host.Publish(id)
+	}
 }
 
 func (a *SchedulerApplier) ApplyTiming(previous, edited Document) error {
@@ -225,7 +257,15 @@ func newRuntimeApplyRouter(store Store, bootTimeout time.Duration) (*ApplyRouter
 	timing := newSchedulerApplier(store, initial, false)
 	ports := composedSimulatorPorts(initial)
 	if len(ports) > 0 {
-		if err := WaitMMA2Ready(ports, bootTimeout); err == nil { timing.ArmSchedules(initial) }
+		if err := WaitMMA2Ready(ports, bootTimeout); err == nil {
+			timing.ArmSchedules(initial)
+			// Real runtime call site for the persistence save wiring (PERSIST-R02):
+			// arm the save host alongside the schedules. A build failure is a
+			// fail-closed error rather than silent persistence drop.
+			if err := timing.ArmPersistenceSave(initial); err != nil {
+				return nil, nil, err
+			}
+		}
 	}
 	return NewApplyRouter(store, timing, timing), timing, nil
 }

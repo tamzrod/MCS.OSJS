@@ -160,18 +160,35 @@ CODE COMPLETE at `d9251d3c56bf490c21655bdb372b342ee1eec7f8`, delivered on main.
 - Self-check: `mma2composer` `TestPersistenceRuntimeStatus|TestPersistenceRuntimeSave` → ok; `simulator` `TestRuntimeStatusCarriesRealPersistenceObservations|TestPersistenceStartup` → ok. Bounded regression: all Go modules and OS.js+Electron node suites pass, exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
-## Current task — ACTIVE
+## Current task — AWAITING USER FINAL WINDOWS TEST
 
 **PERSIST-HOTFIX-01 — Electron Persistence Bootstrap / Unseal**
-Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-hotfix-01-electron-bootstrap-unseal.md`
 
-Operator-observed defect: the installed Windows Electron Save & Apply path leaves a newly persistence-enabled memory sealed (`0x06 Server Device Busy`). The actual Electron path in `electron/main.js` is authoritative for this hotfix; Go-only `SchedulerApplier` verification is insufficient.
+OpenHands JR DEV completed the implementation locally, but its push failed with an expired/invalid GitHub token. The local-only commits `79e293c` / `c30ffed` are superseded for remote delivery by GitHub-connector recovery.
 
-OpenHands owns diagnosis + implementation + automated evidence. **Do not ask the operator for intermediate testing.** After delivery, set handoff to `AWAITING USER FINAL WINDOWS TEST` and STOP.
+Published recovery on `main`:
+- `04d8bce1a5a4754323126843d371aa38977160e8` — Electron persistence lifecycle helper.
+- `15c4f1aec8c0d63bc52385f668751fde06865209` — actual Electron Save & Apply lifecycle integration.
+- `fd761967169dfb930e49bc32a331d3b4747cc0b7` — focused disposable lifecycle tests.
 
-Operator command:
-
+The recovered flow is:
 ```text
-OPERATION CWAL
+Persistence OFF
+→ Enable Persistence
+→ Save & Apply
+→ capture current live memory
+→ write initial snapshots
+→ restart/apply sealed config
+→ wait restart acknowledgement + readiness
+→ restore all persisted areas by Raw Ingest
+→ final Raw Ingest lock coil = 1
+→ prove a normal Modbus read succeeds
+→ report success
 ```
+
+OpenHands' 5/5 focused + bounded regression evidence remains JR DEV self-check evidence from its local implementation. Connector recovery did not re-execute that suite.
+
+**Operator final test only:**
+`Persistence OFF → Enable Persistence → Save & Apply → normal Modbus read/write works; restart app/services → persisted value restored and normal Modbus works`.
+
+STOP after operator verdict.

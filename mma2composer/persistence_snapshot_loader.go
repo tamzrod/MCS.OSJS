@@ -85,12 +85,17 @@ type PersistenceAreaRestore struct {
 // is a plan only: the loader performs no Raw Ingest write and no unseal, so a
 // partially valid snapshot set can never expose state through Modbus. State is
 // Ready only when every configured area is Ready.
+//
+// SealingFlag, when non-nil, is the authoritative State Sealing location that
+// the later restore must keep sealed; it comes from configuration, never from
+// the snapshot.
 type PersistenceRestorePlan struct {
-	Key     PersistenceMemoryKey
-	Enabled bool
-	Sealed  bool
-	State   PersistenceRestoreOutcome
-	Areas   []PersistenceAreaRestore
+	Key         PersistenceMemoryKey
+	Enabled     bool
+	Sealed      bool
+	State       PersistenceRestoreOutcome
+	Areas       []PersistenceAreaRestore
+	SealingFlag *PersistenceSealingFlag
 }
 
 // PersistenceSnapshotAreas derives the startup load set from the

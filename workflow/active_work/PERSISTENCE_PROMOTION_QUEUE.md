@@ -1,6 +1,42 @@
-# Superseding native persistence migration queue — 2026-10-08
+# Native persistence integration queue — realigned 2026-10-08
 
-Human promoted **NP-01..NP-06** as queued active-work packets. **NP-01 (schema & validation) is CODE COMPLETE and delivered at `757fe00b6e8b057b92cb693781fe1885ce362dd6`; NP-02 is the current task.** Ordered: NP-01 schema/validation → NP-02 UI → NP-03 Simulator/Replicator → NP-04 legacy removal → NP-05 integration → NP-06 workflow/docs. One task per invocation; no recursive continuation. The old PERSIST queue below is historical and must not be reactivated. Do not delete historical evidence or user snapshots.
+Human has realigned the persistence migration into TWO sequential product phases.
+
+CURRENT: **NPE-01 — Native Persistence Contract Realignment**
+
+Order:
+
+```text
+NPE-01  MCS/native contract realignment
+NPE-02  Electron persistence UI
+NPE-03  Electron native config / Save & Apply wiring
+NPE-04  Electron Replicator destination persistence parity
+NPE-05  Electron legacy persistence cleanup
+NPE-06  Electron independent native-persistence verification
+        ↓ ONLY AFTER PASS
+NPO-01  OS.js Toolkit persistence UI
+NPO-02  OS.js Toolkit native config wiring
+NPO-03  OS.js Toolkit legacy cleanup / parity
+NPO-04  OS.js Toolkit independent native-persistence verification
+        ↓ ONLY AFTER PASS
+NPF-01  workflow/documentation cleanup
+```
+
+## Routing rules
+
+- One packet per OPERATION CWAL invocation unless a later handoff explicitly changes that rule.
+- Electron is completed and independently verified BEFORE OS.js Toolkit persistence work starts.
+- MMA2 owns persistence runtime: disk snapshot, runtime flush, startup restore, backup and recovery.
+- Integration layers configure native per-memory persistence only.
+- Do not reintroduce persistence dependence on State Sealing, RBE TCP, Raw Ingest restore, an unlock coil, external snapshot capture, or an external persistence watchdog.
+- The previously promoted NP-02..NP-06 packets are SUPERSEDED and must not execute.
+- Historical PERSIST-* packets remain evidence only and must not be reactivated.
+- Do not delete user snapshot data.
+
+## Completed predecessor
+
+NP-01 historical schema work was delivered at `757fe00b6e8b057b92cb693781fe1885ce362dd6`, but its contract is partially stale versus current MMA2: notably it required a directory and retained persistence/State-Sealing assumptions. NPE-01 exists specifically to reconcile those assumptions before Electron UI implementation.
+
 
 ---
 

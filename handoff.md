@@ -2,11 +2,16 @@
 
 **JR DEV OWNER: OpenHands.** OpenHands is explicitly authorized to execute the current NPE/NPO CODE packets under OPERATION CWAL. There is no Codex owner for this workstream.
 
-**CURRENT: NPE-04 — Electron Replicator Destination Persistence Parity** — CODE COMPLETE and delivered on `main` at `b4580d6fa3bbee547caea4680aacd1a8c812b48b` (OpenHands JR DEV, base `3d20c32`). Independent verification is deferred to NPE-06. **Next assigned packet: NPE-05 — Electron Legacy Persistence Cleanup** (`workflow/active_work/npe-05-electron-legacy-persistence-cleanup.md`), assigned to OpenHands JR DEV. Recursive JR DEV continuation is NOT enabled for this NPE chain: this invocation records the delivery and STOPS.
+**AUTO-ADVANCE AUTHORIZED (operator, 2026-10-08).** The operator invoked `operation cwal auto advance`, explicitly enabling recursive JR DEV continuation for this promoted Electron-first (NPE) CODE chain. This supersedes the "recursive continuation NOT enabled" note for CODE/DISCOVERY packets only. The TEST/VERIFY identity boundary is unchanged: JR DEV advances through NPE-05, then prepares and STOPS before NPE-06 (Independent JR TEST/VERIFY) without executing it.
+
+**CURRENT: NPE-05 — Electron Legacy Persistence Cleanup** — CODE COMPLETE and delivered on `main` at `10a4e22aa5350868dac13796ffe78a875fcea641` (OpenHands JR DEV, base `1427520`). **Next packet: NPE-06 — Electron Native Persistence Verification** (`workflow/active_work/npe-06-electron-native-persistence-verification.md`), which is **Stage: TEST/VERIFY, Owner: Independent JR TEST/VERIFY** — an identity boundary. JR DEV MUST STOP here and must not execute NPE-06. A separate invocation/assignment as Independent JR re-reads the exact NPE-06 packet and executes it.
+
+All Electron CODE packets (NPE-01..NPE-05) are now CODE COMPLETE and delivered. Electron must be independently verified by NPE-06 before any NPO-* product task begins.
 
 NPE-01 was accepted as delivered at `b868c2d2d8cb132d52498cb47105b1bd8c095551`.
 NPE-02 was accepted as delivered at `a90f52a1b7ce2830dbc2aa8b6a65041962f21355`.
 NPE-03 was accepted as delivered at `817a6948d7db5bcf666a1e6acf00b1545f9815e8`.
+NPE-04 was accepted as delivered at `b4580d6fa3bbee547caea4680aacd1a8c812b48b`.
 
 The prior NP-02..NP-06 queue is SUPERSEDED. Do not execute it.
 

@@ -23,7 +23,7 @@ No persistence writes/restores in the status layer, no new retry/control path, n
 3. Diagnostics remains read-only and fail-closed for malformed/stale observations.
 
 ## Evidence / handoff
-Record real status call sites, changed paths, focused Go/JS tests, bounded regression and delivered source SHA. After genuine delivery, automatically arm PERSIST-R05 for the next invocation and STOP.
+Record real status call sites, changed paths, focused Go/JS tests, bounded regression and delivered source SHA. After genuine delivery, automatically activate PERSIST-R05. If recursive JR DEV continuation is enabled in handoff, perform the context-reset checkpoint and continue with PERSIST-R05 in the same invocation; otherwise stop.
 
 ## Dependencies
 Requires genuine PERSIST-UI01 and PERSIST-R03 delivery.
@@ -32,4 +32,4 @@ Requires genuine PERSIST-UI01 and PERSIST-R03 delivery.
 1/0/1/1/0=3.
 
 ## CWAL
-Already human-promoted. Execute only when selected by handoff. After delivery, automatically activate PERSIST-R05 and STOP.
+Already human-promoted. Execute only when selected by handoff. After delivery, automatically activate PERSIST-R05. If recursive JR DEV continuation is enabled in handoff, perform the context-reset checkpoint and continue with PERSIST-R05 in the same invocation; otherwise stop.

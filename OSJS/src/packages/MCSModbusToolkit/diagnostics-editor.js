@@ -67,6 +67,16 @@ const createDiagnosticsEditor = (doc, root, memory, replicator, options = {}) =>
     row(devices, 'Memory device:', selectorLabel(snapshot && snapshot.memory));
     row(devices, 'Memory device MMA2:', mapped.devices.memory.mma2);
     row(devices, 'Memory simulation:', mapped.devices.memory.simulator);
+    // Observational persistence health (PERSIST-021); shown only when reported,
+    // never as a control and never a bypass of restore/sealing gates.
+    const persistence = mapped.devices.memory.persistence;
+    if (persistence) {
+      row(devices, 'Memory persistence configured:', persistence.configured);
+      row(devices, 'Memory persistence sealed:', persistence.sealed);
+      row(devices, 'Memory persistence healthy:', persistence.healthy);
+      row(devices, 'Memory persistence snapshot:', persistence.snapshot_health);
+      row(devices, 'Memory persistence restore:', persistence.restore_outcome);
+    }
     row(devices, 'Replicator device:', selectorLabel(snapshot && snapshot.replicator));
     row(devices, 'Replicator device runtime:', mapped.devices.replicator.runtime);
     row(devices, 'Replicator source:', mapped.devices.replicator.source);

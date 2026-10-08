@@ -12,14 +12,14 @@ const replicator = {fresh: true, expectedName: 'Rep-1', result: repStatus};
 
 const empty = mapDiagnostics();
 assert.deepStrictEqual(empty.runtime, {mma2: UNKNOWN, simulator: UNKNOWN, replicator: UNKNOWN});
-assert.deepStrictEqual(empty.devices.memory, {mma2: UNKNOWN, simulator: UNKNOWN});
+assert.deepStrictEqual(empty.devices.memory, {mma2: UNKNOWN, simulator: UNKNOWN, persistence: null});
 assert.deepStrictEqual(empty.devices.replicator, {runtime: UNKNOWN, source: UNKNOWN, blocks: []});
 assert(Object.values(empty.diagnostics).every(value => value === UNAVAILABLE));
 assert.deepStrictEqual(empty.controls, {start: false, stop: false});
 console.log('empty diagnostics, global unknown, paths unavailable, controls disabled: checked');
 
 const live = mapDiagnostics({memory, replicator});
-assert.deepStrictEqual(live.devices.memory, {mma2: 'RUNNING', simulator: 'WAITING'});
+assert.deepStrictEqual(live.devices.memory, {mma2: 'RUNNING', simulator: 'WAITING', persistence: null});
 assert.strictEqual(live.devices.replicator.runtime, 'RUNNING');
 assert.strictEqual(live.devices.replicator.source, 'OK');
 assert.deepStrictEqual(live.devices.replicator.blocks, [
@@ -34,13 +34,32 @@ console.log('matching explicit per-device observations never imply global servic
 assert.deepStrictEqual(mapDiagnostics({memory: {...memory, fresh: false}, replicator: {...replicator, fresh: false}}).devices, empty.devices);
 assert.deepStrictEqual(mapDiagnostics({memory: {...memory, expectedName: 'Other'}, replicator: {...replicator, expectedName: 'Other'}}).devices, empty.devices);
 assert.deepStrictEqual(mapDiagnostics({memory: {fresh: true, expectedName: 'Sim-1', result: {status: {name: 'Sim-1', mma2_status: 'OK', device_status: 'RUNNING'}}}}).devices.memory,
-  {mma2: UNKNOWN, simulator: 'RUNNING'});
+  {mma2: UNKNOWN, simulator: 'RUNNING', persistence: null});
 assert.strictEqual(mapDiagnostics({replicator: {...replicator, result: {...repStatus, blocks: [{index: 99, running: true, source_status: 'OK'}]}}}).devices.replicator.blocks[0].source, UNKNOWN);
 assert.strictEqual(mapDiagnostics({replicator: {...replicator, result: {...repStatus, enabled: false}}}).devices.replicator.runtime, UNKNOWN);
 console.log('stale, wrong-device, unknown status and contradictory/malformed block fail closed: checked');
 
+// PERSIST-021: observational persistence health is surfaced and fails closed.
+const persisted = {fresh: true, expectedName: 'Sim-1', result: {status: {name: 'Sim-1', mma2_status: 'RUNNING', device_status: 'WAITING',
+  persistence: {configured: true, sealed: true, healthy: false, snapshot_health: 'ready', restore_outcome: 'raw_ingest_response'}}}};
+assert.deepStrictEqual(mapDiagnostics({memory: persisted}).devices.memory.persistence,
+  {configured: true, sealed: true, healthy: false, snapshot_health: 'ready', restore_outcome: 'raw_ingest_response'});
+const healthyPersist = {fresh: true, expectedName: 'Sim-1', result: {status: {name: 'Sim-1', mma2_status: 'RUNNING', device_status: 'RUNNING',
+  persistence: {configured: true, sealed: false, healthy: true, snapshot_health: 'ready', restore_outcome: 'none'}}}};
+assert.deepStrictEqual(mapDiagnostics({memory: healthyPersist}).devices.memory.persistence,
+  {configured: true, sealed: false, healthy: true, snapshot_health: 'ready', restore_outcome: 'none'});
+// Malformed / unknown persistence fields fail closed to UNKNOWN, never fabricated.
+assert.deepStrictEqual(mapDiagnostics({memory: {fresh: true, expectedName: 'Sim-1', result: {status: {name: 'Sim-1', mma2_status: 'RUNNING', device_status: 'WAITING',
+  persistence: {configured: 'yes', sealed: 1, healthy: null, snapshot_health: 'bogus', restore_outcome: 'made-up'}}}}}).devices.memory.persistence,
+  {configured: UNKNOWN, sealed: UNKNOWN, healthy: UNKNOWN, snapshot_health: UNKNOWN, restore_outcome: UNKNOWN});
+// A missing persistence block is reported as null, not fabricated.
+assert.strictEqual(mapDiagnostics({memory: {fresh: true, expectedName: 'Sim-1', result: {status: {name: 'Sim-1', mma2_status: 'RUNNING', device_status: 'WAITING'}}}}).devices.memory.persistence, null);
+// Persistence observation must never imply control authority.
+assert.deepStrictEqual(mapDiagnostics({memory: persisted}).controls, {start: false, stop: false});
+console.log('observational persistence health surfaced and fail-closed, with no control authority: checked');
+
 const failed = mapDiagnostics({memory: {error: {message: 'Simulator socket closed'}}, replicator: {error: {message: 'Replicator socket closed'}}});
-assert.deepStrictEqual(failed.devices.memory, {mma2: UNAVAILABLE, simulator: UNAVAILABLE});
+assert.deepStrictEqual(failed.devices.memory, {mma2: UNAVAILABLE, simulator: UNAVAILABLE, persistence: null});
 assert.strictEqual(failed.devices.replicator.runtime, UNAVAILABLE);
 assert.strictEqual(failed.devices.replicator.source, UNAVAILABLE);
 assert.deepStrictEqual(failed.errors, {memory: 'Simulator socket closed', replicator: 'Replicator socket closed'});

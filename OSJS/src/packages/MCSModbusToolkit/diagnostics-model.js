@@ -6,6 +6,11 @@ const UNKNOWN = 'UNKNOWN';
 const UNAVAILABLE = 'UNAVAILABLE';
 const SIM_STATES = new Set(['RUNNING', 'WAITING', 'STOPPED', 'ERROR', 'IDLE']);
 const SOURCE_STATES = new Set(['WAITING', 'OK', 'ERROR', 'DISABLED']);
+// Observational persistence health states (PERSIST-021). These are display-only
+// classifications of the runtime's reported persistence health; they never grant
+// control or bypass of restore/sealing gates.
+const PERSIST_SNAPSHOT_STATES = new Set(['ready', 'missing', 'invalid', 'incompatible', 'disabled', 'unsealed', 'empty']);
+const PERSIST_RESTORE_STATES = new Set(['none', 'disabled', 'unsealed', 'empty', 'missing_snapshot', 'invalid_snapshot', 'incompatible_snapshot', 'area_not_ready', 'unknown_area', 'raw_ingest_write', 'raw_ingest_response', 'incomplete', 'no_sealing_flag', 'unseal_write', 'unseal_response']);
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const state = (value, allowed) => allowed.has(value) ? value : UNKNOWN;
 const observed = item => record(item) && item.fresh === true &&
@@ -14,6 +19,21 @@ const observed = item => record(item) && item.fresh === true &&
 const failureText = item => record(item.error) && typeof item.error.message === 'string' &&
   item.error.message.trim() ? item.error.message : 'Runtime observation unavailable';
 
+// Observational persistence health mapping (PERSIST-021). Display-only: it
+// classifies the runtime's reported persistence health and never grants control
+// or bypass of restore/sealing gates. It fails closed to UNKNOWN for any
+// malformed field, and returns null when no persistence block was reported.
+const mapPersistenceHealth = persistence => {
+  if (!record(persistence)) return null;
+  return {
+    configured: typeof persistence.configured === 'boolean' ? persistence.configured : UNKNOWN,
+    sealed: typeof persistence.sealed === 'boolean' ? persistence.sealed : UNKNOWN,
+    healthy: typeof persistence.healthy === 'boolean' ? persistence.healthy : UNKNOWN,
+    snapshot_health: state(persistence.snapshot_health, PERSIST_SNAPSHOT_STATES),
+    restore_outcome: state(persistence.restore_outcome, PERSIST_RESTORE_STATES)
+  };
+};
+
 // Simulator status() returns {status:{name, device_status, mma2_status}}.
 // Replicator status() returns the device status directly, NOT {status}.
 // Neither response proves overall Docker service or MMA2 supervisor health.
@@ -21,7 +41,7 @@ const mapDiagnostics = ({memory, replicator} = {}) => {
   const view = {
     runtime: {mma2: UNKNOWN, simulator: UNKNOWN, replicator: UNKNOWN},
     devices: {
-      memory: {mma2: UNKNOWN, simulator: UNKNOWN},
+      memory: {mma2: UNKNOWN, simulator: UNKNOWN, persistence: null},
       replicator: {runtime: UNKNOWN, source: UNKNOWN, blocks: []}
     },
     errors: {memory: null, replicator: null},
@@ -38,6 +58,7 @@ const mapDiagnostics = ({memory, replicator} = {}) => {
     if (record(result) && result.name === memory.expectedName) {
       view.devices.memory.mma2 = state(result.mma2_status, SIM_STATES);
       view.devices.memory.simulator = state(result.device_status, SIM_STATES);
+      view.devices.memory.persistence = mapPersistenceHealth(result.persistence);
     }
   }
 

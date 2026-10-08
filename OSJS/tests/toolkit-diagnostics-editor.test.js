@@ -16,7 +16,8 @@ const all = node => [node, ...node.children.flatMap(all)];
 const text = node => all(node).map(entry => entry.textContent).join(' ');
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const memory = {load: async () => ({document: {devices: [{name: 'Sim-D'}]}}),
-  status: async () => ({status: {name: 'Sim-D', mma2_status: 'RUNNING', device_status: 'IDLE'}})};
+  status: async () => ({status: {name: 'Sim-D', mma2_status: 'RUNNING', device_status: 'IDLE',
+    persistence: {configured: true, sealed: true, healthy: false, snapshot_health: 'ready', restore_outcome: 'raw_ingest_response'}}})};
 let offline = false;
 const replicator = {load: async () => ({document: {devices: [{name: 'Rep-D'}]}}),
   status: async () => offline ? Promise.reject(new Error('replicator socket unavailable')) : ({
@@ -37,6 +38,9 @@ const replicator = {load: async () => ({document: {devices: [{name: 'Rep-D'}]}})
   assert(!buttons[0].handlers.click && !buttons[1].handlers.click);
   assert.match(text(root), /Sim-D \(first of 1 canonical device/);
   assert.match(text(root), /Memory simulation:.*IDLE/);
+  assert.match(text(root), /Memory persistence sealed:.*true/);
+  assert.match(text(root), /Memory persistence healthy:.*false/);
+  assert.match(text(root), /Memory persistence restore:.*raw_ingest_response/);
   assert.match(text(root), /Rep-D \(first of 1 canonical device/);
   assert.match(text(root), /Replicator source:.*ERROR/);
   assert.match(text(root), /connection refused/);

@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/tamzrod/MCS.OSJS/mma2composer"
 )
 
 type ApplyPath string
@@ -140,6 +142,16 @@ type DeviceRuntimeStatus struct {
 	RawError string `json:"raw_ingest_error,omitempty"`
 	TotalPoints uint32 `json:"total_points"`
 	FC map[string]FCRuntimeStatus `json:"fc"`
+	// Persistence is read-only observational persistence health (PERSIST-021).
+	// It never controls restore/sealing and grants the UI no bypass.
+	Persistence *mma2composer.PersistenceRuntimeStatus `json:"persistence,omitempty"`
+}
+
+// persistenceConfigured reports whether persistence is enabled for a device's
+// MMA2 memory. It reads only the configured enablement flag; it never inspects
+// or alters runtime restore/sealing state.
+func persistenceConfigured(device DeviceDefinition) bool {
+	return device.MMA2.Persistence != nil && device.MMA2.Persistence.Enabled != nil && *device.MMA2.Persistence.Enabled
 }
 
 func needsRandomIngest(device DeviceDefinition) bool {
@@ -160,6 +172,11 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 	if !ok { return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name) }
 	status := DeviceRuntimeStatus{Name: name, Device: "STOPPED", MMA2: "STOPPED", RawIngest: "WAITING", RawError: rawError, FC: make(map[string]FCRuntimeStatus)}
 	status.TotalPoints = uint32(device.MMA2.FC1.Count) + uint32(device.MMA2.FC2.Count) + uint32(device.MMA2.FC3.Count) + uint32(device.MMA2.FC4.Count)
+	// Read-only observational persistence health (PERSIST-021), derived from the
+	// configured persistence enablement only; it never changes restore or sealing
+	// state and cannot be used to bypass either.
+	persistence := mma2composer.PersistenceRuntimeStatusConfigured(persistenceConfigured(device))
+	status.Persistence = &persistence
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", fmt.Sprint(device.MMA2.Port)), 150*time.Millisecond)
 	if err == nil { status.MMA2 = "RUNNING"; _ = conn.Close() }
 	if !ready {

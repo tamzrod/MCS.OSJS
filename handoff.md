@@ -1,3 +1,8 @@
+## Current NP assignment — operator authorization 2026-10-08
+NP-01 completed by OpenHands JR DEV at 757fe00b. OpenHands is paused. **Codex JR DEV is explicitly assigned NP-02, NP-03, NP-04, and NP-06** (CODE/workflow scopes only). **NP-05 is reserved for Independent JR TEST/VERIFY**; Codex JR DEV must not self-certify NP-05. Current task: NP-02. One task per invocation, STOP after each task. This explicit assignment supersedes the prior OpenHands-only identity for the NP workstream, without changing historical PERSIST assignments.
+
+---
+
 # Current human-approved workstream — MMA2 native persistence migration (2026-10-08)
 
 **CURRENT: NP-02 — Persistence UI.** Six packets NP-01..NP-06 are PROMOTED/QUEUED under `workflow/active_work/np-*.md`. **NP-01 is CODE COMPLETE and delivered (see below).** Recursive continuation is disabled for this workstream: execute one packet per OPERATION CWAL invocation and STOP after its handoff. Advance only after predecessor completion and human/current-task routing. The older PERSIST-001..022 / R01..R05 / UI01 workstream is completed historical implementation and is superseded for new persistence development. Do NOT resume legacy persistence continuation or recursive task execution. MMA2 PR #22 owns native persistence runtime. Keep unrelated workflows intact.

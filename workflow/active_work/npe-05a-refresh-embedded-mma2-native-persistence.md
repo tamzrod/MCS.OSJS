@@ -1,6 +1,6 @@
 # NPE-05A — Refresh Embedded MMA2 Native Persistence Runtime
 
-Status: PROMOTED / CURRENT
+Status: CODE COMPLETE — delivered on main at `1ad2510312ccba0a09024b70c53a1e9945689957` (OpenHands JR DEV); awaiting independent verification (NPE-06)
 Stage: CODE
 Owner: OpenHands JR DEV
 Previous: NPE-05
@@ -90,3 +90,27 @@ Required self-checks:
 Record exact changed paths, commands, results and delivered SHA.
 
 After genuine delivery, update handoff so NPE-06 becomes current Independent TEST/VERIFY and STOP at the identity boundary.
+
+## Delivery evidence (OpenHands JR DEV)
+
+Delivered SHA: `1ad2510312ccba0a09024b70c53a1e9945689957` on `main` (base `cd6c940`). 94 files changed, +23559/-1365.
+
+Method: cloned the donor `tamzrod/MMA2`, checked out the pinned commit `a38687574645ada94c7a7f844152932afb09f147`, and overlaid its file set (excluding `.git/` and `.github/`) onto the repository-root `MMA2/`, preserving the MCS-added files absent from the donor revision.
+
+Acceptance self-checks:
+1. `MMA2/internal/config/config.go` contains native per-memory persistence configuration — `MemoryDefinition.Persistence *MemoryPersistenceConfig` (and a root `Persistence` block explicitly rejected). ✓
+2. `MMA2/internal/persistence/` exists and builds — `cd MMA2 && go build ./internal/persistence/` → BUILD OK. ✓
+3. MMA2 builds from repository-owned source — `cd MMA2 && go build ./...` → BUILD OK. ✓
+4. MMA2 native persistence tests pass — `cd MMA2 && go test -mod=readonly ./...` → all `ok`, including `mma2/internal/persistence` (0.669s), `mma2/internal/config`, `mma2/pkg/configvalidate`. ✓
+5. MCS composer/simulator/replicator/mma2raw build and tests pass against the refreshed contract — `mma2composer`, `simulator` (incl. `cmd/modbus-simulator-runtime`), `replicator` (incl. `cmd/modbus-replicator-runtime`), `mma2raw` all `ok`, exit 0; no reconciliation breakage required. ✓
+6. Electron focused tests remain green — `cd electron && node --test test/*.test.js` → 60 PASS, 0 FAIL. ✓
+7. Source search proves the native persistence runtime resides inside `MMA2/` (`MMA2/internal/persistence/`, `MMA2/internal/config/persistence*.go`); `electron/` retains no persistence runtime (removed in NPE-05); no Electron/OS.js/Simulator/Replicator references inside `MMA2/internal|cmd|pkg`. ✓
+8. Provenance updated — `MMA2/README.md` and `THIRD_PARTY_NOTICES.md` record donor `a38687574645ada94c7a7f844152932afb09f147`. ✓
+
+Notes:
+- `go.mod`, `go.sum` and `LICENSE` were identical in the pinned donor and are unchanged.
+- MCS-local additions preserved: `cmd/mma2-supervisor/`, `internal/restartwatch/`, `pkg/configvalidate/`, `Dockerfile.supervised`, `testdata/smoke-test.yaml`, `docs/MCS_RBE_INTEGRATION.md`, and the MCS component `.gitignore`.
+- `gofmt -l` lists 39 donor files as unformatted; this is the authoritative donor state and was intentionally not reformatted (reformatting would deviate from the pinned donor).
+- Observation for a later task, not a change in this refresh: the previously-built Simulator/`mma2composer` external persistence orchestration (PERSIST-012..022, R01..R05, e.g. `simulator/persistence_bootstrap.go`, `persistence_startup.go`, `persistence_watchdog.go`, `mma2composer/persistence_*.go`) still exists and runs at simulator apply/startup beside MMA2. Under the current contract ("MMA2 is the sole persistence runtime owner"), removing that stale external orchestration is future work (the NPO-03/legacy-cleanup lineage), not part of this donor refresh.
+
+This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.

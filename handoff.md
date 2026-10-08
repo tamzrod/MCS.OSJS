@@ -2,9 +2,19 @@
 
 **JR DEV OWNER: OpenHands.**
 
-**CURRENT: NPE-05A — Refresh Embedded MMA2 Native Persistence Runtime**
+**CURRENT: NPE-06 — Electron Native Persistence Verification** — Stage: TEST/VERIFY, Owner: **Independent JR TEST/VERIFY** (identity boundary).
 
-NPE-06 is BLOCKED by stale embedded MMA2 source and must not execute again until NPE-05A is delivered.
+NPE-05A is CODE COMPLETE and delivered on `main` at `1ad2510312ccba0a09024b70c53a1e9945689957` (OpenHands JR DEV, base `cd6c940`). The embedded `MMA2/` component was refreshed from the pinned donor `tamzrod/MMA2` @ `a38687574645ada94c7a7f844152932afb09f147`, so native per-memory persistence now resides inside `MMA2/internal/persistence/` and the NPE-06 blocker is cleared. MMA2, composer, simulator and replicator builds/tests and the Electron suite all pass.
+
+NPE-06 must be executed as **Independent JR TEST/VERIFY** in a separate assignment/invocation against the exact NPE-06 packet; JR DEV MUST NOT execute or self-certify it. A separate invocation/assignment as Independent JR re-reads the exact packet and executes it.
+
+All Electron CODE packets (NPE-01..NPE-05, NPE-05A) are now CODE COMPLETE and delivered. Electron must be independently verified by NPE-06 before any NPO-* product task begins.
+
+NPE-01 was accepted as delivered at `b868c2d2d8cb132d52498cb47105b1bd8c095551`.
+NPE-02 was accepted as delivered at `a90f52a1b7ce2830dbc2aa8b6a65041962f21355`.
+NPE-03 was accepted as delivered at `817a6948d7db5bcf666a1e6acf00b1545f9815e8`.
+NPE-04 was accepted as delivered at `b4580d6fa3bbee547caea4680aacd1a8c812b48b`.
+NPE-05 was accepted as delivered at `10a4e22aa5350868dac13796ffe78a875fcea641`.
 
 ### Root cause confirmed
 
@@ -28,8 +38,8 @@ NPE-02  COMPLETE
 NPE-03  COMPLETE
 NPE-04  COMPLETE
 NPE-05  COMPLETE
-→ NPE-05A Refresh embedded MMA2 native persistence   ← CURRENT CODE
-→ NPE-06 Independent Electron native persistence verification
+NPE-05A COMPLETE — embedded MMA2 refreshed from donor a386875
+→ NPE-06 Independent Electron native persistence verification   ← CURRENT (TEST/VERIFY, identity boundary)
 → NPO-01 OS.js Toolkit persistence UI
 → NPO-02 OS.js Toolkit config wiring
 → NPO-03 OS.js Toolkit cleanup/parity

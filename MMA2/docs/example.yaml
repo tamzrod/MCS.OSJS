@@ -3,6 +3,7 @@
 # Demonstrates:
 # - Multiple listeners (ports)
 # - Multiple Unit IDs per port
+# - Per-memory Modbus FC43 / MEI14 device identification
 # - Access control with explicit allow_fc
 # - State sealing (on selected units only)
 #
@@ -13,6 +14,10 @@
 # Defaults to false when absent.
 # debug: true
 
+# Native persistence is configured per memory entry only.
+# Schema: listeners[].memory[].persistence.
+# There is no root-level persistence configuration.
+
 listeners:
   # ------------------------------------------------------------
   # Listener on standard Modbus TCP port 502
@@ -22,19 +27,22 @@ listeners:
 
     memory:
       # ========================================================
-      # UNIT ID 1 — OPEN DEVICE (Beginner-friendly)
-      # ========================================================
-      # Purpose:
-      # - First-time users
-      # - Inverters / meters
-      # - "It just works" example
-      #
-      # Behavior:
-      # - Any IP
-      # - All Modbus function codes allowed
-      # - NO state sealing
+      # UNIT ID 1 — OPEN DEVICE
       # ========================================================
       - unit_id: 1
+
+        # Per-memory persistence (disabled when omitted).
+        # persistence:
+        #   enabled: true
+        #   directory: /var/lib/mma2/unit1
+        # Omit ranges to persist all areas allocated to this memory.
+
+        # Optional FC43 identity for this (Port, UnitID).
+        # Omitted fields use compiled defaults.
+        fc43:
+          vendor_name: "github.com/tamzrod"
+          product_code: "MMA2"
+          major_minor_revision: "2.0"
 
         coils:
           start: 0
@@ -52,34 +60,24 @@ listeners:
           rules:
             - id: allow-all
               source_ip:
-                - 0.0.0.0/0      # all IPv4
-                - ::/0           # all IPv6
-                - 127.0.0.1     # localhost
-                - ::1           # localhost IPv6
-              allow_fc: [1,2,3,4,5,6,15,16]       # rw == full Modbus access
+                - 0.0.0.0/0
+                - ::/0
+                - 127.0.0.1
+                - ::1
+              allow_fc: [1,2,3,4,5,6,15,16,43]
 
       # ========================================================
-      # UNIT ID 2 — CONTROLLED DEVICE (Advanced)
-      # ========================================================
-      # Purpose:
-      # - Setpoints
-      # - PPC / EMS interfaces
-      #
-      # Behavior:
-      # - Read-only for LAN
-      # - Write-only for localhost / controller
-      # - State sealing enabled
+      # UNIT ID 2 — CONTROLLED DEVICE
       # ========================================================
       - unit_id: 2
 
-        # --------------------
-        # STATE SEALING
-        # --------------------
-        # Default: sealed (flag = 0)
-        # Unseal by writing 1 to coil 0 via RAW INGEST
+        # Independent identity for Unit ID 2.
+        # Vendor and revision fall back to compiled defaults.
+        fc43:
+          product_code: "MMA2-Controlled"
+
         state_sealing:
           enabled: true
-          # IMPORTANT: area must be "coil" (singular) - this is the ONLY supported value
           area: coil
           address: 0
           exception: 0x06
@@ -94,30 +92,31 @@ listeners:
 
         policy:
           rules:
-            # Local controller — full control
             - id: controller-rw
               source_ip:
                 - 127.0.0.1
                 - ::1
-              allow_fc: [1,2,3,4,5,6,15,16]
+              allow_fc: [1,2,3,4,5,6,15,16,43]
 
-            # Plant LAN — read-only
             - id: lan-read
               source_ip:
                 - 192.168.2.0/24
-              allow_fc: [1,3,4]  # Read coils (FC1), Read holding regs (FC3), Read input regs (FC4)
+              allow_fc: [1,3,4,43]
 
   # ------------------------------------------------------------
-  # Second listener on port 503 (example: test / lab network)
+  # Second listener on port 504
   # ------------------------------------------------------------
   - id: lab-modbus
     listen: ":504"
 
     memory:
-      # ========================================================
-      # UNIT ID 1 — LAB DEVICE
-      # ========================================================
+      # Same Unit ID as the first listener, but a different
+      # (Port, UnitID), so it may expose a different FC43 identity.
       - unit_id: 1
+
+        fc43:
+          vendor_name: "github.com/tamzrod"
+          product_code: "MMA2-Lab"
 
         holding_registers:
           start: 0
@@ -128,4 +127,4 @@ listeners:
             - id: lab-read
               source_ip:
                 - 10.10.0.0/16
-              allow_fc: [3,4]  # Read holding regs (FC3), Read input regs (FC4)
+              allow_fc: [3,4,43]

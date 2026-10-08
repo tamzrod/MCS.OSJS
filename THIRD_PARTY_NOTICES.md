@@ -55,17 +55,23 @@ Update this document whenever a new third-party component is incorporated or an 
 
 ## MMA2 — deterministic Modbus memory appliance
 
-Additional bounded RBE import: `tamzrod/mma2` commit
+Additional bounded RBE import: `tamzrod/MMA2` commit
 `84934d540b7201f96f1ab411177bc62ec6d2165c`, under the same retained Apache-2.0 license.
 Exact scope and local adaptations are recorded in `MMA2/docs/MCS_RBE_INTEGRATION.md`.
-The original harvest attribution below remains historical provenance, not a claim that
-the entire embedded component matches either donor revision.
 
-**Source:** `tamzrod/mma2` (main( — project-owned donor。
+**Component refresh (native persistence):** the embedded `MMA2/` component was refreshed
+from `tamzrod/MMA2` (main) at commit
+`a38687574645ada94c7a7f844152932afb09f147`, which contains the implemented native
+per-memory persistence runtime (`internal/persistence/`, `internal/config/persistence*.go`,
+`docs/PERSISTENCE.md`). This supersedes the original harvest revision below for the
+build/runtime source; the original harvest attribution remains historical provenance.
+
+**Source:** `tamzrod/MMA2` (main) — project-owned donor.
 
 
 
-**Exact material harvested** into `MMA2/` at commit `12311c1d06510840b42723a83438574e6b3ed06f`:
+**Exact material harvested** into `MMA2/` at commit `a38687574645ada94c7a7f844152932afb09f147`
+(original harvest `12311c1d06510840b42723a83438574e6b3ed06f`):
 
 - Build/runtime source (`cmd/`, `internal/`(;
 - Build scaffolding (`go.mod`, `go.sum`, `Dockerfile`, `.gitignore`(;

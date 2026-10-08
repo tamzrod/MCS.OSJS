@@ -2,7 +2,7 @@
 package main
 
 import (
-	"io"
+	"context"
 	"log"
 	"net"
 	"net/http"
@@ -16,28 +16,16 @@ import (
 	"mma2/internal/authority"
 	"mma2/internal/config"
 	"mma2/internal/ingress"
+	"mma2/internal/memorycore"
 	"mma2/internal/notify"
+	"mma2/internal/persistence"
 	"mma2/internal/rbe"
 	"mma2/internal/transport/modbus"
 	"mma2/internal/transport/rawingest"
 	"mma2/internal/version"
-	"mma2/pkg/configvalidate"
 )
 
 func main() {
-	if len(os.Args) == 2 && os.Args[1] == "--validate-stdin" {
-		data, err := io.ReadAll(io.LimitReader(os.Stdin, 4*1024*1024+1))
-		if err != nil {
-			log.Fatal(err)
-		}
-		if len(data) > 4*1024*1024 {
-			log.Fatal("configuration exceeds 4 MiB")
-		}
-		if err := configvalidate.YAML(data); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
 	if len(os.Args) != 2 {
 		log.Fatalf("usage: mma2 <config.yaml>")
 	}
@@ -56,6 +44,20 @@ func main() {
 		log.Fatalf("config validation failed: %v", err)
 	}
 
+	identityValues, err := config.BuildDeviceIdentities(cfg)
+	if err != nil {
+		log.Fatalf("device identity validation failed: %v", err)
+	}
+	configuredIdentities := make(map[memorycore.MemoryID]modbus.DeviceIdentity, len(identityValues))
+	for mid, values := range identityValues {
+		identity, err := modbus.NewDeviceIdentity(values.VendorName, values.ProductCode, values.MajorMinorRevision)
+		if err != nil {
+			log.Fatalf("device identity construction failed for %v: %v", mid, err)
+		}
+		configuredIdentities[mid] = identity
+	}
+	identities := modbus.NewDeviceIdentities(configuredIdentities)
+
 	rbeRules, err := config.BuildRBERules(cfg)
 	if err != nil {
 		log.Fatalf("RBE validation failed: %v", err)
@@ -64,6 +66,41 @@ func main() {
 	store, err := config.BuildMemoryStore(cfg)
 	if err != nil {
 		log.Fatalf("memory build failed: %v", err)
+	}
+
+	// Native persistence is exclusively configured on each memory definition.
+	// Each enabled identity owns its own manager, directory and backup schedule.
+	persistPlans, err := config.BuildPerMemoryPersistencePlans(cfg)
+	if err != nil {
+		log.Fatalf("persistence validation failed: %v", err)
+	}
+	var persistenceShutdown []func()
+	for mid, plan := range persistPlans {
+		mgr, err := persistence.New(plan, map[memorycore.MemoryID]config.MemoryAllocation{
+			mid: config.BuildMemoryAllocations(cfg)[mid],
+		})
+		if err != nil {
+			log.Fatalf("persistence init failed (port=%d unit=%d): %v", mid.Port, mid.UnitID, err)
+		}
+		if err := os.MkdirAll(mgr.Directory(), 0o755); err != nil {
+			log.Fatalf("persistence: create directory %s: %v", mgr.Directory(), err)
+		}
+		mem, err := store.MustGet(mid)
+		if err != nil {
+			log.Fatalf("persistence memory missing (port=%d unit=%d): %v", mid.Port, mid.UnitID, err)
+		}
+		if err := mgr.RestoreMemory(mid, mem); err != nil {
+			log.Fatalf("persistence restore failed (failing closed): %v", err)
+		}
+		mgr.AttachMemory(mid, mem)
+		scheduler := persistence.NewScheduler(mgr)
+		scheduler.Start(context.Background())
+		mgr.SetNotifier(scheduler.Notify)
+		persistenceShutdown = append(persistenceShutdown, scheduler.Close)
+		log.Printf("persistence ready: port=%d unit=%d directory=%s", mid.Port, mid.UnitID, mgr.Directory())
+	}
+	if len(persistPlans) == 0 {
+		log.Println("persistence disabled (no enabled memories)")
 	}
 	auth := authority.New()
 	policies, err := config.BuildAuthorityPolicies(cfg)
@@ -76,6 +113,7 @@ func main() {
 	log.Println("authority policies loaded")
 
 	var shutdown []func()
+	shutdown = append(shutdown, persistenceShutdown...)
 
 	var notifier *notify.Engine
 	if cfg.RBE == nil {
@@ -139,18 +177,18 @@ func main() {
 
 	for _, gate := range cfg.Ingress {
 		onModbus := func(conn net.Conn) {
-			modbus.HandleConnWithRBE(conn, store, auth, notifier, observer, ae, cfg.Debug)
+			modbus.HandleConnWithIdentities(conn, store, auth, notifier, observer, ae, cfg.Debug, identities)
 		}
 		onRawIngest := func(conn net.Conn) {
 			rawingest.HandleConnWithRBE(conn, store, notifier, observer)
 		}
 		l := ingress.NewListener(gate)
 		shutdown = append(shutdown, func() { _ = l.Close() })
-		go func() {
-			if err := l.ListenAndServe(onModbus, onRawIngest); err != nil {
-				log.Fatalf("ingress %s failed: %v", gate.ID, err)
+		go func(g *ingress.Listener, gateID string) {
+			if err := g.ListenAndServe(onModbus, onRawIngest); err != nil {
+				log.Printf("ingress %s stopped: %v", gateID, err)
 			}
-		}()
+		}(l, gate.ID)
 	}
 	log.Println("mma2 ingress started")
 

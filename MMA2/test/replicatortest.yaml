@@ -1,0 +1,187 @@
+# schema/mma_nested_model.zs
+# ============================================
+# ZENO SCHEMA – MMA Nested Configuration Model
+# ============================================
+
+zeno_schema: "2.2"
+application: "mma"
+format: "nested"
+
+root:
+  type: object
+  required:
+    - listeners
+  properties:
+
+    listeners:
+      type: array
+      minItems: 1
+      items:
+        type: object
+        required:
+          - id
+          - port
+          - memory
+        properties:
+
+          id:
+            type: string
+            unique: sibling
+
+          port:
+            type: integer
+            unique: sibling
+
+          memory:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              required:
+                - unit_id
+                - holding_registers
+                - policy
+              properties:
+
+                unit_id:
+                  type: integer
+                  unique: sibling
+
+                holding_registers:
+                  type: object
+                  required:
+                    - start
+                    - count
+                  properties:
+                    start:
+                      type: integer
+                    count:
+                      type: integer
+
+                input_registers:
+                  type: object
+                  properties:
+                    start:
+                      type: integer
+                    count:
+                      type: integer
+
+                coils:
+                  type: object
+                  properties:
+                    start:
+                      type: integer
+                    count:
+                      type: integer
+
+                discrete_inputs:
+                  type: object
+                  properties:
+                    start:
+                      type: integer
+                    count:
+                      type: integer
+
+                policy:
+                  type: object
+                  required:
+                    - rules
+                  properties:
+
+                    rules:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: object
+                        required:
+                          - id
+                          - source_ip
+                          - allow_fc
+                        properties:
+
+                          id:
+                            type: string
+                            unique: sibling
+
+                          source_ip:
+                            type: array
+                            minItems: 1
+                            items:
+                              type: string
+
+                          allow_fc:
+                            type: array
+                            minItems: 1
+                            items:
+                              type: integer
+
+
+    state_sealing:
+      type: object
+      properties:
+
+        area:
+          type: string
+
+        start:
+          type: integer
+
+        count:
+          type: integer
+
+
+    notify:
+      type: object
+      properties:
+
+        holding_registers:
+          type: array
+          items:
+            type: object
+            properties:
+              start:
+                type: integer
+              count:
+                type: integer
+              name:
+                type: string
+                unique: sibling
+
+        input_registers:
+          type: array
+          items:
+            type: object
+            properties:
+              start:
+                type: integer
+              count:
+                type: integer
+              name:
+                type: string
+                unique: sibling
+
+        coils:
+          type: array
+          items:
+            type: object
+            properties:
+              start:
+                type: integer
+              count:
+                type: integer
+              name:
+                type: string
+                unique: sibling
+
+        discrete_inputs:
+          type: array
+          items:
+            type: object
+            properties:
+              start:
+                type: integer
+              count:
+                type: integer
+              name:
+                type: string
+                unique: sibling

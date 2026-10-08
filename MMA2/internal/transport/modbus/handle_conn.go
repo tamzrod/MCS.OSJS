@@ -21,6 +21,11 @@ func HandleConn(conn net.Conn, store *memorycore.Store, auth *authority.Authorit
 
 // HandleConnWithRBE preserves the order: state sealing, authority, dispatch.
 func HandleConnWithRBE(conn net.Conn, store *memorycore.Store, auth *authority.Authority, notifier *notify.Engine, observer *rbe.Engine, ae *accessevents.Engine, debug bool) {
+	HandleConnWithIdentities(conn, store, auth, notifier, observer, ae, debug, nil)
+}
+
+// HandleConnWithIdentities selects startup metadata by MemoryID after sealing and authority.
+func HandleConnWithIdentities(conn net.Conn, store *memorycore.Store, auth *authority.Authority, notifier *notify.Engine, observer *rbe.Engine, ae *accessevents.Engine, debug bool, identities *DeviceIdentities) {
 	defer conn.Close()
 	localAddr, ok := conn.LocalAddr().(*net.TCPAddr)
 	if !ok {
@@ -65,7 +70,17 @@ func HandleConnWithRBE(conn net.Conn, store *memorycore.Store, auth *authority.A
 		}
 		if ae != nil { ae.Record(srcIPStr, req.Port, req.UnitID, req.FunctionCode, true) }
 
-		pdu := DispatchMemoryWithRBE(store, notifier, observer, srcIPStr, req)
+		var pdu []byte
+		if req.FunctionCode == 0x2b {
+			identity, ok := identities.lookup(mid, store)
+			if !ok {
+				pdu = BuildExceptionPDU(req.FunctionCode, 0x02)
+			} else {
+				pdu = identity.ReadDeviceIdentification(req.Payload)
+			}
+		} else {
+			pdu = DispatchMemoryWithRBE(store, notifier, observer, srcIPStr, req)
+		}
 		if pdu == nil { return }
 		frame := BuildResponse(req, pdu)
 		if _, err := conn.Write(frame); err != nil {

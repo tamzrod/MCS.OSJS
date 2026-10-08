@@ -1,23 +1,28 @@
 # MMA2 — Deterministic Modbus Memory Appliance
 
 Repository-root component boundary for MCS.OSJS, sourced from the project-owned donor
-`tamzrod/mma2`. MMA2 is a **deterministic memory appliance** with strict and visible
-boundaries (predictability, isolation, failure containment(; config is loaded once at
+`tamzrod/MMA2`. MMA2 is a **deterministic memory appliance** with strict and visible
+boundaries: predictability, isolation, failure containment. Config is loaded once at
 startup, immutable at runtime, and the sole source of truth. Four conceptual layers:
 Configuration, Core Memory, Transport Adapters, Process Runtime. Full donor architecture
-documentation retailed in `docs/` (00_OVERVIEW, 02_ARCHITECTURE, 04_CONFIGURATION,
-05_MEMORY_MODEL, 06_TRANSPORTS, 07_FAILURE_MODEL, CONFIGURATION_MANUAL; RAW_INGEST{,.
+documentation is retained in `docs/` (00_OVERVIEW, 02_ARCHITECTURE, 04_CONFIGURATION,
+05_MEMORY_MODEL, 06_TRANSPORTS, 07_FAILURE_MODEL, CONFIGURATION_MANUAL, RAW_INGEST,
+PERSISTENCE).
 
-## Provenance (donor harvest
+## Provenance (donor harvest)
 
-- Source: `tamzrod/mma2` (main( at commit `12311c1d06510840b42723a83438574e6b3ed06f`.
-- License: Apache-2.0 (see `LICENSE` in this directory(; compatible with the MCS.OSJS
-  Apache-2.0 project license; retain this notice per the harvest gate..
-- Imported material:   build/runtime source (`cmd/`, `internal/`(, build scaffolding
-  (`go.mod`, `go.sum`, `Dockerfile`, `.gitignore`(, `README.md`, `docs/` (needed for
-  MMA2 configuration/run semantics(, and the required `LICENSE` notice..
-- Excluded:   prebuilt donor `mma2` binary (build artifact; not source( and `test/` e2e
-  scaffolding (not required to build or run this component..
+- Source: `tamzrod/MMA2` (main) at commit `a38687574645ada94c7a7f844152932afb09f147`.
+- License: Apache-2.0 (see `LICENSE` in this directory); compatible with the MCS.OSJS
+  Apache-2.0 project license; retain this notice per the harvest gate.
+- Imported material: build/runtime source (`cmd/`, `internal/`, `tools/`, `benchmark/`),
+  build scaffolding (`go.mod`, `go.sum`, `Dockerfile`, `.gitignore`), `README.md`
+  (rewritten as the MCS component doc; donor architecture content preserved via `docs/`),
+  `docs/` (needed for MMA2 configuration/run semantics), and the required `LICENSE` notice.
+- MCS-local additions not present in the donor revision: `cmd/mma2-supervisor/`,
+  `internal/restartwatch/`, `pkg/configvalidate/` (a composer-facing validation shim),
+  `Dockerfile.supervised`, `testdata/smoke-test.yaml` and `docs/MCS_RBE_INTEGRATION.md`;
+  these are maintained by MCS.OSJS and preserved across donor refreshes.
+- Excluded: prebuilt donor `mma2` binary (build artifact; not source).
 - Recorded in `THIRD_PARTY_NOTICES.md` per the MCS.OSJS licensing policy..
 
 ## Boundary

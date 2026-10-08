@@ -43,7 +43,7 @@ This queue is selected. PERSIST-R03 CODE is complete and delivered by this invoc
 Autonomous successor chain is mandatory after genuine delivery:
 `R01 → R02 → R03 → UI01 → R04 → R05 → PERSIST-022 independent JR`.
 
-Do not request a second human promotion or task-selection confirmation for R02..R05/UI01: they are already human-promoted. Execute exactly one product task per invocation, deliver it, arm its named successor for the next invocation, then STOP. Do not skip a blocked/failed task.
+Do not request a second human promotion or task-selection confirmation for R02..R05/UI01: they are already human-promoted. **Recursive JR DEV continuation is enabled**: after each successful CODE delivery, record/push it, activate the named successor, perform the context-reset checkpoint, and continue within the same OPERATION CWAL invocation. Do not skip a blocked/failed task. Stop before executing PERSIST-022 because VERIFY requires independent JR identity.
 
 ## Architectural invariants
 - Persistence requires State Sealing.
@@ -66,4 +66,4 @@ For this already human-promoted queue, OpenHands JR DEV may autonomously:
 - mark the current packet complete;
 - assign the next eligible already-promoted CODE/DISCOVERY packet to OpenHands JR DEV for the **next invocation**.
 
-It must still execute only one product task per invocation and STOP after preparing the successor. TEST/VERIFY packets switch to independent JR mode and require their exact packet; JR DEV does not certify them.
+It may recursively execute successive already-promoted CODE/DISCOVERY packets in one OPERATION CWAL invocation when handoff explicitly enables recursive continuation. Each task must still be independently delivered/recorded before the next begins, with a context-reset checkpoint between tasks. TEST/VERIFY packets switch to independent JR mode and terminate JR DEV recursion; JR DEV does not certify them.

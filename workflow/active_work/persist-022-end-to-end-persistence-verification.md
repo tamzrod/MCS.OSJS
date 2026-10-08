@@ -1,6 +1,6 @@
 # PERSIST-022 — End-to-End Persistence Verification
 
-Status: PINNED — independent-JR packet ready in handoff.md; JR DEV must STOP before executing
+Status: VERIFY PASS — independent JR on 2026-10-08
 Stage: VERIFY
 Owner: OpenHands / independent JR
 Previous: PERSIST-R05
@@ -20,8 +20,27 @@ No production/customer data, no source fixes, no invented commands, no global se
 2. Observe that Modbus access remains sealed until restoration completes and restored values are correct after unseal.
 3. Exercise at least one authorized failure case showing failed restore remains sealed, if included in the promoted exact packet.
 
-## Evidence / handoff
-JR changes no product source, follows `operation cwal.md`, captures genuine evidence and STOPS after verdict.
+## Independent JR evidence
+
+Verdict: **PASS**
+
+Tested HEAD: `6175a77688a85e4aec4706c9e01079fa235f7963`  
+Pinned product checkpoint: `c8f31b2443b69201f36464db72497ed8271aeb7d`
+
+Executed once, in order:
+
+1. `cd simulator && go test -mod=readonly -count=1 ./...` → PASS, exit 0.
+2. `cd simulator && MCS_RUN_PERSIST_E2E=1 go test -mod=readonly -count=1 -run TestPersistenceDisposableEndToEnd -v .` → PASS, exit 0.
+
+Observed lifecycle:
+- first boot without snapshot stayed sealed and Modbus read was rejected with `0x06`;
+- live value `0x1234` was written and persisted;
+- restart began sealed and rejected Modbus while sealed;
+- startup restore completed, verified all required areas, and final unseal committed last;
+- runtime reported healthy/unsealed and Modbus returned restored `0x1234`;
+- corrupted snapshot failed closed, remained sealed, reported a classified non-none failure, and Modbus remained rejected with `0x06`.
+
+Post-check: working tree clean; changes after pinned checkpoint were workflow-only; no stray harness/MMA2 processes; disposable temp resources cleaned. Independent JR changed no source or workflow files; report was chat-only per pinned packet.
 
 ## Dependencies
 Requires genuine completion of the already-promoted continuation chain:
@@ -35,4 +54,4 @@ JR DEV must not execute or self-certify PERSIST-022.
 0/2/0/2/2=6.
 
 ## CWAL
-Human promotion is already granted, but execution is dependency-gated. Do not run this packet until genuine PERSIST-R05 delivery has pinned the exact safe independent-JR execution packet. After R05, JR DEV may activate this packet for the next invocation but must STOP; the next invocation runs under independent JR identity.
+VERIFY complete — PASS. This packet is closed. No further persistence task is activated.

@@ -146,28 +146,24 @@ const captureInitialSnapshots = async (root, previousDoc, editedDoc) => {
   for (const after of editedDoc.devices || []) {
     if (!enabled(after)) continue;
 
-    // A previous failed Save & Apply may already have persisted
-    // persistence.enabled=true even though no initial snapshot was ever
-    // created. Snapshot presence/validity, not the checkbox history, is the
-    // authoritative bootstrap gate.
-    if (snapshotsComplete(root, after)) continue;
-
     const old = before.get(after.name);
-    if (!old) throw new Error(`${after.name}: cannot enable persistence before the memory has a running instance to snapshot`);
+    if (!old) throw new Error(`${after.name}: persistence Save & Apply requires a running memory to snapshot`);
     if (num(old.mma2.port) !== num(after.mma2.port) || num(old.mma2.unit_id) !== num(after.mma2.unit_id)) {
-      throw new Error(`${after.name}: enable persistence before changing Port/Unit ID`);
+      throw new Error(`${after.name}: snapshot current persistence state before changing Port/Unit ID`);
     }
     for (const spec of AREAS) {
       const oldArea = old.mma2[spec.fc] || {start: 0, count: 0};
       const newArea = after.mma2[spec.fc] || {start: 0, count: 0};
       if (num(oldArea.start) !== num(newArea.start) || num(oldArea.count) !== num(newArea.count)) {
-        throw new Error(`${after.name}: enable persistence before changing memory ranges`);
+        throw new Error(`${after.name}: snapshot current persistence state before changing memory ranges`);
       }
     }
 
-    // Recover safely from a prior failed bootstrap that already restarted MMA2
-    // into SEALED state. Raw Ingest is the authoritative bypass and the same
-    // final commit mechanism used after restore.
+    // Save & Apply always starts by taking a fresh full persistence snapshot.
+    // If a previous failed apply left the running memory sealed, Raw Ingest is
+    // the authoritative bypass used only to make the current state readable
+    // before capture. Existing snapshot files are deliberately overwritten;
+    // runtime RBE saves may update them again afterward.
     if (enabled(old)) await unsealForBootstrap(old);
 
     for (const spec of AREAS) {
@@ -180,7 +176,7 @@ const captureInitialSnapshots = async (root, previousDoc, editedDoc) => {
     }
 
     if (!snapshotsComplete(root, after)) {
-      throw new Error(`${after.name}: initial persistence snapshot set is incomplete after capture`);
+      throw new Error(`${after.name}: persistence snapshot set is incomplete after Save & Apply capture`);
     }
   }
 };

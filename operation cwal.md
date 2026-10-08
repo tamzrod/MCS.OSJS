@@ -2,10 +2,10 @@
 
 ## Entry-point routing — mandatory
 
-"Operation CWAL" invokes the workflow; it does not automatically assign JR identity. **A task placed in `workflow/active_work/` has already passed human review and is authorized for its written scope.** `workflow/micro_task/` is the review stage; do not request a second approval, promotion, or "Proceed / Modify / Skip" confirmation to implement an active-work task. `ACTIVE` and `QUEUED` are legacy scheduling labels, not additional approval gates. A ready task is not permission to execute every task at once: identify the single task assigned for this invocation from the current handoff or explicit user instruction. If an assignment is already established in the current session, continue it without asking again. Do not infer assignment from task numbering alone.
+"Operation CWAL" invokes the workflow; it does not automatically assign JR identity. **A task placed in `workflow/active_work/` has already passed human review and is authorized for its written scope.** `workflow/micro_task/` is the review stage; do not request a second approval, promotion, or "Proceed / Modify / Skip" confirmation to implement an active-work task. `ACTIVE` and `QUEUED` are legacy scheduling labels, not additional approval gates. A ready task normally identifies the current starting task. When the current handoff explicitly enables **recursive JR DEV continuation** for an already human-promoted ordered CODE/DISCOVERY queue, that same OPERATION CWAL invocation may continue through successive eligible packets after each task is genuinely delivered and recorded. If an assignment is already established in the current session, continue it without asking again. Do not infer assignment from task numbering alone.
 
 - OpenCode assigned a ready CODE task: follow `workflow/adapters/opencode.md` for bounded implementation, targeted self-tests, in-scope fixes and retests, evidence, then STOP.
-- **OpenHands assigned a ready CODE/DISCOVERY task as JR DEV:** execute that packet as a coding agent in the disposable OpenHands workspace: read only bounded task context, edit only task-allowed files, run declared targeted self-tests and bounded in-scope corrective retests, record exact evidence/source checkpoint, then STOP. The JR-only TEST/VERIFY restrictions below do not apply while OpenHands is explicitly in JR DEV mode, but JR DEV may not certify its own independent TEST/VERIFY gate or execute a second task in the same invocation.
+- **OpenHands assigned a ready CODE/DISCOVERY task as JR DEV:** execute that packet as a coding agent in the disposable OpenHands workspace: read only bounded task context, edit only task-allowed files, run declared targeted self-tests and bounded in-scope corrective retests, and record exact evidence/source checkpoint. If the handoff enables recursive JR DEV continuation, after successful delivery perform the recursive transition below instead of stopping. The JR-only TEST/VERIFY restrictions below do not apply while OpenHands is explicitly in JR DEV mode, but JR DEV may not certify its own independent TEST/VERIFY gate.
 - OpenHands / independent JR assigned a ready TEST/VERIFY task: follow the independent JR lifecycle below, using its complete current test packet. Independent JR does not implement or self-authorize a test.
 - Missing task identity, genuinely conflicting assignments, or a missing essential execution/safety detail: report the precise blocker once and STOP. Do not select a different task, rewrite workflow files or perform speculative reconciliation. A stale queue label or redundant promotion wording alone is not a blocker when the approved task and assignment are unambiguous.
 
@@ -25,7 +25,7 @@ Allowed routine actions, when needed for the current packet:
 - push non-force to the assigned branch;
 - verify remote delivery;
 - update the current task/queue/handoff with genuine completion evidence;
-- select the next already-promoted eligible packet for the **next** OPERATION CWAL invocation.
+- select the next already-promoted eligible packet; when recursive JR DEV continuation is enabled, activate it immediately as the next packet in the **same** OPERATION CWAL invocation.
 
 This standing authority does **not** permit:
 - force/force-with-lease push;
@@ -34,7 +34,7 @@ This standing authority does **not** permit:
 - scope expansion;
 - ICC edits;
 - independent TEST/VERIFY self-certification;
-- executing a second product task in the same invocation.
+- skipping a failed/blocked predecessor or crossing into TEST/VERIFY under JR DEV identity.
 
 The normal operator loop for an already-promoted autonomous JR DEV queue is therefore:
 
@@ -44,7 +44,27 @@ OPERATION CWAL
 
 JR DEV may perform the already-authorized safe fetch/fast-forward itself. A human does not need to re-promote or re-select each successor.
 
-CWAL handles one task completely, records/delivers it, prepares the next authorized packet, then STOPS. The next human invocation repeats the same two-step loop.
+When recursive JR DEV continuation is **not** enabled, CWAL handles one task completely, records/delivers it, prepares the next authorized packet, then stops.
+
+When the current handoff explicitly enables **recursive JR DEV continuation**, use this loop:
+
+```text
+CURRENT CODE/DISCOVERY PACKET
+→ implement + self-check
+→ commit + non-force push
+→ verify remote delivery
+→ record completion evidence
+→ activate named already-promoted successor
+→ CONTEXT RESET CHECKPOINT
+   - discard prior task working notes from active reasoning
+   - reread handoff.md
+   - read only the successor packet
+   - read only minimum source/context required by that successor
+→ execute successor
+→ repeat
+```
+
+The recursion ends immediately on any genuine FAIL/BLOCKED state, missing essential authority, unsafe/ambiguous conflict, queue end, or identity boundary. **TEST/VERIFY is always an identity boundary**: JR DEV may prepare/activate the exact independent-JR packet, then must stop before executing it.
 
 Approval to enter `active_work/` covers the task's documented edits and routine in-scope tests; it does not grant destructive cleanup, production access, unrelated edits, network actions, or commit/push permissions that the task does not grant. Ask for authorization only for an action outside that scope or a genuine safety boundary. A coding-agent self-test (OpenCode or OpenHands JR DEV) is not an independent JR PASS. No coding or test identity may archive or start a successor without its own assignment, or update ICC; ICC changes belong to BLACK SHEEP WALL under separate authorization. Routine Git archaeology, backups, conflict resolution, reset and worktree repair are not implicit tasks. For a genuine workspace blocker, report the precise issue once and STOP; destructive cleanup requires explicit authorization.
 

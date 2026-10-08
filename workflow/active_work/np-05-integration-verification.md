@@ -2,6 +2,7 @@
 
 Status: PROMOTED / QUEUED (human authorized 2026-10-08)
 Stage: TEST/VERIFY
+Owner: Independent JR TEST/VERIFY (separate identity; not Codex JR DEV) (operator assignment 2026-10-08)
 Previous: NP-04
 Next: NP-06
 

@@ -7,7 +7,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/tamzrod/MCS.OSJS/mma2composer"
 )
 
 // PollPersistenceRestore is the persistence manager watchdog.
@@ -129,7 +128,3 @@ func persistenceProbeSealed(device DeviceDefinition) (bool, error) {
 	}
 	return pdu[1] == exception, nil
 }
-
-// keep the composer import explicit here because the watchdog delegates all
-// restore/verify/unseal semantics to the existing persistence startup contract.
-var _ = mma2composer.PersistenceRawIngestOK

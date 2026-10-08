@@ -70,6 +70,28 @@ func PersistenceRuntimeStatusConfigured(configured bool) PersistenceRuntimeStatu
 	return PersistenceRuntimeStatus{Configured: configured, Sealed: true}
 }
 
+// PersistenceRuntimeStatusFromObservations projects the observational status for
+// one memory from its configured enablement, an optional startup restore result
+// and the observed save status. When no restore has been observed it reports the
+// conservative configured-only view (never fabricated health); otherwise it
+// reports the real loaded plan/result plus the observed last-save and
+// last-restore facts. It is a pure read-only projection.
+func PersistenceRuntimeStatusFromObservations(configured bool, startup *PersistenceStartupResult, save PersistenceSaveStatus) PersistenceRuntimeStatus {
+	if startup == nil {
+		status := PersistenceRuntimeStatusConfigured(configured)
+		if save.LastSaveAt != "" {
+			status.LastSave = &PersistenceTimestamp{At: save.LastSaveAt}
+		}
+		return status
+	}
+	var lastSave *PersistenceTimestamp
+	if save.LastSaveAt != "" {
+		lastSave = &PersistenceTimestamp{At: save.LastSaveAt}
+	}
+	observation := PersistenceRestoreObservationFromResult(startup.Result)
+	return PersistenceRuntimeStatusFromPlan(startup.Plan, startup.Result, lastSave, &observation)
+}
+
 // PersistenceRuntimeStatusFromPlan projects the observational persistence status
 // for one memory from its authoritative restore plan/result. It is a pure
 // read-only projection: it never writes, retries, unseals or changes sealing.

@@ -117,6 +117,28 @@ func TestPersistenceRuntimeSaveReadErrorObserved(t *testing.T) {
 	}
 }
 
+// PERSIST-R04 self-check: the save status records a genuine last-save instant
+// only after a real save, never on a non-persistence event.
+func TestPersistenceRuntimeSaveLastSaveAt(t *testing.T) {
+	cfg, _, _ := runtimeSaveConfig(t)
+	save, err := NewPersistenceRuntimeSave(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if save.Status().LastSaveAt != "" {
+		t.Fatal("no save yet must report no last-save instant")
+	}
+	save.Publish(3)
+	first := save.Status().LastSaveAt
+	if first == "" {
+		t.Fatal("a real save must record a last-save instant")
+	}
+	save.Publish(99)
+	if save.Status().LastSaveAt != first {
+		t.Fatal("a non-persistence event must not change the last-save instant")
+	}
+}
+
 type errFake string
 
 func (e errFake) Error() string { return string(e) }

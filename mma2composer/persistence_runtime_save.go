@@ -1,6 +1,9 @@
 package mma2composer
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // PersistenceRuntimeSave is the concrete runtime wiring that connects
 // persistence-owned RBE events to the existing PersistenceSnapshotWriter and a
@@ -16,6 +19,7 @@ import "fmt"
 // grants control authority over restore, sealing or MMA2.
 type PersistenceRuntimeSave struct {
 	writer *PersistenceSnapshotWriter
+	key    PersistenceMemoryKey
 	ids    map[uint8]PersistenceSnapshotRule
 	status PersistenceSaveStatus
 }
@@ -30,6 +34,10 @@ type PersistenceSaveStatus struct {
 	Saves int `json:"saves"`
 	// BytesWritten is the cumulative number of changed bytes/words persisted.
 	BytesWritten int `json:"bytes_written"`
+	// LastSaveAt is the observed instant of the most recent successful save
+	// (a run that wrote at least one changed byte/word). It is empty when nothing
+	// has been saved yet and is never fabricated.
+	LastSaveAt string `json:"last_save_at,omitempty"`
 	// LastError is the most recent save error, empty when the last save path was
 	// clean. It never fabricates a success.
 	LastError string `json:"last_error,omitempty"`
@@ -71,10 +79,14 @@ func NewPersistenceRuntimeSave(cfg PersistenceRuntimeSaveConfig) (*PersistenceRu
 	}
 	return &PersistenceRuntimeSave{
 		writer: writer,
+		key:    cfg.Key,
 		ids:    ids,
 		status: PersistenceSaveStatus{ConfiguredRules: len(rules)},
 	}, nil
 }
+
+// Key returns the Port -> Unit ID -> Memory identity this component saves.
+func (s *PersistenceRuntimeSave) Key() PersistenceMemoryKey { return s.key }
 
 // SubscribedRuleIDs returns the persistence-owned RBE rule IDs this component
 // listens for, so a runtime can route exactly those one-byte events here.
@@ -110,6 +122,7 @@ func (s *PersistenceRuntimeSave) Publish(id uint8) {
 	if result.StoreCalls > 0 {
 		s.status.Saves++
 		s.status.BytesWritten += result.BytesWritten
+		s.status.LastSaveAt = time.Now().UTC().Format(time.RFC3339Nano)
 	}
 	s.status.LastError = ""
 }

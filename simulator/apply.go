@@ -219,14 +219,26 @@ func (a *SchedulerApplier) RuntimeStatus(name string) (DeviceRuntimeStatus, erro
 	rawError := a.rawErrors[name]
 	ready := a.ready
 	ingestOK := a.ingestOK[name]
+	saveHost := a.persistenceSave
+	startup := a.persistenceStartup
 	a.mu.Unlock()
 	if !ok { return DeviceRuntimeStatus{}, fmt.Errorf("device %q not found", name) }
 	status := DeviceRuntimeStatus{Name: name, Device: "STOPPED", MMA2: "STOPPED", RawIngest: "WAITING", RawError: rawError, FC: make(map[string]FCRuntimeStatus)}
 	status.TotalPoints = uint32(device.MMA2.FC1.Count) + uint32(device.MMA2.FC2.Count) + uint32(device.MMA2.FC3.Count) + uint32(device.MMA2.FC4.Count)
-	// Read-only observational persistence health (PERSIST-021), derived from the
-	// configured persistence enablement only; it never changes restore or sealing
-	// state and cannot be used to bypass either.
-	persistence := mma2composer.PersistenceRuntimeStatusConfigured(persistenceConfigured(device))
+	// Read-only observational persistence health (PERSIST-021/R04), carrying the
+	// real save/restore observations from PERSIST-R02/R03 rather than a
+	// configured-only placeholder. It never changes restore or sealing state and
+	// cannot be used to bypass either.
+	key := mma2composer.PersistenceMemoryKey{Port: device.MMA2.Port, UnitID: device.MMA2.UnitID}
+	save := saveHost.StatusForKey(key)
+	var restore *mma2composer.PersistenceStartupResult
+	for i := range startup {
+		if startup[i].Key == key {
+			restore = &startup[i]
+			break
+		}
+	}
+	persistence := mma2composer.PersistenceRuntimeStatusFromObservations(persistenceConfigured(device), restore, save)
 	status.Persistence = &persistence
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", fmt.Sprint(device.MMA2.Port)), 150*time.Millisecond)
 	if err == nil { status.MMA2 = "RUNNING"; _ = conn.Close() }

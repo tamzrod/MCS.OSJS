@@ -84,6 +84,180 @@ func (f *fakeRawIngestV1) recorded() []rawV1Packet {
 	return append([]rawV1Packet(nil), f.packets...)
 }
 
+// PERSIST-R04 self-check: the runtime status carries real save/restore
+// observations (not a configured-only placeholder) and stays observational.
+func TestRuntimeStatusCarriesRealPersistenceObservations(t *testing.T) {
+	reads := []byte{0x00, 0x2A, 0x01, 0x00}
+	endpoint, port := newFakeMMA2Endpoint(t, reads, []byte{0x00})
+	device := persistenceStartupDevice("r04-status", port, 1, 0, 2)
+	memory := memoryFromMMA2Params(device.MMA2)
+	root := t.TempDir()
+	writeStartupSnapshot(t, root, device, memory, []byte{0x00, 0x2A, 0x01, 0x00})
+
+	// Run the real startup restore, then record it on the applier.
+	results, err := persistenceStartupContext(root, []DeviceDefinition{device})
+	if err != nil {
+		t.Fatal(err)
+	}
+	applier := newSchedulerApplier(Store{Root: root}, Document{Devices: []DeviceDefinition{device}}, false)
+	t.Cleanup(applier.Stop)
+	if err := applier.ArmPersistenceSave(Document{Devices: []DeviceDefinition{device}}); err != nil {
+		t.Fatal(err)
+	}
+	applier.recordPersistenceStartup(results)
+
+	status, err := applier.RuntimeStatus(device.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Persistence == nil {
+		t.Fatal("runtime status must carry persistence observations")
+	}
+	if !status.Persistence.Configured || !status.Persistence.Healthy || status.Persistence.Sealed {
+		t.Fatalf("committed restore must be healthy and unsealed: %+v", status.Persistence)
+	}
+	if status.Persistence.LastRestore == nil || !status.Persistence.LastRestore.Committed {
+		t.Fatalf("last restore observation must appear: %+v", status.Persistence)
+	}
+	_ = endpoint
+
+	// A driven save reads the authoritative state over Modbus and appears as a
+	// last-save observation.
+	host := applier.persistenceSave
+	ids := host.SubscribedRuleIDs()
+	if len(ids) == 0 {
+		t.Fatal("expected a subscribed persistence rule")
+	}
+	applier.PublishPersistenceEvent(ids[0])
+	if host.Status().LastSaveAt == "" {
+		t.Fatalf("a real save must record a last-save instant: %+v", host.Status())
+	}
+	status2, err := applier.RuntimeStatus(device.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status2.Persistence.LastSave == nil {
+		t.Fatalf("a real save must appear as a last-save observation: %+v", status2.Persistence)
+	}
+}
+
+// A non-persistence device keeps no persistence observations (absent, not
+// fabricated).
+func TestRuntimeStatusPersistenceAbsentWithoutConfig(t *testing.T) {
+	device := newStatusDevice("r04-none", true, 1, 1000)
+	applier := newSchedulerApplier(Store{Root: t.TempDir()}, Document{Devices: []DeviceDefinition{device}}, false)
+	t.Cleanup(applier.Stop)
+	status := runtimeStatusOf(t, applier, device.Name)
+	if status.Persistence == nil || status.Persistence.Configured {
+		t.Fatalf("non-persistence device must report not-configured: %+v", status.Persistence)
+	}
+	if status.Persistence.LastSave != nil || status.Persistence.LastRestore != nil {
+		t.Fatalf("non-persistence device must not fabricate observations: %+v", status.Persistence)
+	}
+}
+
+// fakeMMA2Endpoint emulates the shared MMA2 listener: it classifies each
+// connection by its first bytes and serves either Raw Ingest v1 writes or
+// Modbus FC1/FC3 reads, so a real save (Modbus read) and a real startup restore
+// (Raw Ingest write) can run against one disposable port.
+type fakeMMA2Endpoint struct {
+	ln        net.Listener
+	mu        sync.Mutex
+	packets   []rawV1Packet
+	registers []byte
+	bits      []byte
+}
+
+func newFakeMMA2Endpoint(t *testing.T, registers, bits []byte) (*fakeMMA2Endpoint, uint16) {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &fakeMMA2Endpoint{ln: ln, registers: registers, bits: bits}
+	go f.serve()
+	t.Cleanup(func() { _ = ln.Close() })
+	_, portText, _ := net.SplitHostPort(ln.Addr().String())
+	port, _ := strconv.Atoi(portText)
+	return f, uint16(port)
+}
+
+func (f *fakeMMA2Endpoint) serve() {
+	for {
+		conn, err := f.ln.Accept()
+		if err != nil {
+			return
+		}
+		go func(c net.Conn) {
+			defer c.Close()
+			_ = c.SetDeadline(time.Now().Add(2 * time.Second))
+			var peek [2]byte
+			if _, err := io.ReadFull(c, peek[:]); err != nil {
+				return
+			}
+			if peek[0] == 'R' && peek[1] == 'I' {
+				f.handleRawIngest(c)
+				return
+			}
+			f.handleModbus(c, peek)
+		}(conn)
+	}
+}
+
+func (f *fakeMMA2Endpoint) handleRawIngest(c net.Conn) {
+	rest := make([]byte, 8)
+	if _, err := io.ReadFull(c, rest); err != nil {
+		return
+	}
+	hdr := append([]byte{'R', 'I'}, rest...)
+	count := binary.BigEndian.Uint16(hdr[8:10])
+	plen := int(count) * 2
+	if hdr[3] == byte(mma2composer.RawIngestCoils) || hdr[3] == byte(mma2composer.RawIngestDiscreteInputs) {
+		plen = (int(count) + 7) / 8
+	}
+	payload := make([]byte, plen)
+	if _, err := io.ReadFull(c, payload); err != nil {
+		return
+	}
+	f.mu.Lock()
+	f.packets = append(f.packets, rawV1Packet{area: hdr[3], unitID: binary.BigEndian.Uint16(hdr[4:6]), address: binary.BigEndian.Uint16(hdr[6:8]), count: count, payload: payload})
+	f.mu.Unlock()
+	_, _ = c.Write([]byte{0x00})
+}
+
+func (f *fakeMMA2Endpoint) handleModbus(c net.Conn, peek [2]byte) {
+	rest := make([]byte, 10)
+	if _, err := io.ReadFull(c, rest); err != nil {
+		return
+	}
+	req := append(peek[:], rest...)
+	function := req[7]
+	data := f.registers
+	if function == 1 {
+		data = f.bits
+		if data == nil {
+			data = []byte{0}
+		}
+	}
+	if data == nil {
+		data = []byte{}
+	}
+	resp := make([]byte, 9+len(data))
+	binary.BigEndian.PutUint16(resp[0:2], binary.BigEndian.Uint16(req[0:2]))
+	binary.BigEndian.PutUint16(resp[4:6], uint16(3+len(data)))
+	resp[6] = req[6]
+	resp[7] = function
+	resp[8] = byte(len(data))
+	copy(resp[9:], data)
+	_, _ = c.Write(resp)
+}
+
+func (f *fakeMMA2Endpoint) recorded() []rawV1Packet {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]rawV1Packet(nil), f.packets...)
+}
+
 // persistenceStartupDevice builds a persistence-enabled device for the startup
 // tests with one holding-register area.
 func persistenceStartupDevice(name string, port uint16, unitID, start, count uint16) DeviceDefinition {

@@ -122,11 +122,28 @@ func (h *PersistenceRuntimeSaveHost) Status() mma2composer.PersistenceSaveStatus
 		combined.Events += s.Events
 		combined.Saves += s.Saves
 		combined.BytesWritten += s.BytesWritten
+		if s.LastSaveAt > combined.LastSaveAt {
+			combined.LastSaveAt = s.LastSaveAt
+		}
 		if s.LastError != "" {
 			combined.LastError = s.LastError
 		}
 	}
 	return combined
+}
+
+// StatusForKey returns the observational save status for one memory identity, or
+// the zero value when that memory has no save component. It is read-only.
+func (h *PersistenceRuntimeSaveHost) StatusForKey(key mma2composer.PersistenceMemoryKey) mma2composer.PersistenceSaveStatus {
+	if h == nil {
+		return mma2composer.PersistenceSaveStatus{}
+	}
+	for _, c := range h.components {
+		if c.Key() == key {
+			return c.Status()
+		}
+	}
+	return mma2composer.PersistenceSaveStatus{}
 }
 
 // persistenceSaveContext builds the runtime save host for a set of live devices,

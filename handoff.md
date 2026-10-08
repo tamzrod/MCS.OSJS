@@ -1,60 +1,41 @@
 ## Current native persistence assignment — operator resolution 2026-10-08
 
-**JR DEV OWNER: OpenHands.**
+**CURRENT: NPE-06W — Windows Electron Native Persistence Acceptance**
 
-**CURRENT: NPE-06 — Electron Native Persistence Verification** — Stage: TEST/VERIFY, Owner: **Independent JR TEST/VERIFY** (identity boundary).
+NPE-06 Independent JR verification is BLOCKED by the headless Linux environment, not by a product failure. Native MMA2 persistence itself passed the committed disposable harness.
 
-NPE-05A is CODE COMPLETE and delivered on `main` at `1ad2510312ccba0a09024b70c53a1e9945689957` (OpenHands JR DEV, base `cd6c940`). The embedded `MMA2/` component was refreshed from the pinned donor `tamzrod/MMA2` @ `a38687574645ada94c7a7f844152932afb09f147`, so native per-memory persistence now resides inside `MMA2/internal/persistence/` and the NPE-06 blocker is cleared. MMA2, composer, simulator and replicator builds/tests and the Electron suite all pass.
-
-NPE-06 must be executed as **Independent JR TEST/VERIFY** in a separate assignment/invocation against the exact NPE-06 packet; JR DEV MUST NOT execute or self-certify it. A separate invocation/assignment as Independent JR re-reads the exact packet and executes it.
-
-All Electron CODE packets (NPE-01..NPE-05, NPE-05A) are now CODE COMPLETE and delivered. Electron must be independently verified by NPE-06 before any NPO-* product task begins.
-
-NPE-01 was accepted as delivered at `b868c2d2d8cb132d52498cb47105b1bd8c095551`.
-NPE-02 was accepted as delivered at `a90f52a1b7ce2830dbc2aa8b6a65041962f21355`.
-NPE-03 was accepted as delivered at `817a6948d7db5bcf666a1e6acf00b1545f9815e8`.
-NPE-04 was accepted as delivered at `b4580d6fa3bbee547caea4680aacd1a8c812b48b`.
-NPE-05 was accepted as delivered at `10a4e22aa5350868dac13796ffe78a875fcea641`.
-
-### Root cause confirmed
-
-The repository-root `MMA2/` is a harvested copy pinned to an old donor revision. It is not a submodule and is not automatically synchronized with `tamzrod/MMA2`.
-
-Current MCS.OSJS embedded MMA2 lacks native persistence, while authoritative `tamzrod/MMA2` main at:
-
-```
-a38687574645ada94c7a7f844152932afb09f147
-```
-
-contains the implemented and verified native persistence runtime.
-
-Therefore the fix is NOT to implement another persistence engine in MCS.OSJS. The fix is to refresh the embedded `MMA2/` component from the authoritative donor checkpoint.
+The remaining product gate must run on the actual Windows Electron target.
 
 ### Routing
 
 ```text
-NPE-01  COMPLETE
-NPE-02  COMPLETE
-NPE-03  COMPLETE
-NPE-04  COMPLETE
-NPE-05  COMPLETE
-NPE-05A COMPLETE — embedded MMA2 refreshed from donor a386875
-→ NPE-06 Independent Electron native persistence verification   ← CURRENT (TEST/VERIFY, identity boundary)
-→ NPO-01 OS.js Toolkit persistence UI
+NPE-01   COMPLETE
+NPE-02   COMPLETE
+NPE-03   COMPLETE
+NPE-04   COMPLETE
+NPE-05   COMPLETE
+NPE-05A  COMPLETE — embedded MMA2 refreshed
+NPE-06   BLOCKED — no graphical Electron environment
+→ NPE-06W Windows Electron native persistence acceptance   ← CURRENT
+→ NPO-01 OS.js Toolkit persistence UI                     ← only after PASS
 → NPO-02 OS.js Toolkit config wiring
 → NPO-03 OS.js Toolkit cleanup/parity
 → NPO-04 Independent OS.js verification
 → NPF-01 workflow/docs cleanup
 ```
 
-NPE-05A packet:
-`workflow/active_work/npe-05a-refresh-embedded-mma2-native-persistence.md`
+NPE-06W packet:
+`workflow/active_work/npe-06w-windows-electron-native-persistence-acceptance.md`
 
-### Authority
+### Gate rule
 
-OpenHands JR DEV is authorized to execute NPE-05A under OPERATION CWAL, including bounded donor-source synchronization from the exact pinned `tamzrod/MMA2` SHA, reconciliation required to build against the refreshed component, tests, commit and non-force push.
-
-After genuine NPE-05A delivery, route to NPE-06 and STOP at the Independent JR TEST/VERIFY identity boundary.
+Do not begin NPO-* product work until NPE-06W passes the Windows Electron acceptance path:
+- default persistence;
+- MMA2-only restart restore;
+- State Sealing disabled;
+- RBE TCP absent/disabled;
+- disabled persistence no-restore;
+- custom-range behavior.
 
 
 ---

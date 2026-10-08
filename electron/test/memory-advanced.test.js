@@ -19,12 +19,12 @@ const click = (root, title) => {
 };
 const change = (node, value) => { node.value = value; node.events.change(); };
 const type = (node, value) => { node.value = value; node.events.input(); };
-const setup = (params = {...ui.defaults(), fc1: {start: 10, count: 16}}) => {
+const setup = (params = {...ui.defaults(), fc1: {start: 10, count: 16}}, options = {}) => {
   const root = new Element('div');
   const devices = [{mma2: params}];
-  const options = {document, devices, outputLoaded: true, outputListen: '127.0.0.1:19001'};
-  ui.mount(root, params, options);
-  return {root, params, options};
+  const merged = {document, devices, outputLoaded: true, outputListen: '127.0.0.1:19001', persistenceSupported: true, rbeAvailable: true, ...options};
+  ui.mount(root, params, merged);
+  return {root, params, options: merged};
 };
 
 test('new defaults are independent and opening advanced tabs does not alter saved settings', () => {
@@ -142,4 +142,54 @@ test('device copies get unused global RBE IDs and exhaustion leaves the copy unc
   const full = {rbe: {coils: Array.from({length: 255}, (_, index) => ({id: index + 1}))}};
   assert.throws(() => ui.assignCopiedIDs(copied, [{mma2: full}]), /unused RBE/);
   assert.deepEqual(copied.rbe.coils.map(rule => rule.id), [2, 4]);
+});
+
+test('persistence tab round-trips persistence.enabled through the same draft', () => {
+  const params = {...ui.defaults(), fc1: {start: 10, count: 16}};
+  const {root} = setup(params);
+  const tabs = collect(root).filter(node => node.tagName === 'button' && ['Persistence'].includes(node.textContent));
+  assert.equal(tabs.length, 1);
+  click(root, 'Persistence');
+  const enable = find(root, 'Enable persistence');
+  assert.equal(enable.checked, false);
+  enable.checked = true; enable.events.change();
+  assert.deepEqual(params.persistence, {enabled: true});
+  // Save-and-apply composition would send unknown keys through applySettings.
+  enable.checked = false; enable.events.change();
+  assert.deepEqual(params.persistence, {enabled: false});
+  // Navigating away and back preserves the draft value.
+  click(root, 'RBE Rules'); click(root, 'Persistence');
+  assert.equal(find(root, 'Enable persistence').checked, false);
+});
+
+test('persistence is hidden where unsupported and locked derived areas are read-only', () => {
+  const params = {...ui.defaults(), state_sealing: {enabled: true}, fc1: {start: 10, count: 16}, fc3: {start: 100, count: 8}};
+  const {root} = setup(params, {persistenceSupported: false});
+  assert.ok(!collect(root).some(node => node.tagName === 'button' && node.textContent === 'Persistence'));
+  // Support it again to inspect the derived, locked rows.
+  ui.mount(root, params, {document, devices: [{mma2: params}], outputLoaded: true, persistenceSupported: true, rbeAvailable: true});
+  click(root, 'Persistence');
+  const rows = collect(root).filter(node => node.className === 'rbe-rule-row');
+  const text = rows.map(row => collect(row).map(node => node.textContent).join('|'));
+  assert.ok(text.some(entry => /Coils|10|16|System-owned/.test(entry)));
+  assert.ok(text.some(entry => /Holding Registers|100|8|System-owned/.test(entry)));
+  // The derived rows have no editable inputs.
+  assert.equal(collect(root).filter(node => node.tagName === 'input').length, 1); // only the enable checkbox
+});
+
+test('persistenceError requires RBE availability and state sealing, never enables them', () => {
+  const enabled = {persistence: {enabled: true}};
+  assert.match(ui.persistenceError(enabled, {rbeAvailable: false}), /RBE mechanism/);
+  assert.match(ui.persistenceError(enabled, {rbeAvailable: true}), /state sealing/);
+  const sealed = {persistence: {enabled: true}, state_sealing: {enabled: true}};
+  assert.equal(ui.persistenceError(sealed, {rbeAvailable: true}), null);
+  assert.equal(ui.persistenceError({persistence: {enabled: false}}, {rbeAvailable: false}), null);
+  // The prerequisites are reported, not silently created.
+  const params = {...ui.defaults()};
+  const {root} = setup(params);
+  click(root, 'Persistence');
+  const enable = find(root, 'Enable persistence'); enable.checked = true; enable.events.change();
+  assert.equal(params.state_sealing.enabled, false);
+  assert.equal(params.rbe, undefined);
+  assert.ok(collect(root).some(node => node.attributes.role === 'alert' && /state sealing/.test(node.textContent)));
 });

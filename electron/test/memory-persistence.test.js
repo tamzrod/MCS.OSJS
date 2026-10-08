@@ -32,6 +32,20 @@ test('legacy documents inherit advanced fields and explicit edits win without mu
   assert.equal(config.listeners[0].memory[0].policy.rules[0].id, 'read');
 });
 
+test('persistence.enabled round-trips through inherit and apply without a second authority', () => {
+  const config = fixture();
+  config.listeners[0].memory[0].persistence = {enabled: true};
+  const params = {port: 5020, unit_id: 1, fc1: {start: 0, count: 4}};
+  const hydrated = settings.inheritSettings(params, config);
+  assert.deepEqual(hydrated.persistence, {enabled: true});
+  // An explicit draft edit wins.
+  const edited = settings.applySettings({unit_id: 1, coils: params.fc1}, {...hydrated, persistence: {enabled: false}});
+  assert.deepEqual(edited.persistence, {enabled: false});
+  // A device with no persisted persistence config stays absent.
+  const absent = settings.inheritSettings(params, fixture());
+  assert.equal(absent.persistence, undefined);
+});
+
 test('shared settings preserve memories and unknown fields; listener binding survives composition', () => {
   const previous = fixture();
   const updated = settings.updateSharedSettings(previous, {debug: true, rbe: {tcp: {listen: '[::1]:9100'}}});

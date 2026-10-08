@@ -306,6 +306,8 @@ const renderSimulator = () => {
       const advanced = h('div', 'memory-advanced');
       window.mcsMemoryUI.mount(advanced, device.mma2, {document, devices: advancedDevices(),
         outputLoaded: mmaState.loaded, outputListen: mmaState.persisted.rbe?.tcp?.listen,
+        persistenceSupported: true,
+        rbeAvailable: Boolean(mmaState.loaded && mmaState.persisted?.rbe),
         configureOutput: () => openRBEOutput('mma')});
       editor.appendChild(advanced);
     }

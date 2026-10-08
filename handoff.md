@@ -146,22 +146,28 @@ CODE COMPLETE at `2236e15277ebb17c60cac206e05d77e17e296a53`, delivered on main.
 - Self-check: `cd mma2composer && go test -mod=readonly -run TestPersistenceRestoreAtStartup -v .` → 3 tests PASS; `cd simulator && go test -mod=readonly -run TestPersistenceStartup .` → 4 tests PASS. Bounded regression: all Go modules pass, exit 0.
 - This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
 
+**PERSIST-UI01 — Electron Persistence Settings**
+CODE COMPLETE at `cff34f41ebb350fc1c4380253cc2acc02e4562ca`, delivered on main.
+- `electron/renderer/memory-advanced.js` (blob `de068160c35b38ea71cb9e4ba693762485188a5d`), `electron/renderer/app.js` (blob `adb0001e0f52cc00807f2fcf195beb11f61a631f`), plus focused renderer tests.
+- Advanced Settings now offers the Persistence tab (after Access Policy) only where supported; it exposes `persistence.enabled` through the same draft, reports RBE mechanism + State Sealing prerequisites (never silently enabling sealing or creating operator-owned RBE rules), and renders derived persisted areas/locked system-owned RBE rows read-only.
+- Self-check: `cd electron && node test/memory-advanced.test.js` → 12 PASS; `node test/memory-persistence.test.js` → 4 PASS; all Electron test files pass.
+- This is JR DEV self-check evidence only, not an independent TEST/VERIFY PASS.
+
 ## Current task — ACTIVE
 
-**PERSIST-UI01 — Electron Persistence Settings**
+**PERSIST-R04 — Runtime Status Wiring**
 Mode / owner: **CODE / OpenHands JR DEV**
-Packet: `workflow/active_work/persist-ui01-electron-settings.md`
+Packet: `workflow/active_work/persist-r04-runtime-status-wiring.md`
 
-Execute PERSIST-UI01 exactly as written (read the packet for its exact scope before implementing):
-- expose the existing per-memory persistence configuration in the Windows Electron Memory → Advanced Settings editor without creating another configuration authority;
-- add the Advanced Settings tab order `RBE Rules | State Sealing | Persistence | Access Policy`; show RBE mechanism availability + State Sealing as prerequisites and never silently enable sealing or create operator-owned RBE rules;
-- expose `persistence.enabled` plus read-only persisted areas and locked system-owned persistence RBE projection derived from authoritative memory ranges;
-- keep ordinary user RBE editable and unchanged; no filesystem/runtime implementation, manual snapshot/restore buttons, editable ranges/RBE IDs/pathnames, alternate config store, or UI bypass of Save & Apply / Discard;
+Execute PERSIST-R04 exactly as written (read the packet for its exact scope before implementing):
+- add the real non-test runtime call site for `PersistenceRuntimeStatusFromPlan`;
+- carry actual last-save and last-restore observations from PERSIST-R02/R03 into `DeviceRuntimeStatus.Persistence`;
+- keep status observational: restore failure remains visibly sealed and the UI gains no control authority;
 - run only task-bounded self-checks and bounded in-scope corrective retests;
 - commit and non-force push under standing JR DEV authority;
 - record changed paths/checks/source checkpoint;
-- automatically arm PERSIST-R04 for the next invocation only after genuine PERSIST-UI01 completion;
-- STOP after PERSIST-UI01.
+- automatically arm PERSIST-R05 for the next invocation only after genuine PERSIST-R04 completion;
+- STOP after PERSIST-R04.
 
 Human promoted the full optimized persistence continuation chain on 2026-10-08:
 
